@@ -112,6 +112,21 @@ class FastingManager: ObservableObject {
         updateStreak(for: session)
     }
 
+    func deleteFast(for date: Date) {
+        let calendar = Calendar.current
+        let targetDay = calendar.startOfDay(for: date)
+
+        // Remove the fast for this day
+        fastingHistory.removeAll { session in
+            calendar.startOfDay(for: session.startTime) == targetDay
+        }
+
+        // Recalculate streaks from history (deleting may break streak)
+        calculateStreakFromHistory()
+
+        saveHistory()
+    }
+
     private func addToHistory(_ session: FastingSession) {
         let calendar = Calendar.current
         let sessionDay = calendar.startOfDay(for: session.startTime)

@@ -53,6 +53,11 @@ struct HistoryView: View {
                                 HistoryRowView(session: session)
                                     .padding(.horizontal)
                                     .padding(.vertical, 8)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedDate = session.startTime
+                                        showingAddFast = true
+                                    }
                                 Divider()
                                     .padding(.horizontal)
                             }
@@ -371,6 +376,11 @@ struct FastingGraphView: View {
             selectedWeekOffset = 0
             selectedMonthOffset = 0
             selectedYearOffset = 0
+
+            // Intelligently initialize Month view to show most recent data
+            if newValue == .month {
+                initializeMonthView()
+            }
         }
     }
 
@@ -664,6 +674,36 @@ struct FastingGraphView: View {
             return selectedWeekOffset < 0 || selectedMonthOffset < 0 || selectedYearOffset < 0
         case .custom:
             return false
+        }
+    }
+
+    private func initializeMonthView() {
+        // Only initialize once - don't reset if user has already navigated
+        guard selectedMonthOffset == 0 else { return }
+
+        let calendar = Calendar.current
+        let now = Date()
+
+        // Get the current month's data
+        guard let currentMonthInterval = calendar.dateInterval(of: .month, for: now) else { return }
+        let currentMonthStart = calendar.startOfDay(for: currentMonthInterval.start)
+        let currentMonthEnd = calendar.startOfDay(for: now)
+
+        // Check if there's any data in the current month
+        let hasDataInCurrentMonth = fastingManager.fastingHistory.contains { session in
+            session.isComplete && session.startTime >= currentMonthStart && session.startTime <= currentMonthEnd
+        }
+
+        // If no data in current month, find the most recent month with data
+        if !hasDataInCurrentMonth, let mostRecentSession = fastingManager.fastingHistory.first(where: { $0.isComplete }) {
+            // Calculate how many months back the most recent session is
+            let sessionMonth = calendar.startOfDay(for: calendar.dateInterval(of: .month, for: mostRecentSession.startTime)?.start ?? mostRecentSession.startTime)
+            let currentMonth = calendar.startOfDay(for: currentMonthInterval.start)
+
+            let monthDiff = calendar.dateComponents([.month], from: sessionMonth, to: currentMonth).month ?? 0
+
+            // Set the offset to show that month (limit to -11 for max 12 months back)
+            selectedMonthOffset = max(-monthDiff, -11)
         }
     }
 
@@ -1224,6 +1264,7 @@ struct AddEditFastView: View {
     @State private var minutes: Int = 0
     @State private var goalHours: Double = 16
     @State private var startTime: Date
+    @State private var showingDeleteAlert = false
 
     private var existingSession: FastingSession?
 
@@ -1367,6 +1408,20 @@ struct AddEditFastView: View {
                     .disabled(hours == 0 && minutes == 0)
                     .opacity((hours == 0 && minutes == 0) ? 0.5 : 1.0)
 
+                    // Delete Button (only show if editing existing fast)
+                    if existingSession != nil {
+                        Button(action: { showingDeleteAlert = true }) {
+                            Text("Delete Fast")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red)
+                                .cornerRadius(12)
+                        }
+                        .padding(.horizontal)
+                    }
+
                     Spacer().frame(height: 40)
                 }
             }
@@ -1382,6 +1437,14 @@ struct AddEditFastView: View {
         }
         .onAppear {
             goalHours = fastingManager.fastingGoalHours
+        }
+        .alert("Delete Fast", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteFast()
+            }
+        } message: {
+            Text("Are you sure you want to delete this fast? This action cannot be undone.")
         }
     }
 
@@ -1411,6 +1474,11 @@ struct AddEditFastView: View {
         let endTime = startTime.addingTimeInterval(totalSeconds)
 
         fastingManager.addManualFast(startTime: startTime, endTime: endTime, goalHours: goalHours)
+        dismiss()
+    }
+
+    private func deleteFast() {
+        fastingManager.deleteFast(for: date)
         dismiss()
     }
 }
