@@ -836,6 +836,14 @@ struct EditStartTimeView: View {
                         if var session = fastingManager.currentSession {
                             session.startTime = startTime
                             fastingManager.currentSession = session
+
+                            // Reschedule notifications with updated start time
+                            NotificationManager.shared.scheduleGoalNotification(
+                                for: session,
+                                goalHours: fastingManager.fastingGoalHours,
+                                currentStreak: fastingManager.currentStreak,
+                                longestStreak: fastingManager.longestStreak
+                            )
                         }
                         dismiss()
                     }) {
