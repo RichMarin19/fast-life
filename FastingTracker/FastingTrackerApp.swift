@@ -27,6 +27,11 @@ struct FastLifeApp: App {
                     .tabItem {
                         Label("History", systemImage: "list.bullet")
                     }
+
+                AdvancedView()
+                    .tabItem {
+                        Label("More", systemImage: "ellipsis.circle")
+                    }
             }
         }
     }

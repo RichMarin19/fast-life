@@ -116,7 +116,7 @@ struct HistoryRowView: View {
                 }
             }
 
-            HStack {
+            HStack(spacing: 4) {
                 Image(systemName: "clock")
                     .foregroundColor(.secondary)
                 Text("Duration: \(formattedDurationValue)")

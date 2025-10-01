@@ -1,0 +1,239 @@
+import Foundation
+import HealthKit
+
+class HealthKitManager: ObservableObject {
+    static let shared = HealthKitManager()
+
+    private let healthStore = HKHealthStore()
+    @Published var isAuthorized = false
+
+    private init() {
+        checkAuthorizationStatus()
+    }
+
+    // MARK: - Authorization
+
+    func checkAuthorizationStatus() {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            print("HealthKit is not available on this device")
+            return
+        }
+
+        let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass)!
+        let authStatus = healthStore.authorizationStatus(for: weightType)
+
+        isAuthorized = (authStatus == .sharingAuthorized)
+    }
+
+    func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
+            return
+        }
+
+        // Types to read from HealthKit
+        let readTypes: Set<HKObjectType> = [
+            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
+            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
+            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
+        ]
+
+        // Types to write to HealthKit
+        let writeTypes: Set<HKSampleType> = [
+            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
+            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
+            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
+        ]
+
+        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
+            DispatchQueue.main.async {
+                self?.isAuthorized = success
+                completion(success, error)
+            }
+        }
+    }
+
+    // MARK: - Read Weight Data
+
+    func fetchWeightData(startDate: Date, endDate: Date = Date(), completion: @escaping ([WeightEntry]) -> Void) {
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            completion([])
+            return
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] query, results, error in
+
+            guard let samples = results as? [HKQuantitySample], error == nil else {
+                print("Error fetching weight data: \(String(describing: error))")
+                completion([])
+                return
+            }
+
+            // Group by date (one entry per day, taking the most recent)
+            var entriesByDay: [Date: HKQuantitySample] = [:]
+            let calendar = Calendar.current
+
+            for sample in samples {
+                let day = calendar.startOfDay(for: sample.startDate)
+
+                // Keep the most recent sample for each day
+                if let existing = entriesByDay[day] {
+                    if sample.startDate > existing.startDate {
+                        entriesByDay[day] = sample
+                    }
+                } else {
+                    entriesByDay[day] = sample
+                }
+            }
+
+            // Convert to WeightEntry objects
+            var weightEntries: [WeightEntry] = []
+
+            for (date, sample) in entriesByDay {
+                let weightInPounds = sample.quantity.doubleValue(for: HKUnit.pound())
+
+                // Fetch BMI and body fat for this date if available
+                self?.fetchBMIAndBodyFat(for: date) { bmi, bodyFat in
+                    let entry = WeightEntry(
+                        date: sample.startDate,
+                        weight: weightInPounds,
+                        bmi: bmi,
+                        bodyFat: bodyFat,
+                        source: .healthKit
+                    )
+                    weightEntries.append(entry)
+
+                    // Call completion when all entries are processed
+                    if weightEntries.count == entriesByDay.count {
+                        DispatchQueue.main.async {
+                            completion(weightEntries.sorted { $0.date > $1.date })
+                        }
+                    }
+                }
+            }
+
+            // Handle case where there are no samples
+            if entriesByDay.isEmpty {
+                DispatchQueue.main.async {
+                    completion([])
+                }
+            }
+        }
+
+        healthStore.execute(query)
+    }
+
+    private func fetchBMIAndBodyFat(for date: Date, completion: @escaping (Double?, Double?) -> Void) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+
+        var bmi: Double?
+        var bodyFat: Double?
+        let group = DispatchGroup()
+
+        // Fetch BMI
+        if let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) {
+            group.enter()
+            let bmiQuery = HKSampleQuery(sampleType: bmiType, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { query, results, error in
+                if let sample = results?.first as? HKQuantitySample {
+                    bmi = sample.quantity.doubleValue(for: HKUnit.count())
+                }
+                group.leave()
+            }
+            healthStore.execute(bmiQuery)
+        }
+
+        // Fetch Body Fat Percentage
+        if let bodyFatType = HKObjectType.quantityType(forIdentifier: .bodyFatPercentage) {
+            group.enter()
+            let bodyFatQuery = HKSampleQuery(sampleType: bodyFatType, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { query, results, error in
+                if let sample = results?.first as? HKQuantitySample {
+                    bodyFat = sample.quantity.doubleValue(for: HKUnit.percent()) * 100 // Convert to percentage
+                }
+                group.leave()
+            }
+            healthStore.execute(bodyFatQuery)
+        }
+
+        group.notify(queue: .main) {
+            completion(bmi, bodyFat)
+        }
+    }
+
+    // MARK: - Write Weight Data
+
+    func saveWeight(weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, date: Date = Date(), completion: @escaping (Bool, Error?) -> Void) {
+
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            completion(false, NSError(domain: "HealthKit", code: 2, userInfo: [NSLocalizedDescriptionKey: "Unable to access weight type"]))
+            return
+        }
+
+        let weightQuantity = HKQuantity(unit: HKUnit.pound(), doubleValue: weight)
+        let weightSample = HKQuantitySample(type: weightType, quantity: weightQuantity, start: date, end: date)
+
+        var samplesToSave: [HKSample] = [weightSample]
+
+        // Add BMI if provided
+        if let bmi = bmi, let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) {
+            let bmiQuantity = HKQuantity(unit: HKUnit.count(), doubleValue: bmi)
+            let bmiSample = HKQuantitySample(type: bmiType, quantity: bmiQuantity, start: date, end: date)
+            samplesToSave.append(bmiSample)
+        }
+
+        // Add Body Fat Percentage if provided
+        if let bodyFat = bodyFat, let bodyFatType = HKObjectType.quantityType(forIdentifier: .bodyFatPercentage) {
+            let bodyFatQuantity = HKQuantity(unit: HKUnit.percent(), doubleValue: bodyFat / 100) // Convert percentage to decimal
+            let bodyFatSample = HKQuantitySample(type: bodyFatType, quantity: bodyFatQuantity, start: date, end: date)
+            samplesToSave.append(bodyFatSample)
+        }
+
+        healthStore.save(samplesToSave) { success, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("Error saving weight data: \(error.localizedDescription)")
+                }
+                completion(success, error)
+            }
+        }
+    }
+
+    // MARK: - Delete Weight Data
+
+    func deleteWeight(for date: Date, completion: @escaping (Bool, Error?) -> Void) {
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
+
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            completion(false, NSError(domain: "HealthKit", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unable to access weight type"]))
+            return
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { [weak self] query, results, error in
+
+            guard let samples = results, error == nil, !samples.isEmpty else {
+                DispatchQueue.main.async {
+                    completion(false, error)
+                }
+                return
+            }
+
+            self?.healthStore.delete(samples) { success, error in
+                DispatchQueue.main.async {
+                    completion(success, error)
+                }
+            }
+        }
+
+        healthStore.execute(query)
+    }
+}

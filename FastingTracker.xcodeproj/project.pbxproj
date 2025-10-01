@@ -8,6 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		5289E06D2E8D0DAD00254E70 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06C2E8D0DAD00254E70 /* InsightsView.swift */; };
+		5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06F2E8D5F6500254E70 /* AdvancedView.swift */; };
+		5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0712E8D5F6500254E70 /* WeightEntry.swift */; };
+		5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0722E8D5F6500254E70 /* WeightManager.swift */; };
+		5289E0782E8D5F6500254E70 /* WeightTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */; };
+		5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06E2E8D5F6500254E70 /* AddWeightView.swift */; };
+		5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */; };
+		5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0702E8D5F6500254E70 /* HealthKitManager.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -19,6 +26,14 @@
 
 /* Begin PBXFileReference section */
 		5289E06C2E8D0DAD00254E70 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
+		5289E06E2E8D5F6500254E70 /* AddWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWeightView.swift; sourceTree = "<group>"; };
+		5289E06F2E8D5F6500254E70 /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedView.swift; sourceTree = "<group>"; };
+		5289E0702E8D5F6500254E70 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		5289E0712E8D5F6500254E70 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
+		5289E0722E8D5F6500254E70 /* WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightManager.swift; sourceTree = "<group>"; };
+		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSettingsView.swift; sourceTree = "<group>"; };
+		5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackingView.swift; sourceTree = "<group>"; };
+		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -52,6 +67,14 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */,
+				5289E06E2E8D5F6500254E70 /* AddWeightView.swift */,
+				5289E06F2E8D5F6500254E70 /* AdvancedView.swift */,
+				5289E0702E8D5F6500254E70 /* HealthKitManager.swift */,
+				5289E0712E8D5F6500254E70 /* WeightEntry.swift */,
+				5289E0722E8D5F6500254E70 /* WeightManager.swift */,
+				5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */,
+				5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */,
 				5289E06C2E8D0DAD00254E70 /* InsightsView.swift */,
 				A1000002000000000000001 /* FastingTrackerApp.swift */,
 				A1000004000000000000001 /* ContentView.swift */,
@@ -101,7 +124,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 1640;
 				TargetAttributes = {
 					A1000021000000000000001 = {
 						CreatedOnToolsVersion = 15.0;
@@ -143,6 +166,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000001000000000000001 /* FastingTrackerApp.swift in Sources */,
+				5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */,
+				5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */,
+				5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */,
+				5289E0782E8D5F6500254E70 /* WeightTrackingView.swift in Sources */,
+				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,
+				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
+				5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */,
 				A1000003000000000000001 /* ContentView.swift in Sources */,
 				A1000005000000000000001 /* HistoryView.swift in Sources */,
 				A1000007000000000000001 /* FastingSession.swift in Sources */,
@@ -190,6 +220,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = QDD5ZFGK2T;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -253,6 +284,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = QDD5ZFGK2T;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -279,10 +311,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FastingTracker/FastingTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = QDD5ZFGK2T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = FastingTracker/Info.plist;
@@ -309,10 +341,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = FastingTracker/FastingTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "";
-				DEVELOPMENT_TEAM = QDD5ZFGK2T;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = FastingTracker/Info.plist;
