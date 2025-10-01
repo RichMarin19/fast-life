@@ -122,19 +122,26 @@ class WeightManager: ObservableObject {
     var averageWeight: Double? {
         guard !weightEntries.isEmpty else { return nil }
 
-        let total = weightEntries.reduce(0.0) { $0 + $1.weight }
-        return total / Double(weightEntries.count)
+        // Optimized: use lazy to avoid creating intermediate array
+        let sum = weightEntries.lazy.map { $0.weight }.reduce(0.0, +)
+        return sum / Double(weightEntries.count)
     }
 
     func weightChange(since date: Date) -> Double? {
         guard let latestEntry = latestWeight else { return nil }
 
         let calendar = Calendar.current
-        let olderEntries = weightEntries.filter { calendar.compare($0.date, to: date, toGranularity: .day) == .orderedAscending || calendar.isDate($0.date, inSameDayAs: date) }
 
-        guard let oldestEntry = olderEntries.last else { return nil }
+        // Optimized: Since weightEntries is sorted newest first, iterate backwards
+        // to find oldest entry that matches the date (more efficient than filter + last)
+        for entry in weightEntries.reversed() {
+            let comparison = calendar.compare(entry.date, to: date, toGranularity: .day)
+            if comparison == .orderedAscending || comparison == .orderedSame {
+                return latestEntry.weight - entry.weight
+            }
+        }
 
-        return latestEntry.weight - oldestEntry.weight
+        return nil
     }
 
     // MARK: - Persistence

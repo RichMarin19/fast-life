@@ -65,15 +65,12 @@ struct WeightTrackingView: View {
                 )
             }
             .onAppear {
-                // Request HealthKit authorization and sync if needed
+                // Only request authorization on first appearance if needed
+                // Don't auto-sync on every view appearance - user can manually sync
                 if weightManager.syncWithHealthKit && !healthKitManager.isAuthorized {
-                    healthKitManager.requestAuthorization { success, error in
-                        if success {
-                            weightManager.syncFromHealthKit()
-                        }
+                    healthKitManager.requestAuthorization { _, _ in
+                        // Authorization requested, user can manually sync if they want
                     }
-                } else if weightManager.syncWithHealthKit {
-                    weightManager.syncFromHealthKit()
                 }
             }
         }
@@ -234,6 +231,8 @@ struct WeightChartView: View {
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
 
+    @State private var selectedDate: Date?
+
     var filteredEntries: [WeightEntry] {
         let calendar = Calendar.current
 
@@ -302,6 +301,15 @@ struct WeightChartView: View {
         }
     }
 
+    /// Find the weight entry closest to the selected date
+    var selectedEntry: WeightEntry? {
+        guard let selectedDate = selectedDate else { return nil }
+
+        return chartData.min(by: { entry1, entry2 in
+            abs(entry1.date.timeIntervalSince(selectedDate)) < abs(entry2.date.timeIntervalSince(selectedDate))
+        })
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
@@ -343,18 +351,51 @@ struct WeightChartView: View {
                                     .foregroundColor(.green)
                             }
                     }
+
+                    // Selection indicator: vertical line at selected point
+                    if let selectedEntry = selectedEntry {
+                        RuleMark(x: .value("Selected", selectedEntry.date))
+                            .foregroundStyle(.gray.opacity(0.5))
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .annotation(position: .top, alignment: .center) {
+                                VStack(spacing: 4) {
+                                    Text("\(selectedEntry.weight, specifier: "%.1f") lbs")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color(red: 0.2, green: 0.6, blue: 0.86))
+                                        .cornerRadius(6)
+                                }
+                            }
+                    }
                 }
                 .frame(height: 250)
                 .chartXAxis {
-                    // Dynamic X-axis for all views based on actual data points
-                    AxisMarks(values: .automatic) { value in
-                        if let date = value.as(Date.self) {
-                            AxisValueLabel {
-                                Text(xAxisLabel(for: date))
-                                    .font(.caption2)
+                    if selectedTimeRange == .day {
+                        // Day view: Show 3-hour increments starting from 6am
+                        AxisMarks(values: dayXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
                             }
-                            AxisGridLine()
-                            AxisTick()
+                        }
+                    } else {
+                        // Other views: Dynamic X-axis based on actual data points
+                        AxisMarks(values: .automatic) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
                         }
                     }
                 }
@@ -383,10 +424,80 @@ struct WeightChartView: View {
                     }
                 }
                 .chartYScale(domain: yAxisDomain)
+                .modifier(XAxisScaleModifier(domain: xAxisDomain))
+                .chartXSelection(value: $selectedDate)
             } else {
                 Text("No data for selected time range")
                     .foregroundColor(.secondary)
                     .frame(height: 250)
+            }
+
+            // Selected data point details
+            if let selectedEntry = selectedEntry {
+                VStack(spacing: 8) {
+                    Divider()
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Selected Point")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Text("\(selectedEntry.weight, specifier: "%.1f") lbs")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+
+                            HStack(spacing: 8) {
+                                Text(selectedEntry.date, style: .date)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("•")
+                                    .foregroundColor(.secondary)
+                                Text(selectedEntry.date, style: .time)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        Spacer()
+
+                        if selectedEntry.bmi != nil || selectedEntry.bodyFat != nil {
+                            VStack(alignment: .trailing, spacing: 4) {
+                                if let bmi = selectedEntry.bmi {
+                                    HStack(spacing: 4) {
+                                        Text("BMI:")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("\(bmi, specifier: "%.1f")")
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+
+                                if let bodyFat = selectedEntry.bodyFat {
+                                    HStack(spacing: 4) {
+                                        Text("Body Fat:")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("\(bodyFat, specifier: "%.1f")%")
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                            }
+                        }
+
+                        Button(action: {
+                            selectedDate = nil
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                                .font(.title3)
+                        }
+                    }
+                }
+                .transition(.opacity)
             }
 
             Toggle("Show Goal Line", isOn: $showGoalLine)
@@ -441,6 +552,72 @@ struct WeightChartView: View {
         }
     }
 
+
+    // MARK: - X-Axis Domain for Day View
+
+    /// Returns the X-axis date range for Day view: 6am to 12am (midnight) by default
+    /// Adjusts start time if user has entries before 6am
+    var xAxisDomain: ClosedRange<Date>? {
+        guard selectedTimeRange == .day, !chartData.isEmpty else { return nil }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Default start: 6am today
+        guard let defaultStart = calendar.date(bySettingHour: 6, minute: 0, second: 0, of: today) else {
+            return nil
+        }
+
+        // Default end: 12am (midnight) next day
+        guard let defaultEnd = calendar.date(byAdding: .day, value: 1, to: today) else {
+            return nil
+        }
+
+        // Find the earliest entry time
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min() else { return nil }
+
+        // If earliest entry is before 6am, adjust start time to that entry
+        let rangeStart = min(defaultStart, minDate)
+
+        // Always end at midnight (12am next day)
+        return rangeStart...defaultEnd
+    }
+
+    // MARK: - X-Axis Values for Day View
+
+    /// Generates X-axis time marks every 3 hours starting from 6am (or earlier if data exists)
+    var dayXAxisValues: [Date] {
+        guard selectedTimeRange == .day, let domain = xAxisDomain else { return [] }
+
+        let calendar = Calendar.current
+        let startDate = domain.lowerBound
+        let endDate = domain.upperBound
+
+        var values: [Date] = []
+
+        // Get the starting hour (e.g., 6 for 6am, or earlier if adjusted)
+        let startHour = calendar.component(.hour, from: startDate)
+
+        // Round down to nearest 3-hour mark if needed
+        let adjustedStartHour = (startHour / 3) * 3
+
+        // Get today's midnight as reference
+        let today = calendar.startOfDay(for: Date())
+
+        // Generate marks every 3 hours from adjusted start to midnight (24:00)
+        var currentHour = adjustedStartHour
+        while currentHour <= 24 {
+            if let date = calendar.date(bySettingHour: currentHour % 24, minute: 0, second: 0, of: currentHour < 24 ? today : calendar.date(byAdding: .day, value: 1, to: today)!) {
+                if date >= startDate && date <= endDate {
+                    values.append(date)
+                }
+            }
+            currentHour += 3
+        }
+
+        return values
+    }
 
     // MARK: - Y-Axis Values
 
@@ -714,6 +891,20 @@ struct WeightHistoryRow: View {
             }
         } message: {
             Text("Are you sure you want to delete this weight entry?")
+        }
+    }
+}
+
+// MARK: - View Modifier for Conditional X-Axis Scale
+
+struct XAxisScaleModifier: ViewModifier {
+    let domain: ClosedRange<Date>?
+
+    func body(content: Content) -> some View {
+        if let domain = domain {
+            content.chartXScale(domain: domain)
+        } else {
+            content
         }
     }
 }
