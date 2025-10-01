@@ -159,7 +159,7 @@ class FastingManager: ObservableObject {
 
     // MARK: - Persistence
 
-    private func saveCurrentSession() {
+    func saveCurrentSession() {
         guard let session = currentSession else { return }
         if let encoded = try? JSONEncoder().encode(session) {
             userDefaults.set(encoded, forKey: currentSessionKey)

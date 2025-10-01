@@ -837,6 +837,9 @@ struct EditStartTimeView: View {
                             session.startTime = startTime
                             fastingManager.currentSession = session
 
+                            // Persist the updated session to UserDefaults
+                            fastingManager.saveCurrentSession()
+
                             // Reschedule notifications with updated start time
                             NotificationManager.shared.scheduleGoalNotification(
                                 for: session,
