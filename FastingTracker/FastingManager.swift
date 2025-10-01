@@ -224,47 +224,76 @@ class FastingManager: ObservableObject {
             return
         }
 
-        // Start from the most recent goal-met fast
+        // Calculate current streak (must include today or yesterday)
         let mostRecentFast = goalMetFasts[0]
         let mostRecentDay = calendar.startOfDay(for: mostRecentFast.startTime)
-
-        // Calculate days between today and most recent fast
         let daysBetween = calendar.dateComponents([.day], from: mostRecentDay, to: today).day ?? 0
 
-        // Streak is broken if most recent fast is more than 1 day ago
         if daysBetween > 1 {
+            // Current streak is broken
             currentStreak = 0
             saveStreak()
-            return
+        } else {
+            // Calculate current streak
+            var streak = 1
+            var currentDay = mostRecentDay
+
+            for i in 1..<goalMetFasts.count {
+                let fast = goalMetFasts[i]
+                let fastDay = calendar.startOfDay(for: fast.startTime)
+
+                if let previousDay = calendar.date(byAdding: .day, value: -1, to: currentDay),
+                   calendar.isDate(fastDay, inSameDayAs: previousDay) {
+                    streak += 1
+                    currentDay = fastDay
+                } else {
+                    break
+                }
+            }
+
+            currentStreak = streak
+            saveStreak()
         }
 
-        var streak = 1
-        var currentDay = mostRecentDay
+        // Calculate longest streak by examining ALL streaks in history
+        // Always recalculate from scratch to ensure accuracy
+        var maxStreak = 0
+        var tempStreak = 0
+        var lastDay: Date?
 
-        // Count consecutive days going backwards
-        for i in 1..<goalMetFasts.count {
-            let fast = goalMetFasts[i]
+        // Sort by date (oldest first) for easier consecutive day detection
+        let sortedFasts = goalMetFasts.sorted { $0.startTime < $1.startTime }
+
+        for fast in sortedFasts {
             let fastDay = calendar.startOfDay(for: fast.startTime)
 
-            // Check if this fast is the day before currentDay
-            if let previousDay = calendar.date(byAdding: .day, value: -1, to: currentDay),
-               calendar.isDate(fastDay, inSameDayAs: previousDay) {
-                streak += 1
-                currentDay = fastDay
+            if let last = lastDay {
+                let dayDiff = calendar.dateComponents([.day], from: last, to: fastDay).day ?? 0
+
+                if dayDiff == 1 {
+                    // Consecutive day - continue streak
+                    tempStreak += 1
+                } else {
+                    // Gap detected - start new streak
+                    tempStreak = 1
+                }
             } else {
-                // Streak is broken
-                break
+                // First fast in sorted list
+                tempStreak = 1
             }
+
+            // Update max if this streak is longer
+            if tempStreak > maxStreak {
+                maxStreak = tempStreak
+            }
+
+            lastDay = fastDay
         }
 
-        currentStreak = streak
-        saveStreak()
-
-        // Update longest streak if current exceeds it
-        if currentStreak > longestStreak {
-            longestStreak = currentStreak
-            saveLongestStreak()
-        }
+        // Always update longest streak with the maximum found in entire history
+        // This ensures manual data additions are properly reflected
+        longestStreak = maxStreak
+        saveLongestStreak()
     }
 
     private func saveStreak() {

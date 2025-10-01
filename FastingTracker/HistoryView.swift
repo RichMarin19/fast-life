@@ -857,23 +857,13 @@ struct FastingGraphView: View {
     }
 
     private func getFilteredSessions() -> [FastingSession] {
-        let calendar = Calendar.current
-        let now = Date()
+        // Get the date range for the selected period (respects navigation offsets)
+        let dateRange = getDateRange()
 
-        switch selectedRange {
-        case .week:
-            guard let weekAgo = calendar.date(byAdding: .day, value: -7, to: now) else { return [] }
-            return fastingManager.fastingHistory.filter { $0.startTime >= weekAgo }
-        case .month:
-            guard let monthAgo = calendar.date(byAdding: .month, value: -1, to: now) else { return [] }
-            return fastingManager.fastingHistory.filter { $0.startTime >= monthAgo }
-        case .year:
-            guard let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now)) else { return [] }
-            return fastingManager.fastingHistory.filter { $0.startTime >= startOfYear }
-        case .custom:
-            return fastingManager.fastingHistory.filter {
-                $0.startTime >= customStartDate && $0.startTime <= customEndDate
-            }
+        // Filter sessions within the date range
+        return fastingManager.fastingHistory.filter {
+            let sessionDay = Calendar.current.startOfDay(for: $0.startTime)
+            return sessionDay >= dateRange.start && sessionDay <= dateRange.end
         }
     }
 }
