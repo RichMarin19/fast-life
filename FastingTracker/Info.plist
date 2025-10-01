@@ -47,8 +47,8 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Fast lIFe needs permission to notify you when your fasting goal is complete.</string>
+	<string>Fast LIFe needs permission to notify you when your fasting goal is complete.</string>
 	<key>CFBundleDisplayName</key>
-	<string>Fast lIFe</string>
+	<string>Fast LIFe</string>
 </dict>
 </plist>

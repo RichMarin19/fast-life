@@ -221,7 +221,43 @@ struct TotalStatsView: View {
                 .cornerRadius(16)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
             }
+
+            // Third row - Average Hours Per Fast (centered)
+            HStack {
+                Spacer()
+                VStack(spacing: 8) {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
+                    Text(averageHoursText)
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Text("Average Hours Per Fast")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+                Spacer()
+            }
         }
+    }
+
+    // Calculate average hours per fast session
+    private var averageHoursText: String {
+        let completedSessions = fastingManager.fastingHistory.filter { $0.isComplete }
+        let totalDays = completedSessions.filter { $0.duration >= 14 * 3600 || $0.metGoal }.count
+        let totalHours = completedSessions.reduce(0.0) { $0 + $1.duration / 3600 }
+
+        // Avoid division by zero
+        guard totalDays > 0 else { return "0" }
+
+        let average = totalHours / Double(totalDays)
+        return String(format: "%.1f", average)
     }
 }
 

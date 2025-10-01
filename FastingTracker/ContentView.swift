@@ -5,11 +5,13 @@ struct ContentView: View {
     @State private var showingGoalSettings = false
     @State private var showingStopConfirmation = false
     @State private var showingEditTimes = false
+    @State private var showingEditStartTime = false
 
     var body: some View {
         NavigationView {
             VStack(spacing: 30) {
                 Spacer()
+                    .frame(height: 40)
 
                 // Progress Ring
                 ZStack {
@@ -19,8 +21,19 @@ struct ContentView: View {
 
                     Circle()
                         .trim(from: 0, to: fastingManager.progress)
-                        .stroke(fastingManager.isActive ? Color.blue : Color.gray,
-                               style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                        .stroke(
+                            fastingManager.isActive ?
+                            AngularGradient(
+                                gradient: Gradient(colors: progressGradientColors),
+                                center: .center,
+                                startAngle: .degrees(0),
+                                endAngle: .degrees(360)
+                            ) : AngularGradient(
+                                gradient: Gradient(colors: [Color.gray, Color.gray]),
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: 20, lineCap: .round)
+                        )
                         .frame(width: 250, height: 250)
                         .rotationEffect(.degrees(-90))
                         .animation(.linear(duration: 1), value: fastingManager.progress)
@@ -46,7 +59,7 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                             Text(formattedRemainingTime)
                                 .font(.system(size: 28, weight: .semibold, design: .monospaced))
-                                .foregroundColor(fastingManager.remainingTime > 0 ? .blue : .green)
+                                .foregroundColor(fastingManager.isActive ? progressColor : .gray)
                         }
                     }
                 }
@@ -83,34 +96,101 @@ struct ContentView: View {
                         Image(systemName: "gearshape.fill")
                             .foregroundColor(.blue)
                     }
-                    .disabled(fastingManager.isActive)
                 }
+                .padding(.bottom, 10)
 
                 Spacer()
+                    .frame(height: 20)
 
-                // Start/Stop Button
-                Button(action: {
-                    if fastingManager.isActive {
-                        showingStopConfirmation = true
-                    } else {
-                        fastingManager.startFast()
+                // Buttons
+                if fastingManager.isActive {
+                    // Start Time Display with Edit (inline style like competitor)
+                    HStack(spacing: 20) {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 8, height: 8)
+                            Text("Start")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+
+                        Button(action: {
+                            showingEditStartTime = true
+                        }) {
+                            HStack(spacing: 8) {
+                                Text(formatStartTimeDisplay())
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Image(systemName: "pencil")
+                                    .font(.subheadline)
+                            }
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color(red: 0.9, green: 0.95, blue: 0.7))
+                            .cornerRadius(8)
+                        }
                     }
-                }) {
-                    Text(fastingManager.isActive ? "Stop Fast" : "Start Fast")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(fastingManager.isActive ? Color.red : Color.green)
-                        .cornerRadius(15)
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 10)
+
+                    // Stop Fast Button
+                    Button(action: {
+                        showingStopConfirmation = true
+                    }) {
+                        Text("Stop Fast")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.red)
+                            .cornerRadius(15)
+                    }
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 40)
+                } else {
+                    // Start Fast Button
+                    Button(action: {
+                        fastingManager.startFast()
+                    }) {
+                        Text("Start Fast")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.green)
+                            .cornerRadius(15)
+                    }
+                    .padding(.horizontal, 40)
+                    .padding(.bottom, 40)
                 }
-                .padding(.horizontal, 40)
-                .padding(.bottom, 40)
             }
-            .navigationTitle("Fast lIFe")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    HStack(spacing: 0) {
+                        Text("Fast L")
+                            .font(.system(size: 52, weight: .bold))
+                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.8))
+                        Text("IF")
+                            .font(.system(size: 52, weight: .black))
+                            .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                        Text("e")
+                            .font(.system(size: 52, weight: .bold))
+                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.8))
+                    }
+                    .padding(.top, 35)
+                }
+            }
             .sheet(isPresented: $showingGoalSettings) {
                 GoalSettingsView()
+                    .environmentObject(fastingManager)
+            }
+            .sheet(isPresented: $showingEditStartTime) {
+                EditStartTimeView()
                     .environmentObject(fastingManager)
             }
             .sheet(isPresented: $showingEditTimes) {
@@ -144,6 +224,55 @@ struct ContentView: View {
         let minutes = Int(remaining) / 60 % 60
         let seconds = Int(remaining) % 60
         return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
+    }
+
+    private func formatStartTimeDisplay() -> String {
+        guard let session = fastingManager.currentSession else { return "" }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        let timeString = formatter.string(from: session.startTime)
+
+        let calendar = Calendar.current
+        if calendar.isDateInToday(session.startTime) {
+            return "Today, \(timeString)"
+        } else if calendar.isDateInYesterday(session.startTime) {
+            return "Yesterday, \(timeString)"
+        } else {
+            formatter.dateFormat = "MMM d, h:mm a"
+            return formatter.string(from: session.startTime)
+        }
+    }
+
+    // Gradient colors for progress ring - transitions through stages
+    private var progressGradientColors: [Color] {
+        [
+            Color(red: 0.2, green: 0.6, blue: 0.9),   // 0%: Blue (start)
+            Color(red: 0.2, green: 0.7, blue: 0.8),   // 25%: Teal
+            Color(red: 0.2, green: 0.8, blue: 0.7),   // 50%: Cyan
+            Color(red: 0.3, green: 0.8, blue: 0.5),   // 75%: Green-teal
+            Color(red: 0.4, green: 0.9, blue: 0.4),   // 90%: Vibrant green
+            Color(red: 0.3, green: 0.85, blue: 0.3)   // 100%: Celebration green
+        ]
+    }
+
+    // Dynamic color for "Remaining" text based on progress
+    private var progressColor: Color {
+        let progress = fastingManager.progress
+
+        if progress < 0.25 {
+            return Color(red: 0.2, green: 0.6, blue: 0.9)
+        } else if progress < 0.50 {
+            return Color(red: 0.2, green: 0.7, blue: 0.8)
+        } else if progress < 0.75 {
+            return Color(red: 0.2, green: 0.8, blue: 0.7)
+        } else if progress < 0.90 {
+            return Color(red: 0.3, green: 0.8, blue: 0.5)
+        } else if progress < 1.0 {
+            return Color(red: 0.4, green: 0.9, blue: 0.4)
+        } else {
+            return Color(red: 0.3, green: 0.85, blue: 0.3)
+        }
     }
 }
 
@@ -514,6 +643,240 @@ struct EditFastTimesView: View {
 
     private var minutes: Int {
         let duration = endTime.timeIntervalSince(startTime)
+        return Int(duration) / 60 % 60
+    }
+
+    private func formatTimeDisplay(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        let timeString = formatter.string(from: date)
+
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) {
+            return "Today, \(timeString)"
+        } else if calendar.isDateInYesterday(date) {
+            return "Yesterday, \(timeString)"
+        } else {
+            formatter.dateFormat = "MMM d, h:mm a"
+            return formatter.string(from: date)
+        }
+    }
+}
+
+// MARK: - Edit Start Time View
+
+struct EditStartTimeView: View {
+    @EnvironmentObject var fastingManager: FastingManager
+    @Environment(\.dismiss) var dismiss
+    @State private var startTime: Date
+    @State private var editingTime = false
+
+    init() {
+        _startTime = State(initialValue: Date())
+    }
+
+    var body: some View {
+        ZStack {
+            // Soft wellness gradient background
+            LinearGradient(
+                colors: [
+                    Color(red: 0.95, green: 0.97, blue: 1.0),  // Soft blue-white
+                    Color(red: 0.98, green: 0.95, blue: 1.0)   // Soft lavender
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Header
+                HStack {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.title2)
+                            .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                    }
+                    Spacer()
+                    Text("Edit Start Time")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    Spacer()
+                    // Invisible spacer for centering
+                    Image(systemName: "chevron.left")
+                        .font(.title2)
+                        .opacity(0)
+                }
+                .padding()
+                .background(Color.white.opacity(0.9))
+
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Current Duration Card
+                        VStack(spacing: 16) {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(.system(size: 40))
+                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+
+                            Text("Current Duration")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+
+                            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                Text("\(currentHours)")
+                                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                                    .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                Text("h")
+                                    .font(.title2)
+                                    .foregroundColor(.secondary)
+                                Text("\(currentMinutes)")
+                                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                                    .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                Text("m")
+                                    .font(.title2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 32)
+                        .background(
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(Color.white)
+                                .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.1), radius: 15, y: 5)
+                        )
+                        .padding(.top, 16)
+
+                        // Time Adjustment Card
+                        VStack(alignment: .leading, spacing: 20) {
+                            Text("Adjust Start Time")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+
+                            // Start time
+                            VStack(spacing: 12) {
+                                Button(action: {
+                                    withAnimation { editingTime.toggle() }
+                                }) {
+                                    HStack {
+                                        HStack(spacing: 12) {
+                                            Image(systemName: "play.circle.fill")
+                                                .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                                                .font(.title3)
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("Start Time")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.secondary)
+                                                Text(formatTimeDisplay(startTime))
+                                                    .font(.headline)
+                                                    .foregroundColor(.primary)
+                                            }
+                                        }
+                                        Spacer()
+                                        Image(systemName: editingTime ? "chevron.up.circle.fill" : "chevron.down.circle")
+                                            .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                            .font(.title2)
+                                    }
+                                    .padding()
+                                    .background(Color(red: 0.4, green: 0.8, blue: 0.6).opacity(0.1))
+                                    .cornerRadius(12)
+                                }
+
+                                if editingTime {
+                                    DatePicker(
+                                        "",
+                                        selection: $startTime,
+                                        in: ...Date(),
+                                        displayedComponents: [.date, .hourAndMinute]
+                                    )
+                                    .datePickerStyle(.graphical)
+                                    .labelsHidden()
+                                    .transition(.opacity)
+                                }
+                            }
+
+                            HStack(spacing: 6) {
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                    .font(.caption)
+                                Text("Adjust when your fast started. Your fast will continue.")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 4)
+                        }
+                        .padding(20)
+                        .background(Color.white)
+                        .cornerRadius(20)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
+
+                        Spacer()
+                            .frame(height: 180)
+                    }
+                    .padding(.horizontal)
+                }
+                .scrollIndicators(.hidden)
+
+                // Bottom buttons
+                HStack(spacing: 16) {
+                    Button(action: { dismiss() }) {
+                        Text("Cancel")
+                            .font(.headline)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                    }
+
+                    Button(action: {
+                        // Update the start time without stopping the fast
+                        if var session = fastingManager.currentSession {
+                            session.startTime = startTime
+                            fastingManager.currentSession = session
+                        }
+                        dismiss()
+                    }) {
+                        Text("Save")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.4, green: 0.7, blue: 0.95),
+                                        Color(red: 0.3, green: 0.5, blue: 0.85)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(16)
+                            .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.3), radius: 8, y: 4)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 16)
+                .background(Color.white)
+            }
+        }
+        .onAppear {
+            if let session = fastingManager.currentSession {
+                startTime = session.startTime
+            }
+        }
+    }
+
+    private var currentHours: Int {
+        let duration = Date().timeIntervalSince(startTime)
+        return Int(duration) / 3600
+    }
+
+    private var currentMinutes: Int {
+        let duration = Date().timeIntervalSince(startTime)
         return Int(duration) / 60 % 60
     }
 
