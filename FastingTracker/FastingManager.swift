@@ -63,11 +63,12 @@ class FastingManager: ObservableObject {
         guard var session = currentSession else { return }
         session.endTime = Date()
 
-        // Update streak based on goal completion
-        updateStreak(for: session)
-
-        // Add to history (one entry per day)
+        // Add to history FIRST (one entry per day)
         addToHistory(session)
+
+        // Then update streak based on goal completion
+        // This ensures the new session is included in streak calculations
+        updateStreak(for: session)
 
         currentSession = nil
         clearCurrentSession()
@@ -84,11 +85,12 @@ class FastingManager: ObservableObject {
         session.startTime = startTime
         session.endTime = endTime
 
-        // Update streak based on goal completion (with custom duration)
-        updateStreak(for: session)
-
-        // Add to history (one entry per day)
+        // Add to history FIRST (one entry per day)
         addToHistory(session)
+
+        // Then update streak based on goal completion (with custom duration)
+        // This ensures the new session is included in streak calculations
+        updateStreak(for: session)
 
         currentSession = nil
         clearCurrentSession()
@@ -102,11 +104,12 @@ class FastingManager: ObservableObject {
         var session = FastingSession(startTime: startTime, goalHours: goalHours)
         session.endTime = endTime
 
-        // Update streak based on goal completion
-        updateStreak(for: session)
-
-        // Add to history (one entry per day)
+        // Add to history FIRST (one entry per day)
         addToHistory(session)
+
+        // Then update streak based on goal completion
+        // This ensures the new session is included in streak calculations
+        updateStreak(for: session)
     }
 
     private func addToHistory(_ session: FastingSession) {
