@@ -17,6 +17,11 @@ struct FastLifeApp: App {
                         Label("Timer", systemImage: "clock")
                     }
 
+                InsightsView()
+                    .tabItem {
+                        Label("Insights", systemImage: "lightbulb.fill")
+                    }
+
                 HistoryView()
                     .environmentObject(fastingManager)
                     .tabItem {
