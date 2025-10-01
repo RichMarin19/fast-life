@@ -196,6 +196,11 @@ struct FastingGraphView: View {
     @State private var customEndDate = Date()
     @State private var selectedDataPoint: ChartDataPoint? = nil
 
+    // Navigation state for each time range
+    @State private var selectedWeekOffset: Int = 0  // 0 = current week, -1 = last week, etc.
+    @State private var selectedMonthOffset: Int = 0 // 0 = current month, -1 = last month, etc. (max -11)
+    @State private var selectedYearOffset: Int = 0  // 0 = current year, -1 = last year, etc. (max -4)
+
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             headerView
@@ -224,9 +229,33 @@ struct FastingGraphView: View {
                 Text("Fasting Progress")
                     .font(.headline)
                     .foregroundColor(.primary)
-                Text(getRangeSubtitle())
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+
+                // Subtitle with navigation arrows
+                HStack(spacing: 8) {
+                    if selectedRange != .custom {
+                        // Previous button
+                        Button(action: navigatePrevious) {
+                            Image(systemName: "chevron.left")
+                                .font(.subheadline)
+                                .foregroundColor(canNavigatePrevious() ? .blue : .gray.opacity(0.3))
+                        }
+                        .disabled(!canNavigatePrevious())
+                    }
+
+                    Text(getRangeSubtitle())
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+
+                    if selectedRange != .custom {
+                        // Next button
+                        Button(action: navigateNext) {
+                            Image(systemName: "chevron.right")
+                                .font(.subheadline)
+                                .foregroundColor(canNavigateNext() ? .blue : .gray.opacity(0.3))
+                        }
+                        .disabled(!canNavigateNext())
+                    }
+                }
             }
 
             Spacer()
@@ -255,6 +284,10 @@ struct FastingGraphView: View {
             if newValue == .custom {
                 showingCustomPicker = true
             }
+            // Reset offsets when switching view types
+            selectedWeekOffset = 0
+            selectedMonthOffset = 0
+            selectedYearOffset = 0
         }
     }
 
@@ -488,6 +521,67 @@ struct FastingGraphView: View {
         }
     }
 
+    // MARK: - Navigation Functions
+
+    private func navigatePrevious() {
+        switch selectedRange {
+        case .week:
+            selectedWeekOffset -= 1
+        case .month:
+            if selectedMonthOffset > -11 {
+                selectedMonthOffset -= 1
+            }
+        case .year:
+            if selectedYearOffset > -4 {
+                selectedYearOffset -= 1
+            }
+        case .custom:
+            break
+        }
+    }
+
+    private func navigateNext() {
+        switch selectedRange {
+        case .week:
+            if selectedWeekOffset < 0 {
+                selectedWeekOffset += 1
+            }
+        case .month:
+            if selectedMonthOffset < 0 {
+                selectedMonthOffset += 1
+            }
+        case .year:
+            if selectedYearOffset < 0 {
+                selectedYearOffset += 1
+            }
+        case .custom:
+            break
+        }
+    }
+
+    private func canNavigatePrevious() -> Bool {
+        switch selectedRange {
+        case .week:
+            return true // No limit on going back for weeks
+        case .month:
+            return selectedMonthOffset > -11 // Max 12 months back
+        case .year:
+            return selectedYearOffset > -4 // Max 5 years back
+        case .custom:
+            return false
+        }
+    }
+
+    private func canNavigateNext() -> Bool {
+        switch selectedRange {
+        case .week, .month, .year:
+            // Can only go forward if not at current period
+            return selectedWeekOffset < 0 || selectedMonthOffset < 0 || selectedYearOffset < 0
+        case .custom:
+            return false
+        }
+    }
+
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
@@ -507,21 +601,24 @@ struct FastingGraphView: View {
         switch selectedRange {
         case .week:
             // "Week of Sep 28"
-            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: Date()) else {
+            let targetDate = calendar.date(byAdding: .weekOfYear, value: selectedWeekOffset, to: Date()) ?? Date()
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: targetDate) else {
                 return "Week"
             }
             formatter.dateFormat = "MMM d"
             return "Week of \(formatter.string(from: weekInterval.start))"
 
         case .month:
-            // "October"
-            formatter.dateFormat = "MMMM"
-            return formatter.string(from: Date())
+            // "October" or "September" etc.
+            let targetDate = calendar.date(byAdding: .month, value: selectedMonthOffset, to: Date()) ?? Date()
+            formatter.dateFormat = "MMMM yyyy"
+            return formatter.string(from: targetDate)
 
         case .year:
-            // "2025"
+            // "2025" or "2024" etc.
+            let targetDate = calendar.date(byAdding: .year, value: selectedYearOffset, to: Date()) ?? Date()
             formatter.dateFormat = "yyyy"
-            return formatter.string(from: Date())
+            return formatter.string(from: targetDate)
 
         case .custom:
             // "Sep 1 - Sep 30"
@@ -569,9 +666,9 @@ struct FastingGraphView: View {
             let day = calendar.startOfDay(for: currentDate)
 
             if let session = sessionsByDate[day] {
-                // Has actual data
+                // Has actual data - use normalized day for proper alignment
                 dataPoints.append(ChartDataPoint(
-                    date: session.startTime,
+                    date: day,
                     hours: session.duration / 3600,
                     metGoal: session.metGoal
                 ))
@@ -601,17 +698,19 @@ struct FastingGraphView: View {
 
         switch selectedRange {
         case .month:
-            // Show full month range on X-axis
-            guard let monthInterval = calendar.dateInterval(of: .month, for: now) else {
+            // Show full month range on X-axis using selected month offset
+            let targetDate = calendar.date(byAdding: .month, value: selectedMonthOffset, to: now) ?? now
+            guard let monthInterval = calendar.dateInterval(of: .month, for: targetDate) else {
                 return now...now
             }
             let monthStart = calendar.startOfDay(for: monthInterval.start)
-            let monthEnd = calendar.date(byAdding: .day, value: -1, to: monthInterval.end) ?? now
+            let monthEnd = calendar.date(byAdding: .day, value: -1, to: monthInterval.end) ?? targetDate
             return monthStart...monthEnd
 
         case .year:
-            // Show full year range on X-axis
-            guard let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now)),
+            // Show full year range on X-axis using selected year offset
+            let targetDate = calendar.date(byAdding: .year, value: selectedYearOffset, to: now) ?? now
+            guard let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: targetDate)),
                   let endOfYear = calendar.date(byAdding: DateComponents(year: 1, day: -1), to: startOfYear) else {
                 return now...now
             }
@@ -635,8 +734,8 @@ struct FastingGraphView: View {
             return .stride(by: .day, count: 1)
 
         case .month:
-            // Show every 2-3 days to get 12-15 labels
-            let stride = max(1, daysDifference / 15)
+            // Show approximately 12 date labels across the month
+            let stride = max(2, (daysDifference + 11) / 12)
             return .stride(by: .day, count: stride)
 
         case .year:
@@ -656,33 +755,54 @@ struct FastingGraphView: View {
 
         switch selectedRange {
         case .week:
-            // Get the current week (Sunday to Saturday)
-            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else {
-                let weekAgo = calendar.date(byAdding: .day, value: -6, to: now) ?? now
-                return (calendar.startOfDay(for: weekAgo), calendar.startOfDay(for: now))
+            // Get the selected week (Sunday to Saturday)
+            let targetDate = calendar.date(byAdding: .weekOfYear, value: selectedWeekOffset, to: now) ?? now
+            guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: targetDate) else {
+                let weekAgo = calendar.date(byAdding: .day, value: -6, to: targetDate) ?? targetDate
+                return (calendar.startOfDay(for: weekAgo), calendar.startOfDay(for: targetDate))
             }
             let weekStart = calendar.startOfDay(for: weekInterval.start)
-            let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekStart) ?? now
+            let weekEnd = calendar.date(byAdding: .day, value: 6, to: weekStart) ?? targetDate
             return (weekStart, calendar.startOfDay(for: weekEnd))
 
         case .month:
-            // Get from start of current month to today
-            guard let monthInterval = calendar.dateInterval(of: .month, for: now) else {
-                let monthAgo = calendar.date(byAdding: .month, value: -1, to: now) ?? now
-                return (calendar.startOfDay(for: monthAgo), calendar.startOfDay(for: now))
+            // Get the selected month
+            let targetDate = calendar.date(byAdding: .month, value: selectedMonthOffset, to: now) ?? now
+            guard let monthInterval = calendar.dateInterval(of: .month, for: targetDate) else {
+                let monthAgo = calendar.date(byAdding: .month, value: -1, to: targetDate) ?? targetDate
+                return (calendar.startOfDay(for: monthAgo), calendar.startOfDay(for: targetDate))
             }
             let monthStart = calendar.startOfDay(for: monthInterval.start)
-            return (monthStart, calendar.startOfDay(for: now))
+            // For past months, show entire month. For current month, only show up to today
+            let monthEnd: Date
+            if selectedMonthOffset == 0 {
+                // Current month - show up to today
+                monthEnd = calendar.startOfDay(for: now)
+            } else {
+                // Past month - show entire month
+                monthEnd = calendar.date(byAdding: .day, value: -1, to: monthInterval.end) ?? targetDate
+            }
+            return (monthStart, calendar.startOfDay(for: monthEnd))
 
         case .year:
-            // Get start of year to end of year
-            guard let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: now)) else {
-                return (now, now)
+            // Get the selected year
+            let targetDate = calendar.date(byAdding: .year, value: selectedYearOffset, to: now) ?? now
+            guard let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: targetDate)) else {
+                return (targetDate, targetDate)
             }
-            guard let endOfYear = calendar.date(byAdding: DateComponents(year: 1, day: -1), to: startOfYear) else {
-                return (calendar.startOfDay(for: startOfYear), calendar.startOfDay(for: now))
+            // For past years, show entire year. For current year, show up to today or end of year
+            let endOfYear: Date
+            if selectedYearOffset == 0 {
+                // Current year - show up to today
+                endOfYear = calendar.startOfDay(for: now)
+            } else {
+                // Past year - show entire year
+                guard let yearEnd = calendar.date(byAdding: DateComponents(year: 1, day: -1), to: startOfYear) else {
+                    return (calendar.startOfDay(for: startOfYear), calendar.startOfDay(for: targetDate))
+                }
+                endOfYear = calendar.startOfDay(for: yearEnd)
             }
-            return (calendar.startOfDay(for: startOfYear), calendar.startOfDay(for: endOfYear))
+            return (calendar.startOfDay(for: startOfYear), endOfYear)
 
         case .custom:
             return (calendar.startOfDay(for: customStartDate), calendar.startOfDay(for: customEndDate))
