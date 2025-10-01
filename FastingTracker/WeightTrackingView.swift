@@ -385,6 +385,18 @@ struct WeightChartView: View {
                                 AxisTick()
                             }
                         }
+                    } else if selectedTimeRange == .week {
+                        // Week view: Show all 7 days
+                        AxisMarks(values: weekXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
                     } else {
                         // Other views: Dynamic X-axis based on actual data points
                         AxisMarks(values: .automatic) { value in
@@ -413,9 +425,14 @@ struct WeightChartView: View {
                             AxisTick()
                         }
                     } else if selectedTimeRange == .week {
-                        // Week view: Show 10 slots dynamically based on weight range
+                        // Week view: Show weight values at 1lb intervals with "lbs" suffix
                         AxisMarks(position: .leading, values: weekYAxisValues) { value in
-                            AxisValueLabel()
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(weight)) lbs")
+                                        .font(.caption2)
+                                }
+                            }
                             AxisGridLine()
                             AxisTick()
                         }
@@ -452,11 +469,14 @@ struct WeightChartView: View {
                                 Text(selectedEntry.date, style: .date)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
-                                Text("•")
-                                    .foregroundColor(.secondary)
-                                Text(selectedEntry.date, style: .time)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+
+                                if let displayTime = selectedEntryDisplayTime {
+                                    Text("•")
+                                        .foregroundColor(.secondary)
+                                    Text(displayTime, style: .time)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
                             }
                         }
 
@@ -522,10 +542,10 @@ struct WeightChartView: View {
             return formatter.string(from: date).lowercased()
 
         case .week:
-            // Show day of month for last 7 days (e.g., "29", "30", "1")
-            let calendar = Calendar.current
-            let day = calendar.component(.day, from: date)
-            return "\(day)"
+            // Show month/day for last 7 days (e.g., "Sep 24", "Sep 25", "Oct 1")
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d" // "Sep 24", "Oct 1"
+            return formatter.string(from: date)
 
         case .month:
             // Show day of month (1, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30)
@@ -619,6 +639,49 @@ struct WeightChartView: View {
         return values
     }
 
+    // MARK: - X-Axis Values for Week View
+
+    /// Generates X-axis marks for each of the last 7 days
+    var weekXAxisValues: [Date] {
+        guard selectedTimeRange == .week else { return [] }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Generate last 7 days (including today)
+        var values: [Date] = []
+        for daysAgo in (0..<7).reversed() {
+            if let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// For Week view: Returns actual time if day has single entry, nil if multiple entries
+    /// This ensures we show accurate weigh-in times or omit time for averaged data
+    var selectedEntryDisplayTime: Date? {
+        guard let selectedEntry = selectedEntry else { return nil }
+
+        // For Day view (or other views), always show the actual time
+        guard selectedTimeRange == .week else {
+            return selectedEntry.date
+        }
+
+        // For Week view: Check how many entries exist for the selected day
+        let calendar = Calendar.current
+        let selectedDay = calendar.startOfDay(for: selectedEntry.date)
+
+        let entriesForDay = filteredEntries.filter { entry in
+            calendar.isDate(entry.date, inSameDayAs: selectedDay)
+        }
+
+        // If exactly one entry for this day, return its actual time
+        // If multiple entries (averaged), return nil to hide time
+        return entriesForDay.count == 1 ? entriesForDay.first?.date : nil
+    }
+
     // MARK: - Y-Axis Values
 
     /// For Day view: Generates 5-6 evenly-spaced values for cleaner Y-axis
@@ -632,14 +695,19 @@ struct WeightChartView: View {
         return stride(from: min, through: max, by: step).map { $0 }
     }
 
-    /// For Week view: Generates 11 evenly-spaced values for 10 slots
+    /// For Week view: Generates evenly-spaced values at 1lb intervals for 5lb range
     private var weekYAxisValues: [Double] {
         let domain = yAxisDomain
         let min = domain.lowerBound
         let max = domain.upperBound
-        let step = (max - min) / 10.0 // 10 slots = 11 points
 
-        return stride(from: min, through: max, by: step).map { $0 }
+        // Round boundaries to whole pounds to ensure axis marks align properly
+        let minRounded = ceil(min)
+        let maxRounded = floor(max)
+
+        // Use 1lb steps for 5lb range (cleaner, easier to read)
+        let step = 1.0
+        return stride(from: minRounded, through: maxRounded, by: step).map { $0 }
     }
 
     // MARK: - Y-Axis Domain
@@ -666,15 +734,30 @@ struct WeightChartView: View {
             return rangeMin...rangeMax
 
         case .week:
-            // For Week view: Dynamic 30lb range with 10 slots based on actual weights
-            // Find the midpoint of user's weight range
-            let avgWeight = (minWeight + maxWeight) / 2
+            // For Week view: Default 5lb range (average ± 2.5 lbs), adaptive if needed
+            // Calculate average weight for the week
+            let avgWeight = weights.reduce(0.0, +) / Double(weights.count)
 
-            // Create 30lb range centered on average weight, rounded to nearest whole number
-            let rangeMin = round(avgWeight - 15)
-            let rangeMax = round(avgWeight + 15)
+            // Default 5lb range: 2.5 lbs above and below average
+            // Round to whole numbers to ensure goal line aligns with axis marks
+            let centerWeight = round(avgWeight)
+            let defaultRangeMin = centerWeight - 2.5
+            let defaultRangeMax = centerWeight + 2.5
 
-            return rangeMin...rangeMax
+            // Check if actual data fits within default range
+            let dataRange = maxWeight - minWeight
+
+            if dataRange <= 5 {
+                // Data fits within 5lb range, use default
+                return defaultRangeMin...defaultRangeMax
+            } else {
+                // Data exceeds 5lb range, expand adaptively
+                // Add 10% padding to actual data range
+                let padding = dataRange * 0.1
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+                return rangeMin...rangeMax
+            }
 
         default:
             // For other views: auto-scale with padding
