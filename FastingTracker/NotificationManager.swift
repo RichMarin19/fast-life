@@ -17,29 +17,29 @@ class NotificationManager {
         }
     }
 
-    func scheduleGoalNotification(for session: FastingSession, goalHours: Double) {
+    func scheduleGoalNotification(for session: FastingSession, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
         cancelGoalNotification() // Clear any existing notifications
 
         let startTime = session.startTime
 
         // Schedule 12-hour milestone
-        scheduleMilestone(at: 12, startTime: startTime, goalHours: goalHours)
+        scheduleMilestone(at: 12, startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
 
         // Schedule 16-hour milestone
-        scheduleMilestone(at: 16, startTime: startTime, goalHours: goalHours)
+        scheduleMilestone(at: 16, startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
 
         // Schedule hourly milestones after 16 hours until goal
         if goalHours > 16 {
             for hour in 17...Int(goalHours) {
-                scheduleMilestone(at: Double(hour), startTime: startTime, goalHours: goalHours)
+                scheduleMilestone(at: Double(hour), startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
             }
         }
 
         // Final goal completion notification
-        scheduleGoalCompletion(startTime: startTime, goalHours: goalHours)
+        scheduleGoalCompletion(startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
     }
 
-    private func scheduleMilestone(at hours: Double, startTime: Date, goalHours: Double) {
+    private func scheduleMilestone(at hours: Double, startTime: Date, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
         let identifier = "\(milestoneIdentifierPrefix)\(Int(hours))"
         let triggerDate = startTime.addingTimeInterval(hours * 3600)
         let timeInterval = triggerDate.timeIntervalSinceNow
@@ -49,8 +49,8 @@ class NotificationManager {
         let content = UNMutableNotificationContent()
         let hoursRemaining = Int(goalHours - hours)
 
-        // Get random motivational message
-        let message = getMotivationalMessage(forHour: Int(hours), hoursRemaining: hoursRemaining)
+        // Get motivational message with streak context
+        let message = getMotivationalMessage(forHour: Int(hours), hoursRemaining: hoursRemaining, currentStreak: currentStreak, longestStreak: longestStreak)
         content.title = message.title
         content.body = message.body
         content.sound = .default
@@ -65,7 +65,7 @@ class NotificationManager {
         }
     }
 
-    private func scheduleGoalCompletion(startTime: Date, goalHours: Double) {
+    private func scheduleGoalCompletion(startTime: Date, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
         let identifier = "\(milestoneIdentifierPrefix)complete"
         let triggerDate = startTime.addingTimeInterval(goalHours * 3600)
         let timeInterval = triggerDate.timeIntervalSinceNow
@@ -74,7 +74,19 @@ class NotificationManager {
 
         let content = UNMutableNotificationContent()
         content.title = "🎉 Goal Achieved!"
-        content.body = "Congratulations! You've completed your \(Int(goalHours))-hour fast! Your body thanks you! 💪"
+
+        // Add streak context to goal completion
+        var bodyMessage = "Congratulations! You've completed your \(Int(goalHours))-hour fast! Your body thanks you! 💪"
+
+        // Check if they're about to tie or break their PR
+        let nextStreak = currentStreak + 1
+        if nextStreak == longestStreak && longestStreak > 0 {
+            bodyMessage += "\n\n🔥 You're about to TIE your longest streak of \(longestStreak) days! Keep it going!"
+        } else if nextStreak > longestStreak && longestStreak > 0 {
+            bodyMessage += "\n\n🏆 NEW PERSONAL RECORD! You're about to break your longest streak of \(longestStreak) days!"
+        }
+
+        content.body = bodyMessage
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
@@ -97,19 +109,40 @@ class NotificationManager {
         }
     }
 
-    private func getMotivationalMessage(forHour hour: Int, hoursRemaining: Int) -> (title: String, body: String) {
-        let motivationalQuotes = [
-            "You're stronger than you think! 💪",
-            "Your willpower is incredible!",
-            "Keep going, you're doing amazing!",
-            "Every hour brings you closer to your goal!",
-            "Your body is healing itself right now!",
-            "You're making incredible progress!",
-            "Stay strong, you've got this!",
-            "Your dedication is inspiring!",
-            "Mind over matter - you're crushing it!",
-            "One step closer to a healthier you!"
-        ]
+    private func getMotivationalMessage(forHour hour: Int, hoursRemaining: Int, currentStreak: Int = 0, longestStreak: Int = 0) -> (title: String, body: String) {
+        // Check if they're approaching a PR
+        let nextStreak = currentStreak + 1
+        let isApproachingPR = nextStreak >= longestStreak && longestStreak > 0
+
+        let motivationalQuotes: [String]
+        if isApproachingPR {
+            // Use PR-focused motivational messages
+            motivationalQuotes = [
+                "You're on track for a new record! 🏆",
+                "Personal Record in sight! Keep pushing! 💪",
+                "This could be your longest streak yet! 🔥",
+                "You're making history today!",
+                "Breaking records, one hour at a time! 🚀",
+                "Your best streak is within reach!",
+                "Champion mindset! You're crushing your PR!",
+                "This is your moment to shine! ⭐",
+                "Record-breaking performance! Keep it up!",
+                "You're rewriting your own limits! 💫"
+            ]
+        } else {
+            motivationalQuotes = [
+                "You're stronger than you think! 💪",
+                "Your willpower is incredible!",
+                "Keep going, you're doing amazing!",
+                "Every hour brings you closer to your goal!",
+                "Your body is healing itself right now!",
+                "You're making incredible progress!",
+                "Stay strong, you've got this!",
+                "Your dedication is inspiring!",
+                "Mind over matter - you're crushing it!",
+                "One step closer to a healthier you!"
+            ]
+        }
 
         let bodyScienceMessages: [Int: String] = [
             12: "Your body has depleted its glycogen stores and is now burning fat for fuel. Insulin levels are dropping significantly.",
@@ -138,6 +171,15 @@ class NotificationManager {
 
         if !bodyInfo.isEmpty {
             bodyMessage += "\n\n\(bodyInfo)"
+        }
+
+        // Add streak PR information if approaching or breaking record
+        if isApproachingPR {
+            if nextStreak == longestStreak {
+                bodyMessage += "\n\n🔥 Current streak: \(currentStreak) days. One more goal-met fast ties your record of \(longestStreak)!"
+            } else if nextStreak > longestStreak {
+                bodyMessage += "\n\n🏆 Current streak: \(currentStreak) days. You're breaking your personal record of \(longestStreak) days!"
+            }
         }
 
         if hoursRemaining > 0 {

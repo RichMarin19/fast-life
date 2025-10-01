@@ -7,6 +7,7 @@ class FastingManager: ObservableObject {
     @Published var elapsedTime: TimeInterval = 0
     @Published var fastingGoalHours: Double = 16
     @Published var currentStreak: Int = 0
+    @Published var longestStreak: Int = 0
 
     private var timer: AnyCancellable?
     private let userDefaults = UserDefaults.standard
@@ -14,12 +15,14 @@ class FastingManager: ObservableObject {
     private let historyKey = "fastingHistory"
     private let goalKey = "fastingGoalHours"
     private let streakKey = "currentStreak"
+    private let longestStreakKey = "longestStreak"
 
     init() {
         loadGoal()
         loadCurrentSession()
         loadHistory()
         loadStreak()
+        loadLongestStreak()
         // Recalculate streak from history to ensure accuracy
         calculateStreakFromHistory()
         if currentSession != nil {
@@ -47,8 +50,13 @@ class FastingManager: ObservableObject {
         saveCurrentSession()
         startTimer()
 
-        // Schedule notification
-        NotificationManager.shared.scheduleGoalNotification(for: session, goalHours: fastingGoalHours)
+        // Schedule notification with streak context
+        NotificationManager.shared.scheduleGoalNotification(
+            for: session,
+            goalHours: fastingGoalHours,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak
+        )
     }
 
     func stopFast() {
@@ -119,11 +127,7 @@ class FastingManager: ObservableObject {
         // Sort by date (most recent first)
         fastingHistory.sort { $0.startTime > $1.startTime }
 
-        // Keep last 10
-        if fastingHistory.count > 10 {
-            fastingHistory = Array(fastingHistory.prefix(10))
-        }
-
+        // No limit on history - need all data for lifetime statistics and streak calculations
         saveHistory()
     }
 
@@ -255,6 +259,12 @@ class FastingManager: ObservableObject {
 
         currentStreak = streak
         saveStreak()
+
+        // Update longest streak if current exceeds it
+        if currentStreak > longestStreak {
+            longestStreak = currentStreak
+            saveLongestStreak()
+        }
     }
 
     private func saveStreak() {
@@ -263,5 +273,13 @@ class FastingManager: ObservableObject {
 
     private func loadStreak() {
         currentStreak = userDefaults.integer(forKey: streakKey)
+    }
+
+    private func saveLongestStreak() {
+        userDefaults.set(longestStreak, forKey: longestStreakKey)
+    }
+
+    private func loadLongestStreak() {
+        longestStreak = userDefaults.integer(forKey: longestStreakKey)
     }
 }

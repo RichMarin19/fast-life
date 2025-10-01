@@ -135,45 +135,92 @@ struct TotalStatsView: View {
 
     var body: some View {
         let completedSessions = fastingManager.fastingHistory.filter { $0.isComplete }
-        let totalDays = completedSessions.filter { $0.metGoal }.count
+        // Count all days with ≥14 hours OR goal met
+        let totalDays = completedSessions.filter { $0.duration >= 14 * 3600 || $0.metGoal }.count
+        let totalDaysToGoal = completedSessions.filter { $0.metGoal }.count
         let totalHours = completedSessions.reduce(0.0) { $0 + $1.duration / 3600 }
+        let longestStreak = fastingManager.longestStreak
 
-        HStack(spacing: 16) {
-            // Total Days
-            VStack(spacing: 8) {
-                Image(systemName: "calendar.badge.clock")
-                    .font(.title2)
-                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
-                Text("\(totalDays)")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
-                Text("Lifetime Days Fasted")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+        VStack(spacing: 16) {
+            // First row
+            HStack(spacing: 16) {
+                // Total Days (≥14h or goal met)
+                VStack(spacing: 8) {
+                    Image(systemName: "calendar.badge.clock")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                    Text("\(totalDays)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Text("Lifetime Days Fasted")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
-            // Total Hours
-            VStack(spacing: 8) {
-                Image(systemName: "clock.fill")
-                    .font(.title2)
-                    .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
-                Text("\(Int(totalHours))")
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
-                    .foregroundColor(.primary)
-                Text("Lifetime Hours Fasted")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                // Total Hours
+                VStack(spacing: 8) {
+                    Image(systemName: "clock.fill")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                    Text("\(Int(totalHours))")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Text("Lifetime Hours Fasted")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
             }
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+
+            // Second row
+            HStack(spacing: 16) {
+                // Days to Goal
+                VStack(spacing: 8) {
+                    Image(systemName: "target")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.4))
+                    Text("\(totalDaysToGoal)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Text("Lifetime Days Fasted to Goal")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+
+                // Longest Streak
+                VStack(spacing: 8) {
+                    Image(systemName: "flame.fill")
+                        .font(.title2)
+                        .foregroundColor(Color(red: 1.0, green: 0.5, blue: 0.0))
+                    Text("\(longestStreak)")
+                        .font(.system(size: 36, weight: .bold, design: .rounded))
+                        .foregroundColor(.primary)
+                    Text("Longest Lifetime Streak")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+            }
         }
     }
 }
