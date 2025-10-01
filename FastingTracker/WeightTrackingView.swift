@@ -251,9 +251,9 @@ struct WeightChartView: View {
         return weightManager.weightEntries.filter { $0.date >= cutoffDate }
     }
 
-    // MARK: - Daily Averaged Entries for Week/Month/3Months View
+    // MARK: - Daily Averaged Entries for Week/Month/3Months/Year/All View
 
-    /// For Week/Month/3Months view: Groups entries by calendar day and averages weights for each day
+    /// For Week/Month/3Months/Year/All view: Groups entries by calendar day and averages weights for each day
     /// This ensures one data point per day even if multiple weigh-ins occurred
     var dailyAveragedEntries: [WeightEntry] {
         let calendar = Calendar.current
@@ -292,12 +292,9 @@ struct WeightChartView: View {
         case .day:
             // Day view: Show ALL individual data points (no averaging)
             return filteredEntries
-        case .week, .month, .threeMonths:
-            // Week/Month/3Months view: Show daily averaged data (one point per day)
+        case .week, .month, .threeMonths, .year, .all:
+            // Week/Month/3Months/Year/All view: Show daily averaged data (one point per day)
             return dailyAveragedEntries
-        default:
-            // Other views: Show all filtered data
-            return filteredEntries
         }
     }
 
@@ -421,8 +418,32 @@ struct WeightChartView: View {
                                 AxisTick()
                             }
                         }
+                    } else if selectedTimeRange == .year {
+                        // Year view: Show 12 marks (one per month)
+                        AxisMarks(values: yearXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    } else if selectedTimeRange == .all {
+                        // All view: Adaptive marks based on data span
+                        AxisMarks(values: allXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
                     } else {
-                        // Other views: Dynamic X-axis based on actual data points
+                        // Fallback: automatic marks
                         AxisMarks(values: .automatic) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
@@ -475,6 +496,30 @@ struct WeightChartView: View {
                     } else if selectedTimeRange == .threeMonths {
                         // 3 Months view: Show 10 evenly-spaced marks with "lbs" suffix
                         AxisMarks(position: .leading, values: threeMonthsYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(round(weight))) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else if selectedTimeRange == .year {
+                        // Year view: Show 10 evenly-spaced marks with "lbs" suffix
+                        AxisMarks(position: .leading, values: yearYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(round(weight))) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else if selectedTimeRange == .all {
+                        // All view: Show 10 evenly-spaced marks with "lbs" suffix
+                        AxisMarks(position: .leading, values: allYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
                                     Text("\(Int(round(weight))) lbs")
@@ -683,6 +728,34 @@ struct WeightChartView: View {
 
             return rangeStart...rangeEnd
 
+        case .year:
+            guard !chartData.isEmpty else { return nil }
+
+            // Extend domain by 3 days on each side for easier point selection
+            let dates = chartData.map { $0.date }
+            guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
+
+            guard let rangeStart = calendar.date(byAdding: .day, value: -3, to: minDate),
+                  let rangeEnd = calendar.date(byAdding: .day, value: 3, to: maxDate) else {
+                return nil
+            }
+
+            return rangeStart...rangeEnd
+
+        case .all:
+            guard !chartData.isEmpty else { return nil }
+
+            // Extend domain by 5 days on each side for easier point selection
+            let dates = chartData.map { $0.date }
+            guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
+
+            guard let rangeStart = calendar.date(byAdding: .day, value: -5, to: minDate),
+                  let rangeEnd = calendar.date(byAdding: .day, value: 5, to: maxDate) else {
+                return nil
+            }
+
+            return rangeStart...rangeEnd
+
         default:
             return nil
         }
@@ -814,17 +887,92 @@ struct WeightChartView: View {
         return values
     }
 
-    /// For Week/Month/3Months view: Returns actual time if day has single entry, nil if multiple entries
+    /// Generates X-axis marks for Year view: 12 marks (one per month) over last 365 days
+    /// Shows month abbreviations for clear temporal reference
+    var yearXAxisValues: [Date] {
+        guard selectedTimeRange == .year else { return [] }
+        guard !chartData.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
+
+        // Calculate number of months in data range
+        let monthsBetween = calendar.dateComponents([.month], from: minDate, to: maxDate).month ?? 0
+
+        // Always show 12 marks for Year view (one per month)
+        let numberOfMarks = 12
+
+        // Generate evenly-spaced dates across the data range
+        var values: [Date] = []
+        let interval = Double(monthsBetween) / Double(numberOfMarks - 1)
+
+        for i in 0..<numberOfMarks {
+            let monthsToAdd = Int(round(Double(i) * interval))
+            if let date = calendar.date(byAdding: .month, value: monthsToAdd, to: calendar.startOfDay(for: minDate)) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// Generates X-axis marks for All view: Adaptive based on total data span
+    /// Scales from months to years depending on data range
+    var allXAxisValues: [Date] {
+        guard selectedTimeRange == .all else { return [] }
+        guard !chartData.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
+
+        // Calculate the span in months
+        let monthsBetween = calendar.dateComponents([.month], from: minDate, to: maxDate).month ?? 0
+
+        // Determine appropriate number of marks and interval type
+        let numberOfMarks: Int
+        let intervalComponent: Calendar.Component
+
+        if monthsBetween <= 12 {
+            // Less than a year: show monthly marks (up to 12)
+            numberOfMarks = min(monthsBetween + 1, 12)
+            intervalComponent = .month
+        } else if monthsBetween <= 36 {
+            // 1-3 years: show ~12 marks at quarterly intervals
+            numberOfMarks = 12
+            intervalComponent = .month
+        } else {
+            // 3+ years: show ~12 marks at larger intervals
+            numberOfMarks = 12
+            intervalComponent = .month
+        }
+
+        // Generate evenly-spaced dates
+        var values: [Date] = []
+        let interval = Double(monthsBetween) / Double(numberOfMarks - 1)
+
+        for i in 0..<numberOfMarks {
+            let unitsToAdd = Int(round(Double(i) * interval))
+            if let date = calendar.date(byAdding: intervalComponent, value: unitsToAdd, to: calendar.startOfDay(for: minDate)) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// For Week/Month/3Months/Year/All view: Returns actual time if day has single entry, nil if multiple entries
     /// This ensures we show accurate weigh-in times or omit time for averaged data
     var selectedEntryDisplayTime: Date? {
         guard let selectedEntry = selectedEntry else { return nil }
 
-        // For Day view (or other views without averaging), always show the actual time
-        guard selectedTimeRange == .week || selectedTimeRange == .month || selectedTimeRange == .threeMonths else {
+        // For Day view (without averaging), always show the actual time
+        guard selectedTimeRange == .week || selectedTimeRange == .month || selectedTimeRange == .threeMonths || selectedTimeRange == .year || selectedTimeRange == .all else {
             return selectedEntry.date
         }
 
-        // For Week/Month/3Months view: Check how many entries exist for the selected day
+        // For Week/Month/3Months/Year/All view: Check how many entries exist for the selected day
         let calendar = Calendar.current
         let selectedDay = calendar.startOfDay(for: selectedEntry.date)
 
@@ -885,6 +1033,32 @@ struct WeightChartView: View {
         let max = domain.upperBound
 
         // Generate 10 evenly-spaced values for clean visualization
+        let range = max - min
+        let step = range / 10.0
+
+        return stride(from: min, through: max, by: step).map { $0 }
+    }
+
+    /// For Year view: Generates 10 evenly-spaced Y-axis marks
+    private var yearYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Generate 10 evenly-spaced values for year-long trends
+        let range = max - min
+        let step = range / 10.0
+
+        return stride(from: min, through: max, by: step).map { $0 }
+    }
+
+    /// For All view: Generates 10 evenly-spaced Y-axis marks
+    private var allYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Generate 10 evenly-spaced values for all-time view
         let range = max - min
         let step = range / 10.0
 
@@ -1005,12 +1179,69 @@ struct WeightChartView: View {
                 return rangeMin...rangeMax
             }
 
-        default:
-            // For other views: auto-scale with padding
-            let padding = (maxWeight - minWeight) * 0.1 // 10% padding
-            let rangeMin = max(0, minWeight - padding)
-            let rangeMax = maxWeight + padding
-            return rangeMin...rangeMax
+        case .year:
+            // For Year view: Adaptive based on 365-day weight fluctuation
+            // Shows broader trends with goal line support
+            let dataRange = maxWeight - minWeight
+
+            if showGoalLine {
+                // Goal line shown: Position Y-axis below goal for year-long journey view
+                let highestValue = max(maxWeight, weightGoal)
+
+                // Adaptive padding for year-long data
+                let belowGoalPadding: Double
+                if dataRange < 10 {
+                    belowGoalPadding = 15.0 // Small fluctuation over year: 15 lb padding
+                } else if dataRange < 20 {
+                    belowGoalPadding = 25.0 // Moderate fluctuation: 25 lb padding
+                } else {
+                    belowGoalPadding = 35.0 // Large fluctuation: 35 lb padding
+                }
+
+                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMax = max(highestValue + 5, rangeMin + 20) // Ensure at least 20lb range
+
+                return rangeMin...rangeMax
+            } else {
+                // No goal line: Center on data with generous padding for year view
+                let padding = max(dataRange * 0.25, 8.0) // At least 8 lbs padding (25% for year)
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+
+                return rangeMin...rangeMax
+            }
+
+        case .all:
+            // For All view: Maximally adaptive based on entire dataset
+            // Scales from months to years of data
+            let dataRange = maxWeight - minWeight
+
+            if showGoalLine {
+                // Goal line shown: Adaptive positioning for all-time view
+                let highestValue = max(maxWeight, weightGoal)
+
+                // Very adaptive padding for potentially multi-year data
+                let belowGoalPadding: Double
+                if dataRange < 15 {
+                    belowGoalPadding = 20.0 // Smaller all-time range: 20 lb padding
+                } else if dataRange < 30 {
+                    belowGoalPadding = 30.0 // Medium range: 30 lb padding
+                } else {
+                    belowGoalPadding = 40.0 // Large range: 40 lb padding
+                }
+
+                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMax = max(highestValue + 5, rangeMin + 25) // Ensure at least 25lb range
+
+                return rangeMin...rangeMax
+            } else {
+                // No goal line: Maximum adaptive padding for all-time trends
+                let padding = max(dataRange * 0.3, 10.0) // At least 10 lbs padding (30% for all-time)
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+
+                return rangeMin...rangeMax
+            }
         }
     }
 }
