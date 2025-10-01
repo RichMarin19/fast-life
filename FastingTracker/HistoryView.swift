@@ -355,13 +355,15 @@ struct FastingGraphView: View {
     @ViewBuilder
     private var chartContentView: some View {
         let chartData = getChartData()
+        // Check if all data points are zero (no real data for this period)
+        let hasRealData = chartData.contains { $0.hours > 0 }
 
-        if chartData.isEmpty {
+        if chartData.isEmpty || !hasRealData {
             VStack(spacing: 12) {
                 Image(systemName: "chart.xyaxis.line")
                     .font(.system(size: 40))
                     .foregroundColor(.gray.opacity(0.5))
-                Text("No fasting data yet")
+                Text("No data available")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
