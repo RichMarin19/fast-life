@@ -1,5 +1,329 @@
 # New Features Added ✨
 
+## 3. Delete Fast Functionality & Intelligent Month View 🗑️📅
+
+**Added:** January 1, 2025
+**Version:** 1.0.7
+
+### What Changed:
+
+#### A. Delete Fast from Calendar & Recent Fasts
+Users can now **delete fasting sessions** from two locations:
+1. **Calendar View** - Tap any day → Edit Fast → Delete button
+2. **Recent Fasts List** - Tap any fast → Edit Fast → Delete button
+
+#### B. Intelligent Month View Default
+Fasting Progress Month view now **intelligently defaults** to the most recent month with data instead of always showing the current month.
+
+---
+
+### Feature Details:
+
+#### 🗑️ Delete Fast Functionality
+
+**How It Works:**
+
+1. **From Calendar:**
+   - Tap any day with a fast (🔥 or ❌)
+   - Opens "Edit Fast" view
+   - Scroll down → See red "Delete Fast" button
+   - Tap Delete → Confirmation alert appears
+   - Confirm → Fast permanently deleted
+
+2. **From Recent Fasts List:**
+   - Tap any fast in the list
+   - Opens same "Edit Fast" view
+   - Red "Delete Fast" button at bottom
+   - Tap Delete → Confirmation alert appears
+   - Confirm → Fast permanently deleted
+
+**Confirmation Alert:**
+```
+Delete Fast
+Are you sure you want to delete this fast?
+This action cannot be undone.
+
+[Cancel] [Delete]
+```
+
+**What Happens When You Delete:**
+- ✅ Fast removed from history
+- ✅ Calendar updated (flame/X disappears)
+- ✅ Recent Fasts list updated
+- ✅ Streaks recalculated automatically
+- ✅ All statistics updated (Lifetime Days, Hours, etc.)
+- ✅ Changes saved immediately
+
+**Safety Features:**
+- Red button color indicates destructive action (Apple HIG)
+- Confirmation alert prevents accidental deletion
+- Clear warning: "This action cannot be undone"
+- Only shows when editing existing fast (not when adding new)
+
+---
+
+#### 📅 Intelligent Month View Default
+
+**Problem Solved:**
+- **Before:** On Oct 1, Month view showed "October 2025" with "No data available" even though latest fast was Sep 30
+- **After:** Month view intelligently shows "September 2025" (where the data is)
+
+**How It Works:**
+
+1. User opens History → Taps "Month" view
+2. App checks: Does current month have any fasting data?
+3. **If YES:** Show current month (normal behavior)
+4. **If NO:** Find most recent month with data and show that month
+5. User can still navigate forward/backward with arrow buttons
+
+**Example Scenarios:**
+
+**Scenario 1: Current Month Has Data**
+- Date: Oct 15, 2025
+- Last fast: Oct 10, 2025
+- **Result:** Shows "October 2025" ✅
+
+**Scenario 2: Current Month Empty**
+- Date: Oct 1, 2025
+- Last fast: Sep 30, 2025
+- **Result:** Shows "September 2025" (where data is) ✅
+
+**Scenario 3: Multiple Months Gap**
+- Date: Dec 1, 2025
+- Last fast: Sep 15, 2025
+- **Result:** Shows "September 2025" (jumps back 3 months) ✅
+
+**Technical Details:**
+- Only initializes once when switching to Month view
+- Doesn't interfere with manual navigation (arrows still work)
+- Respects 12-month history limit (won't go back more than 11 months)
+- Uses Calendar API for accurate month calculations
+
+---
+
+### Files Modified
+
+#### 1. **FastingManager.swift**
+**New Method Added:**
+```swift
+func deleteFast(for date: Date) {
+    let calendar = Calendar.current
+    let targetDay = calendar.startOfDay(for: date)
+
+    // Remove the fast for this day
+    fastingHistory.removeAll { session in
+        calendar.startOfDay(for: session.startTime) == targetDay
+    }
+
+    // Recalculate streaks from history
+    calculateStreakFromHistory()
+
+    saveHistory()
+}
+```
+
+**Why This Design:**
+- Uses date-based deletion (deletes fast for entire day)
+- Automatically recalculates streaks (important for data integrity)
+- Saves to UserDefaults immediately
+- Follows existing pattern of other FastingManager methods
+
+#### 2. **HistoryView.swift**
+
+**A. AddEditFastView - Delete Button:**
+- Added `@State private var showingDeleteAlert` for alert state
+- Added red "Delete Fast" button (only shows if editing existing fast)
+- Added `.alert` modifier with confirmation
+- Added `deleteFast()` helper function
+
+**B. Recent Fasts List - Tap Gesture:**
+- Removed broken swipe actions (didn't work in VStack)
+- Added `.contentShape(Rectangle())` for full-width tapping
+- Added `.onTapGesture` to open Edit Fast view
+
+**C. FastingGraphView - Intelligent Month View:**
+- Added `initializeMonthView()` function
+- Calls initialization when user switches to Month view
+- Checks current month for data
+- Finds most recent month with data if current is empty
+- Sets `selectedMonthOffset` to show correct month
+
+---
+
+### User Benefits
+
+#### Delete Fast:
+- ✅ **Fix Mistakes:** Remove accidentally recorded fasts
+- ✅ **Clean History:** Delete invalid or test entries
+- ✅ **Accurate Stats:** Keep lifetime statistics correct
+- ✅ **Streak Integrity:** Streaks recalculate after deletion
+- ✅ **Easy Access:** Delete from calendar OR recent fasts list
+
+#### Intelligent Month View:
+- ✅ **Better UX:** See your data immediately, no hunting
+- ✅ **New Users:** Month view shows data even on first day of new month
+- ✅ **Consistency:** Works like you expect it to work
+- ✅ **Time Saver:** No need to manually navigate to previous month
+
+---
+
+### Testing Checklist
+
+#### Delete Fast:
+- [ ] Tap calendar day → See Edit Fast view with Delete button
+- [ ] Tap recent fast → See same Edit Fast view with Delete button
+- [ ] Delete button is RED (destructive color)
+- [ ] Tapping Delete shows confirmation alert
+- [ ] Alert has Cancel and Delete buttons
+- [ ] Cancel returns to Edit Fast view (no deletion)
+- [ ] Delete removes fast and closes view
+- [ ] Fast disappears from calendar
+- [ ] Fast disappears from Recent Fasts list
+- [ ] Statistics update (Lifetime Days, Hours, etc.)
+- [ ] Streak recalculates correctly
+- [ ] Can delete multiple fasts in a row
+
+#### Intelligent Month View:
+- [ ] On Oct 1 with Sep 30 fast → Month view shows September
+- [ ] In current month with data → Month view shows current month
+- [ ] After manual navigation → Doesn't reset when switching away and back
+- [ ] Forward/backward arrows still work normally
+- [ ] Handles months with no data gracefully
+- [ ] Doesn't go back more than 11 months (12 month limit)
+
+---
+
+### Examples
+
+#### Example 1: Delete Accidental Fast
+**Situation:** Added a test fast by accident
+
+**Steps:**
+1. Go to History → See fast in Recent Fasts
+2. Tap the fast
+3. Scroll down → See red "Delete Fast" button
+4. Tap Delete
+5. Alert: "Are you sure you want to delete this fast?"
+6. Tap Delete
+7. View closes → Fast is gone ✅
+
+#### Example 2: Clean Up Old Data
+**Situation:** Want to remove invalid fasts from 2 weeks ago
+
+**Steps:**
+1. Go to History → Streak Calendar
+2. Scroll to 2 weeks ago
+3. Tap day with fast (🔥 or ❌)
+4. Edit Fast view opens
+5. Tap "Delete Fast" button
+6. Confirm deletion
+7. Calendar updates → Flame/X disappears ✅
+
+#### Example 3: Intelligent Month View
+**Situation:** It's October 1st, last fast was September 30th
+
+**Steps:**
+1. Go to History
+2. Tap "Fasting Progress"
+3. Tap "Month" view
+4. **Automatically shows:** "September 2025" with your data ✅
+5. Tap forward arrow → See "October 2025" (empty)
+6. Tap back arrow → Return to "September 2025" ✅
+
+---
+
+### Git Commit
+
+**Commit Message:**
+```
+Add delete functionality for fasting sessions
+
+- Add deleteFast(for:) method to FastingManager
+- Add Delete button to Edit Fast view with confirmation
+- Make Recent Fasts list rows tappable to open Edit Fast view
+- Fix: Intelligent Month view defaults to most recent month with data
+
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
+
+**Commit Hash:** `1a5b267`
+
+---
+
+### API Changes
+
+**New Public Method:**
+```swift
+// FastingManager.swift
+func deleteFast(for date: Date)
+```
+
+**Parameters:**
+- `date: Date` - The date of the fast to delete (uses start date)
+
+**Behavior:**
+- Removes fast from `fastingHistory` array
+- Recalculates `currentStreak` and `longestStreak`
+- Saves updated history to UserDefaults
+- Published properties trigger UI updates automatically
+
+---
+
+### Design Decisions
+
+#### Why Delete by Date (Not by ID)?
+- Existing pattern: One fast per day
+- Matches calendar selection behavior
+- Simpler user mental model
+- Consistent with addManualFast logic
+
+#### Why Confirmation Alert?
+- Follows Apple Human Interface Guidelines
+- Prevents accidental data loss
+- Standard iOS pattern (Mail, Photos, etc.)
+- "Cancel" is safe default (left position)
+
+#### Why Tap Instead of Swipe?
+- Swipe actions require List view (not VStack)
+- Would require refactoring working UI
+- Tap is more discoverable
+- Consistent with calendar tap behavior
+- Simpler implementation
+
+#### Why Intelligent Month View?
+- Better first-time user experience
+- Reduces confusion ("Where's my data?")
+- Follows principle of least surprise
+- Common pattern in analytics apps
+
+---
+
+### Known Limitations
+
+- Delete is permanent (no undo function)
+- Can only delete one fast at a time
+- Month view limited to 12 months back
+- Delete doesn't sync to HealthKit (if implemented later)
+
+---
+
+### Future Enhancements
+
+Potential improvements for future versions:
+- [ ] Batch delete (select multiple fasts)
+- [ ] Undo delete (with timeout)
+- [ ] Delete confirmation preference (disable alert)
+- [ ] Export before delete (data backup)
+- [ ] Soft delete with trash bin
+- [ ] Year/All view intelligent defaults
+
+---
+
+## Previous Features
+
+
+
 ## 1. Current Month Calendar View 📅
 
 ### What Changed:
