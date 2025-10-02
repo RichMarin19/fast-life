@@ -4,8 +4,11 @@ import Charts
 // MARK: - Identifiable Date Wrapper
 
 struct IdentifiableDate: Identifiable {
-    let id = UUID()
     let date: Date
+
+    var id: TimeInterval {
+        date.timeIntervalSince1970
+    }
 }
 
 struct HistoryView: View {
