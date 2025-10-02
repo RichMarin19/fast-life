@@ -3,6 +3,8 @@ import SwiftUI
 struct HydrationTrackingView: View {
     @StateObject private var hydrationManager = HydrationManager()
     @State private var showingGoalSettings = false
+    @State private var showingDrinkPicker = false
+    @State private var selectedDrinkType: DrinkType = .water
 
     var body: some View {
         ScrollView {
@@ -10,26 +12,42 @@ struct HydrationTrackingView: View {
                 Spacer()
                     .frame(height: 20)
 
-                // Progress Ring
+                // Progress Ring (Multi-colored by drink type)
                 ZStack {
+                    // Background ring
                     Circle()
                         .stroke(Color.gray.opacity(0.3), lineWidth: 20)
                         .frame(width: 250, height: 250)
 
+                    // Water segment (cyan)
                     Circle()
-                        .trim(from: 0, to: hydrationManager.todaysProgress())
-                        .stroke(
-                            AngularGradient(
-                                gradient: Gradient(colors: hydrationGradientColors),
-                                center: .center,
-                                startAngle: .degrees(0),
-                                endAngle: .degrees(360)
-                            ),
-                            style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                        )
+                        .trim(from: 0, to: hydrationManager.todaysProgressByType(.water))
+                        .stroke(Color.cyan, style: StrokeStyle(lineWidth: 20, lineCap: .round))
                         .frame(width: 250, height: 250)
                         .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgress())
+                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.water))
+
+                    // Coffee segment (brown) - starts after water
+                    Circle()
+                        .trim(
+                            from: hydrationManager.todaysProgressByType(.water),
+                            to: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee)
+                        )
+                        .stroke(Color.brown, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                        .frame(width: 250, height: 250)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.coffee))
+
+                    // Tea segment (green) - starts after water + coffee
+                    Circle()
+                        .trim(
+                            from: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee),
+                            to: hydrationManager.todaysProgress()
+                        )
+                        .stroke(Color.green, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                        .frame(width: 250, height: 250)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.tea))
 
                     VStack(spacing: 12) {
                         Image(systemName: "drop.fill")
@@ -92,21 +110,30 @@ struct HydrationTrackingView: View {
                         DrinkButton(
                             type: .water,
                             color: .cyan,
-                            action: { hydrationManager.addDrink(type: .water) }
+                            action: {
+                                selectedDrinkType = .water
+                                showingDrinkPicker = true
+                            }
                         )
 
                         // Coffee Button
                         DrinkButton(
                             type: .coffee,
                             color: .brown,
-                            action: { hydrationManager.addDrink(type: .coffee) }
+                            action: {
+                                selectedDrinkType = .coffee
+                                showingDrinkPicker = true
+                            }
                         )
 
                         // Tea Button
                         DrinkButton(
                             type: .tea,
                             color: .green,
-                            action: { hydrationManager.addDrink(type: .tea) }
+                            action: {
+                                selectedDrinkType = .tea
+                                showingDrinkPicker = true
+                            }
                         )
                     }
                     .padding(.horizontal, 40)
@@ -138,19 +165,23 @@ struct HydrationTrackingView: View {
         }
         .navigationTitle("Hydration Tracker")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                NavigationLink(destination: HydrationHistoryView(hydrationManager: hydrationManager)) {
+                    Image(systemName: "chart.bar.fill")
+                        .foregroundColor(.cyan)
+                }
+            }
+        }
         .sheet(isPresented: $showingGoalSettings) {
             HydrationGoalSettingsView(hydrationManager: hydrationManager)
         }
-    }
-
-    // Gradient colors for progress ring - cyan to blue
-    private var hydrationGradientColors: [Color] {
-        [
-            Color.cyan,
-            Color.cyan.opacity(0.8),
-            Color.blue.opacity(0.6),
-            Color.blue
-        ]
+        .sheet(isPresented: $showingDrinkPicker) {
+            DrinkAmountPickerView(
+                drinkType: selectedDrinkType,
+                hydrationManager: hydrationManager
+            )
+        }
     }
 }
 
@@ -287,6 +318,148 @@ struct HydrationGoalSettingsView: View {
                         if let newGoal = Double(goalInput), newGoal > 0 {
                             hydrationManager.updateDailyGoal(newGoal)
                         }
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Drink Amount Picker View
+
+struct DrinkAmountPickerView: View {
+    let drinkType: DrinkType
+    @ObservedObject var hydrationManager: HydrationManager
+    @Environment(\.dismiss) var dismiss
+
+    @State private var selectedAmount: Double = 8.0
+    @State private var customAmount: String = ""
+    @State private var useCustomAmount: Bool = false
+
+    // Preset options in ounces
+    private let presetAmounts: [Double] = [4, 8, 12, 16, 20, 24, 32]
+
+    var drinkColor: Color {
+        switch drinkType {
+        case .water: return .cyan
+        case .coffee: return .brown
+        case .tea: return .green
+        }
+    }
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 24) {
+                Spacer()
+                    .frame(height: 20)
+
+                // Drink Icon
+                Image(systemName: drinkType.icon)
+                    .font(.system(size: 60))
+                    .foregroundColor(.white)
+                    .frame(width: 100, height: 100)
+                    .background(drinkColor)
+                    .cornerRadius(20)
+
+                Text(drinkType.rawValue)
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                Divider()
+                    .padding(.horizontal)
+
+                // Preset Amounts
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("Select Amount")
+                        .font(.headline)
+                        .padding(.horizontal)
+
+                    ScrollView {
+                        VStack(spacing: 12) {
+                            ForEach(presetAmounts, id: \.self) { amount in
+                                Button(action: {
+                                    selectedAmount = amount
+                                    useCustomAmount = false
+                                }) {
+                                    HStack {
+                                        Text("\(Int(amount)) oz")
+                                            .font(.body)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(.primary)
+
+                                        Spacer()
+
+                                        if !useCustomAmount && selectedAmount == amount {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .foregroundColor(drinkColor)
+                                        }
+                                    }
+                                    .padding()
+                                    .background(
+                                        (!useCustomAmount && selectedAmount == amount) ?
+                                        drinkColor.opacity(0.15) : Color(.systemGray6)
+                                    )
+                                    .cornerRadius(12)
+                                }
+                            }
+
+                            // Custom Amount
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Custom Amount")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .padding(.horizontal)
+
+                                HStack {
+                                    TextField("Enter amount", text: $customAmount)
+                                        .keyboardType(.decimalPad)
+                                        .padding()
+                                        .background(
+                                            useCustomAmount ?
+                                            drinkColor.opacity(0.15) : Color(.systemGray6)
+                                        )
+                                        .cornerRadius(12)
+                                        .onChange(of: customAmount) { _, newValue in
+                                            if !newValue.isEmpty {
+                                                useCustomAmount = true
+                                            }
+                                        }
+
+                                    Text("oz")
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                }
+
+                Spacer()
+
+                // Add Button
+                Button(action: {
+                    let amount = useCustomAmount ?
+                        (Double(customAmount) ?? selectedAmount) : selectedAmount
+                    hydrationManager.addDrink(type: drinkType, amount: amount)
+                    dismiss()
+                }) {
+                    Text("Add \(drinkType.rawValue)")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(drinkColor)
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal)
+                .padding(.bottom)
+            }
+            .navigationTitle("Log Drink")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
                         dismiss()
                     }
                 }

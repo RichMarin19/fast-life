@@ -105,6 +105,21 @@ class HydrationManager: ObservableObject {
         return Int(todaysProgress() * 100)
     }
 
+    // MARK: - Drink Type Breakdown
+
+    func todaysDrinksByType() -> [DrinkType: Double] {
+        var breakdown: [DrinkType: Double] = [:]
+        for drink in todaysDrinks() {
+            breakdown[drink.type, default: 0.0] += drink.amount
+        }
+        return breakdown
+    }
+
+    func todaysProgressByType(_ type: DrinkType) -> Double {
+        let typeAmount = todaysDrinksByType()[type] ?? 0.0
+        return min(typeAmount / dailyGoalOunces, 1.0)
+    }
+
     // MARK: - Goal Management
 
     func updateDailyGoal(_ newGoal: Double) {
