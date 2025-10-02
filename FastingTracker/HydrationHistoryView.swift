@@ -785,6 +785,11 @@ struct HydrationDayView: View {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
 
+        // Today always shows as no data (day not complete yet)
+        if calendar.isDateInToday(date) {
+            return .noData
+        }
+
         // Get drinks for this day
         let dayDrinks = hydrationManager.drinkEntries.filter { entry in
             calendar.isDate(entry.date, inSameDayAs: dayStart)
