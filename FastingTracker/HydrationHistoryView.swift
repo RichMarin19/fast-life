@@ -155,6 +155,28 @@ struct HydrationChartView: View {
                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                 }
             }
+            .chartXAxis {
+                AxisMarks(values: getXAxisValues()) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    if timeRange == .year || timeRange == .all {
+                        // Show month abbreviations for year/all view
+                        AxisValueLabel(format: .dateTime.month(.abbreviated))
+                    } else if timeRange == .month || timeRange == .threeMonths {
+                        // Show day numbers for month/3-month view
+                        AxisValueLabel {
+                            if let date = value.as(Date.self) {
+                                let day = Calendar.current.component(.day, from: date)
+                                Text("\(day)")
+                                    .font(.caption2)
+                            }
+                        }
+                    } else {
+                        // Show month and day for week view
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+                    }
+                }
+            }
             .chartYAxis {
                 AxisMarks(position: .leading)
             }
@@ -164,6 +186,45 @@ struct HydrationChartView: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+    }
+
+    private func getXAxisValues() -> AxisMarkValues {
+        let calendar = Calendar.current
+        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+        let daysDifference = calendar.dateComponents([.day], from: cutoffDate, to: Date()).day ?? 1
+
+        switch timeRange {
+        case .week:
+            // Show every day (7 days)
+            return .stride(by: .day, count: 1)
+
+        case .month:
+            // Show approximately 12 date labels across the month (every 2-3 days)
+            let stride = max(2, (daysDifference + 11) / 12)
+            return .stride(by: .day, count: stride)
+
+        case .threeMonths:
+            // Show approximately 12-15 labels (every 6-7 days)
+            let stride = max(6, daysDifference / 12)
+            return .stride(by: .day, count: stride)
+
+        case .year:
+            // Show each month (12 labels)
+            return .stride(by: .month, count: 1)
+
+        case .all:
+            // Calculate stride to show 10-12 labels total
+            if daysDifference > 365 {
+                // More than a year - show months
+                let months = daysDifference / 30
+                let stride = max(1, months / 10)
+                return .stride(by: .month, count: stride)
+            } else {
+                // Less than a year - show every ~30 days
+                let stride = max(30, daysDifference / 10)
+                return .stride(by: .day, count: stride)
+            }
+        }
     }
 
     private func chartData() -> [(date: Date, water: Double, coffee: Double, tea: Double)] {
