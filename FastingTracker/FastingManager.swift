@@ -23,10 +23,16 @@ class FastingManager: ObservableObject {
         loadHistory()
         loadStreak()
         loadLongestStreak()
-        // Recalculate streak from history to ensure accuracy
-        calculateStreakFromHistory()
+
+        // Start timer immediately if there's an active session (critical for UI)
         if currentSession != nil {
             startTimer()
+        }
+
+        // Recalculate streak asynchronously to avoid blocking app launch
+        // This ensures accuracy but doesn't delay the initial UI render
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            self?.calculateStreakFromHistory()
         }
     }
 
@@ -241,8 +247,10 @@ class FastingManager: ObservableObject {
             .sorted { $0.startTime > $1.startTime }
 
         guard !goalMetFasts.isEmpty else {
-            currentStreak = 0
-            saveStreak()
+            DispatchQueue.main.async { [weak self] in
+                self?.currentStreak = 0
+                self?.saveStreak()
+            }
             return
         }
 
@@ -251,10 +259,11 @@ class FastingManager: ObservableObject {
         let mostRecentDay = calendar.startOfDay(for: mostRecentFast.startTime)
         let daysBetween = calendar.dateComponents([.day], from: mostRecentDay, to: today).day ?? 0
 
+        var currentStreakValue: Int
+
         if daysBetween > 1 {
             // Current streak is broken
-            currentStreak = 0
-            saveStreak()
+            currentStreakValue = 0
         } else {
             // Calculate current streak
             var streak = 1
@@ -273,8 +282,7 @@ class FastingManager: ObservableObject {
                 }
             }
 
-            currentStreak = streak
-            saveStreak()
+            currentStreakValue = streak
         }
 
         // Calculate longest streak by examining ALL streaks in history
@@ -312,10 +320,13 @@ class FastingManager: ObservableObject {
             lastDay = fastDay
         }
 
-        // Always update longest streak with the maximum found in entire history
-        // This ensures manual data additions are properly reflected
-        longestStreak = maxStreak
-        saveLongestStreak()
+        // Update @Published properties on main thread
+        DispatchQueue.main.async { [weak self] in
+            self?.currentStreak = currentStreakValue
+            self?.longestStreak = maxStreak
+            self?.saveStreak()
+            self?.saveLongestStreak()
+        }
     }
 
     private func saveStreak() {

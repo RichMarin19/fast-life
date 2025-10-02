@@ -54,5 +54,9 @@
 	<string>Fast LIFe needs access to read your weight, BMI, and body fat data from Apple Health to track your progress.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Fast LIFe needs permission to save your weight, BMI, and body fat data to Apple Health.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>processing</string>
+	</array>
 </dict>
 </plist>

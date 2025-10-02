@@ -43,13 +43,14 @@ struct FastLifeApp: App {
         }
     }
 
-    // Custom binding to detect when More tab is re-tapped
+    // Custom binding to reset More tab navigation to root when switching tabs
     private var tabBinding: Binding<Int> {
         Binding(
             get: { selectedTab },
             set: { newValue in
-                // If More tab (3) is tapped while already on More tab
-                if newValue == 3 && selectedTab == 3 {
+                // Reset More tab to root view whenever switching TO it
+                // This ensures Advanced Features is always shown first
+                if newValue == 3 {
                     shouldPopToRoot = true
                 }
                 selectedTab = newValue

@@ -236,4 +236,34 @@ class HealthKitManager: ObservableObject {
 
         healthStore.execute(query)
     }
+
+    // MARK: - Observer Query for Automatic Updates
+
+    func startObserving(query: HKObserverQuery) {
+        healthStore.execute(query)
+
+        // Enable background delivery for weight updates
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
+
+        healthStore.enableBackgroundDelivery(for: weightType, frequency: .immediate) { success, error in
+            if let error = error {
+                print("Failed to enable background delivery: \(error.localizedDescription)")
+            } else if success {
+                print("Background delivery enabled for weight data")
+            }
+        }
+    }
+
+    func stopObserving(query: HKObserverQuery) {
+        healthStore.stop(query)
+
+        // Disable background delivery when no longer observing
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
+
+        healthStore.disableBackgroundDelivery(for: weightType) { success, error in
+            if let error = error {
+                print("Failed to disable background delivery: \(error.localizedDescription)")
+            }
+        }
+    }
 }

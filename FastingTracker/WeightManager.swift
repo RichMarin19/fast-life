@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import HealthKit
 
 class WeightManager: ObservableObject {
     @Published var weightEntries: [WeightEntry] = []
@@ -8,10 +9,32 @@ class WeightManager: ObservableObject {
     private let userDefaults = UserDefaults.standard
     private let weightEntriesKey = "weightEntries"
     private let syncHealthKitKey = "syncWithHealthKit"
+    private var observerQuery: HKObserverQuery?
 
     init() {
         loadWeightEntries()
         loadSyncPreference()
+
+        // Delay sync and observer setup to allow UI to render first
+        // This prevents perceived slowness on app launch
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            guard let self = self else { return }
+
+            // Automatically sync from HealthKit on launch if authorized and enabled
+            if self.syncWithHealthKit && HealthKitManager.shared.isAuthorized {
+                self.syncFromHealthKit()
+            }
+
+            // Setup observer for automatic updates
+            self.setupHealthKitObserver()
+        }
+    }
+
+    deinit {
+        // Clean up observer when manager is deallocated
+        if let query = observerQuery {
+            HealthKitManager.shared.stopObserving(query: query)
+        }
     }
 
     // MARK: - Add/Update Weight Entry
@@ -93,12 +116,55 @@ class WeightManager: ObservableObject {
                 HealthKitManager.shared.requestAuthorization { success, error in
                     if success {
                         self.syncFromHealthKit()
+                        self.setupHealthKitObserver()
                     }
                 }
             } else {
                 syncFromHealthKit()
+                setupHealthKitObserver()
+            }
+        } else {
+            // Stop observing when sync is disabled
+            if let query = observerQuery {
+                HealthKitManager.shared.stopObserving(query: query)
+                observerQuery = nil
             }
         }
+    }
+
+    // MARK: - HealthKit Observer
+
+    private func setupHealthKitObserver() {
+        // Only setup observer if sync is enabled and authorized
+        guard syncWithHealthKit && HealthKitManager.shared.isAuthorized else { return }
+
+        // Remove existing observer if any
+        if let existingQuery = observerQuery {
+            HealthKitManager.shared.stopObserving(query: existingQuery)
+        }
+
+        // Create observer query for weight data
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
+
+        let query = HKObserverQuery(sampleType: weightType, predicate: nil) { [weak self] query, completionHandler, error in
+            if let error = error {
+                print("Observer query error: \(error.localizedDescription)")
+                completionHandler()
+                return
+            }
+
+            // New weight data detected - sync from HealthKit
+            print("New weight data detected in HealthKit - syncing...")
+            DispatchQueue.main.async {
+                self?.syncFromHealthKit()
+            }
+
+            // Must call completion handler
+            completionHandler()
+        }
+
+        observerQuery = query
+        HealthKitManager.shared.startObserving(query: query)
     }
 
     // MARK: - Statistics

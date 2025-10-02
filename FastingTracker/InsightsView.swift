@@ -34,6 +34,7 @@ struct InsightsView: View {
             .navigationTitle("Insights")
             .background(Color(.systemGroupedBackground).ignoresSafeArea())
         }
+        .navigationViewStyle(.stack)
     }
 }
 
