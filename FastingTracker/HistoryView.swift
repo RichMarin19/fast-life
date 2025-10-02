@@ -1186,7 +1186,6 @@ struct CalendarDayView: View {
     var body: some View {
         let calendar = Calendar.current
         let dayNumber = calendar.component(.day, from: date)
-        let dayStatus = getDayStatus()
 
         ZStack {
             // Background
@@ -1231,7 +1230,7 @@ struct CalendarDayView: View {
         Calendar.current.isDateInToday(date)
     }
 
-    private func getDayStatus() -> DayStatus {
+    private var dayStatus: DayStatus {
         let calendar = Calendar.current
         let targetDay = calendar.startOfDay(for: date)
 
