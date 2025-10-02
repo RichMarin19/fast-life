@@ -15,6 +15,8 @@
 		5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06E2E8D5F6500254E70 /* AddWeightView.swift */; };
 		5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */; };
 		5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0702E8D5F6500254E70 /* HealthKitManager.swift */; };
+		5289E07D2E8D700000254E70 /* HydrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E07E2E8D700000254E70 /* HydrationManager.swift */; };
+		5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0802E8D700100254E70 /* HydrationTrackingView.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -34,6 +36,8 @@
 		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackingView.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
+		5289E07E2E8D700000254E70 /* HydrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationManager.swift; sourceTree = "<group>"; };
+		5289E0802E8D700100254E70 /* HydrationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationTrackingView.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -71,6 +75,8 @@
 				5289E06E2E8D5F6500254E70 /* AddWeightView.swift */,
 				5289E06F2E8D5F6500254E70 /* AdvancedView.swift */,
 				5289E0702E8D5F6500254E70 /* HealthKitManager.swift */,
+				5289E07E2E8D700000254E70 /* HydrationManager.swift */,
+				5289E0802E8D700100254E70 /* HydrationTrackingView.swift */,
 				5289E0712E8D5F6500254E70 /* WeightEntry.swift */,
 				5289E0722E8D5F6500254E70 /* WeightManager.swift */,
 				5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */,
@@ -173,6 +179,8 @@
 				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,
 				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
 				5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */,
+				5289E07D2E8D700000254E70 /* HydrationManager.swift in Sources */,
+				5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */,
 				A1000003000000000000001 /* ContentView.swift in Sources */,
 				A1000005000000000000001 /* HistoryView.swift in Sources */,
 				A1000007000000000000001 /* FastingSession.swift in Sources */,
