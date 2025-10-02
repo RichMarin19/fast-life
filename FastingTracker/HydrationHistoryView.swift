@@ -599,19 +599,19 @@ struct HydrationCalendarView: View {
             // Legend
             HStack(spacing: 20) {
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(Color.cyan)
-                        .frame(width: 12, height: 12)
+                    Image(systemName: "flame.fill")
+                        .foregroundColor(.orange)
+                        .font(.caption)
                     Text("Goal Met")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(Color.orange)
-                        .frame(width: 12, height: 12)
-                    Text("Partial")
+                    Image(systemName: "xmark")
+                        .foregroundColor(.red)
+                        .font(.caption)
+                    Text("Incomplete")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -734,38 +734,44 @@ struct HydrationDayView: View {
         let dayNumber = calendar.component(.day, from: date)
         let dayStatus = getDayStatus()
 
-        Button(action: {
-            selectedDate = date
-            showingAddHydration = true
-        }) {
-            ZStack {
-                // Background
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(dayStatus.backgroundColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(isToday() ? Color.blue : Color.clear, lineWidth: 2)
-                    )
+        ZStack {
+            // Background
+            RoundedRectangle(cornerRadius: 8)
+                .fill(dayStatus == .goalMet ? Color.orange.opacity(0.1) :
+                      dayStatus == .partial ? Color.red.opacity(0.1) :
+                      Color.gray.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(isToday() ? Color.blue : Color.clear, lineWidth: 2)
+                )
 
-                VStack(spacing: 4) {
-                    // Day number
-                    Text("\(dayNumber)")
-                        .font(.subheadline)
-                        .fontWeight(isToday() ? .bold : .medium)
-                        .foregroundColor(.primary)
+            VStack(spacing: 4) {
+                // Day number
+                Text("\(dayNumber)")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.primary)
 
-                    // Status indicator
-                    if dayStatus != .noData {
-                        Circle()
-                            .fill(dayStatus.indicatorColor)
-                            .frame(width: 6, height: 6)
+                // Status icon
+                Group {
+                    if dayStatus == .goalMet {
+                        Image(systemName: "flame.fill")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 16))
+                    } else if dayStatus == .partial {
+                        Image(systemName: "xmark")
+                            .foregroundColor(.red)
+                            .font(.system(size: 12))
                     }
                 }
-                .frame(maxWidth: .infinity)
-                .aspectRatio(1, contentMode: .fit)
             }
+            .padding(4)
         }
-        .buttonStyle(PlainButtonStyle())
+        .frame(maxWidth: .infinity)
+        .aspectRatio(1, contentMode: .fit)
+        .onTapGesture {
+            selectedDate = date
+            showingAddHydration = true
+        }
     }
 
     private func isToday() -> Bool {
@@ -798,22 +804,6 @@ struct HydrationDayView: View {
         case goalMet
         case partial
         case noData
-
-        var backgroundColor: Color {
-            switch self {
-            case .goalMet: return Color.cyan.opacity(0.1)
-            case .partial: return Color.orange.opacity(0.1)
-            case .noData: return Color.gray.opacity(0.05)
-            }
-        }
-
-        var indicatorColor: Color {
-            switch self {
-            case .goalMet: return .cyan
-            case .partial: return .orange
-            case .noData: return .clear
-            }
-        }
     }
 }
 

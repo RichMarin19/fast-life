@@ -45,3 +45,15 @@ fastlane/test_output
 
 # Code Injection
 iOSInjectionProject/
+
+# Backup files
+*.orig
+*.bak
+*~.nib
+*.swp
+*.swo
+*~
+
+# Temporary files
+.tmp/
+.temp/
