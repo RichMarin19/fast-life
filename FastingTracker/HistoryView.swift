@@ -1101,7 +1101,7 @@ struct StreakCalendarView: View {
                     if weekIndex * 7 + dayIndex < monthDays.count {
                         let dateItem = daysByWeek[weekIndex][dayIndex]
                         if let date = dateItem {
-                            CalendarDayView(date: date, selectedDate: $selectedDate, showingAddFast: $showingAddFast)
+                            CalendarDayView(date: date, selectedDate: $selectedDate)
                                 .environmentObject(fastingManager)
                         } else {
                             Color.clear
@@ -1178,7 +1178,6 @@ struct StreakCalendarView: View {
 struct CalendarDayView: View {
     let date: Date
     @Binding var selectedDate: Date?
-    @Binding var showingAddFast: Bool
     @EnvironmentObject var fastingManager: FastingManager
 
     var body: some View {
