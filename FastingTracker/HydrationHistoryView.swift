@@ -774,7 +774,9 @@ struct HydrationDayView: View {
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
             selectedDate = date
-            showingAddHydration = true
+            DispatchQueue.main.async {
+                showingAddHydration = true
+            }
         }
     }
 

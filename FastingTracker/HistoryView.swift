@@ -1213,7 +1213,9 @@ struct CalendarDayView: View {
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
             selectedDate = date
-            showingAddFast = true
+            DispatchQueue.main.async {
+                showingAddFast = true
+            }
         }
     }
 
