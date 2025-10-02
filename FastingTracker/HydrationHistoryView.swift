@@ -652,7 +652,6 @@ struct HydrationCalendarView: View {
                             HydrationDayView(
                                 date: date,
                                 selectedDate: $selectedDate,
-                                showingAddHydration: $showingAddHydration,
                                 hydrationManager: hydrationManager
                             )
                         } else {
@@ -732,7 +731,6 @@ struct HydrationCalendarView: View {
 struct HydrationDayView: View {
     let date: Date
     @Binding var selectedDate: Date?
-    @Binding var showingAddHydration: Bool
     @ObservedObject var hydrationManager: HydrationManager
 
     var body: some View {
