@@ -3,7 +3,7 @@
 > Intermittent fasting timer with hydration tracking, weight management, and HealthKit integration
 
 ## 📱 Current Version
-**1.1.1** (Build 3) - October 2, 2025
+**1.1.2** (Build 4) - October 2, 2025
 
 ## ✨ Features
 
@@ -178,6 +178,24 @@ open FastingTracker.xcodeproj
 
 ## 🐛 Bug Fix Log
 
+### v1.1.2 (October 2, 2025)
+- ✨ **Enhanced:** Custom goal input UX
+  - Added keyboard toolbar with "Done" button to dismiss keyboard
+  - User can now access "Save" button after entering custom goal
+  - Added `@FocusState` for proper keyboard management
+
+- 🎨 **Improved:** Goal button visual styling
+  - Increased goal display font size (36pt) for better readability
+  - Added subtle borders to unselected buttons (30% opacity)
+  - Improved spacing and modern corner radius (8px)
+  - Enhanced TextField with proper padding and background
+
+- 🐛 **Fixed:** Custom goal default value bug
+  - Custom goal now defaults to "0" instead of showing previous preset value
+  - Big display properly resets when entering custom mode
+  - Preset buttons clear custom text to prevent stale data
+  - Files: `HistoryView.swift`, `HydrationHistoryView.swift`
+
 ### v1.1.1 (October 2, 2025)
 - 🐛 **Fixed:** Calendar date truncation (HydrationHistoryView)
   - Changed font from `.subheadline` to `.system(size: 12)`
@@ -209,6 +227,7 @@ open FastingTracker.xcodeproj
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1.2 | Oct 2, 2025 | Custom goal UX improvements, keyboard toolbar, visual styling enhancements |
 | 1.1.1 | Oct 2, 2025 | Calendar visual fixes, date truncation bug fix |
 | 1.1.0 | Oct 1, 2025 | Hydration History, Weight Tracking, Insights |
 | 1.0.0 | Sep 30, 2025 | Initial release with fasting timer |

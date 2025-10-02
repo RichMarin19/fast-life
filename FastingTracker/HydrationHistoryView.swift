@@ -828,6 +828,7 @@ struct AddEditHydrationView: View {
     @State private var dailyGoalOunces: Double = 90
     @State private var customGoalText: String = ""
     @State private var isCustomGoal: Bool = false
+    @FocusState private var isCustomGoalFocused: Bool
 
     var body: some View {
         NavigationView {
@@ -874,58 +875,88 @@ struct AddEditHydrationView: View {
                 }
 
                 Section(header: Text("Goal")) {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 16) {
                         Text("\(Int(dailyGoalOunces)) oz")
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
                             .foregroundColor(.cyan)
                             .frame(maxWidth: .infinity)
-                            .padding(.vertical, 8)
 
-                        HStack(spacing: 8) {
-                            ForEach([60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0], id: \.self) { goal in
-                                Button(action: {
-                                    isCustomGoal = false
-                                    dailyGoalOunces = goal
-                                }) {
-                                    Text("\(Int(goal))oz")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(dailyGoalOunces == goal && !isCustomGoal ? .white : .cyan)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 8)
-                                        .background(dailyGoalOunces == goal && !isCustomGoal ? Color.cyan : Color.clear)
-                                        .cornerRadius(6)
+                        VStack(spacing: 10) {
+                            HStack(spacing: 6) {
+                                ForEach([60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0], id: \.self) { goal in
+                                    Button(action: {
+                                        isCustomGoal = false
+                                        dailyGoalOunces = goal
+                                        customGoalText = ""  // Clear custom text when selecting preset
+                                    }) {
+                                        Text("\(Int(goal))oz")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(dailyGoalOunces == goal && !isCustomGoal ? .white : .cyan)
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 10)
+                                            .background(dailyGoalOunces == goal && !isCustomGoal ? Color.cyan : Color(UIColor.secondarySystemGroupedBackground))
+                                            .cornerRadius(8)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(dailyGoalOunces == goal && !isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
+                                            )
+                                    }
                                 }
                             }
-                        }
 
-                        Button(action: {
-                            isCustomGoal = true
-                            customGoalText = String(Int(dailyGoalOunces))
-                        }) {
-                            Text("Custom")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(isCustomGoal ? .white : .cyan)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                                .background(isCustomGoal ? Color.cyan : Color.clear)
-                                .cornerRadius(6)
-                        }
-
-                        if isCustomGoal {
-                            HStack {
-                                TextField("Enter goal (oz)", text: $customGoalText)
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.center)
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .onChange(of: customGoalText) { _, newValue in
-                                        if let value = Double(newValue), value > 0 {
-                                            dailyGoalOunces = value
-                                        }
-                                    }
-                                Text("oz")
-                                    .foregroundColor(.secondary)
+                            Button(action: {
+                                // Always start with empty text field for custom input
+                                customGoalText = ""
+                                dailyGoalOunces = 0  // Reset display to 0 when entering custom mode
+                                isCustomGoal = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    isCustomGoalFocused = true
+                                }
+                            }) {
+                                Text("Custom")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(isCustomGoal ? .white : .cyan)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(isCustomGoal ? Color.cyan : Color(UIColor.secondarySystemGroupedBackground))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
+                                    )
                             }
-                            .padding(.top, 8)
+
+                            if isCustomGoal {
+                                HStack(spacing: 8) {
+                                    TextField("Enter goal", text: $customGoalText)
+                                        .keyboardType(.numberPad)
+                                        .multilineTextAlignment(.center)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .focused($isCustomGoalFocused)
+                                        .padding(.vertical, 12)
+                                        .padding(.horizontal, 16)
+                                        .background(Color(UIColor.secondarySystemGroupedBackground))
+                                        .cornerRadius(8)
+                                        .onChange(of: customGoalText) { _, newValue in
+                                            if let value = Double(newValue), value > 0 {
+                                                dailyGoalOunces = value
+                                            }
+                                        }
+                                        .toolbar {
+                                            ToolbarItemGroup(placement: .keyboard) {
+                                                Spacer()
+                                                Button("Done") {
+                                                    isCustomGoalFocused = false
+                                                }
+                                                .foregroundColor(.cyan)
+                                                .fontWeight(.semibold)
+                                            }
+                                        }
+                                    Text("oz")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.secondary)
+                                }
+                            }
                         }
                     }
                     .padding(.vertical, 8)

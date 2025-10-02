@@ -1266,6 +1266,7 @@ struct AddEditFastView: View {
     @State private var showingDeleteAlert = false
     @State private var customGoalText: String = ""
     @State private var isCustomGoal: Bool = false
+    @FocusState private var isCustomGoalFocused: Bool
 
     private var existingSession: FastingSession?
 
@@ -1370,64 +1371,95 @@ struct AddEditFastView: View {
                         .padding(.horizontal)
 
                     // Goal Picker
-                    VStack(spacing: 16) {
-                        Text("Goal")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                    VStack(spacing: 20) {
+                        VStack(spacing: 8) {
+                            Text("Goal")
+                                .font(.headline)
+                                .foregroundColor(.secondary)
 
-                        Text("\(Int(goalHours)) hours")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                            Text("\(Int(goalHours)) hours")
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                        }
 
-                        HStack(spacing: 8) {
-                            ForEach([8.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 36.0, 48.0], id: \.self) { goal in
-                                Button(action: {
-                                    isCustomGoal = false
-                                    goalHours = goal
-                                }) {
-                                    Text("\(Int(goal))h")
-                                        .font(.system(size: 14, weight: .medium))
-                                        .foregroundColor(goalHours == goal && !isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 8)
-                                        .background(goalHours == goal && !isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color.clear)
-                                        .cornerRadius(6)
+                        VStack(spacing: 12) {
+                            HStack(spacing: 6) {
+                                ForEach([8.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 36.0, 48.0], id: \.self) { goal in
+                                    Button(action: {
+                                        isCustomGoal = false
+                                        goalHours = goal
+                                        customGoalText = ""  // Clear custom text when selecting preset
+                                    }) {
+                                        Text("\(Int(goal))h")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(goalHours == goal && !isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
+                                            .frame(maxWidth: .infinity)
+                                            .padding(.vertical, 10)
+                                            .background(goalHours == goal && !isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color(UIColor.secondarySystemGroupedBackground))
+                                            .cornerRadius(8)
+                                            .overlay(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .stroke(goalHours == goal && !isCustomGoal ? Color.clear : Color(red: 0.4, green: 0.7, blue: 0.95).opacity(0.3), lineWidth: 1)
+                                            )
+                                    }
+                                }
+                            }
+
+                            Button(action: {
+                                // Always start with empty text field for custom input
+                                customGoalText = ""
+                                goalHours = 0  // Reset display to 0 when entering custom mode
+                                isCustomGoal = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                    isCustomGoalFocused = true
+                                }
+                            }) {
+                                Text("Custom")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .foregroundColor(isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                    .background(isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color(UIColor.secondarySystemGroupedBackground))
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(isCustomGoal ? Color.clear : Color(red: 0.4, green: 0.7, blue: 0.95).opacity(0.3), lineWidth: 1)
+                                    )
+                            }
+
+                            if isCustomGoal {
+                                HStack(spacing: 8) {
+                                    TextField("Enter goal", text: $customGoalText)
+                                        .keyboardType(.numberPad)
+                                        .multilineTextAlignment(.center)
+                                        .font(.system(size: 20, weight: .semibold))
+                                        .focused($isCustomGoalFocused)
+                                        .padding(.vertical, 12)
+                                        .padding(.horizontal, 16)
+                                        .background(Color(UIColor.secondarySystemGroupedBackground))
+                                        .cornerRadius(8)
+                                        .onChange(of: customGoalText) { _, newValue in
+                                            if let value = Double(newValue), value > 0 {
+                                                goalHours = value
+                                            }
+                                        }
+                                        .toolbar {
+                                            ToolbarItemGroup(placement: .keyboard) {
+                                                Spacer()
+                                                Button("Done") {
+                                                    isCustomGoalFocused = false
+                                                }
+                                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                                .fontWeight(.semibold)
+                                            }
+                                        }
+                                    Text("hours")
+                                        .font(.system(size: 16, weight: .medium))
+                                        .foregroundColor(.secondary)
                                 }
                             }
                         }
                         .padding(.horizontal)
-
-                        Button(action: {
-                            isCustomGoal = true
-                            customGoalText = String(Int(goalHours))
-                        }) {
-                            Text("Custom")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                                .background(isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color.clear)
-                                .cornerRadius(6)
-                        }
-                        .padding(.horizontal)
-
-                        if isCustomGoal {
-                            HStack {
-                                TextField("Enter goal (hours)", text: $customGoalText)
-                                    .keyboardType(.numberPad)
-                                    .multilineTextAlignment(.center)
-                                    .font(.system(size: 18, weight: .semibold))
-                                    .onChange(of: customGoalText) { _, newValue in
-                                        if let value = Double(newValue), value > 0 {
-                                            goalHours = value
-                                        }
-                                    }
-                                Text("hours")
-                                    .foregroundColor(.secondary)
-                            }
-                            .padding(.horizontal)
-                            .padding(.top, 8)
-                        }
                     }
                     .padding(.vertical)
 

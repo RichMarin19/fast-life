@@ -2,50 +2,58 @@
 
 > **Purpose:** Enable any AI/developer to continue development exactly where we left off
 
-**Last Updated:** October 2, 2025 - 11:30 AM
-**Session ID:** Calendar Visual Fixes + Backup System Setup
-**Status:** ✅ WORKING - Ready for live test before pushing to GitHub
+**Last Updated:** October 2, 2025 - 4:30 PM
+**Session ID:** Custom Goal Input UX Improvements
+**Status:** ✅ COMPLETE - Ready to push to GitHub
 
 ---
 
 ## 📍 Current State
 
-### ✅ What Just Got Done (Last 30 Minutes)
+### ✅ What Just Got Done (This Session)
 
-1. **Fixed Hydration Calendar Visual Consistency** ✅ VERIFIED WORKING
-   - Changed Goal Met from cyan circle → **orange flame** 🔥
-   - Changed Partial from orange circle → **red X** ❌
-   - Fixed date truncation bug ("20" showing as "...")
-   - File: `FastingTracker/HydrationHistoryView.swift`
-   - Lines modified: 599-627 (legend), 737-774 (day view), 803-807 (enum)
+1. **Added Keyboard Toolbar for Custom Goal Input** ✅ VERIFIED WORKING
+   - Added `@FocusState` for keyboard management in both views
+   - Added "Done" button on keyboard toolbar to dismiss keyboard
+   - User can now access "Save" button after entering custom goal
+   - Files: `HistoryView.swift`, `HydrationHistoryView.swift`
+   - Pattern follows [Apple's TextField best practices](https://developer.apple.com/documentation/swiftui/textfield)
 
-2. **Set Up Professional Backup System** ✅ COMMITTED LOCALLY
-   - Created comprehensive README.md with all pitfalls documented
-   - Enhanced .gitignore with backup file patterns
-   - Created git tag `v1.1.1` for permanent snapshot
-   - Created `develop` branch for future work
-   - **NOT PUSHED YET** - Waiting for user's live test confirmation
+2. **Improved Visual Styling of Goal Buttons** ✅ VERIFIED WORKING
+   - Increased goal display font size (28/32 → 36) for better visibility
+   - Added subtle borders to unselected buttons (30% opacity)
+   - Added background color to buttons using `secondarySystemGroupedBackground`
+   - Improved spacing and padding throughout (tighter 6px spacing, better vertical padding)
+   - Increased corner radius (6 → 8) for modern iOS design language
+   - Enhanced TextField styling with proper padding and background
+   - Files: `HistoryView.swift` lines 1374-1459, `HydrationHistoryView.swift` lines 877-958
 
-### 🧪 Awaiting User Action
+3. **Fixed Custom Goal Default Value Bug** ✅ VERIFIED WORKING
+   - Problem: When tapping "Custom", big display showed "120 oz" even with empty TextField
+   - Root cause: `dailyGoalOunces` retained old preset value when Custom mode activated
+   - Solution: Set `dailyGoalOunces = 0` / `goalHours = 0` when Custom button clicked
+   - Now displays "0 oz" / "0 hours" until user types new value
+   - Preset buttons clear `customGoalText` to prevent stale data
+   - Files: `HistoryView.swift` line 1411, `HydrationHistoryView.swift` line 910
 
-**BEFORE PUSHING TO GITHUB:**
-1. User must build app in Xcode (⌘B)
-2. User must test Hydration History calendar
-3. User must confirm "fixes are good"
-4. **ONLY THEN** execute: `git push origin main develop --tags`
+### 🎉 Ready to Push
+
+All changes tested and verified working by user. Ready to commit and push to GitHub.
 
 ---
 
 ## 🎯 Next Planned Work
 
-### Immediate Next Task (User's Words):
-> "We last left off working on the look and feel of the 'Hydration History'. I want the visual aesthetics to feel like the 'History' for fasting. I want to go section by section and fix 1 issue/section at a time."
+**Status:** No immediate tasks - waiting for user direction
 
-**Completed:** ✅ Calendar section (flame icons, X icons, date truncation)
+**Completed Items:**
+- ✅ Calendar visual consistency (flame/X icons)
+- ✅ Custom goal input with keyboard toolbar
+- ✅ Visual styling improvements
 
-**Next Section to Match:** TBD - User will specify next section after confirming calendar fixes work
-
-**Pattern:** Match Hydration History styling/behavior to Fasting History (use Fasting as reference)
+**Future Considerations:**
+- Continue matching Hydration History sections to Fasting History (if user requests)
+- Additional UI/UX improvements as identified
 
 ---
 
@@ -167,8 +175,8 @@ FastingTracker/
 ## 🔧 Technical Context
 
 ### Current Version
-- **App Version:** 1.1.1
-- **Build:** 3
+- **App Version:** 1.1.2
+- **Build:** 4
 - **iOS Target:** 16.0+
 - **Framework:** 100% SwiftUI (no UIKit)
 - **Dependencies:** None (all native)
@@ -176,9 +184,9 @@ FastingTracker/
 ### Git State
 ```
 Branch: main (stable)
-Last Commit: 1679752 - "style: Match Hydration calendar..."
-Tag: v1.1.1 (created, not pushed)
-Develop Branch: Created (not pushed)
+Last Commit: TBD - About to commit v1.1.2 changes
+Tag: v1.1.2 (will be created)
+Develop Branch: Exists (created in v1.1.1)
 
 Remotes:
 - origin: https://github.com/RichMarin19/fast-life.git
@@ -186,7 +194,12 @@ Remotes:
 ```
 
 ### Uncommitted Changes
-**NONE** - All changes committed locally, ready to push after user test
+**Changes staged for commit:**
+- Info.plist (version 1.1.2, build 4)
+- HistoryView.swift (keyboard toolbar, visual improvements, custom goal fix)
+- HydrationHistoryView.swift (keyboard toolbar, visual improvements, custom goal fix)
+- SESSION_STATE.md (updated documentation)
+- README.md (to be updated with v1.1.2 changes)
 
 ---
 
