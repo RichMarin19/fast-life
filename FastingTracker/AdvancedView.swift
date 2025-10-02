@@ -29,21 +29,25 @@ struct AdvancedView: View {
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
 
+                    // Hydration Tracking Feature
+                    Button(action: { navigationPath.append("hydrationTracking") }) {
+                        AdvancedFeatureCard(
+                            title: "Hydration Tracker",
+                            description: "Track water, coffee, and tea intake during fasting",
+                            icon: "drop.fill",
+                            color: .cyan,
+                            isAvailable: true
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal)
+
                     // Coming Soon Features
                     AdvancedFeatureCard(
                         title: "Mood & Energy Tracker",
                         description: "Track your mood and energy levels during fasting",
                         icon: "face.smiling.fill",
                         color: .orange,
-                        isAvailable: false
-                    )
-                    .padding(.horizontal)
-
-                    AdvancedFeatureCard(
-                        title: "Hydration Tracker",
-                        description: "Monitor your water intake throughout the day",
-                        icon: "drop.fill",
-                        color: .cyan,
                         isAvailable: false
                     )
                     .padding(.horizontal)
@@ -78,6 +82,8 @@ struct AdvancedView: View {
                 switch destination {
                 case "weightTracking":
                     WeightTrackingView()
+                case "hydrationTracking":
+                    HydrationTrackingView()
                 case "settings":
                     AppSettingsView(fastingManager: fastingManager)
                 default:
