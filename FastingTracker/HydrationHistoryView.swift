@@ -5,7 +5,6 @@ struct HydrationHistoryView: View {
     @ObservedObject var hydrationManager: HydrationManager
     @State private var selectedTimeRange: TimeRange = .week
     @State private var selectedDate: Date?
-    @State private var showingAddHydration = false
 
     enum TimeRange: String, CaseIterable {
         case week = "Week"
@@ -31,8 +30,7 @@ struct HydrationHistoryView: View {
                 // Calendar View
                 HydrationCalendarView(
                     hydrationManager: hydrationManager,
-                    selectedDate: $selectedDate,
-                    showingAddHydration: $showingAddHydration
+                    selectedDate: $selectedDate
                 )
                 .padding(.horizontal)
                 .padding(.top)
@@ -94,10 +92,8 @@ struct HydrationHistoryView: View {
         }
         .navigationTitle("Hydration History")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(isPresented: $showingAddHydration) {
-            if let date = selectedDate {
-                AddEditHydrationView(date: date, hydrationManager: hydrationManager)
-            }
+        .sheet(item: $selectedDate) { date in
+            AddEditHydrationView(date: date, hydrationManager: hydrationManager)
         }
     }
 
@@ -548,7 +544,6 @@ struct DrinkBadge: View {
 struct HydrationCalendarView: View {
     @ObservedObject var hydrationManager: HydrationManager
     @Binding var selectedDate: Date?
-    @Binding var showingAddHydration: Bool
     @State private var displayedMonth: Date = Date()
 
     var body: some View {
@@ -774,9 +769,6 @@ struct HydrationDayView: View {
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
             selectedDate = date
-            DispatchQueue.main.async {
-                showingAddHydration = true
-            }
         }
     }
 
@@ -963,6 +955,14 @@ struct AddEditHydrationView: View {
             let entry = DrinkEntry(type: .tea, amount: tea, date: entryTime)
             hydrationManager.addDrinkEntry(entry)
         }
+    }
+}
+
+// MARK: - Date Extension for Identifiable
+
+extension Date: Identifiable {
+    public var id: TimeInterval {
+        self.timeIntervalSince1970
     }
 }
 

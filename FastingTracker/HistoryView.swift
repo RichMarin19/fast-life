@@ -4,7 +4,6 @@ import Charts
 struct HistoryView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @State private var selectedDate: Date?
-    @State private var showingAddFast = false
 
     var body: some View {
         NavigationView {
@@ -27,7 +26,7 @@ struct HistoryView: View {
                         Spacer()
                     } else {
                         // Streak Calendar Visualization (First)
-                        StreakCalendarView(selectedDate: $selectedDate, showingAddFast: $showingAddFast)
+                        StreakCalendarView(selectedDate: $selectedDate)
                             .environmentObject(fastingManager)
                             .padding()
 
@@ -56,7 +55,6 @@ struct HistoryView: View {
                                     .contentShape(Rectangle())
                                     .onTapGesture {
                                         selectedDate = session.startTime
-                                        showingAddFast = true
                                     }
                                 Divider()
                                     .padding(.horizontal)
@@ -66,11 +64,9 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
-            .sheet(isPresented: $showingAddFast) {
-                if let date = selectedDate {
-                    AddEditFastView(date: date, fastingManager: fastingManager)
-                        .environmentObject(fastingManager)
-                }
+            .sheet(item: $selectedDate) { date in
+                AddEditFastView(date: date, fastingManager: fastingManager)
+                    .environmentObject(fastingManager)
             }
         }
     }
@@ -994,7 +990,6 @@ struct CustomDateRangePickerView: View {
 struct StreakCalendarView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @Binding var selectedDate: Date?
-    @Binding var showingAddFast: Bool
     @State private var displayedMonth: Date = Date()
 
     var body: some View {
@@ -1213,9 +1208,6 @@ struct CalendarDayView: View {
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
             selectedDate = date
-            DispatchQueue.main.async {
-                showingAddFast = true
-            }
         }
     }
 
@@ -1472,5 +1464,13 @@ struct AddEditFastView: View {
     private func deleteFast() {
         fastingManager.deleteFast(for: date)
         dismiss()
+    }
+}
+
+// MARK: - Date Extension for Identifiable
+
+extension Date: Identifiable {
+    public var id: TimeInterval {
+        self.timeIntervalSince1970
     }
 }
