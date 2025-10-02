@@ -210,21 +210,21 @@ struct HydrationStatsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 16) {
-                StatCard(
+                HydrationStatCard(
                     title: "Avg Daily",
                     value: "\(Int(averageDaily())) oz",
                     icon: "chart.bar.fill",
                     color: .cyan
                 )
 
-                StatCard(
+                HydrationStatCard(
                     title: "Total",
                     value: "\(Int(totalOunces())) oz",
                     icon: "drop.fill",
                     color: .blue
                 )
 
-                StatCard(
+                HydrationStatCard(
                     title: "Goal Met",
                     value: "\(goalMetDays())",
                     icon: "checkmark.circle.fill",
@@ -275,9 +275,9 @@ struct HydrationStatsView: View {
     }
 }
 
-// MARK: - Stat Card Component
+// MARK: - Hydration Stat Card Component
 
-struct StatCard: View {
+struct HydrationStatCard: View {
     let title: String
     let value: String
     let icon: String
