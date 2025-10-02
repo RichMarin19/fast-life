@@ -577,6 +577,10 @@ struct HydrationCalendarView: View {
                 }
 
                 Spacer()
+
+                Text("\(hydrationManager.currentStreak) day\(hydrationManager.currentStreak == 1 ? "" : "s")")
+                    .font(.headline)
+                    .foregroundColor(.cyan)
             }
 
             // Calendar Grid (Current Month)
