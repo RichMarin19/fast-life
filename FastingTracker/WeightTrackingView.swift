@@ -307,6 +307,15 @@ struct WeightChartView: View {
         })
     }
 
+    /// Get current time range label for display (e.g., "September 2025" for Month view)
+    var timeRangeLabel: String? {
+        guard selectedTimeRange == .month else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: Date())
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
@@ -319,6 +328,15 @@ struct WeightChartView: View {
                     }
                 }
                 .pickerStyle(.menu)
+            }
+
+            // Display current time range (Month/Year) for Month view
+            if let label = timeRangeLabel {
+                Text(label)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             if !chartData.isEmpty {
