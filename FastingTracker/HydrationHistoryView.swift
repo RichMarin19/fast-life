@@ -1,13 +1,6 @@
 import SwiftUI
 import Charts
 
-// MARK: - Identifiable Date Wrapper
-
-struct IdentifiableDate: Identifiable {
-    let id = UUID()
-    let date: Date
-}
-
 struct HydrationHistoryView: View {
     @ObservedObject var hydrationManager: HydrationManager
     @State private var selectedTimeRange: TimeRange = .week
