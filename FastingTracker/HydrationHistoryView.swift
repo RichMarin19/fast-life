@@ -826,6 +826,8 @@ struct AddEditHydrationView: View {
     @State private var coffeeAmount: String = ""
     @State private var teaAmount: String = ""
     @State private var dailyGoalOunces: Double = 90
+    @State private var customGoalText: String = ""
+    @State private var isCustomGoal: Bool = false
 
     var body: some View {
         NavigationView {
@@ -879,13 +881,54 @@ struct AddEditHydrationView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 8)
 
-                        Picker("Goal", selection: $dailyGoalOunces) {
+                        HStack(spacing: 8) {
                             ForEach([60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0], id: \.self) { goal in
-                                Text("\(Int(goal))oz").tag(goal)
+                                Button(action: {
+                                    isCustomGoal = false
+                                    dailyGoalOunces = goal
+                                }) {
+                                    Text("\(Int(goal))oz")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(dailyGoalOunces == goal && !isCustomGoal ? .white : .cyan)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(dailyGoalOunces == goal && !isCustomGoal ? Color.cyan : Color.clear)
+                                        .cornerRadius(6)
+                                }
                             }
                         }
-                        .pickerStyle(.segmented)
+
+                        Button(action: {
+                            isCustomGoal = true
+                            customGoalText = String(Int(dailyGoalOunces))
+                        }) {
+                            Text("Custom")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(isCustomGoal ? .white : .cyan)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(isCustomGoal ? Color.cyan : Color.clear)
+                                .cornerRadius(6)
+                        }
+
+                        if isCustomGoal {
+                            HStack {
+                                TextField("Enter goal (oz)", text: $customGoalText)
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .onChange(of: customGoalText) { _, newValue in
+                                        if let value = Double(newValue), value > 0 {
+                                            dailyGoalOunces = value
+                                        }
+                                    }
+                                Text("oz")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 8)
+                        }
                     }
+                    .padding(.vertical, 8)
                 }
 
                 Section {
@@ -912,6 +955,12 @@ struct AddEditHydrationView: View {
             }
             .onAppear {
                 dailyGoalOunces = hydrationManager.dailyGoalOunces
+                // Check if current goal is a preset value or custom
+                let presetGoals = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
+                if !presetGoals.contains(dailyGoalOunces) {
+                    isCustomGoal = true
+                    customGoalText = String(Int(dailyGoalOunces))
+                }
                 loadExistingData()
             }
         }

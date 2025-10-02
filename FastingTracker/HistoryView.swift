@@ -1264,6 +1264,8 @@ struct AddEditFastView: View {
     @State private var goalHours: Double = 16
     @State private var startTime: Date
     @State private var showingDeleteAlert = false
+    @State private var customGoalText: String = ""
+    @State private var isCustomGoal: Bool = false
 
     private var existingSession: FastingSession?
 
@@ -1377,13 +1379,55 @@ struct AddEditFastView: View {
                             .font(.system(size: 32, weight: .bold, design: .rounded))
                             .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
 
-                        Picker("Goal", selection: $goalHours) {
+                        HStack(spacing: 8) {
                             ForEach([8.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 36.0, 48.0], id: \.self) { goal in
-                                Text("\(Int(goal))h").tag(goal)
+                                Button(action: {
+                                    isCustomGoal = false
+                                    goalHours = goal
+                                }) {
+                                    Text("\(Int(goal))h")
+                                        .font(.system(size: 14, weight: .medium))
+                                        .foregroundColor(goalHours == goal && !isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 8)
+                                        .background(goalHours == goal && !isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color.clear)
+                                        .cornerRadius(6)
+                                }
                             }
                         }
-                        .pickerStyle(.segmented)
                         .padding(.horizontal)
+
+                        Button(action: {
+                            isCustomGoal = true
+                            customGoalText = String(Int(goalHours))
+                        }) {
+                            Text("Custom")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 8)
+                                .background(isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color.clear)
+                                .cornerRadius(6)
+                        }
+                        .padding(.horizontal)
+
+                        if isCustomGoal {
+                            HStack {
+                                TextField("Enter goal (hours)", text: $customGoalText)
+                                    .keyboardType(.numberPad)
+                                    .multilineTextAlignment(.center)
+                                    .font(.system(size: 18, weight: .semibold))
+                                    .onChange(of: customGoalText) { _, newValue in
+                                        if let value = Double(newValue), value > 0 {
+                                            goalHours = value
+                                        }
+                                    }
+                                Text("hours")
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.horizontal)
+                            .padding(.top, 8)
+                        }
                     }
                     .padding(.vertical)
 
@@ -1436,6 +1480,12 @@ struct AddEditFastView: View {
         }
         .onAppear {
             goalHours = fastingManager.fastingGoalHours
+            // Check if current goal is a preset value or custom
+            let presetGoals = [8.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 36.0, 48.0]
+            if !presetGoals.contains(goalHours) {
+                isCustomGoal = true
+                customGoalText = String(Int(goalHours))
+            }
         }
         .alert("Delete Fast", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
