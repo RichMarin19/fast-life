@@ -577,6 +577,11 @@ struct HydrationCalendarView: View {
                 }
 
                 Spacer()
+                if hydrationManager.currentStreak > 0 {
+                    Text("\(hydrationManager.currentStreak) day\(hydrationManager.currentStreak == 1 ? "" : "s")")
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                }
             }
 
             // Calendar Grid (Current Month)
@@ -599,9 +604,9 @@ struct HydrationCalendarView: View {
             // Legend
             HStack(spacing: 20) {
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(Color.cyan)
-                        .frame(width: 12, height: 12)
+                    Image(systemName: "flame.fill")
+                        .foregroundColor(.orange)
+                        .font(.system(size: 12))
                     Text("Goal Met")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -757,9 +762,13 @@ struct HydrationDayView: View {
                         .minimumScaleFactor(0.5)
 
                     // Status indicator
-                    if dayStatus != .noData {
+                    if dayStatus == .goalMet {
+                        Image(systemName: "flame.fill")
+                            .foregroundColor(.orange)
+                            .font(.system(size: 16))
+                    } else if dayStatus == .partial {
                         Circle()
-                            .fill(dayStatus.indicatorColor)
+                            .fill(.orange)
                             .frame(width: 6, height: 6)
                     }
                 }
@@ -803,17 +812,9 @@ struct HydrationDayView: View {
 
         var backgroundColor: Color {
             switch self {
-            case .goalMet: return Color.cyan.opacity(0.1)
+            case .goalMet: return Color.orange.opacity(0.1)
             case .partial: return Color.orange.opacity(0.1)
             case .noData: return Color.gray.opacity(0.05)
-            }
-        }
-
-        var indicatorColor: Color {
-            switch self {
-            case .goalMet: return .cyan
-            case .partial: return .orange
-            case .noData: return .clear
             }
         }
     }

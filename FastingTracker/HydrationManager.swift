@@ -47,14 +47,22 @@ struct DrinkEntry: Identifiable, Codable, Equatable {
 class HydrationManager: ObservableObject {
     @Published var drinkEntries: [DrinkEntry] = []
     @Published var dailyGoalOunces: Double = 64.0  // Default 8 glasses of water
+    @Published var currentStreak: Int = 0
+    @Published var longestStreak: Int = 0
 
     private let userDefaults = UserDefaults.standard
     private let drinkEntriesKey = "drinkEntries"
     private let dailyGoalKey = "dailyHydrationGoal"
+    private let streakKey = "hydrationCurrentStreak"
+    private let longestStreakKey = "hydrationLongestStreak"
 
     init() {
         loadDrinkEntries()
         loadDailyGoal()
+        loadStreak()
+        loadLongestStreak()
+        // Calculate streaks from history to ensure accuracy
+        calculateStreakFromHistory()
     }
 
     // MARK: - Add Drink Entry
@@ -66,6 +74,9 @@ class HydrationManager: ObservableObject {
         drinkEntries.sort { $0.date > $1.date }
 
         saveDrinkEntries()
+
+        // Recalculate streaks after adding entry
+        calculateStreakFromHistory()
     }
 
     func addDrink(type: DrinkType, amount: Double? = nil) {
@@ -79,6 +90,9 @@ class HydrationManager: ObservableObject {
     func deleteDrinkEntry(_ entry: DrinkEntry) {
         drinkEntries.removeAll { $0.id == entry.id }
         saveDrinkEntries()
+
+        // Recalculate streaks after deleting entry
+        calculateStreakFromHistory()
     }
 
     // MARK: - Daily Progress Calculations
@@ -147,5 +161,113 @@ class HydrationManager: ObservableObject {
         if savedGoal > 0 {
             dailyGoalOunces = savedGoal
         }
+    }
+
+    // MARK: - Streak Management
+
+    private func calculateStreakFromHistory() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Get all days that met the goal (group by day)
+        var goalMetDays: Set<Date> = []
+
+        for entry in drinkEntries {
+            let dayStart = calendar.startOfDay(for: entry.date)
+
+            // Get total for this day
+            let dayTotal = drinkEntries
+                .filter { calendar.isDate($0.date, inSameDayAs: dayStart) }
+                .reduce(0.0) { $0 + $1.amount }
+
+            if dayTotal >= dailyGoalOunces {
+                goalMetDays.insert(dayStart)
+            }
+        }
+
+        let sortedDays = goalMetDays.sorted(by: >)  // Most recent first
+
+        guard !sortedDays.isEmpty else {
+            currentStreak = 0
+            longestStreak = 0
+            saveStreak()
+            saveLongestStreak()
+            return
+        }
+
+        // Calculate current streak (must include today or yesterday)
+        let mostRecentDay = sortedDays[0]
+        let daysBetween = calendar.dateComponents([.day], from: mostRecentDay, to: today).day ?? 0
+
+        if daysBetween > 1 {
+            // Streak is broken
+            currentStreak = 0
+            saveStreak()
+        } else {
+            // Calculate current streak
+            var streak = 1
+            var currentDay = mostRecentDay
+
+            for i in 1..<sortedDays.count {
+                let previousDay = sortedDays[i]
+                let dayDiff = calendar.dateComponents([.day], from: previousDay, to: currentDay).day ?? 0
+
+                if dayDiff == 1 {
+                    streak += 1
+                    currentDay = previousDay
+                } else {
+                    break
+                }
+            }
+
+            currentStreak = streak
+            saveStreak()
+        }
+
+        // Calculate longest streak
+        var maxStreak = 0
+        var tempStreak = 0
+        var lastDay: Date?
+
+        let sortedAscending = sortedDays.sorted(by: <)  // Oldest first
+
+        for day in sortedAscending {
+            if let last = lastDay {
+                let dayDiff = calendar.dateComponents([.day], from: last, to: day).day ?? 0
+
+                if dayDiff == 1 {
+                    tempStreak += 1
+                } else {
+                    tempStreak = 1
+                }
+            } else {
+                tempStreak = 1
+            }
+
+            if tempStreak > maxStreak {
+                maxStreak = tempStreak
+            }
+
+            lastDay = day
+        }
+
+        longestStreak = maxStreak
+        saveLongestStreak()
+    }
+
+    private func saveStreak() {
+        userDefaults.set(currentStreak, forKey: streakKey)
+    }
+
+    private func loadStreak() {
+        currentStreak = userDefaults.integer(forKey: streakKey)
+    }
+
+    private func saveLongestStreak() {
+        userDefaults.set(longestStreak, forKey: longestStreakKey)
+    }
+
+    private func loadLongestStreak() {
+        longestStreak = userDefaults.integer(forKey: longestStreakKey)
     }
 }
