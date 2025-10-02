@@ -10,7 +10,14 @@ struct IdentifiableDate: Identifiable {
 
 struct HistoryView: View {
     @EnvironmentObject var fastingManager: FastingManager
-    @State private var selectedDate: IdentifiableDate?
+    @State private var selectedDate: Date?
+
+    private var selectedIdentifiableDate: Binding<IdentifiableDate?> {
+        Binding(
+            get: { selectedDate.map { IdentifiableDate(date: $0) } },
+            set: { selectedDate = $0?.date }
+        )
+    }
 
     var body: some View {
         NavigationView {
@@ -61,7 +68,7 @@ struct HistoryView: View {
                                     .padding(.vertical, 8)
                                     .contentShape(Rectangle())
                                     .onTapGesture {
-                                        selectedDate = IdentifiableDate(date: session.startTime)
+                                        selectedDate = session.startTime
                                     }
                                 Divider()
                                     .padding(.horizontal)
@@ -71,7 +78,7 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
-            .sheet(item: $selectedDate) { identifiableDate in
+            .sheet(item: selectedIdentifiableDate) { identifiableDate in
                 AddEditFastView(date: identifiableDate.date, fastingManager: fastingManager)
                     .environmentObject(fastingManager)
             }
@@ -996,7 +1003,7 @@ struct CustomDateRangePickerView: View {
 
 struct StreakCalendarView: View {
     @EnvironmentObject var fastingManager: FastingManager
-    @Binding var selectedDate: IdentifiableDate?
+    @Binding var selectedDate: Date?
     @State private var displayedMonth: Date = Date()
 
     var body: some View {
@@ -1214,7 +1221,7 @@ struct CalendarDayView: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
-            selectedDate = IdentifiableDate(date: date)
+            selectedDate = date
         }
     }
 

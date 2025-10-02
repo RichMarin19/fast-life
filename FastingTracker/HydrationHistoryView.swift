@@ -4,7 +4,14 @@ import Charts
 struct HydrationHistoryView: View {
     @ObservedObject var hydrationManager: HydrationManager
     @State private var selectedTimeRange: TimeRange = .week
-    @State private var selectedDate: IdentifiableDate?
+    @State private var selectedDate: Date?
+
+    private var selectedIdentifiableDate: Binding<IdentifiableDate?> {
+        Binding(
+            get: { selectedDate.map { IdentifiableDate(date: $0) } },
+            set: { selectedDate = $0?.date }
+        )
+    }
 
     enum TimeRange: String, CaseIterable {
         case week = "Week"
@@ -92,7 +99,7 @@ struct HydrationHistoryView: View {
         }
         .navigationTitle("Hydration History")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $selectedDate) { identifiableDate in
+        .sheet(item: selectedIdentifiableDate) { identifiableDate in
             AddEditHydrationView(date: identifiableDate.date, hydrationManager: hydrationManager)
         }
     }
@@ -543,7 +550,7 @@ struct DrinkBadge: View {
 
 struct HydrationCalendarView: View {
     @ObservedObject var hydrationManager: HydrationManager
-    @Binding var selectedDate: IdentifiableDate?
+    @Binding var selectedDate: Date?
     @State private var displayedMonth: Date = Date()
 
     var body: some View {
@@ -768,7 +775,7 @@ struct HydrationDayView: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
-            selectedDate = IdentifiableDate(date: date)
+            selectedDate = date
         }
     }
 
