@@ -1466,11 +1466,3 @@ struct AddEditFastView: View {
         dismiss()
     }
 }
-
-// MARK: - Date Extension for Identifiable
-
-extension Date: Identifiable {
-    public var id: TimeInterval {
-        self.timeIntervalSince1970
-    }
-}

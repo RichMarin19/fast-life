@@ -958,14 +958,6 @@ struct AddEditHydrationView: View {
     }
 }
 
-// MARK: - Date Extension for Identifiable
-
-extension Date: Identifiable {
-    public var id: TimeInterval {
-        self.timeIntervalSince1970
-    }
-}
-
 // MARK: - Array Extension for Chunking
 
 extension Array {
