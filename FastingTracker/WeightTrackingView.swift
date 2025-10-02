@@ -6,9 +6,14 @@ struct WeightTrackingView: View {
     @StateObject private var healthKitManager = HealthKitManager.shared
     @State private var showingAddWeight = false
     @State private var showingSettings = false
+    @State private var showingFirstTimeSetup = false
     @State private var selectedTimeRange: WeightTimeRange = .month
     @State private var showGoalLine = false
     @State private var weightGoal: Double = 180.0
+
+    // UserDefaults keys for persistence
+    private let showGoalLineKey = "showGoalLine"
+    private let weightGoalKey = "weightGoal"
 
     var body: some View {
         NavigationView {
@@ -64,7 +69,25 @@ struct WeightTrackingView: View {
                     weightGoal: $weightGoal
                 )
             }
+            .sheet(isPresented: $showingFirstTimeSetup) {
+                FirstTimeWeightSetupView(
+                    weightManager: weightManager,
+                    weightGoal: $weightGoal,
+                    showGoalLine: $showGoalLine
+                )
+            }
             .onAppear {
+                // Load saved goal settings from UserDefaults
+                loadGoalSettings()
+
+                // Show first-time setup if user has no weight data
+                // Small delay to ensure weightManager has loaded data from UserDefaults
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    if weightManager.weightEntries.isEmpty {
+                        showingFirstTimeSetup = true
+                    }
+                }
+
                 // Only request authorization on first appearance if needed
                 // Don't auto-sync on every view appearance - user can manually sync
                 if weightManager.syncWithHealthKit && !healthKitManager.isAuthorized {
@@ -73,7 +96,30 @@ struct WeightTrackingView: View {
                     }
                 }
             }
+            .onChange(of: showGoalLine) { _, _ in
+                saveGoalSettings()
+            }
+            .onChange(of: weightGoal) { _, _ in
+                saveGoalSettings()
+            }
         }
+    }
+
+    // MARK: - Goal Settings Persistence
+
+    private func loadGoalSettings() {
+        // Load show goal line preference (default: false)
+        showGoalLine = UserDefaults.standard.bool(forKey: showGoalLineKey)
+
+        // Load weight goal (default: 180.0 if not set)
+        if let savedGoal = UserDefaults.standard.object(forKey: weightGoalKey) as? Double {
+            weightGoal = savedGoal
+        }
+    }
+
+    func saveGoalSettings() {
+        UserDefaults.standard.set(showGoalLine, forKey: showGoalLineKey)
+        UserDefaults.standard.set(weightGoal, forKey: weightGoalKey)
     }
 }
 
@@ -1484,6 +1530,145 @@ struct XAxisScaleModifier: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+// MARK: - First Time Weight Setup View
+
+struct FirstTimeWeightSetupView: View {
+    @ObservedObject var weightManager: WeightManager
+    @Binding var weightGoal: Double
+    @Binding var showGoalLine: Bool
+    @Environment(\.dismiss) var dismiss
+
+    @State private var currentWeightString: String = ""
+    @State private var goalWeightString: String = ""
+    @State private var showError: Bool = false
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 32) {
+                    // Header
+                    VStack(spacing: 12) {
+                        Image(systemName: "scalemass.fill")
+                            .font(.system(size: 60))
+                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+
+                        Text("Welcome to Weight Tracking")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .multilineTextAlignment(.center)
+
+                        Text("Let's get started by setting up your weight goals")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .padding(.top, 40)
+
+                    // Current Weight Input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Current Weight")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        HStack {
+                            TextField("Enter weight", text: $currentWeightString)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .multilineTextAlignment(.center)
+                                .padding()
+                                .background(Color(.systemGray6))
+                                .cornerRadius(12)
+
+                            Text("lbs")
+                                .font(.title3)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    // Goal Weight Input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Goal Weight")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+
+                        HStack {
+                            TextField("Enter goal", text: $goalWeightString)
+                                .keyboardType(.decimalPad)
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .multilineTextAlignment(.center)
+                                .padding()
+                                .background(Color(.systemGray6))
+                                .cornerRadius(12)
+
+                            Text("lbs")
+                                .font(.title3)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .padding(.horizontal)
+
+                    // Error message
+                    if showError {
+                        Text("Please enter valid weights")
+                            .font(.caption)
+                            .foregroundColor(.red)
+                    }
+
+                    // Get Started Button
+                    Button(action: saveAndContinue) {
+                        Text("Get Started")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color(red: 0.2, green: 0.6, blue: 0.86))
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal)
+                    .padding(.top, 20)
+
+                    Spacer()
+                }
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .interactiveDismissDisabled() // Prevent dismissal without entering data
+        }
+    }
+
+    private func saveAndContinue() {
+        // Validate inputs
+        guard let currentWeight = Double(currentWeightString),
+              let goalWeight = Double(goalWeightString),
+              currentWeight > 0,
+              goalWeight > 0 else {
+            showError = true
+            return
+        }
+
+        // Save current weight entry
+        let entry = WeightEntry(
+            id: UUID(),
+            date: Date(),
+            weight: currentWeight,
+            bmi: nil,
+            bodyFat: nil,
+            source: .manual
+        )
+        weightManager.addWeightEntry(entry)
+
+        // Save goal weight
+        weightGoal = goalWeight
+
+        // Enable goal line by default
+        showGoalLine = true
+
+        // Dismiss the sheet
+        dismiss()
     }
 }
 
