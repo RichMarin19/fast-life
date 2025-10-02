@@ -1,9 +1,16 @@
 import SwiftUI
 import Charts
 
+// MARK: - Identifiable Date Wrapper
+
+struct IdentifiableDate: Identifiable {
+    let id = UUID()
+    let date: Date
+}
+
 struct HistoryView: View {
     @EnvironmentObject var fastingManager: FastingManager
-    @State private var selectedDate: Date?
+    @State private var selectedDate: IdentifiableDate?
 
     var body: some View {
         NavigationView {
@@ -54,7 +61,7 @@ struct HistoryView: View {
                                     .padding(.vertical, 8)
                                     .contentShape(Rectangle())
                                     .onTapGesture {
-                                        selectedDate = session.startTime
+                                        selectedDate = IdentifiableDate(date: session.startTime)
                                     }
                                 Divider()
                                     .padding(.horizontal)
@@ -64,8 +71,8 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
-            .sheet(item: $selectedDate) { date in
-                AddEditFastView(date: date, fastingManager: fastingManager)
+            .sheet(item: $selectedDate) { identifiableDate in
+                AddEditFastView(date: identifiableDate.date, fastingManager: fastingManager)
                     .environmentObject(fastingManager)
             }
         }
@@ -989,7 +996,7 @@ struct CustomDateRangePickerView: View {
 
 struct StreakCalendarView: View {
     @EnvironmentObject var fastingManager: FastingManager
-    @Binding var selectedDate: Date?
+    @Binding var selectedDate: IdentifiableDate?
     @State private var displayedMonth: Date = Date()
 
     var body: some View {
@@ -1207,7 +1214,7 @@ struct CalendarDayView: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
-            selectedDate = date
+            selectedDate = IdentifiableDate(date: date)
         }
     }
 

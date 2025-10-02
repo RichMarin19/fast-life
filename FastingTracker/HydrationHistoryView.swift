@@ -1,10 +1,17 @@
 import SwiftUI
 import Charts
 
+// MARK: - Identifiable Date Wrapper
+
+struct IdentifiableDate: Identifiable {
+    let id = UUID()
+    let date: Date
+}
+
 struct HydrationHistoryView: View {
     @ObservedObject var hydrationManager: HydrationManager
     @State private var selectedTimeRange: TimeRange = .week
-    @State private var selectedDate: Date?
+    @State private var selectedDate: IdentifiableDate?
 
     enum TimeRange: String, CaseIterable {
         case week = "Week"
@@ -92,8 +99,8 @@ struct HydrationHistoryView: View {
         }
         .navigationTitle("Hydration History")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: $selectedDate) { date in
-            AddEditHydrationView(date: date, hydrationManager: hydrationManager)
+        .sheet(item: $selectedDate) { identifiableDate in
+            AddEditHydrationView(date: identifiableDate.date, hydrationManager: hydrationManager)
         }
     }
 
@@ -543,7 +550,7 @@ struct DrinkBadge: View {
 
 struct HydrationCalendarView: View {
     @ObservedObject var hydrationManager: HydrationManager
-    @Binding var selectedDate: Date?
+    @Binding var selectedDate: IdentifiableDate?
     @State private var displayedMonth: Date = Date()
 
     var body: some View {
@@ -768,7 +775,7 @@ struct HydrationDayView: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
-            selectedDate = date
+            selectedDate = IdentifiableDate(date: date)
         }
     }
 
