@@ -4,6 +4,8 @@ import Charts
 struct HydrationHistoryView: View {
     @ObservedObject var hydrationManager: HydrationManager
     @State private var selectedTimeRange: TimeRange = .week
+    @State private var selectedDate: Date?
+    @State private var showingAddHydration = false
 
     enum TimeRange: String, CaseIterable {
         case week = "Week"
@@ -26,6 +28,15 @@ struct HydrationHistoryView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
+                // Calendar View
+                HydrationCalendarView(
+                    hydrationManager: hydrationManager,
+                    selectedDate: $selectedDate,
+                    showingAddHydration: $showingAddHydration
+                )
+                .padding(.horizontal)
+                .padding(.top)
+
                 // Time Range Picker
                 Picker("Time Range", selection: $selectedTimeRange) {
                     ForEach(TimeRange.allCases, id: \.self) { range in
@@ -34,7 +45,6 @@ struct HydrationHistoryView: View {
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
-                .padding(.top)
 
                 // Hydration Chart
                 HydrationChartView(
@@ -84,6 +94,11 @@ struct HydrationHistoryView: View {
         }
         .navigationTitle("Hydration History")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showingAddHydration) {
+            if let date = selectedDate {
+                AddEditHydrationView(date: date, hydrationManager: hydrationManager)
+            }
+        }
     }
 
     // MARK: - Data Grouping
@@ -524,6 +539,443 @@ struct DrinkBadge: View {
         case .water: return .cyan
         case .coffee: return .brown
         case .tea: return .green
+        }
+    }
+}
+
+// MARK: - Hydration Calendar View
+
+struct HydrationCalendarView: View {
+    @ObservedObject var hydrationManager: HydrationManager
+    @Binding var selectedDate: Date?
+    @Binding var showingAddHydration: Bool
+    @State private var displayedMonth: Date = Date()
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Header with Month/Year
+            HStack {
+                Image(systemName: "drop.fill")
+                    .foregroundColor(.cyan)
+                    .font(.title2)
+
+                Button(action: previousMonth) {
+                    Image(systemName: "chevron.left")
+                        .foregroundColor(.primary)
+                        .font(.title3)
+                }
+
+                Text(currentMonthYear)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .frame(minWidth: 180)
+
+                Button(action: nextMonth) {
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(.primary)
+                        .font(.title3)
+                }
+
+                Spacer()
+            }
+
+            // Calendar Grid (Current Month)
+            VStack(spacing: 12) {
+                // Weekday headers
+                HStack(spacing: 8) {
+                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
+                        Text(day)
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+
+                // Calendar days grid
+                calendarGridView
+            }
+
+            // Legend
+            HStack(spacing: 20) {
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(Color.cyan)
+                        .frame(width: 12, height: 12)
+                    Text("Goal Met")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(Color.orange)
+                        .frame(width: 12, height: 12)
+                    Text("Partial")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+
+                HStack(spacing: 6) {
+                    Circle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(width: 12, height: 12)
+                    Text("No Data")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+    }
+
+    @ViewBuilder
+    private var calendarGridView: some View {
+        let monthDays = getMonthDays()
+        let daysByWeek = monthDays.chunked(into: 7)
+
+        ForEach(0..<daysByWeek.count, id: \.self) { weekIndex in
+            HStack(spacing: 8) {
+                ForEach(0..<7, id: \.self) { dayIndex in
+                    if weekIndex * 7 + dayIndex < monthDays.count {
+                        let dateItem = daysByWeek[weekIndex][dayIndex]
+                        if let date = dateItem {
+                            HydrationDayView(
+                                date: date,
+                                selectedDate: $selectedDate,
+                                showingAddHydration: $showingAddHydration,
+                                hydrationManager: hydrationManager
+                            )
+                        } else {
+                            Color.clear
+                                .frame(maxWidth: .infinity)
+                                .aspectRatio(1, contentMode: .fit)
+                        }
+                    } else {
+                        Color.clear
+                            .frame(maxWidth: .infinity)
+                            .aspectRatio(1, contentMode: .fit)
+                    }
+                }
+            }
+        }
+    }
+
+    private var currentMonthYear: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: displayedMonth)
+    }
+
+    private func previousMonth() {
+        let calendar = Calendar.current
+        if let newMonth = calendar.date(byAdding: .month, value: -1, to: displayedMonth) {
+            displayedMonth = newMonth
+        }
+    }
+
+    private func nextMonth() {
+        let calendar = Calendar.current
+        if let newMonth = calendar.date(byAdding: .month, value: 1, to: displayedMonth) {
+            displayedMonth = newMonth
+        }
+    }
+
+    private func getMonthDays() -> [Date?] {
+        let calendar = Calendar.current
+
+        // Get the first day of the displayed month
+        guard let monthInterval = calendar.dateInterval(of: .month, for: displayedMonth),
+              let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthInterval.start)) else {
+            return []
+        }
+
+        // Get number of days in month
+        guard let daysInMonth = calendar.range(of: .day, in: .month, for: firstDayOfMonth)?.count else {
+            return []
+        }
+
+        // Get weekday of first day (0 = Sunday, 1 = Monday, etc.)
+        let firstWeekday = calendar.component(.weekday, from: firstDayOfMonth)
+        let leadingEmptyDays = firstWeekday - 1 // Number of empty slots before month starts
+
+        // Create array with leading nils, then dates
+        var days: [Date?] = Array(repeating: nil, count: leadingEmptyDays)
+
+        for day in 0..<daysInMonth {
+            if let date = calendar.date(byAdding: .day, value: day, to: firstDayOfMonth) {
+                days.append(date)
+            }
+        }
+
+        // Pad to fill last week (ensure multiple of 7)
+        let totalSlots = ((days.count + 6) / 7) * 7
+        while days.count < totalSlots {
+            days.append(nil)
+        }
+
+        return days
+    }
+}
+
+// MARK: - Hydration Day View
+
+struct HydrationDayView: View {
+    let date: Date
+    @Binding var selectedDate: Date?
+    @Binding var showingAddHydration: Bool
+    @ObservedObject var hydrationManager: HydrationManager
+
+    var body: some View {
+        let calendar = Calendar.current
+        let dayNumber = calendar.component(.day, from: date)
+        let dayStatus = getDayStatus()
+
+        Button(action: {
+            selectedDate = date
+            showingAddHydration = true
+        }) {
+            ZStack {
+                // Background
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(dayStatus.backgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8)
+                            .stroke(isToday() ? Color.blue : Color.clear, lineWidth: 2)
+                    )
+
+                VStack(spacing: 4) {
+                    // Day number
+                    Text("\(dayNumber)")
+                        .font(.subheadline)
+                        .fontWeight(isToday() ? .bold : .medium)
+                        .foregroundColor(.primary)
+
+                    // Status indicator
+                    if dayStatus != .noData {
+                        Circle()
+                            .fill(dayStatus.indicatorColor)
+                            .frame(width: 6, height: 6)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .aspectRatio(1, contentMode: .fit)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+
+    private func isToday() -> Bool {
+        Calendar.current.isDateInToday(date)
+    }
+
+    private func getDayStatus() -> DayStatus {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+
+        // Get drinks for this day
+        let dayDrinks = hydrationManager.drinkEntries.filter { entry in
+            calendar.isDate(entry.date, inSameDayAs: dayStart)
+        }
+
+        if dayDrinks.isEmpty {
+            return .noData
+        }
+
+        let totalOunces = dayDrinks.reduce(0.0) { $0 + $1.amount }
+
+        if totalOunces >= hydrationManager.dailyGoalOunces {
+            return .goalMet
+        } else {
+            return .partial
+        }
+    }
+
+    enum DayStatus {
+        case goalMet
+        case partial
+        case noData
+
+        var backgroundColor: Color {
+            switch self {
+            case .goalMet: return Color.cyan.opacity(0.1)
+            case .partial: return Color.orange.opacity(0.1)
+            case .noData: return Color.gray.opacity(0.05)
+            }
+        }
+
+        var indicatorColor: Color {
+            switch self {
+            case .goalMet: return .cyan
+            case .partial: return .orange
+            case .noData: return .clear
+            }
+        }
+    }
+}
+
+// MARK: - Add/Edit Hydration View
+
+struct AddEditHydrationView: View {
+    let date: Date
+    @ObservedObject var hydrationManager: HydrationManager
+    @Environment(\.dismiss) var dismiss
+
+    @State private var waterAmount: String = ""
+    @State private var coffeeAmount: String = ""
+    @State private var teaAmount: String = ""
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Date")) {
+                    HStack {
+                        Text(formatDate(date))
+                            .font(.body)
+                        Spacer()
+                    }
+                }
+
+                Section(header: Text("Water")) {
+                    HStack {
+                        Image(systemName: "drop.fill")
+                            .foregroundColor(.cyan)
+                        TextField("Amount (oz)", text: $waterAmount)
+                            .keyboardType(.decimalPad)
+                        Text("oz")
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Section(header: Text("Coffee")) {
+                    HStack {
+                        Image(systemName: "cup.and.saucer.fill")
+                            .foregroundColor(.brown)
+                        TextField("Amount (oz)", text: $coffeeAmount)
+                            .keyboardType(.decimalPad)
+                        Text("oz")
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Section(header: Text("Tea")) {
+                    HStack {
+                        Image(systemName: "mug.fill")
+                            .foregroundColor(.green)
+                        TextField("Amount (oz)", text: $teaAmount)
+                            .keyboardType(.decimalPad)
+                        Text("oz")
+                            .foregroundColor(.secondary)
+                    }
+                }
+
+                Section {
+                    Text("Enter the total amount consumed for each drink type on this day.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .navigationTitle("Add Hydration")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveHydration()
+                        dismiss()
+                    }
+                    .disabled(!hasValidInput())
+                }
+            }
+            .onAppear {
+                loadExistingData()
+            }
+        }
+    }
+
+    private func formatDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        return formatter.string(from: date)
+    }
+
+    private func hasValidInput() -> Bool {
+        let water = Double(waterAmount) ?? 0
+        let coffee = Double(coffeeAmount) ?? 0
+        let tea = Double(teaAmount) ?? 0
+        return water > 0 || coffee > 0 || tea > 0
+    }
+
+    private func loadExistingData() {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+
+        // Get existing drinks for this day
+        let dayDrinks = hydrationManager.drinkEntries.filter { entry in
+            calendar.isDate(entry.date, inSameDayAs: dayStart)
+        }
+
+        // Sum up by type
+        var waterTotal = 0.0
+        var coffeeTotal = 0.0
+        var teaTotal = 0.0
+
+        for drink in dayDrinks {
+            switch drink.type {
+            case .water: waterTotal += drink.amount
+            case .coffee: coffeeTotal += drink.amount
+            case .tea: teaTotal += drink.amount
+            }
+        }
+
+        // Populate fields if data exists
+        if waterTotal > 0 { waterAmount = String(Int(waterTotal)) }
+        if coffeeTotal > 0 { coffeeAmount = String(Int(coffeeTotal)) }
+        if teaTotal > 0 { teaAmount = String(Int(teaTotal)) }
+    }
+
+    private func saveHydration() {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: date)
+
+        // Remove existing entries for this day
+        hydrationManager.drinkEntries.removeAll { entry in
+            calendar.isDate(entry.date, inSameDayAs: dayStart)
+        }
+
+        // Add new entries (use noon as the time)
+        let entryTime = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: dayStart) ?? dayStart
+
+        if let water = Double(waterAmount), water > 0 {
+            let entry = DrinkEntry(type: .water, amount: water, date: entryTime)
+            hydrationManager.addDrinkEntry(entry)
+        }
+
+        if let coffee = Double(coffeeAmount), coffee > 0 {
+            let entry = DrinkEntry(type: .coffee, amount: coffee, date: entryTime)
+            hydrationManager.addDrinkEntry(entry)
+        }
+
+        if let tea = Double(teaAmount), tea > 0 {
+            let entry = DrinkEntry(type: .tea, amount: tea, date: entryTime)
+            hydrationManager.addDrinkEntry(entry)
+        }
+    }
+}
+
+// MARK: - Array Extension for Chunking
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
         }
     }
 }
