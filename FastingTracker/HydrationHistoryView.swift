@@ -825,6 +825,7 @@ struct AddEditHydrationView: View {
     @State private var waterAmount: String = ""
     @State private var coffeeAmount: String = ""
     @State private var teaAmount: String = ""
+    @State private var dailyGoalOunces: Double = 90
 
     var body: some View {
         NavigationView {
@@ -870,6 +871,23 @@ struct AddEditHydrationView: View {
                     }
                 }
 
+                Section(header: Text("Goal")) {
+                    VStack(spacing: 12) {
+                        Text("\(Int(dailyGoalOunces)) oz")
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundColor(.cyan)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+
+                        Picker("Goal", selection: $dailyGoalOunces) {
+                            ForEach([60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0], id: \.self) { goal in
+                                Text("\(Int(goal))oz").tag(goal)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                    }
+                }
+
                 Section {
                     Text("Enter the total amount consumed for each drink type on this day.")
                         .font(.caption)
@@ -893,6 +911,7 @@ struct AddEditHydrationView: View {
                 }
             }
             .onAppear {
+                dailyGoalOunces = hydrationManager.dailyGoalOunces
                 loadExistingData()
             }
         }
@@ -940,6 +959,9 @@ struct AddEditHydrationView: View {
     }
 
     private func saveHydration() {
+        // Update the global daily goal
+        hydrationManager.dailyGoalOunces = dailyGoalOunces
+
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
 
