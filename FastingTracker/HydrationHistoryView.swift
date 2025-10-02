@@ -753,6 +753,8 @@ struct HydrationDayView: View {
                         .font(.subheadline)
                         .fontWeight(isToday() ? .bold : .medium)
                         .foregroundColor(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.5)
 
                     // Status indicator
                     if dayStatus != .noData {
@@ -761,7 +763,7 @@ struct HydrationDayView: View {
                             .frame(width: 6, height: 6)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .aspectRatio(1, contentMode: .fit)
             }
         }
