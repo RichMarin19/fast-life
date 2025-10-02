@@ -53,9 +53,19 @@ struct HydrationHistoryView: View {
                 )
                 .padding()
 
-                // Total Lifetime Stats (matches TotalStatsView from Fasting History)
-                HydrationTotalStatsView(hydrationManager: hydrationManager)
-                    .padding()
+                // Daily Average Stats
+                HydrationStatsView(
+                    hydrationManager: hydrationManager,
+                    timeRange: selectedTimeRange
+                )
+                .padding()
+
+                // Drink Type Breakdown
+                DrinkTypeBreakdownView(
+                    hydrationManager: hydrationManager,
+                    timeRange: selectedTimeRange
+                )
+                .padding()
 
                 // Daily History List
                 VStack(spacing: 0) {
@@ -263,145 +273,175 @@ struct HydrationChartView: View {
     }
 }
 
-// MARK: - Hydration Total Stats View
+// MARK: - Hydration Stats View
 
-struct HydrationTotalStatsView: View {
+struct HydrationStatsView: View {
     @ObservedObject var hydrationManager: HydrationManager
+    let timeRange: HydrationHistoryView.TimeRange
 
     var body: some View {
+        VStack(spacing: 12) {
+            Text("Statistics")
+                .font(.headline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            HStack(spacing: 16) {
+                HydrationStatCard(
+                    title: "Avg Daily",
+                    value: "\(Int(averageDaily())) oz",
+                    icon: "chart.bar.fill",
+                    color: .cyan
+                )
+
+                HydrationStatCard(
+                    title: "Total",
+                    value: "\(Int(totalOunces())) oz",
+                    icon: "drop.fill",
+                    color: .blue
+                )
+
+                HydrationStatCard(
+                    title: "Goal Met",
+                    value: "\(goalMetDays())",
+                    icon: "checkmark.circle.fill",
+                    color: .green
+                )
+            }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+    }
+
+    private func averageDaily() -> Double {
         let calendar = Calendar.current
+        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+        let entries = hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
 
-        // Calculate lifetime stats
-        var totalDaysLogged = 0
-        var totalOunces = 0.0
-        var totalDaysMetGoal = 0
+        if entries.isEmpty { return 0.0 }
 
-        // Group entries by day
+        let total = entries.reduce(0.0) { $0 + $1.amount }
+        let days = Set(entries.map { calendar.startOfDay(for: $0.date) }).count
+
+        return total / Double(max(days, 1))
+    }
+
+    private func totalOunces() -> Double {
+        let calendar = Calendar.current
+        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+        return hydrationManager.drinkEntries
+            .filter { $0.date >= cutoffDate }
+            .reduce(0.0) { $0 + $1.amount }
+    }
+
+    private func goalMetDays() -> Int {
+        let calendar = Calendar.current
+        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+        let entries = hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
+
+        // Group by day and count days that met goal
         var dailyTotals: [Date: Double] = [:]
-        for entry in hydrationManager.drinkEntries {
+        for entry in entries {
             let dayStart = calendar.startOfDay(for: entry.date)
             dailyTotals[dayStart, default: 0.0] += entry.amount
         }
 
-        // Calculate totals
-        totalDaysLogged = dailyTotals.count
-        totalOunces = hydrationManager.drinkEntries.reduce(0.0) { $0 + $1.amount }
-        totalDaysMetGoal = dailyTotals.values.filter { $0 >= hydrationManager.dailyGoalOunces }.count
+        return dailyTotals.values.filter { $0 >= hydrationManager.dailyGoalOunces }.count
+    }
+}
 
-        let longestStreak = hydrationManager.longestStreak
+// MARK: - Hydration Stat Card Component
 
-        VStack(spacing: 16) {
-            // First row
-            HStack(spacing: 16) {
-                // Total Days Logged
-                VStack(spacing: 8) {
-                    Image(systemName: "calendar.badge.clock")
-                        .font(.title2)
-                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
-                    Text("\(totalDaysLogged)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Lifetime Days Logged")
+struct HydrationStatCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+
+            Text(value)
+                .font(.headline)
+                .fontWeight(.bold)
+
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding()
+        .background(color.opacity(0.1))
+        .cornerRadius(12)
+    }
+}
+
+// MARK: - Drink Type Breakdown View
+
+struct DrinkTypeBreakdownView: View {
+    @ObservedObject var hydrationManager: HydrationManager
+    let timeRange: HydrationHistoryView.TimeRange
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Drink Breakdown")
+                .font(.headline)
+
+            ForEach(DrinkType.allCases, id: \.self) { type in
+                HStack {
+                    Image(systemName: type.icon)
+                        .foregroundColor(colorForType(type))
+                        .frame(width: 24)
+
+                    Text(type.rawValue)
+                        .font(.subheadline)
+
+                    Spacer()
+
+                    Text("\(Int(totalForType(type))) oz")
+                        .font(.subheadline)
+                        .fontWeight(.semibold)
+
+                    Text("(\(percentageForType(type))%)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-
-                // Total Ounces
-                VStack(spacing: 8) {
-                    Image(systemName: "drop.fill")
-                        .font(.title2)
-                        .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
-                    Text("\(Int(totalOunces))")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Lifetime Ounces Consumed")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
+                .padding(.vertical, 4)
             }
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+    }
 
-            // Second row
-            HStack(spacing: 16) {
-                // Days Met Goal
-                VStack(spacing: 8) {
-                    Image(systemName: "target")
-                        .font(.title2)
-                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.4))
-                    Text("\(totalDaysMetGoal)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Lifetime Days Met Goal")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-
-                // Longest Streak
-                VStack(spacing: 8) {
-                    Image(systemName: "flame.fill")
-                        .font(.title2)
-                        .foregroundColor(Color(red: 1.0, green: 0.5, blue: 0.0))
-                    Text("\(longestStreak)")
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Longest Lifetime Streak")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-            }
-
-            // Third row - Average Ounces Per Day (centered)
-            HStack {
-                Spacer()
-                VStack(spacing: 8) {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.title2)
-                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
-                    Text(averageOuncesText(daysLogged: totalDaysLogged, totalOunces: totalOunces))
-                        .font(.system(size: 36, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Average Ounces Per Day")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: .infinity)
-                .padding()
-                .background(Color.white)
-                .cornerRadius(16)
-                .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-                Spacer()
-            }
+    private func colorForType(_ type: DrinkType) -> Color {
+        switch type {
+        case .water: return .cyan
+        case .coffee: return .brown
+        case .tea: return .green
         }
     }
 
-    // Calculate average ounces per day logged
-    private func averageOuncesText(daysLogged: Int, totalOunces: Double) -> String {
-        guard daysLogged > 0 else { return "0" }
-        let average = totalOunces / Double(daysLogged)
-        return String(format: "%.1f", average)
+    private func totalForType(_ type: DrinkType) -> Double {
+        let calendar = Calendar.current
+        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+
+        return hydrationManager.drinkEntries
+            .filter { $0.date >= cutoffDate && $0.type == type }
+            .reduce(0.0) { $0 + $1.amount }
+    }
+
+    private func percentageForType(_ type: DrinkType) -> Int {
+        let total = totalForType(type)
+        let allTotal = DrinkType.allCases.reduce(0.0) { $0 + totalForType($1) }
+
+        guard allTotal > 0 else { return 0 }
+        return Int((total / allTotal) * 100)
     }
 }
 
@@ -537,10 +577,6 @@ struct HydrationCalendarView: View {
                 }
 
                 Spacer()
-
-                Text("\(hydrationManager.currentStreak) day\(hydrationManager.currentStreak == 1 ? "" : "s")")
-                    .font(.headline)
-                    .foregroundColor(.orange)
             }
 
             // Calendar Grid (Current Month)
@@ -563,9 +599,9 @@ struct HydrationCalendarView: View {
             // Legend
             HStack(spacing: 20) {
                 HStack(spacing: 6) {
-                    Image(systemName: "flame.fill")
-                        .foregroundColor(.orange)
-                        .font(.system(size: 12))
+                    Circle()
+                        .fill(Color.cyan)
+                        .frame(width: 12, height: 12)
                     Text("Goal Met")
                         .font(.caption)
                         .foregroundColor(.secondary)
@@ -717,21 +753,15 @@ struct HydrationDayView: View {
                         .font(.subheadline)
                         .fontWeight(isToday() ? .bold : .medium)
                         .foregroundColor(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.5)
 
                     // Status indicator
-                    if dayStatus == .goalMet {
-                        Image(systemName: "flame.fill")
-                            .foregroundColor(.orange)
-                            .font(.system(size: 16))
-                    } else if dayStatus == .partial {
+                    if dayStatus != .noData {
                         Circle()
-                            .fill(.orange)
+                            .fill(dayStatus.indicatorColor)
                             .frame(width: 6, height: 6)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(maxWidth: .infinity)
                 .aspectRatio(1, contentMode: .fit)
             }
         }
@@ -771,9 +801,17 @@ struct HydrationDayView: View {
 
         var backgroundColor: Color {
             switch self {
-            case .goalMet: return Color.orange.opacity(0.1)
+            case .goalMet: return Color.cyan.opacity(0.1)
             case .partial: return Color.orange.opacity(0.1)
             case .noData: return Color.gray.opacity(0.05)
+            }
+        }
+
+        var indicatorColor: Color {
+            switch self {
+            case .goalMet: return .cyan
+            case .partial: return .orange
+            case .noData: return .clear
             }
         }
     }
@@ -928,6 +966,16 @@ struct AddEditHydrationView: View {
         if let tea = Double(teaAmount), tea > 0 {
             let entry = DrinkEntry(type: .tea, amount: tea, date: entryTime)
             hydrationManager.addDrinkEntry(entry)
+        }
+    }
+}
+
+// MARK: - Array Extension for Chunking
+
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0 ..< Swift.min($0 + size, count)])
         }
     }
 }

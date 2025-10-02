@@ -1243,15 +1243,6 @@ enum DayStatus {
     case noFast
 }
 
-// Helper extension to chunk array into groups
-extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        stride(from: 0, to: count, by: size).map {
-            Array(self[$0..<Swift.min($0 + size, count)])
-        }
-    }
-}
-
 // MARK: - Add/Edit Fast View
 
 struct AddEditFastView: View {
