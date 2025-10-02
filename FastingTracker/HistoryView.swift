@@ -1023,11 +1023,10 @@ struct StreakCalendarView: View {
                 }
 
                 Spacer()
-                if fastingManager.currentStreak > 0 {
-                    Text("\(fastingManager.currentStreak) day\(fastingManager.currentStreak == 1 ? "" : "s")")
-                        .font(.headline)
-                        .foregroundColor(.orange)
-                }
+
+                Text("\(fastingManager.currentStreak) day\(fastingManager.currentStreak == 1 ? "" : "s")")
+                    .font(.headline)
+                    .foregroundColor(.orange)
             }
 
             // Calendar Grid (Current Month)
