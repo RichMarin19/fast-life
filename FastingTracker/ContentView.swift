@@ -383,7 +383,8 @@ struct GoalSettingsView: View {
                 Spacer()
 
                 Button(action: {
-                    fastingManager.setFastingGoal(hours: selectedHours)
+                    // Round to ensure clean whole number hours
+                    fastingManager.setFastingGoal(hours: selectedHours.rounded())
                     dismiss()
                 }) {
                     Text("Save Goal")

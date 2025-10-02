@@ -32,6 +32,10 @@ class FastingManager: ObservableObject {
 
     var remainingTime: TimeInterval {
         let goalSeconds = fastingGoalHours * 3600
+        // If no session is active, return the full goal time
+        guard currentSession != nil else {
+            return goalSeconds
+        }
         return max(0, goalSeconds - elapsedTime)
     }
 
