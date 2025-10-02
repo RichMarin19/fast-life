@@ -2,9 +2,11 @@ import SwiftUI
 
 struct AdvancedView: View {
     @EnvironmentObject var fastingManager: FastingManager
+    @Binding var shouldPopToRoot: Bool
+    @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $navigationPath) {
             ScrollView {
                 VStack(spacing: 16) {
                     Text("Advanced Features")
@@ -15,7 +17,7 @@ struct AdvancedView: View {
                         .padding(.top)
 
                     // Weight Tracking Feature
-                    NavigationLink(destination: WeightTrackingView()) {
+                    Button(action: { navigationPath.append("weightTracking") }) {
                         AdvancedFeatureCard(
                             title: "Weight Tracking",
                             description: "Track your weight, BMI, and body fat percentage",
@@ -24,6 +26,7 @@ struct AdvancedView: View {
                             isAvailable: true
                         )
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
 
                     // Coming Soon Features
@@ -55,7 +58,7 @@ struct AdvancedView: View {
                     .padding(.horizontal)
 
                     // Settings - Placed at bottom
-                    NavigationLink(destination: AppSettingsView(fastingManager: fastingManager)) {
+                    Button(action: { navigationPath.append("settings") }) {
                         AdvancedFeatureCard(
                             title: "Settings",
                             description: "Manage app data, sync, and preferences",
@@ -64,12 +67,30 @@ struct AdvancedView: View {
                             isAvailable: true
                         )
                     }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
 
                     Spacer()
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
+            .navigationDestination(for: String.self) { destination in
+                switch destination {
+                case "weightTracking":
+                    WeightTrackingView()
+                case "settings":
+                    AppSettingsView(fastingManager: fastingManager)
+                default:
+                    EmptyView()
+                }
+            }
+        }
+        .onChange(of: shouldPopToRoot) { _, newValue in
+            if newValue {
+                // Pop to root by clearing navigation path
+                navigationPath = NavigationPath()
+                shouldPopToRoot = false  // Reset trigger
+            }
         }
     }
 }
@@ -316,5 +337,6 @@ struct AppSettingsView: View {
 }
 
 #Preview {
-    AdvancedView()
+    AdvancedView(shouldPopToRoot: .constant(false))
+        .environmentObject(FastingManager())
 }

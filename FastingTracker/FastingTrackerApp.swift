@@ -4,6 +4,7 @@ import SwiftUI
 struct FastLifeApp: App {
     @StateObject private var fastingManager = FastingManager()
     @State private var selectedTab: Int = 0  // Always start at Timer tab (index 0)
+    @State private var shouldPopToRoot = false  // Trigger navigation pop
 
     init() {
         NotificationManager.shared.requestAuthorization()
@@ -11,7 +12,7 @@ struct FastLifeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView(selection: $selectedTab) {
+            TabView(selection: tabBinding) {
                 ContentView()
                     .environmentObject(fastingManager)
                     .tabItem {
@@ -32,7 +33,7 @@ struct FastLifeApp: App {
                     }
                     .tag(2)
 
-                AdvancedView()
+                AdvancedView(shouldPopToRoot: $shouldPopToRoot)
                     .environmentObject(fastingManager)
                     .tabItem {
                         Label("More", systemImage: "ellipsis.circle")
@@ -40,5 +41,19 @@ struct FastLifeApp: App {
                     .tag(3)
             }
         }
+    }
+
+    // Custom binding to detect when More tab is re-tapped
+    private var tabBinding: Binding<Int> {
+        Binding(
+            get: { selectedTab },
+            set: { newValue in
+                // If More tab (3) is tapped while already on More tab
+                if newValue == 3 && selectedTab == 3 {
+                    shouldPopToRoot = true
+                }
+                selectedTab = newValue
+            }
+        )
     }
 }

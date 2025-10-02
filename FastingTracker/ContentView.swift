@@ -133,6 +133,30 @@ struct ContentView: View {
                         }
                     }
                     .padding(.horizontal, 40)
+
+                    // Goal End Time Display
+                    HStack(spacing: 20) {
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 8, height: 8)
+                            Text("Goal End")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+
+                        HStack(spacing: 8) {
+                            Text(formatGoalEndTimeDisplay())
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.blue.opacity(0.1))
+                        .cornerRadius(8)
+                    }
+                    .padding(.horizontal, 40)
                     .padding(.bottom, 10)
 
                     // Stop Fast Button
@@ -241,6 +265,28 @@ struct ContentView: View {
         } else {
             formatter.dateFormat = "MMM d, h:mm a"
             return formatter.string(from: session.startTime)
+        }
+    }
+
+    private func formatGoalEndTimeDisplay() -> String {
+        guard let session = fastingManager.currentSession else { return "" }
+
+        // Calculate goal end time: start time + goal hours
+        let goalSeconds = fastingManager.fastingGoalHours * 3600
+        let goalEndTime = session.startTime.addingTimeInterval(goalSeconds)
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        let timeString = formatter.string(from: goalEndTime)
+
+        let calendar = Calendar.current
+        if calendar.isDateInToday(goalEndTime) {
+            return "Today, \(timeString)"
+        } else if calendar.isDateInTomorrow(goalEndTime) {
+            return "Tomorrow, \(timeString)"
+        } else {
+            formatter.dateFormat = "MMM d, h:mm a"
+            return formatter.string(from: goalEndTime)
         }
     }
 
