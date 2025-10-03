@@ -1,7 +1,7 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.1.5 (Build 7)**
-*Your intelligent intermittent fasting companion with weight and hydration tracking*
+**Version 1.2.0 (Build 8)**
+*Your intelligent intermittent fasting companion with weight, hydration, sleep, and mood tracking*
 
 ---
 
@@ -90,6 +90,56 @@
 - **Sync Controls**: Separate buttons for hydration sync with options:
   - Sync All Data: Import all historical water data
   - Sync Future Data Only: Start syncing from today forward
+
+---
+
+## 😴 Sleep Tracking
+
+### 🛏️ Sleep Duration Monitoring
+- **Track Sleep Sessions**: Log bed time and wake time
+- **Sleep Duration Display**: Automatic calculation of total sleep hours
+- **Sleep Quality Rating**: Optional 1-5 star quality assessment
+- **Visual Progress Ring**: Shows sleep vs. 7-hour goal
+- **Apple HealthKit Integration**: Two-way sync with Apple Health sleep data
+
+### 📊 Sleep Analytics
+- **Last Night's Sleep**: See most recent sleep session at a glance
+- **7-Day Average**: Track average sleep hours over the week
+- **Sleep Trend**: Compare recent 7 days to previous 7 days
+- **Recent Sleep History**: View last 5 sleep entries with delete option
+- **Sleep Source Tracking**: Know which entries came from app vs. HealthKit
+
+### 🍎 HealthKit Sleep Integration
+- **Automatic Sync**: New sleep entries sync to Apple Health automatically
+- **Import from HealthKit**: Pull existing sleep data from Apple Health
+- **Background Observer**: Automatically detects new sleep data in HealthKit
+- **Bi-directional Sync**: Manual entries save to HealthKit when enabled
+- **Sync Settings**: Toggle sync on/off, manual sync button
+
+---
+
+## 😊 Mood & Energy Tracking
+
+### 📈 Daily Mood & Energy Logging
+- **1-10 Scale Ratings**: Intuitive slider for mood and energy levels
+- **Visual Emoji Feedback**: Mood (😢→😄) and Energy (🔋→⚡⚡⚡) emojis update live
+- **Color-Coded Progress Rings**: Mood (red→green) and Energy (red→green) circles
+- **Optional Notes**: Add context to your mood/energy entries
+- **Quick Entry**: Log both mood and energy in seconds
+
+### 📊 Mood & Energy Analytics
+- **Current Levels Display**: See latest mood and energy with animated circles
+- **7-Day Averages**: Track average mood and energy levels over the week
+- **Trend Graphs**: Dual line charts (Mood in orange, Energy in blue)
+- **Multiple Time Ranges**: View 7, 30, or 90-day trends
+- **Recent Entries List**: See last 5 entries with delete option
+
+### 🎨 Visual Insights
+- **Smooth Graph Interpolation**: CatmullRom curves for natural trend lines
+- **Data Point Markers**: Individual dots for each entry
+- **Y-Axis Scale**: Fixed 0-10 scale for consistent visualization
+- **Embedded Charts**: Graphs display directly below stats (like Weight Tracker)
+- **Time Range Picker**: Segmented control to switch between 7/30/90 days
 
 ---
 
@@ -236,9 +286,10 @@ Top 10 frequently asked questions with expandable answers:
 ### ➕ Advanced Features (More Tab)
 - **Weight Tracking**: Complete weight management system
 - **Hydration Tracker**: Water, coffee, and tea tracking
+- **Sleep Tracker**: Sleep duration and quality monitoring
+- **Mood & Energy Tracker**: Daily mood and energy logging with graphs
 - **Settings**: App configuration and data management
 - **Coming Soon**:
-  - Mood & Energy Tracker
   - Data Export & Backup
 
 ---
@@ -273,6 +324,8 @@ Top 10 frequently asked questions with expandable answers:
   - Clear All Fasting Data
   - Clear All Weight Data
   - Clear All Hydration Data
+  - Clear All Sleep Data
+  - Clear All Mood Data
   - Clear All Data and Reset (returns to onboarding)
 - **Safety Confirmations**: Two-step confirmation for destructive actions
 
@@ -372,7 +425,8 @@ Top 10 frequently asked questions with expandable answers:
 - **v1.1.2**: Weight tracking enhancements
 - **v1.1.3**: UI/UX improvements for Timer tab
 - **v1.1.4**: HealthKit water tracking integration
-- **v1.1.5**: Separate sync controls, app reset UX improvements
+- **v1.1.5**: Separate sync controls, app reset UX improvements, sleep tracking with HealthKit
+- **v1.2.0**: Mood & Energy tracking with 1-10 scale and trend graphs
 
 ---
 
@@ -406,18 +460,19 @@ Top 10 frequently asked questions with expandable answers:
 
 ## 🌟 What Makes Fast LIFe Unique
 
-1. **All-in-One Health Tracking**: Fasting, weight, and hydration in one beautiful app
-2. **HealthKit Integration**: Two-way sync with Apple Health for weight and water
+1. **Complete Wellness Tracking**: Fasting, weight, hydration, sleep, and mood/energy in one beautiful app
+2. **HealthKit Integration**: Two-way sync with Apple Health for weight, water, and sleep
 3. **Intelligent Sync Controls**: Choose "All Data" or "Future Only" for each data type
 4. **Gradient Progress Ring**: Ring changes colors smoothly as you progress
 5. **Edit While Fasting**: Adjust start time without stopping your fast
 6. **Multi-Drink Hydration**: Track water, coffee, and tea (all sync as water to HealthKit)
-7. **PR-Aware Notifications**: Smart alerts that know when you're approaching personal records
-8. **80/20 Education**: Focus on the essentials that matter most
-9. **Delete & Reset Options**: Full control over your data with safe confirmations
-10. **Beautiful Design**: Health-conscious color scheme and modern UI
-11. **Privacy-Focused**: All data local, HealthKit sync is optional and user-controlled
-12. **Smooth App Reset**: Returns to onboarding instead of crashing
+7. **Mood & Energy Insights**: 1-10 scale with trend graphs and emoji feedback
+8. **PR-Aware Notifications**: Smart alerts that know when you're approaching personal records
+9. **80/20 Education**: Focus on the essentials that matter most
+10. **Delete & Reset Options**: Full control over your data with safe confirmations
+11. **Beautiful Design**: Health-conscious color scheme and modern UI
+12. **Privacy-Focused**: All data local, HealthKit sync is optional and user-controlled
+13. **Smooth App Reset**: Returns to onboarding instead of crashing
 
 ---
 

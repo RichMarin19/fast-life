@@ -1,5 +1,77 @@
 # New Features Added ✨
 
+## 7. Mood & Energy Tracker 😊⚡
+
+**Added:** January 3, 2025
+**Version:** 1.2.0 (Build 8)
+
+### What Changed:
+
+Complete mood and energy tracking system with 1-10 scale rating and trend visualization:
+
+**Features:**
+- ✅ 1-10 scale sliders for mood and energy levels
+- ✅ Live emoji feedback (😢→😄 for mood, 🔋→⚡⚡⚡ for energy)
+- ✅ Color-coded progress rings (red→green gradient)
+- ✅ Embedded trend graphs (Mood in orange, Energy in blue)
+- ✅ Multiple time ranges (7/30/90 days)
+- ✅ 7-day average statistics
+- ✅ Optional notes for context
+- ✅ Recent entries list with delete
+- ✅ UserDefaults persistence (no HealthKit)
+
+**How It Works:**
+1. Go to More → Mood & Energy Tracker
+2. Tap "+" button to log entry
+3. Adjust Mood slider (1-10) → emoji/color updates live
+4. Adjust Energy slider (1-10) → emoji/color updates live
+5. Add optional notes
+6. Tap "Save" → See entry in list with graphs below
+
+**UI/UX Design:**
+- **Layout Pattern**: Matches Weight Tracker (single ScrollView, no tabs)
+- **Structure**: Circles → Averages → Graphs → Recent Entries
+- **Graphs**: Swift Charts with catmullRom interpolation for smooth curves
+- **Time Picker**: Segmented control (7/30/90 days) updates both graphs
+- **Progress Rings**: Animated fill based on 1-10 level
+
+**Technical Implementation:**
+- `MoodEntry.swift`: Data model with emoji/color helpers
+- `MoodManager.swift`: ObservableObject with statistics methods
+- `MoodTrackingView.swift`: Main view with embedded graphs
+- Updated `AdvancedView.swift`: Added navigation + Settings clear data
+
+**Data Structure:**
+```swift
+struct MoodEntry: Codable, Identifiable {
+    let id: UUID
+    let date: Date
+    let moodLevel: Int      // 1-10 scale
+    let energyLevel: Int    // 1-10 scale
+    let notes: String?
+
+    var moodEmoji: String   // 😢→😄
+    var energyEmoji: String // 🔋→⚡⚡⚡
+    var moodColor: Color    // red→green
+    var energyColor: Color  // red→green
+}
+```
+
+**Why No HealthKit Integration:**
+- User decision to start without HealthKit
+- iOS 17+ has `stateOfMind` type, but not necessary for v1
+- Can be added in future if users request it (will poll in beta)
+- Keeps implementation simple and focused
+
+**Settings Integration:**
+- "Clear All Mood Data" button in Danger Zone
+- Included in "Clear All Data and Reset"
+- Two-step confirmation (follows safety pattern)
+
+**Commit:** `ab05e30` - "Add Mood & Energy Tracker feature (v1.2.0)"
+
+---
+
 ## 6. Hydration Sync Timing & App Reset UX Improvements 🔄✨
 
 **Added:** January 2, 2025
