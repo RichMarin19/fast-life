@@ -4,6 +4,8 @@ struct AdvancedView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @Binding var shouldPopToRoot: Bool
     @Binding var shouldResetToOnboarding: Bool
+    @Binding var isOnboardingComplete: Bool
+    @Binding var selectedTab: Int
     @State private var navigationPath = NavigationPath()
 
     var body: some View {
@@ -86,7 +88,12 @@ struct AdvancedView: View {
                 case "hydrationTracking":
                     HydrationTrackingView()
                 case "settings":
-                    AppSettingsView(fastingManager: fastingManager, shouldResetToOnboarding: $shouldResetToOnboarding)
+                    AppSettingsView(
+                        fastingManager: fastingManager,
+                        shouldResetToOnboarding: $shouldResetToOnboarding,
+                        isOnboardingComplete: $isOnboardingComplete,
+                        selectedTab: $selectedTab
+                    )
                 default:
                     EmptyView()
                 }
@@ -162,6 +169,8 @@ struct AdvancedFeatureCard: View {
 struct AppSettingsView: View {
     @ObservedObject var fastingManager: FastingManager
     @Binding var shouldResetToOnboarding: Bool
+    @Binding var isOnboardingComplete: Bool
+    @Binding var selectedTab: Int
     @StateObject private var weightManager = WeightManager()
     @StateObject private var hydrationManager = HydrationManager()
     @StateObject private var healthKitManager = HealthKitManager.shared
@@ -418,6 +427,9 @@ struct AppSettingsView: View {
     // MARK: - Clear Data Functions
 
     private func clearAllFastingData() {
+        // Stop any active fast
+        fastingManager.currentSession = nil
+
         // Clear all fasting history
         fastingManager.fastingHistory.removeAll()
 
@@ -429,6 +441,7 @@ struct AppSettingsView: View {
         fastingManager.fastingGoalHours = 0
 
         // Save empty state
+        UserDefaults.standard.removeObject(forKey: "currentFastingSession")
         UserDefaults.standard.removeObject(forKey: "fastingHistory")
         UserDefaults.standard.removeObject(forKey: "currentStreak")
         UserDefaults.standard.removeObject(forKey: "longestStreak")
@@ -436,31 +449,26 @@ struct AppSettingsView: View {
     }
 
     private func clearAllWeightData() {
-        // Clear all weight entries
-        weightManager.weightEntries.removeAll()
-
-        // Save empty state
+        // Clear all weight entries from UserDefaults only
+        // Don't clear instance array - it's a separate instance from WeightTrackingView
         UserDefaults.standard.removeObject(forKey: "weightEntries")
+
+        // Disable HealthKit auto-sync to prevent re-importing data
+        // Must SET to false (not remove) because default is true
+        UserDefaults.standard.set(false, forKey: "syncWithHealthKit")
     }
 
     private func clearAllHydrationData() {
-        // Clear all hydration entries
-        hydrationManager.drinkEntries.removeAll()
-
-        // Reset daily goal to 0 to trigger goal setup on next use
-        hydrationManager.dailyGoalOunces = 0
-
-        // Reset streak
-        hydrationManager.currentStreak = 0
-
-        // Save empty state
+        // Clear all hydration entries from UserDefaults only
+        // Don't clear instance arrays - it's a separate instance from HydrationTrackingView
         UserDefaults.standard.removeObject(forKey: "drinkEntries")
         UserDefaults.standard.removeObject(forKey: "dailyGoalOunces")
-        UserDefaults.standard.removeObject(forKey: "hydrationStreak")
+        UserDefaults.standard.removeObject(forKey: "hydrationCurrentStreak")
+        UserDefaults.standard.removeObject(forKey: "hydrationLongestStreak")
     }
 
     private func clearAllData() {
-        // Clear fasting data
+        // Clear fasting data (includes stopping active fast)
         clearAllFastingData()
 
         // Clear weight data
@@ -481,16 +489,22 @@ struct AppSettingsView: View {
         // Remove goal weight
         UserDefaults.standard.removeObject(forKey: "goalWeight")
 
+        // Remove hydration goal
+        UserDefaults.standard.removeObject(forKey: "dailyHydrationGoal")
+
         // Ensure all UserDefaults changes are persisted to disk
         UserDefaults.standard.synchronize()
 
-        // Dismiss settings and trigger onboarding to restart the app experience
-        dismiss()
+        // Reset to Timer tab (index 0) before showing onboarding
+        // This ensures after onboarding completes, user sees Timer tab
+        selectedTab = 0
 
-        // Trigger app reset to onboarding after dismissing settings
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            shouldResetToOnboarding = true
-        }
+        // Update state BEFORE dismissing to ensure proper propagation
+        isOnboardingComplete = false
+        shouldResetToOnboarding = true
+
+        // Dismiss settings to navigate back
+        dismiss()
     }
 
     // MARK: - Weight Sync Function
@@ -582,14 +596,12 @@ struct AppSettingsView: View {
             hydrationManager.syncToHealthKit()
 
             // Then import from HealthKit with completion handler
-            hydrationManager.syncFromHealthKit { [weak self] in
-                guard let self = self else { return }
-
+            hydrationManager.syncFromHealthKit {
                 // This runs AFTER import completes
-                self.isSyncingHydration = false
-                let count = self.hydrationManager.drinkEntries.count
-                self.syncMessage = count > 0 ? "Successfully synced \(count) drink entries from Apple Health." : "No hydration data found in Apple Health."
-                self.showingSyncAlert = true
+                isSyncingHydration = false
+                let count = hydrationManager.drinkEntries.count
+                syncMessage = count > 0 ? "Successfully synced \(count) drink entries from Apple Health." : "No hydration data found in Apple Health."
+                showingSyncAlert = true
             }
         }
     }
@@ -641,21 +653,24 @@ struct AppSettingsView: View {
             hydrationManager.syncToHealthKit()
 
             // Then import hydration from HealthKit with completion
-            hydrationManager.syncFromHealthKit { [weak self] in
-                guard let self = self else { return }
-
+            hydrationManager.syncFromHealthKit {
                 // This runs AFTER all syncs complete
-                self.isSyncingAll = false
-                let weightCount = self.weightManager.weightEntries.count
-                let drinkCount = self.hydrationManager.drinkEntries.count
-                self.syncMessage = "Successfully synced \(weightCount) weight entries and \(drinkCount) drink entries from Apple Health."
-                self.showingSyncAlert = true
+                isSyncingAll = false
+                let weightCount = weightManager.weightEntries.count
+                let drinkCount = hydrationManager.drinkEntries.count
+                syncMessage = "Successfully synced \(weightCount) weight entries and \(drinkCount) drink entries from Apple Health."
+                showingSyncAlert = true
             }
         }
     }
 }
 
 #Preview {
-    AdvancedView(shouldPopToRoot: .constant(false), shouldResetToOnboarding: .constant(false))
+    AdvancedView(
+        shouldPopToRoot: .constant(false),
+        shouldResetToOnboarding: .constant(false),
+        isOnboardingComplete: .constant(true),
+        selectedTab: .constant(0)
+    )
         .environmentObject(FastingManager())
 }

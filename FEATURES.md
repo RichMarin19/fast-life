@@ -1,7 +1,7 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.0.6**  
-*Your intelligent intermittent fasting companion*
+**Version 1.1.5 (Build 7)**
+*Your intelligent intermittent fasting companion with weight and hydration tracking*
 
 ---
 
@@ -38,6 +38,58 @@
   - Updates all calculations in real-time
 - **Edit Start & End Times (When Stopping)**: Modify both times before completing a fast
 - **Manual Fast Entry**: Add past fasts with custom start/end times and goals
+
+---
+
+## ⚖️ Weight Tracking
+
+### 📊 Comprehensive Weight Management
+- **Track Weight, BMI, and Body Fat**: Record all key metrics in one place
+- **Apple HealthKit Integration**: Two-way sync with Apple Health app
+- **Visual Progress Charts**: See your weight trends over time
+- **Goal Weight Setting**: Set and track progress toward your target
+- **Weight Source Tracking**: Know which entries came from app vs. HealthKit
+- **Manual Entry**: Add weight data anytime with date/time selection
+
+### 📈 Weight Analytics
+- **Current Weight Display**: See your latest entry at a glance
+- **Starting Weight**: Remember where you began your journey
+- **Weight Change**: Track total pounds/kg lost or gained
+- **Goal Progress**: Visual indicator of progress toward goal weight
+- **Days Tracked**: Count total days with weight entries
+- **History Graph**: Interactive chart showing weight over time
+
+### 🔄 HealthKit Sync Options
+- **Sync All Data**: Import entire weight history from Apple Health
+- **Sync Future Data Only**: Start syncing from today forward
+- **Automatic Sync**: New entries sync automatically when HealthKit is authorized
+- **Manual Sync**: Control when data syncs with dedicated sync buttons
+
+---
+
+## 💧 Hydration Tracking
+
+### 🥤 Drink Tracking
+- **Multiple Drink Types**: Track water, coffee, and tea separately
+- **Quick-Add Buttons**: One-tap to log standard servings
+- **Custom Amounts**: Enter any amount in ounces
+- **Daily Progress**: Visual progress toward daily hydration goal
+- **Drink History**: See all drinks logged with timestamps
+
+### 📊 Hydration Analytics
+- **Daily Goal Setting**: Customize your hydration target (default 64 oz)
+- **Progress Percentage**: Clear visual of goal completion
+- **Drink Type Breakdown**: See how much water vs. coffee vs. tea
+- **Hydration Streaks**: Track consecutive days meeting your goal
+- **Longest Streak**: Record your best hydration streak
+
+### 🍎 HealthKit Water Integration
+- **All Drinks Sync as Water**: Water, coffee, and tea save to HealthKit as water intake
+- **Automatic Sync**: New drinks sync to Apple Health automatically
+- **Import from HealthKit**: Pull existing water data from Apple Health
+- **Sync Controls**: Separate buttons for hydration sync with options:
+  - Sync All Data: Import all historical water data
+  - Sync Future Data Only: Start syncing from today forward
 
 ---
 
@@ -172,13 +224,22 @@ Top 10 frequently asked questions with expandable answers:
 - **Wellness Color Palette**: Health-conscious blue, teal, and green tones
 
 ### 📱 Intuitive Navigation
-- **Three-Tab Interface**:
+- **Four-Tab Interface**:
   - ⏱️ Timer: Active fasting tracking
   - 💡 Insights: Educational content
   - 📊 History: Analytics and past fasts
+  - ➕ More: Advanced features hub
 - **Segmented Controls**: Easy switching between view modes
 - **Expandable Sections**: Collapsible FAQ and content areas
 - **Interactive Elements**: Tap to expand, swipe to navigate
+
+### ➕ Advanced Features (More Tab)
+- **Weight Tracking**: Complete weight management system
+- **Hydration Tracker**: Water, coffee, and tea tracking
+- **Settings**: App configuration and data management
+- **Coming Soon**:
+  - Mood & Energy Tracker
+  - Data Export & Backup
 
 ---
 
@@ -198,6 +259,22 @@ Top 10 frequently asked questions with expandable answers:
 - **Unlimited History**: No cap on stored fasting sessions
 - **Complete Records**: All data retained for accurate statistics
 - **One Fast Per Day**: Automatic replacement of same-day entries
+
+### ⚙️ Settings & Data Control
+- **App Information**: View current version and build number
+- **Apple Health Sync**: Three sync options with dialog controls:
+  - **Sync Weight with Apple Health**: Import/export weight data
+  - **Sync Hydration with Apple Health**: Import/export water data
+  - **Sync All Health Data**: Sync both weight and hydration together
+- **Sync Options for Each Type**:
+  - Sync All Data: Import entire history from HealthKit
+  - Sync Future Data Only: Start syncing from today forward
+- **Data Management**:
+  - Clear All Fasting Data
+  - Clear All Weight Data
+  - Clear All Hydration Data
+  - Clear All Data and Reset (returns to onboarding)
+- **Safety Confirmations**: Two-step confirmation for destructive actions
 
 ---
 
@@ -274,8 +351,12 @@ Top 10 frequently asked questions with expandable answers:
 
 ### 📄 Permissions
 - **Notifications**: For milestone and goal completion alerts
+- **Apple Health (Optional)**:
+  - Read/Write weight, BMI, and body fat data
+  - Read/Write water intake data
+  - All syncing is user-controlled and optional
 - **No Location**: Privacy-focused, no tracking
-- **No Network**: Fully offline functionality
+- **No Network**: Fully offline functionality (except HealthKit sync)
 
 ### 🔄 Version History
 - **v1.0.0**: Initial release with basic timer
@@ -285,6 +366,13 @@ Top 10 frequently asked questions with expandable answers:
 - **v1.0.4**: Dynamic progress colors
 - **v1.0.5**: Edit start time feature
 - **v1.0.6**: Insights tab and gradient progress ring
+- **v1.0.7**: Delete fast functionality, intelligent month view
+- **v1.1.0**: Weight tracking with HealthKit integration
+- **v1.1.1**: Hydration tracking system
+- **v1.1.2**: Weight tracking enhancements
+- **v1.1.3**: UI/UX improvements for Timer tab
+- **v1.1.4**: HealthKit water tracking integration
+- **v1.1.5**: Separate sync controls, app reset UX improvements
 
 ---
 
@@ -318,16 +406,18 @@ Top 10 frequently asked questions with expandable answers:
 
 ## 🌟 What Makes Fast LIFe Unique
 
-1. **Gradient Progress Ring**: Unlike other apps, our ring changes colors smoothly as you progress
-2. **Edit While Fasting**: Adjust start time without stopping your fast
-3. **Inline Time Display**: See your start time at a glance with natural language formatting
-4. **PR-Aware Notifications**: Smart alerts that know when you're approaching personal records
-5. **80/20 Education**: Focus on the essentials that matter most
-6. **Myth Busters**: Clear up common misconceptions
-7. **Comprehensive Glossary**: Understand all the terms
-8. **Average Hours Tracking**: Know your typical fasting duration
-9. **Unlimited History**: Never lose your progress data
+1. **All-in-One Health Tracking**: Fasting, weight, and hydration in one beautiful app
+2. **HealthKit Integration**: Two-way sync with Apple Health for weight and water
+3. **Intelligent Sync Controls**: Choose "All Data" or "Future Only" for each data type
+4. **Gradient Progress Ring**: Ring changes colors smoothly as you progress
+5. **Edit While Fasting**: Adjust start time without stopping your fast
+6. **Multi-Drink Hydration**: Track water, coffee, and tea (all sync as water to HealthKit)
+7. **PR-Aware Notifications**: Smart alerts that know when you're approaching personal records
+8. **80/20 Education**: Focus on the essentials that matter most
+9. **Delete & Reset Options**: Full control over your data with safe confirmations
 10. **Beautiful Design**: Health-conscious color scheme and modern UI
+11. **Privacy-Focused**: All data local, HealthKit sync is optional and user-controlled
+12. **Smooth App Reset**: Returns to onboarding instead of crashing
 
 ---
 

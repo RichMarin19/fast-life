@@ -1,6 +1,206 @@
 # New Features Added ✨
 
-## 3. Delete Fast Functionality & Intelligent Month View 🗑️📅
+## 6. Hydration Sync Timing & App Reset UX Improvements 🔄✨
+
+**Added:** January 2, 2025
+**Version:** 1.1.5 (Build 7)
+
+### What Changed:
+
+#### A. Fixed Hydration Sync Data Accuracy
+The hydration sync now waits for actual import completion before showing success message, ensuring accurate drink counts from HealthKit.
+
+**Problem Solved:**
+- **Before:** UI showed old count (e.g., 44 oz) because arbitrary 1.5s delay didn't wait for async import
+- **After:** UI shows correct imported total (e.g., 108 oz) after import completes
+
+**Technical Implementation:**
+- Added completion handler to `HydrationManager.syncFromHealthKit()`
+- Replaced time-based delays with actual async completion callbacks
+- Follows Apple HealthKit Framework async operation best practices
+
+#### B. Smooth App Reset Experience
+"Clear All Data and Reset" now smoothly transitions to onboarding instead of force-closing the app.
+
+**Problem Solved:**
+- **Before:** App called `exit(0)` which crashed the app (violates Apple guidelines)
+- **After:** Settings dismisses, then onboarding appears smoothly via state management
+
+**Technical Implementation:**
+- Removed `exit(0)` call (per Apple HIG: "Don't quit an iOS app programmatically")
+- Implemented SwiftUI state-driven reset with `shouldResetToOnboarding` binding
+- Proper navigation dismiss followed by state trigger
+
+**Commit:** `bf1ac0d` - "fix(hydration): sync timing and app reset UX improvements"
+
+---
+
+## 5. Separate Sync Controls for Weight and Hydration 🔄
+
+**Added:** January 1, 2025
+**Version:** 1.1.5 (Build 7)
+
+### What Changed:
+
+Three independent sync buttons in Settings with separate dialog options:
+
+1. **Sync Weight with Apple Health** (Blue icon)
+   - Sync All Data: Import all weight history
+   - Sync Future Data Only: Sync from today forward
+
+2. **Sync Hydration with Apple Health** (Cyan icon)
+   - Sync All Data: Import all water history
+   - Sync Future Data Only: Sync from today forward
+
+3. **Sync All Health Data** (Green icon) - NEW
+   - Sync All Data: Import both weight and hydration history
+   - Sync Future Data Only: Sync both from today forward
+
+### Technical Implementation:
+- Separate state variables: `isSyncingWeight`, `isSyncingHydration`, `isSyncingAll`
+- Three independent `confirmationDialog` views
+- Prevents UI conflicts (both buttons showing "Syncing..." simultaneously)
+- Each sync type has its own completion flow
+
+**Commit:** `48e3eb7` - "feat(settings): separate weight and hydration sync controls"
+
+---
+
+## 4. HealthKit Water/Hydration Tracking Integration 💧🍎
+
+**Added:** December 31, 2024
+**Version:** 1.1.4
+
+### What Changed:
+
+Full Apple HealthKit integration for hydration tracking:
+
+**Features:**
+- ✅ All drink types (water, coffee, tea) sync to HealthKit as water intake
+- ✅ Automatic sync when adding drinks (if HealthKit authorized)
+- ✅ Manual sync option in Settings
+- ✅ Import water data from HealthKit to app
+- ✅ Water-specific authorization checks
+
+**How It Works:**
+1. Grant water permissions in Settings > Health > Apps > Fast LIFe
+2. Add any drink (water, coffee, tea) → Automatically syncs to Apple Health
+3. Use "Sync Hydration with Apple Health" to import existing water data
+
+**Technical Details:**
+- Uses `HKQuantityTypeIdentifier.dietaryWater`
+- Unit: `HKUnit.fluidOunceUS()`
+- Methods: `saveWater()`, `fetchWaterData()`, `isWaterAuthorized()`
+- Auto-sync in `HydrationManager.addDrinkEntry()`
+
+**Commit:** `[version 1.1.4 commits]` - HealthKit water tracking integration
+
+---
+
+## 3. Hydration Tracking System 💧
+
+**Added:** December 30, 2024
+**Version:** 1.1.1
+
+### What Changed:
+
+Complete hydration tracking system added to the More tab:
+
+**Features:**
+- **Track Three Drink Types**: Water, coffee, and tea with custom icons
+- **Quick-Add Buttons**: One-tap to log standard 8oz servings
+- **Custom Amounts**: Enter any amount in ounces
+- **Daily Goal**: Set and track hydration target (default 64 oz)
+- **Visual Progress**: Progress ring showing completion percentage
+- **Drink Breakdown**: See amounts by drink type
+- **Hydration Streaks**: Track consecutive days meeting goal
+- **History View**: See all drinks logged with timestamps
+- **Today's Summary**: Quick glance at today's hydration progress
+
+**How It Works:**
+1. Go to More → Hydration Tracker
+2. Tap quick-add buttons or enter custom amount
+3. See real-time progress toward daily goal
+4. Track streaks for consecutive days meeting goal
+
+**Technical Details:**
+- `HydrationManager` class with ObservableObject
+- `DrinkEntry` model with UUID, type, amount, date
+- `DrinkType` enum: water, coffee, tea
+- Streak calculation from history
+- UserDefaults persistence
+
+**UI Components:**
+- Hydration Dashboard with progress ring
+- Drink type quick-add buttons
+- History tab with statistics
+- Settings for daily goal
+
+---
+
+## 2. Weight Tracking with HealthKit Integration ⚖️🍎
+
+**Added:** December 29, 2024
+**Version:** 1.1.0 - 1.1.3
+
+### What Changed:
+
+Comprehensive weight tracking system with Apple HealthKit integration:
+
+**Core Features:**
+- **Track Weight, BMI, Body Fat**: All key metrics in one place
+- **Visual Progress Dashboard**: See current weight, goal, and progress
+- **Weight History Chart**: Interactive graph showing trends over time
+- **HealthKit Integration**: Two-way sync with Apple Health
+- **Manual Entry**: Add weight with date/time picker
+- **Goal Weight Setting**: Set target and track progress
+- **Statistics Display**:
+  - Current Weight
+  - Starting Weight
+  - Weight Change (± lbs/kg)
+  - Goal Progress percentage
+  - Days Tracked
+
+**HealthKit Sync:**
+- Read weight, BMI, and body fat from Apple Health
+- Write weight entries to Apple Health
+- Automatic sync when adding new weight
+- Manual sync option in Settings
+- Data source tracking (App vs. HealthKit)
+
+**How It Works:**
+1. Go to More → Weight Tracking
+2. Add weight entry with optional BMI and body fat
+3. View progress on dashboard
+4. Sync with Apple Health in Settings
+5. See visual trends in history chart
+
+**Technical Details:**
+- `WeightManager` class managing data and HealthKit sync
+- `HealthKitManager` for all Health app interactions
+- `WeightEntry` model with source tracking
+- `WeightSource` enum: manual, healthKit
+- Supports both pounds and kilograms
+- One entry per day (replaces same-day entries)
+
+**UI/UX Improvements (v1.1.3):**
+- Timer tab layout refinements
+- Fast LIFe title spacing (70px top)
+- Circle progress spacing (20px)
+- Color-coded Start/Goal End indicators:
+  - Start: Blue dot + blue background
+  - Goal End: Green dot + yellow-green background
+- Button spacing improvements
+
+**Files Added:**
+- `WeightTrackingView.swift`
+- `WeightManager.swift`
+- `HealthKitManager.swift`
+- Updates to `AdvancedView.swift` for navigation
+
+---
+
+## 1. Delete Fast Functionality & Intelligent Month View 🗑️📅
 
 **Added:** January 1, 2025
 **Version:** 1.0.7

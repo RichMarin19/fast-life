@@ -48,7 +48,12 @@ struct FastLifeApp: App {
                 }
                 .tag(2)
 
-            AdvancedView(shouldPopToRoot: $shouldPopToRoot, shouldResetToOnboarding: $shouldResetToOnboarding)
+            AdvancedView(
+                shouldPopToRoot: $shouldPopToRoot,
+                shouldResetToOnboarding: $shouldResetToOnboarding,
+                isOnboardingComplete: $isOnboardingComplete,
+                selectedTab: $selectedTab
+            )
                 .environmentObject(fastingManager)
                 .tabItem {
                     Label("More", systemImage: "ellipsis.circle")
