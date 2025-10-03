@@ -45,15 +45,33 @@ struct AdvancedView: View {
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
 
-                    // Coming Soon Features
-                    AdvancedFeatureCard(
-                        title: "Mood & Energy Tracker",
-                        description: "Track your mood and energy levels during fasting",
-                        icon: "face.smiling.fill",
-                        color: .orange,
-                        isAvailable: false
-                    )
+                    // Sleep Tracking Feature
+                    Button(action: { navigationPath.append("sleepTracking") }) {
+                        AdvancedFeatureCard(
+                            title: "Sleep Tracker",
+                            description: "Track sleep duration and sync with Apple Health",
+                            icon: "bed.double.fill",
+                            color: .purple,
+                            isAvailable: true
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
+
+                    // Mood & Energy Tracking Feature
+                    Button(action: { navigationPath.append("moodTracking") }) {
+                        AdvancedFeatureCard(
+                            title: "Mood & Energy Tracker",
+                            description: "Track your mood and energy levels during fasting",
+                            icon: "face.smiling.fill",
+                            color: .orange,
+                            isAvailable: true
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.horizontal)
+
+                    // Coming Soon Features
 
                     AdvancedFeatureCard(
                         title: "Data Export & Backup",
@@ -87,6 +105,10 @@ struct AdvancedView: View {
                     WeightTrackingView()
                 case "hydrationTracking":
                     HydrationTrackingView()
+                case "sleepTracking":
+                    SleepTrackingView()
+                case "moodTracking":
+                    MoodTrackingView()
                 case "settings":
                     AppSettingsView(
                         fastingManager: fastingManager,
@@ -182,6 +204,10 @@ struct AppSettingsView: View {
     @State private var showingClearWeightConfirmation = false
     @State private var showingClearHydrationAlert = false
     @State private var showingClearHydrationConfirmation = false
+    @State private var showingClearSleepAlert = false
+    @State private var showingClearSleepConfirmation = false
+    @State private var showingClearMoodAlert = false
+    @State private var showingClearMoodConfirmation = false
     @State private var showingClearAllDataAlert = false
     @State private var showingClearAllDataConfirmation = false
     @State private var isSyncingWeight = false
@@ -310,6 +336,24 @@ struct AppSettingsView: View {
                     }
                 }
 
+                Button(action: { showingClearSleepAlert = true }) {
+                    HStack {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                        Text("Clear All Sleep Data")
+                            .foregroundColor(.red)
+                    }
+                }
+
+                Button(action: { showingClearMoodAlert = true }) {
+                    HStack {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                        Text("Clear All Mood Data")
+                            .foregroundColor(.red)
+                    }
+                }
+
                 Button(action: { showingClearAllDataAlert = true }) {
                     HStack {
                         Image(systemName: "trash")
@@ -377,13 +421,49 @@ struct AppSettingsView: View {
                 .font(.headline)
                 .fontWeight(.bold)
         }
+        .alert("Clear All Sleep Data", isPresented: $showingClearSleepAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear All Data", role: .destructive) {
+                showingClearSleepConfirmation = true
+            }
+        } message: {
+            Text("This will permanently delete all your sleep tracking data. This action cannot be undone.")
+        }
+        .alert("Are you sure?", isPresented: $showingClearSleepConfirmation) {
+            Button("No", role: .cancel) { }
+            Button("Yes", role: .destructive) {
+                clearAllSleepData()
+            }
+        } message: {
+            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete all sleep data and cannot be restored unless you have created a backup.\n\nAre you absolutely sure?")
+                .font(.headline)
+                .fontWeight(.bold)
+        }
+        .alert("Clear All Mood Data", isPresented: $showingClearMoodAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear All Data", role: .destructive) {
+                showingClearMoodConfirmation = true
+            }
+        } message: {
+            Text("This will permanently delete all your mood and energy tracking data. This action cannot be undone.")
+        }
+        .alert("Are you sure?", isPresented: $showingClearMoodConfirmation) {
+            Button("No", role: .cancel) { }
+            Button("Yes", role: .destructive) {
+                clearAllMoodData()
+            }
+        } message: {
+            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete all mood data and cannot be restored unless you have created a backup.\n\nAre you absolutely sure?")
+                .font(.headline)
+                .fontWeight(.bold)
+        }
         .alert("Clear All Data and Reset", isPresented: $showingClearAllDataAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Clear All Data and Reset", role: .destructive) {
                 showingClearAllDataConfirmation = true
             }
         } message: {
-            Text("This will permanently delete ALL app data including fasting history, weight entries, hydration tracking, streaks, and statistics. The app will be reset to its initial state and you will need to set up your goals again. This action cannot be undone.")
+            Text("This will permanently delete ALL app data including fasting history, weight entries, hydration tracking, sleep tracking, mood & energy data, streaks, and statistics. The app will be reset to its initial state and you will need to set up your goals again. This action cannot be undone.")
         }
         .alert("Are you sure?", isPresented: $showingClearAllDataConfirmation) {
             Button("No", role: .cancel) { }
@@ -391,7 +471,7 @@ struct AppSettingsView: View {
                 clearAllData()
             }
         } message: {
-            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete ALL app data (fasting, weight, hydration) and cannot be restored unless you have created a backup.\n\nThe app will be reset to its initial state.\n\nAre you absolutely sure?")
+            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete ALL app data (fasting, weight, hydration, sleep, mood) and cannot be restored unless you have created a backup.\n\nThe app will be reset to its initial state.\n\nAre you absolutely sure?")
                 .font(.headline)
                 .fontWeight(.bold)
         }
@@ -488,6 +568,22 @@ struct AppSettingsView: View {
         UserDefaults.standard.removeObject(forKey: "hydrationLongestStreak")
     }
 
+    private func clearAllSleepData() {
+        // Clear all sleep entries from UserDefaults only
+        // Don't clear instance array - it's a separate instance from SleepTrackingView
+        UserDefaults.standard.removeObject(forKey: "sleepEntries")
+
+        // Disable HealthKit auto-sync to prevent re-importing data
+        // Must SET to false (not remove) because default is true
+        UserDefaults.standard.set(false, forKey: "syncSleepWithHealthKit")
+    }
+
+    private func clearAllMoodData() {
+        // Clear all mood entries from UserDefaults only
+        // Don't clear instance array - it's a separate instance from MoodTrackingView
+        UserDefaults.standard.removeObject(forKey: "moodEntries")
+    }
+
     private func clearAllData() {
         // Clear fasting data (includes stopping active fast)
         clearAllFastingData()
@@ -497,6 +593,12 @@ struct AppSettingsView: View {
 
         // Clear hydration data
         clearAllHydrationData()
+
+        // Clear sleep data
+        clearAllSleepData()
+
+        // Clear mood data
+        clearAllMoodData()
 
         // Reset fasting goal to default
         fastingManager.fastingGoalHours = 16

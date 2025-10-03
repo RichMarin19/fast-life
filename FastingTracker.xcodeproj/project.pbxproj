@@ -8,6 +8,12 @@
 
 /* Begin PBXBuildFile section */
 		5243F23E2E8F27C70051A731 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* OnboardingView.swift */; };
+		5243F2422E900F440051A731 /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* SleepEntry.swift */; };
+		5243F2432E900F440051A731 /* SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* SleepManager.swift */; };
+		5243F2442E900F440051A731 /* SleepTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2412E900F440051A731 /* SleepTrackingView.swift */; };
+		5243F24A2E9029970051A731 /* MoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2472E9029970051A731 /* MoodEntry.swift */; };
+		5243F24B2E9029970051A731 /* MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2482E9029970051A731 /* MoodManager.swift */; };
+		5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2492E9029970051A731 /* MoodTrackingView.swift */; };
 		5289E06D2E8D0DAD00254E70 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06C2E8D0DAD00254E70 /* InsightsView.swift */; };
 		5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06F2E8D5F6500254E70 /* AdvancedView.swift */; };
 		5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0712E8D5F6500254E70 /* WeightEntry.swift */; };
@@ -30,6 +36,12 @@
 
 /* Begin PBXFileReference section */
 		5243F23D2E8F27C70051A731 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		5243F23F2E900F440051A731 /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepEntry.swift; sourceTree = "<group>"; };
+		5243F2402E900F440051A731 /* SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepManager.swift; sourceTree = "<group>"; };
+		5243F2412E900F440051A731 /* SleepTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepTrackingView.swift; sourceTree = "<group>"; };
+		5243F2472E9029970051A731 /* MoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodEntry.swift; sourceTree = "<group>"; };
+		5243F2482E9029970051A731 /* MoodManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodManager.swift; sourceTree = "<group>"; };
+		5243F2492E9029970051A731 /* MoodTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrackingView.swift; sourceTree = "<group>"; };
 		5289E06C2E8D0DAD00254E70 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
 		5289E06E2E8D5F6500254E70 /* AddWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWeightView.swift; sourceTree = "<group>"; };
 		5289E06F2E8D5F6500254E70 /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedView.swift; sourceTree = "<group>"; };
@@ -75,6 +87,12 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				5243F2472E9029970051A731 /* MoodEntry.swift */,
+				5243F2482E9029970051A731 /* MoodManager.swift */,
+				5243F2492E9029970051A731 /* MoodTrackingView.swift */,
+				5243F23F2E900F440051A731 /* SleepEntry.swift */,
+				5243F2402E900F440051A731 /* SleepManager.swift */,
+				5243F2412E900F440051A731 /* SleepTrackingView.swift */,
 				5243F23D2E8F27C70051A731 /* OnboardingView.swift */,
 				5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */,
 				5289E06E2E8D5F6500254E70 /* AddWeightView.swift */,
@@ -182,7 +200,13 @@
 				5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */,
 				5243F23E2E8F27C70051A731 /* OnboardingView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */,
+				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
+				5243F2432E900F440051A731 /* SleepManager.swift in Sources */,
+				5243F2442E900F440051A731 /* SleepTrackingView.swift in Sources */,
 				5289E0782E8D5F6500254E70 /* WeightTrackingView.swift in Sources */,
+				5243F24A2E9029970051A731 /* MoodEntry.swift in Sources */,
+				5243F24B2E9029970051A731 /* MoodManager.swift in Sources */,
+				5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */,
 				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,
 				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
 				5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */,
