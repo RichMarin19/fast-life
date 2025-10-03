@@ -81,11 +81,9 @@ struct WeightTrackingView: View {
                 loadGoalSettings()
 
                 // Show first-time setup if user has no weight data
-                // Small delay to ensure weightManager has loaded data from UserDefaults
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    if weightManager.weightEntries.isEmpty {
-                        showingFirstTimeSetup = true
-                    }
+                // No delay needed - weightManager loads synchronously in init
+                if weightManager.weightEntries.isEmpty {
+                    showingFirstTimeSetup = true
                 }
 
                 // Only request authorization on first appearance if needed
