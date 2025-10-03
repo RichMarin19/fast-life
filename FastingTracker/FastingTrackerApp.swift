@@ -8,10 +8,6 @@ struct FastLifeApp: App {
     @State private var shouldResetToOnboarding = false  // Trigger full app reset
     @State private var isOnboardingComplete: Bool = UserDefaults.standard.bool(forKey: "onboardingCompleted")
 
-    init() {
-        NotificationManager.shared.requestAuthorization()
-    }
-
     var body: some Scene {
         WindowGroup {
             if isOnboardingComplete && !shouldResetToOnboarding {

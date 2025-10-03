@@ -15,6 +15,7 @@ struct OnboardingView: View {
     @State private var currentPage = 0
     @State private var showingSyncOptions = false
     @State private var isSyncing = false
+    @State private var healthKitSyncChoice: (enabled: Bool, futureOnly: Bool) = (false, false)
     @FocusState private var isWeightFocused: Bool
     @FocusState private var isGoalWeightFocused: Bool
     @FocusState private var isFastingGoalFocused: Bool
@@ -47,6 +48,10 @@ struct OnboardingView: View {
             // Page 6: HealthKit Sync
             healthKitSyncPage
                 .tag(5)
+
+            // Page 7: Notification Permission
+            notificationPermissionPage
+                .tag(6)
         }
         .tabViewStyle(.page(indexDisplayMode: .always))
         .indexViewStyle(.page(backgroundDisplayMode: .always))
@@ -450,7 +455,8 @@ struct OnboardingView: View {
 
             VStack(spacing: 15) {
                 Button(action: {
-                    completeOnboarding(syncHealthKit: true, futureOnly: false)
+                    saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
+                    currentPage = 6
                 }) {
                     VStack(spacing: 8) {
                         Text("Sync All Historical Data")
@@ -467,7 +473,8 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
-                    completeOnboarding(syncHealthKit: true, futureOnly: true)
+                    saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
+                    currentPage = 6
                 }) {
                     VStack(spacing: 8) {
                         Text("Sync Future Data Only")
@@ -484,7 +491,8 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
-                    completeOnboarding(syncHealthKit: false, futureOnly: false)
+                    saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                    currentPage = 6
                 }) {
                     Text("Skip for Now")
                         .font(.headline)
@@ -508,9 +516,78 @@ struct OnboardingView: View {
         }
     }
 
+    // MARK: - Notification Permission Page
+
+    private var notificationPermissionPage: some View {
+        VStack(spacing: 30) {
+            Spacer()
+
+            Image(systemName: "bell.badge.fill")
+                .font(.system(size: 72))
+                .foregroundColor(.orange)
+
+            Text("Stay on Track with Reminders")
+                .font(.title)
+                .fontWeight(.bold)
+                .multilineTextAlignment(.center)
+
+            Text("Get notified when you hit milestones during your fast and when you reach your goals")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            Spacer()
+
+            VStack(spacing: 15) {
+                Button(action: {
+                    NotificationManager.shared.requestAuthorization { granted in
+                        completeOnboarding()
+                    }
+                }) {
+                    Text("Enable Notifications")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.orange)
+                        .cornerRadius(15)
+                }
+
+                Button(action: {
+                    completeOnboarding()
+                }) {
+                    Text("Maybe Later")
+                        .font(.headline)
+                        .foregroundColor(.orange)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(15)
+                }
+            }
+            .padding(.horizontal, 40)
+
+            Spacer()
+
+            Button(action: { currentPage = 5 }) {
+                Text("Back")
+                    .font(.headline)
+                    .foregroundColor(.blue)
+            }
+            .padding(.bottom, 40)
+        }
+    }
+
+    // MARK: - Helper Functions
+
+    private func saveHealthKitPreference(syncHealthKit: Bool, futureOnly: Bool) {
+        healthKitSyncChoice = (syncHealthKit, futureOnly)
+    }
+
     // MARK: - Complete Onboarding
 
-    private func completeOnboarding(syncHealthKit: Bool, futureOnly: Bool) {
+    private func completeOnboarding() {
         // Save current weight
         if let weight = Double(currentWeight) {
             let entry = WeightEntry(date: Date(), weight: weight)
@@ -529,13 +606,13 @@ struct OnboardingView: View {
         hydrationManager.dailyGoalOunces = hydrationGoal
 
         // Sync with HealthKit if requested
-        if syncHealthKit {
+        if healthKitSyncChoice.enabled {
             healthKitManager.requestAuthorization { success, error in
                 if success {
-                    if futureOnly {
-                        weightManager.syncFromHealthKit(startDate: Date())
+                    if self.healthKitSyncChoice.futureOnly {
+                        self.weightManager.syncFromHealthKit(startDate: Date())
                     } else {
-                        weightManager.syncFromHealthKit()
+                        self.weightManager.syncFromHealthKit()
                     }
                 }
             }

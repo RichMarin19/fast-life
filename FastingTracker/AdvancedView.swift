@@ -212,6 +212,27 @@ struct AppSettingsView: View {
                 }
             }
 
+            // Notifications Section
+            Section(header: Text("Notifications"), footer: Text("Get reminded when you hit fasting milestones and reach your goals.")) {
+                Button(action: {
+                    // Open iOS Settings app to notification settings
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }) {
+                    HStack {
+                        Image(systemName: "bell.badge.fill")
+                            .foregroundColor(.orange)
+                        Text("Manage Notification Settings")
+                            .foregroundColor(.primary)
+                        Spacer()
+                        Image(systemName: "arrow.up.forward.app")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+
             // Apple Health Section
             Section(header: Text("Apple Health"), footer: Text("Sync your weight and hydration data with Apple Health. Water, coffee, and tea are saved as water intake.")) {
                 Button(action: { showingWeightSyncOptions = true }) {

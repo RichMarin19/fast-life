@@ -9,10 +9,21 @@ class NotificationManager {
 
     private init() {}
 
-    func requestAuthorization() {
+    func requestAuthorization(completion: ((Bool) -> Void)? = nil) {
         notificationCenter.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
                 print("Notification authorization error: \(error)")
+            }
+            DispatchQueue.main.async {
+                completion?(granted)
+            }
+        }
+    }
+
+    func getAuthorizationStatus(completion: @escaping (UNAuthorizationStatus) -> Void) {
+        notificationCenter.getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                completion(settings.authorizationStatus)
             }
         }
     }
