@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		5243F23E2E8F27C70051A731 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* OnboardingView.swift */; };
 		5289E06D2E8D0DAD00254E70 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06C2E8D0DAD00254E70 /* InsightsView.swift */; };
 		5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06F2E8D5F6500254E70 /* AdvancedView.swift */; };
 		5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0712E8D5F6500254E70 /* WeightEntry.swift */; };
@@ -28,6 +29,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		5243F23D2E8F27C70051A731 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		5289E06C2E8D0DAD00254E70 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
 		5289E06E2E8D5F6500254E70 /* AddWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWeightView.swift; sourceTree = "<group>"; };
 		5289E06F2E8D5F6500254E70 /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedView.swift; sourceTree = "<group>"; };
@@ -73,6 +75,7 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				5243F23D2E8F27C70051A731 /* OnboardingView.swift */,
 				5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */,
 				5289E06E2E8D5F6500254E70 /* AddWeightView.swift */,
 				5289E06F2E8D5F6500254E70 /* AdvancedView.swift */,
@@ -177,6 +180,7 @@
 				A1000001000000000000001 /* FastingTrackerApp.swift in Sources */,
 				5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */,
 				5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */,
+				5243F23E2E8F27C70051A731 /* OnboardingView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */,
 				5289E0782E8D5F6500254E70 /* WeightTrackingView.swift in Sources */,
 				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,

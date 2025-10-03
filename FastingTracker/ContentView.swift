@@ -4,14 +4,31 @@ struct ContentView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @State private var showingGoalSettings = false
     @State private var showingStopConfirmation = false
+    @State private var showingDeleteConfirmation = false
     @State private var showingEditTimes = false
     @State private var showingEditStartTime = false
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
+            VStack(spacing: 20) {
                 Spacer()
-                    .frame(height: 40)
+                    .frame(height: 70)
+
+                // Fast LIFe Title
+                HStack(spacing: 0) {
+                    Text("Fast L")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(.blue)
+                    Text("IF")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                    Text("e")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(.cyan)
+                }
+
+                Spacer()
+                    .frame(height: 20)
 
                 // Progress Ring
                 ZStack {
@@ -68,6 +85,8 @@ struct ContentView: View {
                 Text("\(Int(fastingManager.progress * 100))%")
                     .font(.title2)
                     .foregroundColor(.secondary)
+                    .padding(.top, 10)
+                    .padding(.bottom, 15)
 
                 // Streak Display
                 if fastingManager.currentStreak > 0 {
@@ -86,34 +105,32 @@ struct ContentView: View {
 
                 // Goal Display and Settings
                 HStack {
-                    Text("Goal: \(Int(fastingManager.fastingGoalHours))h")
-                        .font(.headline)
-                        .foregroundColor(.secondary)
+                    Text("GOAL: \(Int(fastingManager.fastingGoalHours))h")
+                        .font(.system(size: 36, weight: .bold))
+                        .foregroundColor(.green)
 
                     Button(action: {
                         showingGoalSettings = true
                     }) {
                         Image(systemName: "gearshape.fill")
-                            .foregroundColor(.blue)
+                            .foregroundColor(.gray)
+                            .font(.system(size: 28))
                     }
                 }
-                .padding(.bottom, 10)
-
-                Spacer()
-                    .frame(height: 20)
+                .padding(.bottom, 15)
 
                 // Buttons
                 if fastingManager.isActive {
                     // Start Time Display with Edit (inline style like competitor)
-                    HStack(spacing: 20) {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color.green)
-                                .frame(width: 8, height: 8)
-                            Text("Start")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color.blue)
+                            .frame(width: 8, height: 8)
+                        Text("Start")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Spacer()
 
                         Button(action: {
                             showingEditStartTime = true
@@ -128,22 +145,22 @@ struct ContentView: View {
                             .foregroundColor(.primary)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(Color(red: 0.9, green: 0.95, blue: 0.7))
+                            .background(Color.blue.opacity(0.1))
                             .cornerRadius(8)
                         }
                     }
                     .padding(.horizontal, 40)
 
                     // Goal End Time Display
-                    HStack(spacing: 20) {
-                        HStack(spacing: 6) {
-                            Circle()
-                                .fill(Color.blue)
-                                .frame(width: 8, height: 8)
-                            Text("Goal End")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                        }
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 8, height: 8)
+                        Text("Goal End")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+
+                        Spacer()
 
                         HStack(spacing: 8) {
                             Text(formatGoalEndTimeDisplay())
@@ -153,11 +170,11 @@ struct ContentView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(Color.blue.opacity(0.1))
+                        .background(Color(red: 0.9, green: 0.95, blue: 0.7))
                         .cornerRadius(8)
                     }
                     .padding(.horizontal, 40)
-                    .padding(.bottom, 10)
+                    .padding(.bottom, 5)
 
                     // Stop Fast Button
                     Button(action: {
@@ -173,7 +190,7 @@ struct ContentView: View {
                             .cornerRadius(15)
                     }
                     .padding(.horizontal, 40)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 105)
                 } else {
                     // Start Fast Button
                     Button(action: {
@@ -189,24 +206,15 @@ struct ContentView: View {
                             .cornerRadius(15)
                     }
                     .padding(.horizontal, 40)
-                    .padding(.bottom, 40)
+                    .padding(.bottom, 125)
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    HStack(spacing: 0) {
-                        Text("Fast L")
-                            .font(.system(size: 52, weight: .bold))
-                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.8))
-                        Text("IF")
-                            .font(.system(size: 52, weight: .black))
-                            .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
-                        Text("e")
-                            .font(.system(size: 52, weight: .bold))
-                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.8))
-                    }
-                    .padding(.top, 35)
+            .navigationBarHidden(true)
+            .onAppear {
+                // Check if fasting goal needs to be set
+                if fastingManager.fastingGoalHours == 0 {
+                    showingGoalSettings = true
                 }
             }
             .sheet(isPresented: $showingGoalSettings) {
@@ -221,16 +229,33 @@ struct ContentView: View {
                 EditFastTimesView()
                     .environmentObject(fastingManager)
             }
-            .alert("Stop Fast?", isPresented: $showingStopConfirmation) {
-                Button("Cancel", role: .cancel) { }
-                Button("Edit Times", role: .none) {
-                    showingEditTimes = true
+            .sheet(isPresented: $showingStopConfirmation) {
+                StopFastConfirmationView(
+                    onEditTimes: {
+                        showingStopConfirmation = false
+                        showingEditTimes = true
+                    },
+                    onStop: {
+                        showingStopConfirmation = false
+                        fastingManager.stopFast()
+                    },
+                    onDelete: {
+                        showingStopConfirmation = false
+                        showingDeleteConfirmation = true
+                    },
+                    onCancel: {
+                        showingStopConfirmation = false
+                    }
+                )
+                .presentationDetents([.height(400)])
+            }
+            .alert("Are you sure?", isPresented: $showingDeleteConfirmation) {
+                Button("Yes", role: .destructive) {
+                    fastingManager.deleteFast()
                 }
-                Button("Stop", role: .destructive) {
-                    fastingManager.stopFast()
-                }
+                Button("No", role: .cancel) { }
             } message: {
-                Text("Do you want to edit the start/end times before stopping?")
+                Text("This will permanently delete the current fast without saving it to history.")
             }
         }
     }
@@ -318,6 +343,84 @@ struct ContentView: View {
             return Color(red: 0.4, green: 0.9, blue: 0.4)
         } else {
             return Color(red: 0.3, green: 0.85, blue: 0.3)
+        }
+    }
+}
+
+// MARK: - Stop Fast Confirmation View
+
+struct StopFastConfirmationView: View {
+    let onEditTimes: () -> Void
+    let onStop: () -> Void
+    let onDelete: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Spacer()
+                .frame(height: 30)
+
+            Text("Stop Fast?")
+                .font(.title2)
+                .fontWeight(.bold)
+
+            Text("Do you want to edit the start/end times\nbefore stopping?")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 30)
+
+            Spacer()
+                .frame(height: 10)
+
+            VStack(spacing: 12) {
+                // Edit Times Button
+                Button(action: onEditTimes) {
+                    Text("Edit Times")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                }
+
+                // Stop Button - GREEN, BOLD, LARGER
+                Button(action: onStop) {
+                    Text("Stop")
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.green)
+                        .cornerRadius(12)
+                }
+
+                // Delete Button
+                Button(action: onDelete) {
+                    Text("Delete")
+                        .font(.headline)
+                        .foregroundColor(.red)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.red.opacity(0.1))
+                        .cornerRadius(12)
+                }
+
+                // Cancel Button
+                Button(action: onCancel) {
+                    Text("Cancel")
+                        .font(.headline)
+                        .foregroundColor(.blue)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.systemGray6))
+                        .cornerRadius(12)
+                }
+            }
+            .padding(.horizontal, 30)
+
+            Spacer()
         }
     }
 }

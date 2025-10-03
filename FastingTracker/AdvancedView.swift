@@ -161,11 +161,18 @@ struct AdvancedFeatureCard: View {
 struct AppSettingsView: View {
     @ObservedObject var fastingManager: FastingManager
     @StateObject private var weightManager = WeightManager()
+    @StateObject private var hydrationManager = HydrationManager()
     @StateObject private var healthKitManager = HealthKitManager.shared
     @Environment(\.dismiss) var dismiss
 
     @State private var showingClearFastingAlert = false
+    @State private var showingClearFastingConfirmation = false
     @State private var showingClearWeightAlert = false
+    @State private var showingClearWeightConfirmation = false
+    @State private var showingClearHydrationAlert = false
+    @State private var showingClearHydrationConfirmation = false
+    @State private var showingClearAllDataAlert = false
+    @State private var showingClearAllDataConfirmation = false
     @State private var isSyncing = false
     @State private var syncMessage = ""
     @State private var showingSyncAlert = false
@@ -227,6 +234,25 @@ struct AppSettingsView: View {
                             .foregroundColor(.red)
                     }
                 }
+
+                Button(action: { showingClearHydrationAlert = true }) {
+                    HStack {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                        Text("Clear All Hydration Data")
+                            .foregroundColor(.red)
+                    }
+                }
+
+                Button(action: { showingClearAllDataAlert = true }) {
+                    HStack {
+                        Image(systemName: "trash")
+                            .foregroundColor(.red)
+                        Text("Clear All Data and Reset")
+                            .foregroundColor(.red)
+                            .fontWeight(.bold)
+                    }
+                }
             }
         }
         .navigationTitle("Settings")
@@ -234,18 +260,74 @@ struct AppSettingsView: View {
         .alert("Clear All Fasting Data", isPresented: $showingClearFastingAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Clear All Data", role: .destructive) {
-                clearAllFastingData()
+                showingClearFastingConfirmation = true
             }
         } message: {
             Text("This will permanently delete all your fasting history, streaks, and statistics. This action cannot be undone.")
         }
+        .alert("Are you sure?", isPresented: $showingClearFastingConfirmation) {
+            Button("No", role: .cancel) { }
+            Button("Yes", role: .destructive) {
+                clearAllFastingData()
+            }
+        } message: {
+            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete all fasting data and cannot be restored unless you have created a backup.\n\nAre you absolutely sure?")
+                .font(.headline)
+                .fontWeight(.bold)
+        }
         .alert("Clear All Weight Data", isPresented: $showingClearWeightAlert) {
             Button("Cancel", role: .cancel) { }
             Button("Clear All Data", role: .destructive) {
-                clearAllWeightData()
+                showingClearWeightConfirmation = true
             }
         } message: {
             Text("This will permanently delete all your weight entries. This action cannot be undone.")
+        }
+        .alert("Are you sure?", isPresented: $showingClearWeightConfirmation) {
+            Button("No", role: .cancel) { }
+            Button("Yes", role: .destructive) {
+                clearAllWeightData()
+            }
+        } message: {
+            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete all weight data and cannot be restored unless you have created a backup.\n\nAre you absolutely sure?")
+                .font(.headline)
+                .fontWeight(.bold)
+        }
+        .alert("Clear All Hydration Data", isPresented: $showingClearHydrationAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear All Data", role: .destructive) {
+                showingClearHydrationConfirmation = true
+            }
+        } message: {
+            Text("This will permanently delete all your hydration tracking data including water, coffee, and tea entries. This action cannot be undone.")
+        }
+        .alert("Are you sure?", isPresented: $showingClearHydrationConfirmation) {
+            Button("No", role: .cancel) { }
+            Button("Yes", role: .destructive) {
+                clearAllHydrationData()
+            }
+        } message: {
+            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete all hydration data and cannot be restored unless you have created a backup.\n\nAre you absolutely sure?")
+                .font(.headline)
+                .fontWeight(.bold)
+        }
+        .alert("Clear All Data and Reset", isPresented: $showingClearAllDataAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Clear All Data and Reset", role: .destructive) {
+                showingClearAllDataConfirmation = true
+            }
+        } message: {
+            Text("This will permanently delete ALL app data including fasting history, weight entries, hydration tracking, streaks, and statistics. The app will be reset to its initial state and you will need to set up your goals again. This action cannot be undone.")
+        }
+        .alert("Are you sure?", isPresented: $showingClearAllDataConfirmation) {
+            Button("No", role: .cancel) { }
+            Button("Yes", role: .destructive) {
+                clearAllData()
+            }
+        } message: {
+            Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete ALL app data (fasting, weight, hydration) and cannot be restored unless you have created a backup.\n\nThe app will be reset to its initial state.\n\nAre you absolutely sure?")
+                .font(.headline)
+                .fontWeight(.bold)
         }
         .alert("Sync Status", isPresented: $showingSyncAlert) {
             Button("OK", role: .cancel) { }
@@ -285,10 +367,14 @@ struct AppSettingsView: View {
         fastingManager.currentStreak = 0
         fastingManager.longestStreak = 0
 
+        // Reset goal to 0 to trigger goal setup on next use
+        fastingManager.fastingGoalHours = 0
+
         // Save empty state
         UserDefaults.standard.removeObject(forKey: "fastingHistory")
         UserDefaults.standard.removeObject(forKey: "currentStreak")
         UserDefaults.standard.removeObject(forKey: "longestStreak")
+        UserDefaults.standard.removeObject(forKey: "fastingGoalHours")
     }
 
     private func clearAllWeightData() {
@@ -297,6 +383,54 @@ struct AppSettingsView: View {
 
         // Save empty state
         UserDefaults.standard.removeObject(forKey: "weightEntries")
+    }
+
+    private func clearAllHydrationData() {
+        // Clear all hydration entries
+        hydrationManager.drinkEntries.removeAll()
+
+        // Reset daily goal to 0 to trigger goal setup on next use
+        hydrationManager.dailyGoalOunces = 0
+
+        // Reset streak
+        hydrationManager.currentStreak = 0
+
+        // Save empty state
+        UserDefaults.standard.removeObject(forKey: "drinkEntries")
+        UserDefaults.standard.removeObject(forKey: "dailyGoalOunces")
+        UserDefaults.standard.removeObject(forKey: "hydrationStreak")
+    }
+
+    private func clearAllData() {
+        // Clear fasting data
+        clearAllFastingData()
+
+        // Clear weight data
+        clearAllWeightData()
+
+        // Clear hydration data
+        clearAllHydrationData()
+
+        // Reset fasting goal to default
+        fastingManager.fastingGoalHours = 16
+
+        // Remove onboarding completed flag to trigger first-time setup
+        UserDefaults.standard.removeObject(forKey: "onboardingCompleted")
+
+        // Save reset state
+        UserDefaults.standard.removeObject(forKey: "fastingGoalHours")
+
+        // Remove goal weight
+        UserDefaults.standard.removeObject(forKey: "goalWeight")
+
+        // Ensure all UserDefaults changes are persisted to disk before exit
+        UserDefaults.standard.synchronize()
+
+        // Exit app so user must relaunch to see onboarding
+        // Using a brief delay to ensure data is fully saved
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            exit(0)
+        }
     }
 
     // MARK: - Sync Function

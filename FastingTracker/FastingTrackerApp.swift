@@ -5,6 +5,7 @@ struct FastLifeApp: App {
     @StateObject private var fastingManager = FastingManager()
     @State private var selectedTab: Int = 0  // Always start at Timer tab (index 0)
     @State private var shouldPopToRoot = false  // Trigger navigation pop
+    @State private var isOnboardingComplete: Bool = UserDefaults.standard.bool(forKey: "onboardingCompleted")
 
     init() {
         NotificationManager.shared.requestAuthorization()
@@ -12,34 +13,42 @@ struct FastLifeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            TabView(selection: tabBinding) {
-                ContentView()
-                    .environmentObject(fastingManager)
-                    .tabItem {
-                        Label("Timer", systemImage: "clock")
-                    }
-                    .tag(0)
-
-                InsightsView()
-                    .tabItem {
-                        Label("Insights", systemImage: "lightbulb.fill")
-                    }
-                    .tag(1)
-
-                HistoryView()
-                    .environmentObject(fastingManager)
-                    .tabItem {
-                        Label("History", systemImage: "list.bullet")
-                    }
-                    .tag(2)
-
-                AdvancedView(shouldPopToRoot: $shouldPopToRoot)
-                    .environmentObject(fastingManager)
-                    .tabItem {
-                        Label("More", systemImage: "ellipsis.circle")
-                    }
-                    .tag(3)
+            if isOnboardingComplete {
+                mainTabView
+            } else {
+                OnboardingView(isOnboardingComplete: $isOnboardingComplete)
             }
+        }
+    }
+
+    private var mainTabView: some View {
+        TabView(selection: tabBinding) {
+            ContentView()
+                .environmentObject(fastingManager)
+                .tabItem {
+                    Label("Timer", systemImage: "clock")
+                }
+                .tag(0)
+
+            InsightsView()
+                .tabItem {
+                    Label("Insights", systemImage: "lightbulb.fill")
+                }
+                .tag(1)
+
+            HistoryView()
+                .environmentObject(fastingManager)
+                .tabItem {
+                    Label("History", systemImage: "list.bullet")
+                }
+                .tag(2)
+
+            AdvancedView(shouldPopToRoot: $shouldPopToRoot)
+                .environmentObject(fastingManager)
+                .tabItem {
+                    Label("More", systemImage: "ellipsis.circle")
+                }
+                .tag(3)
         }
     }
 

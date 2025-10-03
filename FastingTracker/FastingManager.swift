@@ -88,6 +88,17 @@ class FastingManager: ObservableObject {
         NotificationManager.shared.cancelGoalNotification()
     }
 
+    func deleteFast() {
+        // Delete current fast without saving to history
+        // This discards the fast as if it never happened
+        currentSession = nil
+        clearCurrentSession()
+        stopTimer()
+
+        // Cancel notification
+        NotificationManager.shared.cancelGoalNotification()
+    }
+
     func stopFastWithCustomTimes(startTime: Date, endTime: Date) {
         guard var session = currentSession else { return }
 

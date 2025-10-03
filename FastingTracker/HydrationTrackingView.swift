@@ -165,6 +165,12 @@ struct HydrationTrackingView: View {
         }
         .navigationTitle("Hydration Tracker")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Check if hydration goal needs to be set
+            if hydrationManager.dailyGoalOunces == 0 {
+                showingGoalSettings = true
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: HydrationHistoryView(hydrationManager: hydrationManager)) {
