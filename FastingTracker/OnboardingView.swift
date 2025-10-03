@@ -1,10 +1,8 @@
 import SwiftUI
 
 struct OnboardingView: View {
-    @StateObject private var fastingManager = FastingManager()
-    @StateObject private var weightManager = WeightManager()
-    @StateObject private var hydrationManager = HydrationManager()
-    private let healthKitManager = HealthKitManager.shared
+    // Don't create managers or access HealthKit immediately - they're only needed at the end
+    // Accessing HealthKitManager.shared causes expensive HealthKit framework initialization on main thread
 
     @State private var currentWeight: String = ""
     @State private var goalWeight: String = ""
@@ -13,8 +11,6 @@ struct OnboardingView: View {
     @State private var hydrationGoal: Double = 90
     @State private var hydrationGoalText: String = "90"
     @State private var currentPage = 0
-    @State private var showingSyncOptions = false
-    @State private var isSyncing = false
     @State private var healthKitSyncChoice: (enabled: Bool, futureOnly: Bool) = (false, false)
     @FocusState private var isWeightFocused: Bool
     @FocusState private var isGoalWeightFocused: Bool
@@ -53,8 +49,10 @@ struct OnboardingView: View {
             notificationPermissionPage
                 .tag(6)
         }
-        .tabViewStyle(.page(indexDisplayMode: .always))
-        .indexViewStyle(.page(backgroundDisplayMode: .always))
+        .tabViewStyle(.page)
+        // Removed .indexViewStyle(.always) to enable lazy page rendering
+        // This prevents all 7 pages from rendering on app launch
+        // Per Apple docs: default behavior renders pages on-demand for better performance
     }
 
     // MARK: - Welcome Page
@@ -85,6 +83,7 @@ struct OnboardingView: View {
             VStack(spacing: 20) {
                 FeatureRow(icon: "timer", title: "Track Fasting", description: "Monitor your fasting windows and streaks")
                 FeatureRow(icon: "drop.fill", title: "Stay Hydrated", description: "Log water, coffee, and tea intake")
+                FeatureRow(icon: "bed.double.fill", title: "Sleep Tracking", description: "Monitor sleep quality and duration")
                 FeatureRow(icon: "scalemass.fill", title: "Weight Goals", description: "Track progress with HealthKit integration")
             }
             .padding(.horizontal)
@@ -455,13 +454,24 @@ struct OnboardingView: View {
 
             VStack(spacing: 15) {
                 Button(action: {
-                    saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
-                    currentPage = 6
+                    // Request HealthKit authorization IMMEDIATELY (not later)
+                    // Access HealthKitManager.shared here (not during view init) to defer framework initialization
+                    HealthKitManager.shared.requestAuthorization { success, error in
+                        if success {
+                            saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
+                            currentPage = 6
+                        } else {
+                            print("HealthKit authorization failed: \(String(describing: error))")
+                            // Still allow user to continue even if authorization fails
+                            saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                            currentPage = 6
+                        }
+                    }
                 }) {
                     VStack(spacing: 8) {
                         Text("Sync All Historical Data")
                             .font(.headline)
-                        Text("Import all weight entries from Apple Health")
+                        Text("Import all weight, water, and sleep data from Apple Health")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
@@ -473,8 +483,19 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
-                    saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
-                    currentPage = 6
+                    // Request HealthKit authorization IMMEDIATELY (not later)
+                    // Access HealthKitManager.shared here (not during view init) to defer framework initialization
+                    HealthKitManager.shared.requestAuthorization { success, error in
+                        if success {
+                            saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
+                            currentPage = 6
+                        } else {
+                            print("HealthKit authorization failed: \(String(describing: error))")
+                            // Still allow user to continue even if authorization fails
+                            saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                            currentPage = 6
+                        }
+                    }
                 }) {
                     VStack(spacing: 8) {
                         Text("Sync Future Data Only")
@@ -588,6 +609,12 @@ struct OnboardingView: View {
     // MARK: - Complete Onboarding
 
     private func completeOnboarding() {
+        // Create managers only when needed (at completion time, not during onboarding UI rendering)
+        // This prevents lag during onboarding caused by expensive init() work
+        let weightManager = WeightManager()
+        let fastingManager = FastingManager()
+        let hydrationManager = HydrationManager()
+
         // Save current weight
         if let weight = Double(currentWeight) {
             let entry = WeightEntry(date: Date(), weight: weight)
@@ -605,16 +632,13 @@ struct OnboardingView: View {
         // Save hydration goal
         hydrationManager.dailyGoalOunces = hydrationGoal
 
-        // Sync with HealthKit if requested
+        // Sync with HealthKit if requested (authorization was already requested on HealthKit page)
         if healthKitSyncChoice.enabled {
-            healthKitManager.requestAuthorization { success, error in
-                if success {
-                    if self.healthKitSyncChoice.futureOnly {
-                        self.weightManager.syncFromHealthKit(startDate: Date())
-                    } else {
-                        self.weightManager.syncFromHealthKit()
-                    }
-                }
+            // Perform sync (authorization already granted on previous page)
+            if self.healthKitSyncChoice.futureOnly {
+                weightManager.syncFromHealthKit(startDate: Date())
+            } else {
+                weightManager.syncFromHealthKit()
             }
         }
 
