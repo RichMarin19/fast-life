@@ -19,6 +19,17 @@ struct OnboardingView: View {
 
     @Binding var isOnboardingComplete: Bool
 
+    init(isOnboardingComplete: Binding<Bool>) {
+        self._isOnboardingComplete = isOnboardingComplete
+
+        // Style page indicator dots to be visible against white background
+        // Current page = blue (matches app theme), inactive pages = light gray
+        // Per Apple UIPageControl documentation: appearance() sets global styling
+        // Reference: https://developer.apple.com/documentation/uikit/uipagecontrol
+        UIPageControl.appearance().currentPageIndicatorTintColor = UIColor.systemBlue
+        UIPageControl.appearance().pageIndicatorTintColor = UIColor.gray.withAlphaComponent(0.3)
+    }
+
     var body: some View {
         TabView(selection: $currentPage) {
             // Page 1: Welcome
@@ -49,10 +60,11 @@ struct OnboardingView: View {
             notificationPermissionPage
                 .tag(6)
         }
-        .tabViewStyle(.page)
-        // Removed .indexViewStyle(.always) to enable lazy page rendering
-        // This prevents all 7 pages from rendering on app launch
-        // Per Apple docs: default behavior renders pages on-demand for better performance
+        .tabViewStyle(.page(indexDisplayMode: .always))
+        // .always ensures page indicator dots are always visible and properly positioned
+        // Dots remain visible even when keyboard appears (iOS handles positioning)
+        // This matches the original working version behavior
+        // Reference: https://developer.apple.com/documentation/swiftui/pagetabviewstyle
     }
 
     // MARK: - Welcome Page
@@ -90,7 +102,9 @@ struct OnboardingView: View {
 
             Spacer()
 
-            Button(action: { currentPage = 1 }) {
+            Button(action: {
+                currentPage = 1
+            }) {
                 Text("Get Started")
                     .font(.headline)
                     .foregroundColor(.white)
@@ -141,7 +155,10 @@ struct OnboardingView: View {
             Spacer()
 
             HStack(spacing: 20) {
-                Button(action: { currentPage = 0 }) {
+                Button(action: {
+                    dismissKeyboard()
+                    currentPage = 0
+                }) {
                     Text("Back")
                         .font(.headline)
                         .foregroundColor(.blue)
@@ -151,7 +168,9 @@ struct OnboardingView: View {
                         .cornerRadius(15)
                 }
 
-                Button(action: { currentPage = 2 }) {
+                Button(action: {
+                    currentPage = 2
+                }) {
                     Text("Next")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -204,7 +223,9 @@ struct OnboardingView: View {
             Spacer()
 
             HStack(spacing: 20) {
-                Button(action: { currentPage = 1 }) {
+                Button(action: {
+                    currentPage = 1
+                }) {
                     Text("Back")
                         .font(.headline)
                         .foregroundColor(.blue)
@@ -214,7 +235,9 @@ struct OnboardingView: View {
                         .cornerRadius(15)
                 }
 
-                Button(action: { currentPage = 3 }) {
+                Button(action: {
+                    currentPage = 3
+                }) {
                     Text("Next")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -601,6 +624,13 @@ struct OnboardingView: View {
     }
 
     // MARK: - Helper Functions
+
+    /// Dismisses the keyboard
+    /// Per Apple HIG: "Dismiss the keyboard when users navigate away from text input"
+    /// Reference: https://developer.apple.com/design/human-interface-guidelines/text-fields
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
 
     private func saveHealthKitPreference(syncHealthKit: Bool, futureOnly: Bool) {
         healthKitSyncChoice = (syncHealthKit, futureOnly)

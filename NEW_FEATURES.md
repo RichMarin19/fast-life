@@ -1,5 +1,19 @@
 # New Features Added ✨
 
+## ⚠️ CRITICAL DEVELOPMENT RULE
+
+**UI OVERLAY PROHIBITION:** UI elements (buttons, text, page indicators, navigation controls) must NEVER overlap under ANY circumstances.
+
+**Before Adding Features:**
+- ✅ Test on ALL device sizes (iPhone SE, standard, Pro Max)
+- ✅ Test with keyboard open AND closed
+- ✅ Test ALL navigation paths (forward/backward)
+- ✅ Verify NO overlapping in ANY state
+
+**Reference:** See `HANDOFF.md` for detailed overlay prevention protocols.
+
+---
+
 ## 7. Mood & Energy Tracker 😊⚡
 
 **Added:** January 3, 2025

@@ -476,6 +476,36 @@ Top 10 frequently asked questions with expandable answers:
 
 ---
 
+## 🛠️ Development Guidelines
+
+### Critical UI Rule: NO OVERLAPPING ELEMENTS
+
+**⚠️ NEVER ACCEPTABLE:** UI elements (buttons, text, page indicators, navigation controls) overlapping under ANY circumstances.
+
+**Why This Matters:**
+- Breaks usability and user experience
+- Makes interactive elements inaccessible
+- Appears unprofessional and buggy
+
+**Specific Cases:**
+- ✅ **Correct:** Buttons, page dots, and content maintain proper spacing with keyboard open/closed
+- ❌ **Wrong:** Keyboard toolbar causes buttons to overlap page indicator dots
+- ❌ **Wrong:** Navigation buttons cover text or other UI elements
+
+**Testing Requirements:**
+- Test on ALL device sizes (iPhone SE, standard, Pro Max)
+- Test with keyboard OPEN and CLOSED
+- Test ALL navigation paths (forward and backward through flows)
+- Verify proper spacing in EVERY screen state
+
+**Reference Documentation:** See `HANDOFF.md` for detailed overlay prevention protocols and historical issues.
+
+**Apple HIG Reference:**
+> "Ensure sufficient space between interactive elements to prevent accidental taps and maintain visual clarity"
+> https://developer.apple.com/design/human-interface-guidelines/layout
+
+---
+
 ## 📞 Support & Feedback
 
 ### 🐛 Found a Bug?
