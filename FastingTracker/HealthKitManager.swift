@@ -35,14 +35,16 @@ class HealthKitManager: ObservableObject {
         let readTypes: Set<HKObjectType> = [
             HKObjectType.quantityType(forIdentifier: .bodyMass)!,
             HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
-            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
+            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
+            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
         ]
 
         // Types to write to HealthKit
         let writeTypes: Set<HKSampleType> = [
             HKObjectType.quantityType(forIdentifier: .bodyMass)!,
             HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
-            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
+            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
+            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
         ]
 
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
@@ -235,6 +237,60 @@ class HealthKitManager: ObservableObject {
         }
 
         healthStore.execute(query)
+    }
+
+    // MARK: - Read Water Data
+
+    func fetchWaterData(startDate: Date, endDate: Date = Date(), completion: @escaping ([(date: Date, amount: Double)]) -> Void) {
+        guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
+            completion([])
+            return
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        let query = HKSampleQuery(sampleType: waterType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { query, results, error in
+
+            guard let samples = results as? [HKQuantitySample], error == nil else {
+                print("Error fetching water data: \(String(describing: error))")
+                completion([])
+                return
+            }
+
+            // Convert samples to date/amount tuples
+            let waterData = samples.map { sample in
+                let amountInOunces = sample.quantity.doubleValue(for: HKUnit.fluidOunceUS())
+                return (date: sample.startDate, amount: amountInOunces)
+            }
+
+            DispatchQueue.main.async {
+                completion(waterData)
+            }
+        }
+
+        healthStore.execute(query)
+    }
+
+    // MARK: - Write Water Data
+
+    func saveWater(amount: Double, date: Date = Date(), completion: @escaping (Bool, Error?) -> Void) {
+        guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
+            completion(false, NSError(domain: "HealthKit", code: 4, userInfo: [NSLocalizedDescriptionKey: "Unable to access water type"]))
+            return
+        }
+
+        let waterQuantity = HKQuantity(unit: HKUnit.fluidOunceUS(), doubleValue: amount)
+        let waterSample = HKQuantitySample(type: waterType, quantity: waterQuantity, start: date, end: date)
+
+        healthStore.save(waterSample) { success, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("Error saving water data: \(error.localizedDescription)")
+                }
+                completion(success, error)
+            }
+        }
     }
 
     // MARK: - Observer Query for Automatic Updates

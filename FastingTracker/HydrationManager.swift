@@ -77,6 +77,16 @@ class HydrationManager: ObservableObject {
 
         // Recalculate streaks after adding entry
         calculateStreakFromHistory()
+
+        // Auto-sync to HealthKit (all drink types sync as water)
+        let healthKitManager = HealthKitManager.shared
+        if healthKitManager.isAuthorized {
+            healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
+                if let error = error {
+                    print("Failed to auto-sync drink to HealthKit: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     func addDrink(type: DrinkType, amount: Double? = nil) {
@@ -269,5 +279,59 @@ class HydrationManager: ObservableObject {
 
     private func loadLongestStreak() {
         longestStreak = userDefaults.integer(forKey: longestStreakKey)
+    }
+
+    // MARK: - HealthKit Sync
+
+    func syncToHealthKit() {
+        let healthKitManager = HealthKitManager.shared
+
+        guard healthKitManager.isAuthorized else {
+            print("HealthKit not authorized for hydration sync")
+            return
+        }
+
+        // Sync all drink entries to HealthKit as water
+        for entry in drinkEntries {
+            healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
+                if let error = error {
+                    print("Failed to sync drink to HealthKit: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+
+    func syncFromHealthKit(startDate: Date? = nil) {
+        let healthKitManager = HealthKitManager.shared
+
+        guard healthKitManager.isAuthorized else {
+            print("HealthKit not authorized for hydration import")
+            return
+        }
+
+        // Default to last 365 days if no start date provided
+        let fromDate = startDate ?? Calendar.current.date(byAdding: .day, value: -365, to: Date())!
+
+        healthKitManager.fetchWaterData(startDate: fromDate) { [weak self] waterData in
+            guard let self = self else { return }
+
+            // Import water data as "Water" type DrinkEntry
+            for (date, amount) in waterData {
+                // Check if we already have an entry for this exact date/amount to avoid duplicates
+                let exists = self.drinkEntries.contains { entry in
+                    entry.date == date && entry.amount == amount && entry.type == .water
+                }
+
+                if !exists {
+                    let entry = DrinkEntry(type: .water, amount: amount, date: date)
+                    self.drinkEntries.append(entry)
+                }
+            }
+
+            // Sort and save
+            self.drinkEntries.sort { $0.date > $1.date }
+            self.saveDrinkEntries()
+            self.calculateStreakFromHistory()
+        }
     }
 }

@@ -198,7 +198,7 @@ struct AppSettingsView: View {
             }
 
             // Apple Health Section
-            Section(header: Text("Apple Health"), footer: Text("Choose whether to sync all historical data or only future weight entries with Apple Health.")) {
+            Section(header: Text("Apple Health"), footer: Text("Sync your weight and hydration data with Apple Health. Water, coffee, and tea are saved as water intake.")) {
                 Button(action: { showingSyncOptions = true }) {
                     HStack {
                         if isSyncing {
@@ -209,6 +209,21 @@ struct AppSettingsView: View {
                                 .foregroundColor(.blue)
                         }
                         Text(isSyncing ? "Syncing..." : "Sync Weight with Apple Health")
+                            .foregroundColor(.primary)
+                    }
+                }
+                .disabled(isSyncing)
+
+                Button(action: { syncHydrationToHealthKit() }) {
+                    HStack {
+                        if isSyncing {
+                            ProgressView()
+                                .padding(.trailing, 8)
+                        } else {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundColor(.cyan)
+                        }
+                        Text(isSyncing ? "Syncing..." : "Sync Hydration with Apple Health")
                             .foregroundColor(.primary)
                     }
                 }
@@ -471,6 +486,42 @@ struct AppSettingsView: View {
             let count = weightManager.weightEntries.count
             let timeframe = futureOnly ? "from today forward" : "from Apple Health"
             syncMessage = count > 0 ? "Successfully synced \(count) weight entries \(timeframe)." : "No weight data found in Apple Health."
+            showingSyncAlert = true
+        }
+    }
+
+    // MARK: - Hydration Sync Function
+
+    private func syncHydrationToHealthKit() {
+        isSyncing = true
+
+        // Check if HealthKit is authorized
+        if !healthKitManager.isAuthorized {
+            // Request authorization first
+            healthKitManager.requestAuthorization { success, error in
+                if success {
+                    performHydrationSync()
+                } else {
+                    isSyncing = false
+                    syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
+                    showingSyncAlert = true
+                }
+            }
+        } else {
+            // Already authorized, just sync
+            performHydrationSync()
+        }
+    }
+
+    private func performHydrationSync() {
+        // Sync all drinks (water, coffee, tea) to HealthKit as water
+        hydrationManager.syncToHealthKit()
+
+        // Give it a moment to complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            isSyncing = false
+            let count = hydrationManager.drinkEntries.count
+            syncMessage = count > 0 ? "Successfully synced \(count) drink entries to Apple Health as water." : "No hydration data to sync."
             showingSyncAlert = true
         }
     }
