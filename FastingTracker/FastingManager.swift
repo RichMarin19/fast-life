@@ -18,22 +18,23 @@ class FastingManager: ObservableObject {
     private let longestStreakKey = "longestStreak"
 
     init() {
-        loadGoal()
-        loadCurrentSession()
-        loadHistory()
-        loadStreak()
-        loadLongestStreak()
+        // CRITICAL: Only load data needed for Timer tab (first screen)
+        // History loading deferred to loadHistoryAsync() to avoid blocking app launch
+        // Per Apple: "Defer work that isn't critical to launch"
+        // Reference: https://developer.apple.com/documentation/xcode/reducing-your-app-s-launch-time
 
-        // Start timer immediately if there's an active session (critical for UI)
+        loadGoal()              // Fast: Single double from UserDefaults
+        loadCurrentSession()    // Fast: Single session object (or nil)
+        loadStreak()            // Fast: Single int from UserDefaults
+        loadLongestStreak()     // Fast: Single int from UserDefaults
+
+        // Start timer immediately if there's an active session (critical for Timer tab UI)
         if currentSession != nil {
             startTimer()
         }
 
-        // Recalculate streak asynchronously to avoid blocking app launch
-        // This ensures accuracy but doesn't delay the initial UI render
-        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
-            self?.calculateStreakFromHistory()
-        }
+        // NOTE: History loading moved to loadHistoryAsync()
+        // Called from MainTabView.onAppear after first frame renders
     }
 
     var remainingTime: TimeInterval {
@@ -227,6 +228,31 @@ class FastingManager: ObservableObject {
         }
         // Filter out any incomplete sessions from history (safety check)
         fastingHistory = history.filter { $0.isComplete }.sorted { $0.startTime > $1.startTime }
+    }
+
+    /// Loads fasting history asynchronously on background thread
+    /// Call this from MainTabView.onAppear() to defer heavy data loading until after first frame renders
+    /// This prevents white screen lag on app launch
+    func loadHistoryAsync() {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            guard let self = self else { return }
+
+            // Load and decode history on background thread
+            guard let data = self.userDefaults.data(forKey: self.historyKey),
+                  let history = try? JSONDecoder().decode([FastingSession].self, from: data) else {
+                return
+            }
+
+            let filteredHistory = history.filter { $0.isComplete }.sorted { $0.startTime > $1.startTime }
+
+            // Update @Published property on main thread
+            DispatchQueue.main.async {
+                self.fastingHistory = filteredHistory
+            }
+
+            // Recalculate streaks on background thread (already handles main thread updates internally)
+            self.calculateStreakFromHistory()
+        }
     }
 
     func setFastingGoal(hours: Double) {

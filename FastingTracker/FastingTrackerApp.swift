@@ -100,6 +100,12 @@ struct MainTabView: View {
             }
             .tag(3)
         }
+        .onAppear {
+            // Load fasting history asynchronously after UI renders
+            // This prevents blocking app launch with heavy data loading
+            // History loads in background while Timer tab displays
+            fastingManager.loadHistoryAsync()
+        }
     }
 }
 
