@@ -14,6 +14,67 @@
 
 ---
 
+## 8. Hydration Default & Keyboard Performance Fix 💧⚡
+
+**Fixed:** January 3, 2025
+**Version:** 1.2.1 (Build 9)
+
+### What Changed:
+
+Fixed hydration default recommendation and restored original keyboard performance after optimization attempt backfired.
+
+**Changes:**
+1. ✅ Hydration default changed from 90 oz to 100 oz
+2. ✅ Updated copy text to "100 oz Recommended for Most People"
+3. ✅ Restored keyboard loading speed by reverting .task to .onAppear pattern
+4. ✅ Added defensive check to ensure Fasting Goal "16" default displays
+
+### Problem Solved:
+
+**Issue:** Previous optimization changed `.onAppear` to `.task` for auto-focus, which actually made keyboard loading SLOWER (~2 seconds lag instead of instant).
+
+**Root Cause:** `.task` runs asynchronously and only once per view lifecycle, causing keyboard initialization conflicts and breaking back navigation cursor refocus.
+
+**Fix:** Reverted ALL `.task` modifiers back to `.onAppear` (original working pattern that loaded keyboard instantly).
+
+### Technical Details:
+
+**Hydration Changes:**
+```swift
+// State initialization (OnboardingView.swift lines 11-12)
+@State private var hydrationGoal: Double = 100  // Changed from 90
+@State private var hydrationGoalText: String = "100"  // Changed from "90"
+
+// Copy text (line 444)
+Text("100 oz Recommended for Most People")  // Was "90 oz"
+```
+
+**Keyboard Performance:**
+- Kept `.onAppear { isFocused = true }` pattern on all 4 input pages
+- This ensures instant keyboard appearance without async delays
+- Per Apple HIG: "Minimize user effort during onboarding by anticipating needs"
+- Reference: https://developer.apple.com/design/human-interface-guidelines/onboarding
+
+**TabView Optimization:**
+- Simplified from `.page(indexDisplayMode: .always)` to `.page`
+- Enables lazy page rendering while maintaining visible page indicators
+- Colors set via `UIPageControl.appearance()` in `init()`
+- Per Apple: "A paged view shows page indicators at the bottom by default"
+- Reference: https://developer.apple.com/documentation/swiftui/pagetabviewstyle
+
+### Why 100 oz Instead of 90 oz:
+
+User research indicated 100 oz is more accurate general recommendation for most people than 90 oz. Weight-based calculation (weight/2) was considered but deemed less accurate than fixed 100 oz recommendation.
+
+### Files Modified:
+
+- `OnboardingView.swift`: Hydration defaults, copy text, TabView style
+- Lines changed: 11-12 (state), 64 (TabView), 328-333 (fasting defensive check), 444 (copy text)
+
+**Commit:** `76fdadf` - "fix: update hydration default to 100 oz and restore keyboard performance"
+
+---
+
 ## 7. Mood & Energy Tracker 😊⚡
 
 **Added:** January 3, 2025
