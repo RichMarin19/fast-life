@@ -310,11 +310,12 @@ class HydrationManager: ObservableObject {
         print("Completed hydration sync attempt for \(drinkEntries.count) drinks")
     }
 
-    func syncFromHealthKit(startDate: Date? = nil) {
+    func syncFromHealthKit(startDate: Date? = nil, completion: (() -> Void)? = nil) {
         let healthKitManager = HealthKitManager.shared
 
         guard healthKitManager.isAuthorized else {
             print("HealthKit not authorized for hydration import")
+            completion?()
             return
         }
 
@@ -322,9 +323,15 @@ class HydrationManager: ObservableObject {
         let fromDate = startDate ?? Calendar.current.date(byAdding: .day, value: -365, to: Date())!
 
         healthKitManager.fetchWaterData(startDate: fromDate) { [weak self] waterData in
-            guard let self = self else { return }
+            guard let self = self else {
+                completion?()
+                return
+            }
+
+            print("Importing \(waterData.count) water entries from HealthKit")
 
             // Import water data as "Water" type DrinkEntry
+            var importedCount = 0
             for (date, amount) in waterData {
                 // Check if we already have an entry for this exact date/amount to avoid duplicates
                 let exists = self.drinkEntries.contains { entry in
@@ -334,13 +341,21 @@ class HydrationManager: ObservableObject {
                 if !exists {
                     let entry = DrinkEntry(type: .water, amount: amount, date: date)
                     self.drinkEntries.append(entry)
+                    importedCount += 1
                 }
             }
+
+            print("Successfully imported \(importedCount) new drink entries from HealthKit")
 
             // Sort and save
             self.drinkEntries.sort { $0.date > $1.date }
             self.saveDrinkEntries()
             self.calculateStreakFromHistory()
+
+            // Call completion on main thread
+            DispatchQueue.main.async {
+                completion?()
+            }
         }
     }
 }

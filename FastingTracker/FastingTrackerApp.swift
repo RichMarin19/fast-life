@@ -5,6 +5,7 @@ struct FastLifeApp: App {
     @StateObject private var fastingManager = FastingManager()
     @State private var selectedTab: Int = 0  // Always start at Timer tab (index 0)
     @State private var shouldPopToRoot = false  // Trigger navigation pop
+    @State private var shouldResetToOnboarding = false  // Trigger full app reset
     @State private var isOnboardingComplete: Bool = UserDefaults.standard.bool(forKey: "onboardingCompleted")
 
     init() {
@@ -13,10 +14,14 @@ struct FastLifeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if isOnboardingComplete {
+            if isOnboardingComplete && !shouldResetToOnboarding {
                 mainTabView
             } else {
                 OnboardingView(isOnboardingComplete: $isOnboardingComplete)
+                    .onAppear {
+                        // Reset the flag when onboarding appears
+                        shouldResetToOnboarding = false
+                    }
             }
         }
     }
@@ -43,7 +48,7 @@ struct FastLifeApp: App {
                 }
                 .tag(2)
 
-            AdvancedView(shouldPopToRoot: $shouldPopToRoot)
+            AdvancedView(shouldPopToRoot: $shouldPopToRoot, shouldResetToOnboarding: $shouldResetToOnboarding)
                 .environmentObject(fastingManager)
                 .tabItem {
                     Label("More", systemImage: "ellipsis.circle")

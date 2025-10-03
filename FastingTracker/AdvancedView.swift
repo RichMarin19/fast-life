@@ -3,6 +3,7 @@ import SwiftUI
 struct AdvancedView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @Binding var shouldPopToRoot: Bool
+    @Binding var shouldResetToOnboarding: Bool
     @State private var navigationPath = NavigationPath()
 
     var body: some View {
@@ -85,7 +86,7 @@ struct AdvancedView: View {
                 case "hydrationTracking":
                     HydrationTrackingView()
                 case "settings":
-                    AppSettingsView(fastingManager: fastingManager)
+                    AppSettingsView(fastingManager: fastingManager, shouldResetToOnboarding: $shouldResetToOnboarding)
                 default:
                     EmptyView()
                 }
@@ -160,6 +161,7 @@ struct AdvancedFeatureCard: View {
 
 struct AppSettingsView: View {
     @ObservedObject var fastingManager: FastingManager
+    @Binding var shouldResetToOnboarding: Bool
     @StateObject private var weightManager = WeightManager()
     @StateObject private var hydrationManager = HydrationManager()
     @StateObject private var healthKitManager = HealthKitManager.shared
@@ -479,13 +481,15 @@ struct AppSettingsView: View {
         // Remove goal weight
         UserDefaults.standard.removeObject(forKey: "goalWeight")
 
-        // Ensure all UserDefaults changes are persisted to disk before exit
+        // Ensure all UserDefaults changes are persisted to disk
         UserDefaults.standard.synchronize()
 
-        // Exit app so user must relaunch to see onboarding
-        // Using a brief delay to ensure data is fully saved
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            exit(0)
+        // Dismiss settings and trigger onboarding to restart the app experience
+        dismiss()
+
+        // Trigger app reset to onboarding after dismissing settings
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            shouldResetToOnboarding = true
         }
     }
 
@@ -565,21 +569,28 @@ struct AppSettingsView: View {
         if futureOnly {
             // Sync only from today forward - TO HealthKit
             hydrationManager.syncToHealthKit()
+
+            // No import needed for future-only, complete immediately
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                isSyncingHydration = false
+                let count = hydrationManager.drinkEntries.count
+                syncMessage = "Successfully synced \(count) drink entries going forward. Future drinks will automatically sync to Apple Health."
+                showingSyncAlert = true
+            }
         } else {
-            // Sync all drinks to HealthKit
+            // Sync all drinks to HealthKit first
             hydrationManager.syncToHealthKit()
 
-            // Also import from HealthKit (all historical data)
-            hydrationManager.syncFromHealthKit()
-        }
+            // Then import from HealthKit with completion handler
+            hydrationManager.syncFromHealthKit { [weak self] in
+                guard let self = self else { return }
 
-        // Give it a moment to complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            isSyncingHydration = false
-            let count = hydrationManager.drinkEntries.count
-            let timeframe = futureOnly ? "going forward" : "from Apple Health"
-            syncMessage = count > 0 ? "Successfully synced \(count) drink entries \(timeframe)." : "No hydration data to sync."
-            showingSyncAlert = true
+                // This runs AFTER import completes
+                self.isSyncingHydration = false
+                let count = self.hydrationManager.drinkEntries.count
+                self.syncMessage = count > 0 ? "Successfully synced \(count) drink entries from Apple Health." : "No hydration data found in Apple Health."
+                self.showingSyncAlert = true
+            }
         }
     }
 
@@ -607,34 +618,44 @@ struct AppSettingsView: View {
     }
 
     private func performAllDataSync(futureOnly: Bool) {
-        // Sync weight
         if futureOnly {
+            // Sync weight from today forward
             weightManager.syncFromHealthKit(startDate: Date())
+
+            // Sync hydration to HealthKit only
+            hydrationManager.syncToHealthKit()
+
+            // No imports needed for future-only, complete after brief delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                isSyncingAll = false
+                let weightCount = weightManager.weightEntries.count
+                let drinkCount = hydrationManager.drinkEntries.count
+                syncMessage = "Successfully synced \(weightCount) weight entries and \(drinkCount) drink entries going forward."
+                showingSyncAlert = true
+            }
         } else {
+            // Sync weight from HealthKit
             weightManager.syncFromHealthKit()
-        }
 
-        // Sync hydration
-        if futureOnly {
+            // Sync hydration to HealthKit first
             hydrationManager.syncToHealthKit()
-        } else {
-            hydrationManager.syncToHealthKit()
-            hydrationManager.syncFromHealthKit()
-        }
 
-        // Give it a moment to complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            isSyncingAll = false
-            let weightCount = weightManager.weightEntries.count
-            let drinkCount = hydrationManager.drinkEntries.count
-            let timeframe = futureOnly ? "going forward" : "from Apple Health"
-            syncMessage = "Successfully synced \(weightCount) weight entries and \(drinkCount) drink entries \(timeframe)."
-            showingSyncAlert = true
+            // Then import hydration from HealthKit with completion
+            hydrationManager.syncFromHealthKit { [weak self] in
+                guard let self = self else { return }
+
+                // This runs AFTER all syncs complete
+                self.isSyncingAll = false
+                let weightCount = self.weightManager.weightEntries.count
+                let drinkCount = self.hydrationManager.drinkEntries.count
+                self.syncMessage = "Successfully synced \(weightCount) weight entries and \(drinkCount) drink entries from Apple Health."
+                self.showingSyncAlert = true
+            }
         }
     }
 }
 
 #Preview {
-    AdvancedView(shouldPopToRoot: .constant(false))
+    AdvancedView(shouldPopToRoot: .constant(false), shouldResetToOnboarding: .constant(false))
         .environmentObject(FastingManager())
 }
