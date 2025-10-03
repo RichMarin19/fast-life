@@ -495,20 +495,27 @@ struct AppSettingsView: View {
     private func syncHydrationToHealthKit() {
         isSyncing = true
 
-        // Check if HealthKit is authorized
-        if !healthKitManager.isAuthorized {
-            // Request authorization first
+        // Check if water is specifically authorized
+        if !healthKitManager.isWaterAuthorized() {
+            // Request authorization for water
             healthKitManager.requestAuthorization { success, error in
                 if success {
-                    performHydrationSync()
+                    // Check again after authorization
+                    if self.healthKitManager.isWaterAuthorized() {
+                        self.performHydrationSync()
+                    } else {
+                        self.isSyncing = false
+                        self.syncMessage = "Water permission not granted. Please enable water access in Settings > Health > Apps > Fast LIFe."
+                        self.showingSyncAlert = true
+                    }
                 } else {
-                    isSyncing = false
-                    syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
-                    showingSyncAlert = true
+                    self.isSyncing = false
+                    self.syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
+                    self.showingSyncAlert = true
                 }
             }
         } else {
-            // Already authorized, just sync
+            // Already authorized for water, just sync
             performHydrationSync()
         }
     }

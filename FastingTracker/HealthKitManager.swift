@@ -13,16 +13,34 @@ class HealthKitManager: ObservableObject {
 
     // MARK: - Authorization
 
+    func isWaterAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
+            return false
+        }
+
+        let status = healthStore.authorizationStatus(for: waterType)
+        return status == .sharingAuthorized
+    }
+
     func checkAuthorizationStatus() {
         guard HKHealthStore.isHealthDataAvailable() else {
             print("HealthKit is not available on this device")
             return
         }
 
+        // Check authorization for both weight and water
         let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass)!
-        let authStatus = healthStore.authorizationStatus(for: weightType)
+        let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater)!
 
-        isAuthorized = (authStatus == .sharingAuthorized)
+        let weightStatus = healthStore.authorizationStatus(for: weightType)
+        let waterStatus = healthStore.authorizationStatus(for: waterType)
+
+        // Authorized if either weight or water is authorized
+        isAuthorized = (weightStatus == .sharingAuthorized || waterStatus == .sharingAuthorized)
     }
 
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {

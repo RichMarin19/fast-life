@@ -80,10 +80,12 @@ class HydrationManager: ObservableObject {
 
         // Auto-sync to HealthKit (all drink types sync as water)
         let healthKitManager = HealthKitManager.shared
-        if healthKitManager.isAuthorized {
+        if healthKitManager.isWaterAuthorized() {
             healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
                 if let error = error {
                     print("Failed to auto-sync drink to HealthKit: \(error.localizedDescription)")
+                } else if success {
+                    print("Successfully synced drink to HealthKit as water: \(entry.amount)oz")
                 }
             }
         }
@@ -286,19 +288,26 @@ class HydrationManager: ObservableObject {
     func syncToHealthKit() {
         let healthKitManager = HealthKitManager.shared
 
-        guard healthKitManager.isAuthorized else {
-            print("HealthKit not authorized for hydration sync")
+        guard healthKitManager.isWaterAuthorized() else {
+            print("HealthKit not authorized for water - cannot sync hydration")
             return
         }
 
+        print("Starting hydration sync to HealthKit - \(drinkEntries.count) total drinks")
+
         // Sync all drink entries to HealthKit as water
+        var syncedCount = 0
         for entry in drinkEntries {
             healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
                 if let error = error {
                     print("Failed to sync drink to HealthKit: \(error.localizedDescription)")
+                } else if success {
+                    syncedCount += 1
                 }
             }
         }
+
+        print("Completed hydration sync attempt for \(drinkEntries.count) drinks")
     }
 
     func syncFromHealthKit(startDate: Date? = nil) {
