@@ -19,7 +19,7 @@ struct WeightTrackingView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 16) {
+            VStack(spacing: 12) {
                 // Large Title: "Weight Tracker" (styled like "Fast LIFe")
                 // Per Apple HIG: Use prominent titles for top-level screens
                 // Reference: https://developer.apple.com/design/human-interface-guidelines/typography
@@ -323,12 +323,12 @@ struct CurrentWeightCard: View {
     }
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 8) {
             if let latest = weightManager.latestWeight {
                 // TAPPABLE Current Weight Section - opens Add Weight sheet
                 // Per Apple HIG: "Let people interact with content in ways they find most natural"
                 // Reference: https://developer.apple.com/design/human-interface-guidelines/gestures
-                VStack(spacing: 8) {
+                VStack(spacing: 6) {
                     // "Current Weight" label
                     Text("Current Weight")
                         .font(.title2)
@@ -429,33 +429,33 @@ struct CurrentWeightCard: View {
                 // Reference: https://developer.apple.com/design/human-interface-guidelines/buttons
                 if weightGoal > 0 {
                     Divider()
-                        .padding(.vertical, 8)
+                        .padding(.vertical, 4)
 
                     // Entire pill is tappable - large hit target for better UX
                     Button(action: {
                         showingGoalEditor = true
                     }) {
-                        HStack(spacing: 12) {
+                        HStack(spacing: 10) {
                             // 🎯 Target emoji for visual excitement
                             Text("🎯")
-                                .font(.system(size: 36))
+                                .font(.system(size: 28))
 
-                            // Goal label and value - LARGE, BOLD, GREEN = EXCITING!
+                            // Goal label and value - COMPACT but still EXCITING!
                             (Text("GOAL: ")
-                                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                                .font(.system(size: 32, weight: .heavy, design: .rounded))
                                 .foregroundColor(.green)
                             + Text("\(Int(weightGoal)) lbs")
-                                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                                .font(.system(size: 32, weight: .heavy, design: .rounded))
                                 .foregroundColor(.green))
 
                             // Gear icon visual indicator that this is editable
                             // No longer a separate button - entire pill is tappable
                             Image(systemName: "gearshape.fill")
-                                .font(.system(size: 28))
+                                .font(.system(size: 24))
                                 .foregroundColor(.gray)
                         }
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)  // Reduced from 16 to 12 for shorter pill
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)  // Reduced for more compact pill
                         .background(
                             // Subtle green background for extra pop
                             RoundedRectangle(cornerRadius: 16)
@@ -483,7 +483,7 @@ struct CurrentWeightCard: View {
                             startWeight: startWeight,
                             goalWeight: weightGoal
                         )
-                        .padding(.top, 12)
+                        .padding(.top, 8)
                     }
                 }
 
