@@ -14,6 +14,132 @@
 
 ---
 
+## 9. Educational Fasting Timeline 🕐🎓
+
+**Added:** January 4, 2025
+**Version:** 1.2.1 (Build 9)
+
+### What Changed:
+
+Interactive educational timeline showing what happens in your body during fasting, integrated directly into the Timer screen and Insights tab.
+
+**Features:**
+- ✅ Educational stage icons positioned around timer circle
+- ✅ Smart filtering: Only shows stages relevant to your goal (18h goal = 5 icons)
+- ✅ Tap any icon for instant educational popover with metabolic details
+- ✅ 9 fasting stages from Fed State (0-4h) to Prolonged Fast (48+h)
+- ✅ New "Timeline" section in Insights tab with all stages
+- ✅ Expandable cards with descriptions and "Did You Know?" facts
+- ✅ Improved Timer screen spacing (title up, goal/buttons down)
+
+**How It Works:**
+1. **On Timer Screen:** Icons appear around the progress ring at relevant hour angles
+2. **Tap Icon:** Beautiful popover shows stage title, metabolic changes, educational facts
+3. **In Insights Tab:** Navigate to "Timeline" tab for full educational reference
+
+### Educational Content (9 Stages):
+
+1. **🍽️ Fed State (0-4h)**: Digestion active, blood sugar and insulin elevated
+2. **🔄 Post-Absorptive State (4-8h)**: Insulin drops, fat burning begins
+3. **⚡ Early Fasting (8-12h)**: Liver glycogen depleting, fat breakdown ramps up
+4. **🔥 Fat-Burning Mode (12-16h)**: Insulin stays low, ketone production starts
+5. **🧠 Ketone Production Rises (16-20h)**: Mental clarity, steady fat burning
+6. **💪 Deeper Fasting (20-24h)**: Growth hormone rises, autophagy begins
+7. **🧬 Strong Metabolic Shift (24-36h)**: Ketones are major fuel, autophagy continues
+8. **🔬 Deep Autophagy + Repair (36-48h)**: Cell cleanup, inflammation lowers, immune refresh
+9. **⭐ Prolonged Fast Territory (48+h)**: Stem cells activate, deep repair (medical supervision recommended)
+
+### UI/UX Improvements:
+
+**Timer Screen:**
+- Top spacer reduced from 70pt → 30pt (title moves up)
+- Progress percentage bottom padding increased 15pt → 40pt (goal/buttons move down)
+- Icons positioned using trigonometry: `angle = (midpointHour / 24) * 360° - 90°`
+- Icons render at 160pt radius from timer center
+- White circle background with subtle shadow for visibility
+
+**Educational Popover:**
+- Clean NavigationView presentation
+- Icon + title + hour range header
+- "What's Happening" section with bullet points (blue background)
+- "Did You Know?" section with lightbulb icon (yellow background)
+- "Done" button to dismiss
+
+**Insights Timeline Section:**
+- New "Timeline" tab in segmented picker
+- All 9 stages in expandable cards
+- Tap to expand/collapse with smooth spring animation
+- Shows icon, title, hour range, descriptions, facts
+- Consistent design with other Insights sections
+
+### Technical Implementation:
+
+**Files Added:**
+```
+FastingStage.swift
+- Identifiable struct with id, hourRange, title, icon, description[], didYouKnow, startHour, endHour
+- Static array of 9 stages
+- relevantStages(for:) helper method filters by goal
+
+FastingStageDetailView.swift
+- Educational popover view
+- ScrollView with NavigationView presentation
+- Color-coded sections (blue for info, yellow for facts)
+```
+
+**Files Modified:**
+```
+ContentView.swift (lines 10, 31-109, 311-313)
+- Added @State selectedStage property
+- Added ForEach loop around timer rendering stage icons at calculated positions
+- Added .sheet(item:) for educational popover
+- Improved spacing (30pt top, 40pt bottom padding)
+
+InsightsView.swift (lines 41-272)
+- Added "timeline" case to InsightSection enum
+- Added FastingTimelineSection view
+- Added TimelineStageCard expandable component
+- Uses same expandable pattern as FAQ section
+
+project.pbxproj
+- Registered FastingStage.swift and FastingStageDetailView.swift
+- Added to PBXBuildFile, PBXFileReference, PBXGroup, PBXSourcesBuildPhase
+```
+
+### Why This Matters:
+
+**Educational Value:**
+- Users learn metabolic science while tracking
+- Demystifies what's happening in their body
+- Motivates continued fasting with knowledge
+- Evidence-based information at fingertips
+
+**UX Excellence:**
+- < 2 clicks to access any stage info (tap icon on timer)
+- Progressive disclosure (icons → tap → popover)
+- Contextual help (Apple HIG compliant)
+- Clean visual hierarchy with icons and colors
+
+**Design Philosophy:**
+- Education integrated into experience, not separate
+- Non-intrusive (icons don't clutter timer)
+- Goal-aware (only relevant stages shown)
+- Scalable (works for 8h to 48h+ goals)
+
+### Apple HIG References:
+
+**Contextual Help:**
+> "Provide context to help users understand app functionality"
+> https://developer.apple.com/design/human-interface-guidelines/help
+
+**Progressive Disclosure:**
+> "Start with simple information and reveal details progressively"
+> https://developer.apple.com/design/human-interface-guidelines/managing-complexity
+
+**Commit:** `af7405d` - "Add educational fasting timeline feature"
+
+---
+
 ## 8. Hydration Default & Keyboard Performance Fix 💧⚡
 
 **Fixed:** January 3, 2025

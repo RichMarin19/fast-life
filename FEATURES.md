@@ -1,6 +1,6 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.2.0 (Build 8)**
+**Version 1.2.1 (Build 9)**
 *Your intelligent intermittent fasting companion with weight, hydration, sleep, and mood tracking*
 
 ---
@@ -184,6 +184,38 @@ Four key lifetime metrics displayed in beautiful card layouts:
 ---
 
 ## 💡 Insights & Education
+
+### 🕐 Interactive Fasting Timeline
+Real-time educational content integrated into your fasting experience:
+
+**Timer Screen Integration:**
+- **Stage Icons Around Timer**: Educational icons positioned at relevant hour marks around the progress ring
+- **Smart Filtering**: Only shows stages relevant to your goal (18h goal = 5 icons, 24h goal = 6 icons)
+- **Tap to Learn**: Instant access to stage information in beautiful popover
+- **Visual Hour Positioning**: Icons placed at angle corresponding to fasting hours
+
+**Educational Content (9 Fasting Stages):**
+1. **🍽️ Fed State (0-4h)**: Digestion, blood sugar regulation
+2. **🔄 Post-Absorptive State (4-8h)**: Insulin drops, fat burning begins
+3. **⚡ Early Fasting (8-12h)**: Glycogen depletion, increased fat breakdown
+4. **🔥 Fat-Burning Mode (12-16h)**: Low insulin, ketone production starts
+5. **🧠 Ketone Production Rises (16-20h)**: Mental clarity, steady fat burning
+6. **💪 Deeper Fasting (20-24h)**: Growth hormone rise, autophagy begins
+7. **🧬 Strong Metabolic Shift (24-36h)**: Ketones as major fuel
+8. **🔬 Deep Autophagy + Repair (36-48h)**: Cell cleanup, immune refresh
+9. **⭐ Prolonged Fast Territory (48+h)**: Stem cell activation, deep repair
+
+**Timeline Section in Insights Tab:**
+- Dedicated "Timeline" tab in Insights segmented control
+- All 9 stages displayed in expandable cards
+- Each card shows: Icon, title, hour range, metabolic changes, "Did You Know?" facts
+- Progressive disclosure: Tap to expand for detailed information
+
+**UI/UX Highlights:**
+- ✅ Access stage info in < 2 clicks (tap icon on timer)
+- ✅ Clear visual hierarchy with icons and colors
+- ✅ Educational content without overwhelming
+- ✅ Contextual help (Apple HIG compliant)
 
 ### ⭐ The 80/20 Essentials
 Based on Pareto's Principle - the 20% that gives 80% of results:
@@ -427,6 +459,7 @@ Top 10 frequently asked questions with expandable answers:
 - **v1.1.4**: HealthKit water tracking integration
 - **v1.1.5**: Separate sync controls, app reset UX improvements, sleep tracking with HealthKit
 - **v1.2.0**: Mood & Energy tracking with 1-10 scale and trend graphs
+- **v1.2.1**: Educational fasting timeline with interactive stage icons around timer
 
 ---
 
@@ -461,18 +494,19 @@ Top 10 frequently asked questions with expandable answers:
 ## 🌟 What Makes Fast LIFe Unique
 
 1. **Complete Wellness Tracking**: Fasting, weight, hydration, sleep, and mood/energy in one beautiful app
-2. **HealthKit Integration**: Two-way sync with Apple Health for weight, water, and sleep
-3. **Intelligent Sync Controls**: Choose "All Data" or "Future Only" for each data type
-4. **Gradient Progress Ring**: Ring changes colors smoothly as you progress
-5. **Edit While Fasting**: Adjust start time without stopping your fast
-6. **Multi-Drink Hydration**: Track water, coffee, and tea (all sync as water to HealthKit)
-7. **Mood & Energy Insights**: 1-10 scale with trend graphs and emoji feedback
-8. **PR-Aware Notifications**: Smart alerts that know when you're approaching personal records
-9. **80/20 Education**: Focus on the essentials that matter most
-10. **Delete & Reset Options**: Full control over your data with safe confirmations
-11. **Beautiful Design**: Health-conscious color scheme and modern UI
-12. **Privacy-Focused**: All data local, HealthKit sync is optional and user-controlled
-13. **Smooth App Reset**: Returns to onboarding instead of crashing
+2. **Interactive Educational Timeline**: Learn what's happening in your body with icons around the timer - tap to explore 9 fasting stages
+3. **HealthKit Integration**: Two-way sync with Apple Health for weight, water, and sleep
+4. **Intelligent Sync Controls**: Choose "All Data" or "Future Only" for each data type
+5. **Gradient Progress Ring**: Ring changes colors smoothly as you progress
+6. **Edit While Fasting**: Adjust start time without stopping your fast
+7. **Multi-Drink Hydration**: Track water, coffee, and tea (all sync as water to HealthKit)
+8. **Mood & Energy Insights**: 1-10 scale with trend graphs and emoji feedback
+9. **PR-Aware Notifications**: Smart alerts that know when you're approaching personal records
+10. **80/20 Education**: Focus on the essentials that matter most
+11. **Delete & Reset Options**: Full control over your data with safe confirmations
+12. **Beautiful Design**: Health-conscious color scheme and modern UI
+13. **Privacy-Focused**: All data local, HealthKit sync is optional and user-controlled
+14. **Smooth App Reset**: Returns to onboarding instead of crashing
 
 ---
 
