@@ -1,6 +1,6 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.2.2 (Build 10)**
+**Version 1.2.3 (Build 11)**
 *Your intelligent intermittent fasting companion with weight, hydration, sleep, and mood tracking*
 
 ---
@@ -216,15 +216,21 @@ Real-time educational content integrated into your fasting experience:
 - **Visual Hour Positioning**: Icons placed at angle corresponding to fasting hours
 
 **Educational Content (9 Fasting Stages):**
-1. **🍽️ Fed State (0-4h)**: Digestion, blood sugar regulation
-2. **🔄 Post-Absorptive State (4-8h)**: Insulin drops, fat burning begins
-3. **⚡ Early Fasting (8-12h)**: Glycogen depletion, increased fat breakdown
-4. **🔥 Fat-Burning Mode (12-16h)**: Low insulin, ketone production starts
-5. **🧠 Ketone Production Rises (16-20h)**: Mental clarity, steady fat burning
-6. **💪 Deeper Fasting (20-24h)**: Growth hormone rise, autophagy begins
-7. **🧬 Strong Metabolic Shift (24-36h)**: Ketones as major fuel
-8. **🔬 Deep Autophagy + Repair (36-48h)**: Cell cleanup, immune refresh
-9. **⭐ Prolonged Fast Territory (48+h)**: Stem cell activation, deep repair
+Each stage features 4 sections in the educational popover:
+1. **What's Happening**: Metabolic changes occurring in your body
+2. **Physical Signs**: What you may feel during this stage
+3. **Recommendations**: Action steps and optimal activities
+4. **Did You Know?**: Interesting facts about this stage
+
+1. **🍽️ Fed State (0-4h)**: Digestion, blood sugar regulation, feeling satisfied
+2. **🔄 Post-Absorptive State (4-8h)**: Insulin drops, fat burning begins, mild hunger may start
+3. **⚡ Early Fasting (8-12h)**: Glycogen depletion, increased fat breakdown, hunger waves
+4. **🔥 Fat-Burning Mode (12-16h)**: Low insulin, ketone production starts, great time for workouts
+5. **🧠 Ketone Production Rises (16-20h)**: Mental clarity, steady fat burning, peak focus
+6. **💪 Deeper Fasting (20-24h)**: Growth hormone rise, autophagy begins, deep calm
+7. **🧬 Strong Metabolic Shift (24-36h)**: Ketones as major fuel, sustained energy
+8. **🔬 Deep Autophagy + Repair (36-48h)**: Cell cleanup, immune refresh, deep repair
+9. **⭐ Prolonged Fast Territory (48+h)**: Stem cell activation, deep repair, medical supervision recommended
 
 **Timeline Section in Insights Tab:**
 - Dedicated "Timeline" tab in Insights segmented control
@@ -482,6 +488,7 @@ Top 10 frequently asked questions with expandable answers:
 - **v1.2.0**: Mood & Energy tracking with 1-10 scale and trend graphs
 - **v1.2.1**: Educational fasting timeline with interactive stage icons around timer
 - **v1.2.2**: Timer tab restructure with embedded history + Analytics placeholder tab
+- **v1.2.3**: Enhanced educational popovers with Physical Signs and Recommendations sections
 
 ---
 

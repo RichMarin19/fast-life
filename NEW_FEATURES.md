@@ -14,6 +14,120 @@
 
 ---
 
+## 11. Enhanced Educational Popovers with Physical Signs & Recommendations 🎓💪
+
+**Added:** January 4, 2025
+**Version:** 1.2.3 (Build 11)
+
+### What Changed:
+
+Educational stage popovers now include 4 comprehensive sections instead of 2, providing complete guidance for each fasting stage while maintaining single-screen layout.
+
+**Features:**
+- ✅ Added "Physical Signs" section → What you physically feel during each stage
+- ✅ Added "Recommendations" section → Actionable advice and optimal activities
+- ✅ Enhanced all 9 fasting stages with new content
+- ✅ Upgraded font sizes to .headline/.body for better readability
+- ✅ Color-coded sections for visual organization (blue, red, green, yellow)
+- ✅ Uniform alignment across all sections
+- ✅ Content optimized for single-screen viewing (minimal scroll)
+- ✅ Follows 80/20 rule - most valuable information only
+
+### How It Works:
+
+**Tap any stage icon around timer → See 4 sections:**
+
+1. **What's Happening** (Blue) - Metabolic changes
+2. **Physical Signs** (Red) - Body feelings and sensations
+3. **Recommendations** (Green) - Action steps and activities
+4. **Did You Know?** (Yellow) - Interesting facts
+
+### Content Examples:
+
+**12-16h Fat-Burning Mode (🔥):**
+- **Physical Signs**: "Hunger lessens surprisingly", "Energy stabilizes", "Mental clarity improving"
+- **Recommendations**: "Great time for a jog or workout", "Tackle mentally demanding work", "Sip water or electrolyte drink"
+
+**20-24h Deeper Fasting (💪):**
+- **Physical Signs**: "Feeling lighter physically", "Deep sense of calm", "No food cravings"
+- **Recommendations**: "Rest or light stretching", "Stay hydrated with electrolytes", "Avoid intense exercise today"
+
+**48+h Prolonged Fast Territory (⭐):**
+- **Physical Signs**: "Profound sense of well-being", "Very low hunger", "Deep mental clarity"
+- **Recommendations**: "Medical supervision recommended", "Rest and minimal activity", "Break fast carefully with light foods"
+
+### Technical Implementation:
+
+**Files Modified:**
+```
+FastingStage.swift
+- Added physicalSigns: [String] property
+- Added recommendations: [String] property
+- Updated all 9 stages with comprehensive content
+
+FastingStageDetailView.swift
+- Added Physical Signs section with heart.text.square.fill icon (red)
+- Added Recommendations section with sparkles icon (green)
+- Upgraded fonts: .headline for headers, .body for text
+- Reduced spacing from 20pt → 12pt between sections
+- Applied uniform .frame(maxWidth: .infinity, alignment: .leading)
+- Consistent 12pt padding, 10pt corner radius on all sections
+```
+
+### UI/UX Design:
+
+**Color-Coded Sections:**
+- 🔵 Blue: What's Happening (metabolic info)
+- 🔴 Red: Physical Signs (body feelings)
+- 🟢 Green: Recommendations (action steps)
+- 🟡 Yellow: Did You Know? (interesting facts)
+
+**Layout Excellence:**
+- All sections use identical width for perfect alignment
+- Consistent padding (12pt) and corner radius (10pt)
+- Bullet points with bold markers
+- Multi-line text wrapping enabled
+- Smooth ScrollView for longer stages
+
+### Why This Matters:
+
+**Educational Value:**
+- Users understand BOTH what's happening AND what to do about it
+- Physical signs reduce anxiety ("Is this normal?")
+- Recommendations optimize each stage ("What should I do?")
+- Action-oriented guidance increases engagement
+
+**User Experience:**
+- Larger fonts = easier reading
+- Color coding = faster scanning
+- 4 sections = comprehensive but not overwhelming
+- Single screen = no excessive scrolling
+- Uniform design = professional appearance
+
+**Design Philosophy:**
+- Follows 80/20 rule - focused on most valuable info
+- Didn't add "Normal vs Not Normal" section (would cause info overload)
+- Spoon-feeds useful content without overwhelming
+- Maintains < 3 click accessibility rule
+
+### Apple HIG References:
+
+**Accessibility:**
+> "Use larger, easy-to-read fonts for primary content"
+> https://developer.apple.com/design/human-interface-guidelines/accessibility
+
+**Visual Design:**
+> "Use color to communicate meaning, not as the only differentiator"
+> https://developer.apple.com/design/human-interface-guidelines/color
+
+**Layout:**
+> "Ensure sufficient space between interactive elements to prevent accidental taps and maintain visual clarity"
+> https://developer.apple.com/design/human-interface-guidelines/layout
+
+**Commit:** `0381548` - "feat: enhance educational popovers with Physical Signs and Recommendations"
+
+---
+
 ## 10. Timer Tab Restructure + Analytics Placeholder 📱📊
 
 **Added:** January 4, 2025
