@@ -686,8 +686,10 @@ struct OnboardingView: View {
             UserDefaults.standard.set(goal, forKey: "goalWeight")
         }
 
-        // Save fasting goal
-        fastingManager.fastingGoalHours = fastingGoal
+        // Save fasting goal to UserDefaults
+        // CRITICAL: Use setFastingGoal() to persist to UserDefaults, not direct property assignment
+        // Direct assignment only sets in-memory value, doesn't persist across app launches
+        fastingManager.setFastingGoal(hours: fastingGoal)
 
         // Save hydration goal
         hydrationManager.dailyGoalOunces = hydrationGoal

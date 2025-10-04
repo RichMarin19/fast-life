@@ -103,20 +103,44 @@ struct ContentView: View {
                     .cornerRadius(20)
                 }
 
-                // Goal Display and Settings
-                HStack {
-                    Text("GOAL: \(Int(fastingManager.fastingGoalHours))h")
-                        .font(.system(size: 36, weight: .bold))
-                        .foregroundColor(.green)
-
-                    Button(action: {
-                        showingGoalSettings = true
-                    }) {
-                        Image(systemName: "gearshape.fill")
-                            .foregroundColor(.gray)
+                // Goal Display - Styled like Weight Tracker for consistency
+                // Per Apple HIG: Use consistent design patterns across features
+                // Reference: https://developer.apple.com/design/human-interface-guidelines/consistency
+                Button(action: {
+                    showingGoalSettings = true
+                }) {
+                    HStack(spacing: 10) {
+                        // 🎯 Target emoji for visual excitement
+                        Text("🎯")
                             .font(.system(size: 28))
+
+                        // Goal label and value - COMPACT but still EXCITING!
+                        (Text("GOAL: ")
+                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                            .foregroundColor(.green)
+                        + Text("\(Int(fastingManager.fastingGoalHours))h")
+                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                            .foregroundColor(.green))
+
+                        // Gear icon visual indicator that this is editable
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.gray)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(
+                        // Subtle green background for extra pop
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.green.opacity(0.08))
+                    )
+                    .overlay(
+                        // Green border for emphasis
+                        RoundedRectangle(cornerRadius: 16)
+                            .strokeBorder(Color.green.opacity(0.3), lineWidth: 2)
+                    )
                 }
+                .buttonStyle(.plain)
                 .padding(.bottom, 15)
 
                 // Buttons
