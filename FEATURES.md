@@ -1,6 +1,6 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.2.3 (Build 11)**
+**Version 1.2.4 (Build 12)**
 *Your intelligent intermittent fasting companion with weight, hydration, sleep, and mood tracking*
 
 ---
@@ -32,6 +32,13 @@
 - **Visual Goal Line**: Chart displays your target goal for easy tracking
 
 ### 🕐 Time Editing Features
+- **Tappable Elapsed Time**: Tap the fasting timer "00:20:17" to instantly edit your fast time
+- **Duration-Based Input**: Set duration directly with hour/minute pickers (e.g., "I've been fasting for 18h 30m")
+  - No mental math required - app calculates start time automatically
+  - Wheel pickers for quick, precise input (0-48 hours, 0-59 minutes)
+  - Real-time preview as you scroll
+- **Two Input Methods**: Choose duration pickers OR exact start time picker
+- **Tappable Duration Card**: Interactive "Current Duration" card with visual feedback
 - **Edit Start Time (During Active Fast)**: Adjust when your fast started without stopping
   - Inline display showing "Yesterday, 7:00 PM" format
   - Green indicator showing fast is active
@@ -489,6 +496,7 @@ Top 10 frequently asked questions with expandable answers:
 - **v1.2.1**: Educational fasting timeline with interactive stage icons around timer
 - **v1.2.2**: Timer tab restructure with embedded history + Analytics placeholder tab
 - **v1.2.3**: Enhanced educational popovers with Physical Signs and Recommendations sections
+- **v1.2.4**: Improved time editing UX with tappable elements and duration pickers
 
 ---
 
