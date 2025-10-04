@@ -7,99 +7,129 @@ struct WeightTrackingView: View {
     @State private var showingAddWeight = false
     @State private var showingSettings = false
     @State private var showingFirstTimeSetup = false
+    @State private var showingGoalEditor = false  // Quick access goal editor
+    @State private var showingTrends = false  // Weight trends detail view
     @State private var selectedTimeRange: WeightTimeRange = .month
     @State private var showGoalLine = false
     @State private var weightGoal: Double = 180.0
 
     // UserDefaults keys for persistence
     private let showGoalLineKey = "showGoalLine"
-    private let weightGoalKey = "weightGoal"
+    private let weightGoalKey = "goalWeight"  // MUST match onboarding key (OnboardingView.swift line 686)
 
     var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    if weightManager.weightEntries.isEmpty {
-                        EmptyWeightStateView(showingAddWeight: $showingAddWeight, healthKitManager: healthKitManager, weightManager: weightManager)
-                    } else {
-                        // Current Weight Card
-                        CurrentWeightCard(weightManager: weightManager)
-                            .padding(.horizontal)
+        ScrollView {
+            VStack(spacing: 16) {
+                // Large Title: "Weight Tracker" (styled like "Fast LIFe")
+                // Per Apple HIG: Use prominent titles for top-level screens
+                // Reference: https://developer.apple.com/design/human-interface-guidelines/typography
+                if !weightManager.weightEntries.isEmpty {
+                    HStack(spacing: 0) {
+                        Text("Weight Tr")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(.blue)
+                        Text("ac")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(.green)
+                        Text("ker")
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .foregroundColor(.cyan)
+                    }
+                }
 
-                        // Weight Chart
-                        WeightChartView(
-                            weightManager: weightManager,
-                            selectedTimeRange: $selectedTimeRange,
-                            showGoalLine: $showGoalLine,
-                            weightGoal: $weightGoal
-                        )
+                if weightManager.weightEntries.isEmpty {
+                    EmptyWeightStateView(showingAddWeight: $showingAddWeight, healthKitManager: healthKitManager, weightManager: weightManager)
+                } else {
+                    // Current Weight Card
+                    CurrentWeightCard(
+                        weightManager: weightManager,
+                        weightGoal: weightGoal,
+                        showingGoalEditor: $showingGoalEditor,
+                        showingAddWeight: $showingAddWeight,
+                        showingTrends: $showingTrends
+                    )
+                    .padding(.horizontal)
+
+                    // Weight Chart
+                    WeightChartView(
+                        weightManager: weightManager,
+                        selectedTimeRange: $selectedTimeRange,
+                        showGoalLine: $showGoalLine,
+                        weightGoal: $weightGoal
+                    )
+                    .padding(.horizontal)
+
+                    // Weight Statistics
+                    WeightStatsView(weightManager: weightManager)
                         .padding(.horizontal)
 
-                        // Weight Statistics
-                        WeightStatsView(weightManager: weightManager)
-                            .padding(.horizontal)
+                    // Weight History List
+                    WeightHistoryListView(weightManager: weightManager)
+                        .padding(.horizontal)
+                }
+            }
+            .padding(.bottom)
+        }
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showingSettings = true }) {
+                    Image(systemName: "gear")
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button(action: { showingAddWeight = true }) {
+                    Image(systemName: "plus")
+                }
+            }
+        }
+        .sheet(isPresented: $showingAddWeight) {
+            AddWeightView(weightManager: weightManager)
+        }
+        .sheet(isPresented: $showingSettings) {
+            WeightSettingsView(
+                weightManager: weightManager,
+                showGoalLine: $showGoalLine,
+                weightGoal: $weightGoal
+            )
+        }
+        .sheet(isPresented: $showingGoalEditor) {
+            QuickGoalEditorView(weightGoal: $weightGoal)
+        }
+        .sheet(isPresented: $showingTrends) {
+            WeightTrendsView(weightManager: weightManager)
+        }
+        .sheet(isPresented: $showingFirstTimeSetup) {
+            FirstTimeWeightSetupView(
+                weightManager: weightManager,
+                weightGoal: $weightGoal,
+                showGoalLine: $showGoalLine
+            )
+        }
+        .onAppear {
+            // Load saved goal settings from UserDefaults
+            loadGoalSettings()
 
-                        // Weight History List
-                        WeightHistoryListView(weightManager: weightManager)
-                            .padding(.horizontal)
-                    }
-                }
-                .padding(.vertical)
+            // Show first-time setup if user has no weight data
+            // No delay needed - weightManager loads synchronously in init
+            if weightManager.weightEntries.isEmpty {
+                showingFirstTimeSetup = true
             }
-            .navigationTitle("Weight Tracking")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingSettings = true }) {
-                        Image(systemName: "gear")
-                    }
-                }
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showingAddWeight = true }) {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showingAddWeight) {
-                AddWeightView(weightManager: weightManager)
-            }
-            .sheet(isPresented: $showingSettings) {
-                WeightSettingsView(
-                    weightManager: weightManager,
-                    showGoalLine: $showGoalLine,
-                    weightGoal: $weightGoal
-                )
-            }
-            .sheet(isPresented: $showingFirstTimeSetup) {
-                FirstTimeWeightSetupView(
-                    weightManager: weightManager,
-                    weightGoal: $weightGoal,
-                    showGoalLine: $showGoalLine
-                )
-            }
-            .onAppear {
-                // Load saved goal settings from UserDefaults
-                loadGoalSettings()
 
-                // Show first-time setup if user has no weight data
-                // No delay needed - weightManager loads synchronously in init
-                if weightManager.weightEntries.isEmpty {
-                    showingFirstTimeSetup = true
-                }
-
-                // Only request authorization on first appearance if needed
-                // Don't auto-sync on every view appearance - user can manually sync
-                if weightManager.syncWithHealthKit && !healthKitManager.isAuthorized {
-                    healthKitManager.requestAuthorization { _, _ in
-                        // Authorization requested, user can manually sync if they want
-                    }
+            // Only request authorization on first appearance if needed
+            // Don't auto-sync on every view appearance - user can manually sync
+            if weightManager.syncWithHealthKit && !healthKitManager.isAuthorized {
+                healthKitManager.requestAuthorization { _, _ in
+                    // Authorization requested, user can manually sync if they want
                 }
             }
-            .onChange(of: showGoalLine) { _, _ in
-                saveGoalSettings()
-            }
-            .onChange(of: weightGoal) { _, _ in
-                saveGoalSettings()
-            }
+        }
+        .onChange(of: showGoalLine) { _, _ in
+            saveGoalSettings()
+        }
+        .onChange(of: weightGoal) { _, _ in
+            saveGoalSettings()
         }
     }
 
@@ -182,37 +212,279 @@ struct EmptyWeightStateView: View {
 
 struct CurrentWeightCard: View {
     @ObservedObject var weightManager: WeightManager
+    let weightGoal: Double
+    @Binding var showingGoalEditor: Bool
+    @Binding var showingAddWeight: Bool
+    @Binding var showingTrends: Bool
+
+    /// Calculates total weight change from START (first entry) to CURRENT (latest entry)
+    /// Returns: (totalChange: Double, isLoss: Bool)
+    /// Positive = loss, Negative = gain
+    private func calculateTotalProgress() -> (amount: Double, isLoss: Bool)? {
+        guard weightManager.weightEntries.count >= 2 else { return nil }
+
+        // Get FIRST entry (start weight from onboarding)
+        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        guard let startWeight = sortedEntries.first?.weight,
+              let currentWeight = sortedEntries.last?.weight else {
+            return nil
+        }
+
+        let change = startWeight - currentWeight
+        return (amount: abs(change), isLoss: change > 0)
+    }
+
+    /// Returns celebration emoji based on weight loss amount
+    /// More loss = more exciting emoji! 🎉
+    private func celebrationEmoji(for lbs: Double) -> String {
+        switch lbs {
+        case 0..<1:      return "👍"  // Small loss
+        case 1..<2:      return "💪"  // Good loss
+        case 2..<3:      return "🌟"  // Great loss
+        case 3..<5:      return "🎉"  // Excellent loss
+        case 5..<10:     return "🏆"  // Amazing loss
+        default:         return "🚀"  // Incredible loss!
+        }
+    }
+
+    /// Returns gentle message for weight gain - progressively softer as gain increases
+    /// Psychology: More gain = MORE supportive, not harsh
+    private func gentleGainMessage(for lbs: Double) -> (emoji: String, message: String, color: Color) {
+        switch lbs {
+        case 0..<1:
+            // Tiny fluctuation - totally normal
+            return ("💧", "Just water weight", .blue)
+        case 1..<2:
+            // Small gain - gentle
+            return ("🤝", "Small fluctuation, you've got this", .blue)
+        case 2..<3:
+            // Medium gain - supportive
+            return ("💙", "Keep going, progress isn't always linear", .cyan)
+        case 3..<5:
+            // Larger gain - very supportive
+            return ("🌱", "Every journey has ups and downs", .green.opacity(0.7))
+        default:
+            // Large gain - SUPER gentle and encouraging
+            return ("🫂", "You're still on the journey, one day at a time", .purple)
+        }
+    }
+
+    /// Gets starting weight (first entry from onboarding)
+    private func getStartWeight() -> Double? {
+        guard weightManager.weightEntries.count >= 1 else { return nil }
+        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        return sortedEntries.first?.weight
+    }
+
+    /// Calculates weight remaining to reach goal
+    private func calculateWeightToGo() -> Double? {
+        guard weightManager.weightEntries.count >= 1, weightGoal > 0 else { return nil }
+        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        guard let currentWeight = sortedEntries.last?.weight else { return nil }
+        let remaining = currentWeight - weightGoal
+        return remaining > 0 ? remaining : 0
+    }
+
+    /// Calculates progress percentage toward goal weight
+    /// Formula: (Starting Weight - Current Weight) / (Starting Weight - Goal Weight) × 100
+    /// Returns nil if insufficient data or goal not set
+    private func calculateProgressPercentage() -> Double? {
+        // Require goal weight to be set
+        guard weightGoal > 0 else { return nil }
+
+        // Need at least 2 entries (start and current)
+        guard weightManager.weightEntries.count >= 2 else { return nil }
+
+        // Get starting weight (earliest entry) and current weight (latest entry)
+        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        guard let startingWeight = sortedEntries.first?.weight,
+              let currentWeight = sortedEntries.last?.weight else {
+            return nil
+        }
+
+        // Calculate progress
+        let totalWeightToLose = startingWeight - weightGoal
+        let weightLostSoFar = startingWeight - currentWeight
+
+        // Only show progress if:
+        // 1. User is trying to lose weight (start > goal)
+        // 2. Some progress has been made (current != start)
+        // 3. Haven't already passed the goal
+        guard totalWeightToLose > 0,
+              weightLostSoFar > 0,
+              currentWeight > weightGoal else {
+            return nil
+        }
+
+        let percentage = (weightLostSoFar / totalWeightToLose) * 100.0
+
+        // Cap at 100% even if they've made more progress than expected
+        return min(percentage, 100.0)
+    }
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Current Weight")
-                .font(.headline)
-                .foregroundColor(.secondary)
-
             if let latest = weightManager.latestWeight {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Text("\(latest.weight, specifier: "%.1f")")
-                        .font(.system(size: 48, weight: .bold))
-                        .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
-                    Text("lbs")
+                // TAPPABLE Current Weight Section - opens Add Weight sheet
+                // Per Apple HIG: "Let people interact with content in ways they find most natural"
+                // Reference: https://developer.apple.com/design/human-interface-guidelines/gestures
+                VStack(spacing: 8) {
+                    // "Current Weight" label
+                    Text("Current Weight")
                         .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.secondary)
+
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(latest.weight, specifier: "%.1f")")
+                            .font(.system(size: 48, weight: .bold))
+                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+                        Text("lbs")
+                            .font(.title2)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Text(latest.date, style: .date)
+                        .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
+                .contentShape(Rectangle())  // Make entire area tappable
+                .onTapGesture {
+                    showingAddWeight = true
+                }
 
-                Text(latest.date, style: .date)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+                // Weight Change Display - EXCITING, MOTIVATIONAL, CELEBRATORY! 🎉
+                // Shows TOTAL progress from START weight to CURRENT weight
+                // Per Apple HIG: "Celebrate achievements to encourage healthy behaviors"
+                // Reference: https://developer.apple.com/design/human-interface-guidelines/health-and-fitness
+                if let progress = calculateTotalProgress() {
+                    VStack(spacing: 8) {
+                        if progress.isLoss {
+                            // WEIGHT LOSS - CELEBRATE! 🎉
+                            // TAPPABLE - opens Trends view
+                            // Per Apple HIG: "Make it easy for people to drill down into details"
+                            HStack(spacing: 8) {
+                                // Celebration emoji - dynamic based on amount
+                                Text(celebrationEmoji(for: progress.amount))
+                                    .font(.system(size: 28))
 
-                if let trend = weightManager.weightTrend {
-                    HStack(spacing: 4) {
-                        Image(systemName: trend >= 0 ? "arrow.up.right" : "arrow.down.right")
-                            .font(.caption)
-                        Text("\(abs(trend), specifier: "%.1f") lbs \(trend >= 0 ? "gained" : "lost")")
-                            .font(.caption)
-                            .fontWeight(.medium)
+                                // Weight lost - LARGE and PROUD
+                                Text("\(progress.amount, specifier: "%.1f") lbs lost!")
+                                    .font(.system(size: 24, weight: .heavy, design: .rounded))
+                                    .foregroundColor(.white)
+
+                                // Fire emoji for extra motivation
+                                Text("🔥")
+                                    .font(.system(size: 28))
+                            }
+                            .padding(.horizontal, 20)
+                            .padding(.vertical, 12)
+                            .background(
+                                // Gradient background - exciting and vibrant
+                                LinearGradient(
+                                    colors: [Color.green, Color.green.opacity(0.8)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .cornerRadius(12)
+                            .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
+                            .contentShape(Rectangle())  // Make entire pill tappable
+                            .onTapGesture {
+                                showingTrends = true
+                            }
+
+                        } else {
+                            // WEIGHT GAIN - PROGRESSIVELY GENTLER as gain increases
+                            // TAPPABLE - opens Trends view to see patterns
+                            // Psychology: More supportive = users stay engaged
+                            let gentleMessage = gentleGainMessage(for: progress.amount)
+
+                            HStack(spacing: 8) {
+                                // Gentle emoji (changes based on amount)
+                                Text(gentleMessage.emoji)
+                                    .font(.system(size: 20))
+
+                                // Supportive message (gets softer as gain increases)
+                                Text(gentleMessage.message)
+                                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                                    .foregroundColor(gentleMessage.color)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(gentleMessage.color.opacity(0.08))
+                            .cornerRadius(10)
+                            .contentShape(Rectangle())  // Make entire message tappable
+                            .onTapGesture {
+                                showingTrends = true
+                            }
+                        }
                     }
-                    .foregroundColor(trend >= 0 ? .red : .green)
-                    .padding(.top, 4)
+                    .padding(.top, 8)
+                }
+
+                // Goal Display - EXCITING, PROMINENT, MOTIVATIONAL! 🎯
+                // ENTIRE PILL IS TAPPABLE for maximum usability
+                // Per Apple HIG: "Make controls easy to interact with by giving them ample hit targets"
+                // Reference: https://developer.apple.com/design/human-interface-guidelines/buttons
+                if weightGoal > 0 {
+                    Divider()
+                        .padding(.vertical, 8)
+
+                    // Entire pill is tappable - large hit target for better UX
+                    Button(action: {
+                        showingGoalEditor = true
+                    }) {
+                        HStack(spacing: 12) {
+                            // 🎯 Target emoji for visual excitement
+                            Text("🎯")
+                                .font(.system(size: 36))
+
+                            // Goal label and value - LARGE, BOLD, GREEN = EXCITING!
+                            (Text("GOAL: ")
+                                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                                .foregroundColor(.green)
+                            + Text("\(Int(weightGoal)) lbs")
+                                .font(.system(size: 38, weight: .heavy, design: .rounded))
+                                .foregroundColor(.green))
+
+                            // Gear icon visual indicator that this is editable
+                            // No longer a separate button - entire pill is tappable
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 28))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)  // Reduced from 16 to 12 for shorter pill
+                        .background(
+                            // Subtle green background for extra pop
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.green.opacity(0.08))
+                        )
+                        .overlay(
+                            // Green border for emphasis
+                            RoundedRectangle(cornerRadius: 16)
+                                .strokeBorder(Color.green.opacity(0.3), lineWidth: 2)
+                        )
+                    }
+                    .buttonStyle(.plain)  // Removes default button styling, keeps custom design
+
+                    // Progress Ring - Beautiful circular visual progress indicator
+                    // Inspired by milestone concept with sexy color scheme
+                    // Per Apple HIG: "Use visual metaphors to communicate meaning"
+                    if let progressPercentage = calculateProgressPercentage(),
+                       let progress = calculateTotalProgress(),
+                       let startWeight = getStartWeight(),
+                       let weightToGo = calculateWeightToGo() {
+                        CircularProgressRing(
+                            percentage: progressPercentage,
+                            weightLost: progress.amount,
+                            weightToGo: weightToGo,
+                            startWeight: startWeight,
+                            goalWeight: weightGoal
+                        )
+                        .padding(.top, 12)
+                    }
                 }
 
                 if let bmi = latest.bmi {
@@ -360,6 +632,9 @@ struct WeightChartView: View {
         return formatter.string(from: Date())
     }
 
+    // Progress percentage calculation moved to CurrentWeightCard
+    // Removed duplicate function to keep code DRY (Don't Repeat Yourself)
+
     var body: some View {
         VStack(spacing: 16) {
             HStack {
@@ -382,6 +657,9 @@ struct WeightChartView: View {
                     .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
+
+            // Progress percentage moved to CurrentWeightCard (below goal pill)
+            // This keeps related information grouped together per Apple HIG
 
             if !chartData.isEmpty {
                 Chart {
@@ -1667,6 +1945,584 @@ struct FirstTimeWeightSetupView: View {
 
         // Dismiss the sheet
         dismiss()
+    }
+}
+
+// MARK: - Quick Goal Editor View
+
+/// Simplified goal editor for quick access from Current Weight card
+/// Per Apple HIG: "Provide shortcuts to frequently performed tasks"
+/// Reference: https://developer.apple.com/design/human-interface-guidelines/user-interaction
+struct QuickGoalEditorView: View {
+    @Binding var weightGoal: Double
+    @Environment(\.dismiss) var dismiss
+
+    @State private var goalText: String = ""
+    @State private var showError: Bool = false
+    @FocusState private var isTextFieldFocused: Bool  // Auto-focus for keyboard
+    @State private var hasAppeared: Bool = false  // Prevent re-triggering focus
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 32) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "target")
+                        .font(.system(size: 60))
+                        .foregroundColor(.green)
+
+                    Text("Set Your Goal Weight")
+                        .font(.title2)
+                        .fontWeight(.bold)
+
+                    Text("Choose your target weight")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.top, 40)
+
+                // Goal Weight Input
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Goal Weight")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+
+                    HStack {
+                        TextField("Enter goal", text: $goalText)
+                            .keyboardType(.decimalPad)
+                            .font(.system(size: 48, weight: .bold, design: .rounded))
+                            .multilineTextAlignment(.center)
+                            .padding()
+                            .background(Color(.systemGray6))
+                            .cornerRadius(12)
+                            .focused($isTextFieldFocused)  // Bind focus state
+
+                        Text("lbs")
+                            .font(.title)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                .padding(.horizontal)
+
+                // Error message
+                if showError {
+                    Text("Please enter a valid weight")
+                        .font(.caption)
+                        .foregroundColor(.red)
+                }
+
+                Spacer()
+            }
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveGoal()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+            .onAppear {
+                // Pre-fill with current goal
+                goalText = String(Int(weightGoal))
+            }
+            .task {
+                // Only run focus logic ONCE per sheet presentation
+                // Prevents notification loop from repeated focus changes
+                // Reference: https://developer.apple.com/documentation/swiftui/view/task(priority:_:)
+                guard !hasAppeared else { return }
+                hasAppeared = true
+
+                // Delay keyboard to let sheet animation complete first
+                // 0.4s = sheet animation (0.3s) + small buffer (0.1s)
+                try? await Task.sleep(nanoseconds: 400_000_000)
+                isTextFieldFocused = true
+            }
+        }
+    }
+
+    private func saveGoal() {
+        // Validate input
+        guard let newGoal = Double(goalText), newGoal > 0 else {
+            showError = true
+            return
+        }
+
+        // Save to binding (automatically saves to UserDefaults via parent view)
+        weightGoal = newGoal
+
+        // Dismiss sheet
+        dismiss()
+    }
+}
+
+// MARK: - Circular Progress Ring (Milestone Style)
+
+/// Beautiful circular progress indicator inspired by milestone design
+/// Blue→Green gradient shows progression visually
+/// Per Apple HIG: "Use visual metaphors to make abstract concepts tangible"
+/// Reference: https://developer.apple.com/design/human-interface-guidelines/charts
+struct CircularProgressRing: View {
+    let percentage: Double
+    let weightLost: Double
+    let weightToGo: Double?
+    let startWeight: Double?
+    let goalWeight: Double
+
+    var body: some View {
+        VStack(spacing: 16) {
+            // Title
+            Text("Your Progress Journey")
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundColor(.primary)
+
+            // Circular Progress Ring (WIDER!)
+            ZStack {
+                // Background circle (gray)
+                Circle()
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 14)
+                    .frame(width: 200, height: 200)
+
+                // Progress arc (BLUE → GREEN gradient - shows progression!)
+                Circle()
+                    .trim(from: 0, to: CGFloat(percentage / 100))
+                    .stroke(
+                        AngularGradient(
+                            colors: [Color.blue, Color.cyan, Color.green],
+                            center: .center,
+                            startAngle: .degrees(0),
+                            endAngle: .degrees(360 * (percentage / 100))
+                        ),
+                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                    )
+                    .frame(width: 200, height: 200)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: percentage)
+
+                // Center content
+                VStack(spacing: 4) {
+                    // Milestone emoji (dynamic based on percentage)
+                    Text(milestoneEmoji(for: percentage))
+                        .font(.system(size: 36))
+
+                    // Large percentage
+                    Text("\(percentage, specifier: "%.0f")%")
+                        .font(.system(size: 44, weight: .heavy, design: .rounded))
+                        .foregroundColor(progressColor(for: percentage))
+
+                    // "COMPLETE" label
+                    Text("COMPLETE")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(.secondary)
+                        .tracking(1)
+                }
+            }
+
+            // Stats below ring
+            HStack(spacing: 24) {
+                // Weight Lost (left)
+                VStack(spacing: 2) {
+                    Text("\(weightLost, specifier: "%.1f") lbs")
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                    Text("LOST")
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundColor(.secondary)
+                        .tracking(0.5)
+                }
+
+                // Divider
+                Rectangle()
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 1, height: 35)
+
+                // Weight To Go (right)
+                if let toGo = weightToGo, toGo > 0 {
+                    VStack(spacing: 2) {
+                        Text("\(toGo, specifier: "%.1f") lbs")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundColor(.orange)
+                        Text("TO GO")
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .foregroundColor(.secondary)
+                            .tracking(0.5)
+                    }
+                }
+            }
+
+            // 10 Milestone Dots (like Image 2!)
+            VStack(spacing: 8) {
+                // Dots row
+                HStack(spacing: 12) {
+                    ForEach(1...10, id: \.self) { milestone in
+                        Circle()
+                            .fill(milestoneColor(for: milestone, percentage: percentage))
+                            .frame(width: 20, height: 20)
+                            .overlay(
+                                Circle()
+                                    .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
+                    }
+                }
+
+                // Progress text
+                Text("\(milestonesCompleted(for: percentage)) OF 10 MILESTONES COMPLETE")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.secondary)
+                    .tracking(0.5)
+            }
+            .padding(.top, 8)
+        }
+        .padding(.vertical, 20)
+        .padding(.horizontal, 24)
+    }
+
+    /// Returns motivational emoji based on progress percentage
+    private func milestoneEmoji(for percentage: Double) -> String {
+        switch percentage {
+        case 0..<10:    return "🌱"
+        case 10..<25:   return "💪"
+        case 25..<50:   return "⭐️"
+        case 50..<75:   return "🔥"
+        case 75..<90:   return "🏆"
+        case 90..<100:  return "🚀"
+        default:        return "👑"
+        }
+    }
+
+    /// Returns color for percentage text based on progress
+    private func progressColor(for percentage: Double) -> Color {
+        switch percentage {
+        case 0..<33:    return .blue
+        case 33..<66:   return .cyan
+        default:        return .green
+        }
+    }
+
+    /// Returns how many milestones are completed (0-10)
+    private func milestonesCompleted(for percentage: Double) -> Int {
+        return Int((percentage / 100) * 10)
+    }
+
+    /// Returns color for each milestone dot matching the ring's gradient
+    /// Creates smooth blue → cyan → green progression like the circular ring
+    private func milestoneColor(for milestone: Int, percentage: Double) -> Color {
+        let completed = milestonesCompleted(for: percentage)
+
+        if milestone <= completed {
+            // Filled dots: smooth gradient matching ring (blue → cyan → green)
+            // Distribute colors evenly across 10 milestones
+            switch milestone {
+            case 1...3:
+                return .blue
+            case 4...6:
+                return .cyan
+            case 7...10:
+                return .green
+            default:
+                return .blue
+            }
+        } else {
+            // Empty dots: light gray
+            return Color.gray.opacity(0.2)
+        }
+    }
+}
+
+// MARK: - Weight Trends View
+
+/// Shows weight change trends over different time periods
+/// Per Apple HIG: "Help people see patterns in data by presenting information clearly"
+/// Reference: https://developer.apple.com/design/human-interface-guidelines/charts
+struct WeightTrendsView: View {
+    @ObservedObject var weightManager: WeightManager
+    @Environment(\.dismiss) private var dismiss
+
+    /// Calculate weight change over a specific number of days
+    /// Returns (amount: Double, isLoss: Bool) or nil if insufficient data
+    private func calculateTrend(days: Int?) -> (amount: Double, isLoss: Bool)? {
+        guard weightManager.weightEntries.count >= 2 else { return nil }
+
+        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+
+        if let days = days {
+            // Calculate trend for specific period
+            let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+            let recentEntries = sortedEntries.filter { $0.date >= cutoffDate }
+
+            guard recentEntries.count >= 2,
+                  let firstWeight = recentEntries.first?.weight,
+                  let lastWeight = recentEntries.last?.weight else {
+                return nil
+            }
+
+            let change = firstWeight - lastWeight
+            return (amount: abs(change), isLoss: change > 0)
+        } else {
+            // All-time trend (first to latest)
+            guard let firstWeight = sortedEntries.first?.weight,
+                  let lastWeight = sortedEntries.last?.weight else {
+                return nil
+            }
+
+            let change = firstWeight - lastWeight
+            return (amount: abs(change), isLoss: change > 0)
+        }
+    }
+
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Motivational header with emoji
+                    // Per Apple HIG: Use large titles for top-level information
+                    VStack(spacing: 8) {
+                        Text("📈 Your Progress Story")
+                            .font(.largeTitle)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+
+                        Text("See how far you've come!")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 8)
+
+                    // Trends Grid - Centered for visual balance
+                    // Per Apple HIG: Use alignment to improve scannability
+                    VStack(spacing: 16) {
+                        // Row 1: 7 days and 30 days
+                        HStack(spacing: 16) {
+                            TrendCard(title: "7 DAYS", trend: calculateTrend(days: 7))
+                            TrendCard(title: "30 DAYS", trend: calculateTrend(days: 30))
+                        }
+
+                        // Row 2: 90 days and All Time
+                        HStack(spacing: 16) {
+                            TrendCard(title: "90 DAYS", trend: calculateTrend(days: 90))
+                            TrendCard(title: "ALL TIME", trend: calculateTrend(days: nil))
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical)
+            }
+            .navigationTitle("Weight Trends")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Trend Card Component
+
+/// Individual card showing weight trend for a time period
+/// EXCITING, MOTIVATIONAL design with gradients and emojis!
+/// Per Apple HIG: "Use visual design to communicate the feeling you want people to experience"
+/// Reference: https://developer.apple.com/design/human-interface-guidelines/visual-design
+struct TrendCard: View {
+    let title: String
+    let trend: (amount: Double, isLoss: Bool)?
+
+    var body: some View {
+        VStack(spacing: 8) {
+            if let trend = trend {
+                // Top: Celebration emoji (EXCITING!)
+                Text(trendEmoji(for: trend))
+                    .font(.system(size: 40))
+                    .padding(.top, 8)
+
+                // Middle: HUGE number + lbs (IMPACTFUL!)
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(String(format: "%.1f", trend.amount))
+                        .font(.system(size: 60, weight: .heavy, design: .rounded))
+                        .foregroundColor(.white)
+                    Text("lbs")
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white.opacity(0.9))
+                }
+
+                // Status pill (like weight lost pill!)
+                Text(trend.isLoss ? "LOST" : "GAINED")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.3))
+                    )
+
+                // Period label (clear but subtle)
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.bottom, 4)
+            } else {
+                // No data state
+                Text("📊")
+                    .font(.system(size: 40))
+                    .padding(.top, 8)
+
+                Text("--")
+                    .font(.system(size: 60, weight: .heavy, design: .rounded))
+                    .foregroundColor(.white.opacity(0.6))
+
+                Text("NO DATA")
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.2))
+                    )
+
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.bottom, 4)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 20)
+        .padding(.horizontal, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(cardGradient)
+        )
+        .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
+    }
+
+    /// Vibrant gradient background - EXCITING!
+    /// Different gradient per time period for visual distinction
+    private var cardGradient: LinearGradient {
+        guard let trend = trend else {
+            // No data: Gray gradient
+            return LinearGradient(
+                colors: [Color.gray.opacity(0.6), Color.gray.opacity(0.4)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+
+        if trend.isLoss {
+            // Loss: Use time-period specific gradients for visual distinction
+            switch title {
+            case "7 DAYS":
+                // Recent: Blue gradient
+                return LinearGradient(
+                    colors: [Color.blue, Color.blue.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            case "30 DAYS":
+                // Medium: Cyan gradient
+                return LinearGradient(
+                    colors: [Color.cyan, Color.cyan.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            case "90 DAYS":
+                // Long-term: Green gradient
+                return LinearGradient(
+                    colors: [Color.green, Color.green.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            case "ALL TIME":
+                // Lifetime: Gold/yellow gradient (achievement!)
+                return LinearGradient(
+                    colors: [Color.orange, Color.yellow.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            default:
+                // Fallback: Green
+                return LinearGradient(
+                    colors: [Color.green, Color.green.opacity(0.7)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            }
+        } else {
+            // Gain: Red gradient (but gentle)
+            return LinearGradient(
+                colors: [Color.red.opacity(0.8), Color.red.opacity(0.6)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    /// Shadow color matches card gradient
+    private var shadowColor: Color {
+        guard let trend = trend else {
+            return Color.gray.opacity(0.3)
+        }
+
+        if trend.isLoss {
+            switch title {
+            case "7 DAYS":
+                return Color.blue.opacity(0.3)
+            case "30 DAYS":
+                return Color.cyan.opacity(0.3)
+            case "90 DAYS":
+                return Color.green.opacity(0.3)
+            case "ALL TIME":
+                return Color.orange.opacity(0.3)
+            default:
+                return Color.green.opacity(0.3)
+            }
+        } else {
+            return Color.red.opacity(0.3)
+        }
+    }
+
+    /// Dynamic emoji based on trend - CELEBRATION!
+    private func trendEmoji(for trend: (amount: Double, isLoss: Bool)) -> String {
+        if trend.isLoss {
+            // Celebration emojis for weight loss!
+            switch trend.amount {
+            case 0..<1:
+                return "👍"  // Small progress
+            case 1..<2:
+                return "💪"  // Good progress
+            case 2..<3:
+                return "⭐️"  // Great progress
+            case 3..<5:
+                return "🔥"  // Excellent progress
+            case 5..<10:
+                return "🏆"  // Amazing progress
+            default:
+                return "🚀"  // Incredible progress!
+            }
+        } else {
+            // Gentle supportive emojis for weight gain
+            switch trend.amount {
+            case 0..<1:
+                return "💧"  // Just water weight
+            case 1..<2:
+                return "🤝"  // Small fluctuation
+            case 2..<5:
+                return "💙"  // Keep going
+            default:
+                return "🫂"  // Still on the journey
+            }
+        }
     }
 }
 
