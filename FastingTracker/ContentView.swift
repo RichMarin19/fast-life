@@ -9,13 +9,16 @@ struct ContentView: View {
     @State private var showingEditStartTime = false
     @State private var selectedStage: FastingStage?
 
+    @State private var selectedDate: Date?
+
     var body: some View {
         NavigationView {
-            VStack(spacing: 20) {
-                Spacer()
-                    .frame(height: 30)
+            ScrollView {
+                VStack(spacing: 20) {
+                    Spacer()
+                        .frame(height: 30)
 
-                // Fast LIFe Title
+                    // Fast LIFe Title
                 HStack(spacing: 0) {
                     Text("Fast L")
                         .font(.system(size: 72, weight: .bold, design: .rounded))
@@ -29,7 +32,7 @@ struct ContentView: View {
                 }
 
                 Spacer()
-                    .frame(height: 20)
+                    .frame(height: 50)
 
                 // Progress Ring with Educational Stage Icons
                 ZStack {
@@ -241,7 +244,6 @@ struct ContentView: View {
                             .cornerRadius(15)
                     }
                     .padding(.horizontal, 40)
-                    .padding(.bottom, 105)
                 } else {
                     // Start Fast Button
                     Button(action: {
@@ -257,8 +259,49 @@ struct ContentView: View {
                             .cornerRadius(15)
                     }
                     .padding(.horizontal, 40)
-                    .padding(.bottom, 125)
                 }
+
+                // MARK: - Embedded History Content (like Weight Tracker pattern)
+
+                if !fastingManager.fastingHistory.isEmpty {
+                    // Calendar View (FIRST - Visual Streak!)
+                    StreakCalendarView(selectedDate: $selectedDate)
+                        .environmentObject(fastingManager)
+                        .padding()
+
+                    // Lifetime Stats Cards
+                    TotalStatsView()
+                        .environmentObject(fastingManager)
+                        .padding()
+
+                    // Progress Chart
+                    FastingGraphView()
+                        .environmentObject(fastingManager)
+                        .padding()
+
+                    // Recent Fasts List
+                    VStack(spacing: 0) {
+                        Text("Recent Fasts")
+                            .font(.headline)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                            .padding(.bottom, 10)
+
+                        ForEach(fastingManager.fastingHistory.filter { $0.isComplete }) { session in
+                            HistoryRowView(session: session)
+                                .padding(.horizontal)
+                                .padding(.vertical, 8)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedDate = session.startTime
+                                }
+                            Divider()
+                                .padding(.horizontal)
+                        }
+                    }
+                    .padding(.bottom, 20)
+                }
+            }
             }
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarHidden(true)
@@ -311,7 +354,19 @@ struct ContentView: View {
             .sheet(item: $selectedStage) { stage in
                 FastingStageDetailView(stage: stage)
             }
+            .sheet(item: selectedIdentifiableDate) { identifiableDate in
+                AddEditFastView(date: identifiableDate.date, fastingManager: fastingManager)
+                    .environmentObject(fastingManager)
+            }
         }
+    }
+
+    // Identifiable date wrapper for sheet presentation
+    private var selectedIdentifiableDate: Binding<IdentifiableDate?> {
+        Binding(
+            get: { selectedDate.map { IdentifiableDate(date: $0) } },
+            set: { selectedDate = $0?.date }
+        )
     }
 
     private var formattedElapsedTime: String {

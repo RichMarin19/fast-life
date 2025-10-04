@@ -75,13 +75,10 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            // History tab - Lazy loaded (expensive: charts, calendar, stats)
-            LazyView(
-                HistoryView()
-                    .environmentObject(fastingManager)
-            )
+            // Analytics tab - Lazy loaded (cross-tracker insights coming soon)
+            LazyView(AnalyticsView())
             .tabItem {
-                Label("History", systemImage: "list.bullet")
+                Label("Analytics", systemImage: "chart.bar.xaxis")
             }
             .tag(2)
 
@@ -103,7 +100,7 @@ struct MainTabView: View {
         .onAppear {
             // Load fasting history asynchronously after UI renders
             // This prevents blocking app launch with heavy data loading
-            // History loads in background while Timer tab displays
+            // History loads in background and displays inline in Timer tab (like Weight Tracker pattern)
             fastingManager.loadHistoryAsync()
         }
     }

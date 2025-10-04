@@ -34,6 +34,7 @@
 		A1000013000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000014000000000000001 /* Assets.xcassets */; };
 		FF00000100000000000000A1 /* FastingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A1 /* FastingStage.swift */; };
 		FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000400000000000000A1 /* FastingStageDetailView.swift */; };
+		FF00000500000000000000A1 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000600000000000000A1 /* AnalyticsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -67,6 +68,7 @@
 		A1000016000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		FF00000200000000000000A1 /* FastingStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStage.swift; sourceTree = "<group>"; };
 		FF00000400000000000000A1 /* FastingStageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStageDetailView.swift; sourceTree = "<group>"; };
+		FF00000600000000000000A1 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +95,7 @@
 			children = (
 				FF00000200000000000000A1 /* FastingStage.swift */,
 				FF00000400000000000000A1 /* FastingStageDetailView.swift */,
+				FF00000600000000000000A1 /* AnalyticsView.swift */,
 				5243F2472E9029970051A731 /* MoodEntry.swift */,
 				5243F2482E9029970051A731 /* MoodManager.swift */,
 				5243F2492E9029970051A731 /* MoodTrackingView.swift */,
@@ -227,6 +230,7 @@
 				A1000011000000000000001 /* NotificationManager.swift in Sources */,
 				FF00000100000000000000A1 /* FastingStage.swift in Sources */,
 				FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */,
+				FF00000500000000000000A1 /* AnalyticsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

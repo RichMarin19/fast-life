@@ -54,7 +54,8 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .bodyMass)!,
             HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
-            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
+            HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
         ]
 
         // Types to write to HealthKit
@@ -62,7 +63,8 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .bodyMass)!,
             HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
-            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
+            HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
         ]
 
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
@@ -335,6 +337,137 @@ class HealthKitManager: ObservableObject {
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
 
         healthStore.disableBackgroundDelivery(for: weightType) { success, error in
+            if let error = error {
+                print("Failed to disable background delivery: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    // MARK: - Sleep Tracking Methods
+
+    func isSleepAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            return false
+        }
+
+        let status = healthStore.authorizationStatus(for: sleepType)
+        return status == .sharingAuthorized
+    }
+
+    func saveSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            completion(false, nil)
+            return
+        }
+
+        let sleepSample = HKCategorySample(
+            type: sleepType,
+            value: HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue,
+            start: bedTime,
+            end: wakeTime
+        )
+
+        healthStore.save(sleepSample) { success, error in
+            DispatchQueue.main.async {
+                completion(success, error)
+            }
+        }
+    }
+
+    func deleteSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            completion(false, nil)
+            return
+        }
+
+        // Find the sample that matches these times
+        let predicate = HKQuery.predicateForSamples(withStart: bedTime, end: wakeTime, options: .strictStartDate)
+        let query = HKSampleQuery(
+            sampleType: sleepType,
+            predicate: predicate,
+            limit: 1,
+            sortDescriptors: nil
+        ) { [weak self] _, samples, error in
+            guard let sample = samples?.first as? HKCategorySample else {
+                DispatchQueue.main.async {
+                    completion(false, error)
+                }
+                return
+            }
+
+            self?.healthStore.delete(sample) { success, error in
+                DispatchQueue.main.async {
+                    completion(success, error)
+                }
+            }
+        }
+
+        healthStore.execute(query)
+    }
+
+    func fetchSleepData(startDate: Date, completion: @escaping ([SleepEntry]) -> Void) {
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            completion([])
+            return
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: Date(), options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)
+
+        let query = HKSampleQuery(
+            sampleType: sleepType,
+            predicate: predicate,
+            limit: HKObjectQueryNoLimit,
+            sortDescriptors: [sortDescriptor]
+        ) { _, samples, error in
+            guard let samples = samples as? [HKCategorySample], error == nil else {
+                DispatchQueue.main.async {
+                    completion([])
+                }
+                return
+            }
+
+            // Convert HKCategorySamples to SleepEntry objects
+            let sleepEntries = samples.map { sample in
+                SleepEntry(
+                    bedTime: sample.startDate,
+                    wakeTime: sample.endDate,
+                    quality: nil,
+                    source: .healthKit
+                )
+            }
+
+            DispatchQueue.main.async {
+                completion(sleepEntries)
+            }
+        }
+
+        healthStore.execute(query)
+    }
+
+    func startObservingSleep(query: HKObserverQuery) {
+        healthStore.execute(query)
+
+        // Enable background delivery
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
+
+        healthStore.enableBackgroundDelivery(for: sleepType, frequency: .immediate) { success, error in
+            if let error = error {
+                print("Failed to enable background delivery: \(error.localizedDescription)")
+            }
+        }
+    }
+
+    func stopObservingSleep(query: HKObserverQuery) {
+        healthStore.stop(query)
+
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
+
+        healthStore.disableBackgroundDelivery(for: sleepType) { success, error in
             if let error = error {
                 print("Failed to disable background delivery: \(error.localizedDescription)")
             }
