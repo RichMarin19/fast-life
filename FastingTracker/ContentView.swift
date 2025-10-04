@@ -1270,10 +1270,10 @@ struct EditStartTimeView: View {
                 durationMinutes = Int(duration) / 60 % 60
             }
         }
-        .onChange(of: durationHours) { _ in
+        .onChange(of: durationHours) {
             updateStartTimeFromDuration()
         }
-        .onChange(of: durationMinutes) { _ in
+        .onChange(of: durationMinutes) {
             updateStartTimeFromDuration()
         }
     }
