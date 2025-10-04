@@ -21,6 +21,8 @@ struct InsightsView: View {
                     switch selectedSection {
                     case .essentials:
                         EssentialsSection()
+                    case .timeline:
+                        FastingTimelineSection()
                     case .faq:
                         FAQSection()
                     case .myths:
@@ -40,6 +42,7 @@ struct InsightsView: View {
 
 enum InsightSection: String, CaseIterable {
     case essentials = "Essentials"
+    case timeline = "Timeline"
     case faq = "FAQ"
     case myths = "Myths"
     case terms = "Terms"
@@ -151,6 +154,117 @@ struct EssentialCard: View {
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
+    }
+}
+
+// MARK: - Fasting Timeline Section
+
+struct FastingTimelineSection: View {
+    var body: some View {
+        VStack(spacing: 16) {
+            // Header
+            VStack(spacing: 8) {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 40))
+                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                Text("Fasting Timeline")
+                    .font(.title2)
+                    .fontWeight(.bold)
+                Text("What happens in your body during fasting")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .padding()
+
+            // Timeline Cards
+            VStack(spacing: 12) {
+                ForEach(FastingStage.all) { stage in
+                    TimelineStageCard(stage: stage)
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+}
+
+struct TimelineStageCard: View {
+    let stage: FastingStage
+    @State private var isExpanded = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Button(action: {
+                withAnimation(.spring(response: 0.3)) {
+                    isExpanded.toggle()
+                }
+            }) {
+                HStack(spacing: 12) {
+                    Text(stage.icon)
+                        .font(.system(size: 36))
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(stage.title)
+                            .font(.headline)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                        Text(stage.hourRange + " hours")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
+                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                        .font(.title3)
+                }
+            }
+
+            if isExpanded {
+                VStack(alignment: .leading, spacing: 12) {
+                    Divider()
+
+                    // Description points
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(stage.description, id: \.self) { point in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                Text(point)
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+
+                    // Did You Know
+                    HStack(alignment: .top, spacing: 8) {
+                        Image(systemName: "lightbulb.fill")
+                            .foregroundColor(.yellow)
+                            .font(.subheadline)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Did You Know?")
+                                .font(.caption)
+                                .fontWeight(.bold)
+                            Text(stage.didYouKnow)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    .padding()
+                    .background(Color.yellow.opacity(0.1))
+                    .cornerRadius(8)
+                }
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+        }
+        .padding()
         .background(Color.white)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 5, y: 2)

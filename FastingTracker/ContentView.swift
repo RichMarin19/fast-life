@@ -7,12 +7,13 @@ struct ContentView: View {
     @State private var showingDeleteConfirmation = false
     @State private var showingEditTimes = false
     @State private var showingEditStartTime = false
+    @State private var selectedStage: FastingStage?
 
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
                 Spacer()
-                    .frame(height: 70)
+                    .frame(height: 30)
 
                 // Fast LIFe Title
                 HStack(spacing: 0) {
@@ -30,8 +31,33 @@ struct ContentView: View {
                 Spacer()
                     .frame(height: 20)
 
-                // Progress Ring
+                // Progress Ring with Educational Stage Icons
                 ZStack {
+                    // Educational stage icons positioned around the circle
+                    ForEach(FastingStage.relevantStages(for: fastingManager.fastingGoalHours)) { stage in
+                        let midpointHour = Double(stage.startHour + stage.endHour) / 2.0
+                        let angle = (midpointHour / 24.0) * 360.0 - 90.0 // -90 to start at top
+                        let radius: CGFloat = 160
+                        let x = radius * cos(angle * .pi / 180)
+                        let y = radius * sin(angle * .pi / 180)
+
+                        Button(action: {
+                            selectedStage = stage
+                        }) {
+                            Text(stage.icon)
+                                .font(.system(size: 36))
+                                .background(
+                                    Circle()
+                                        .fill(Color.white)
+                                        .frame(width: 50, height: 50)
+                                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                )
+                        }
+                        .offset(x: x, y: y)
+                    }
+
+                    // Timer Circle
+                    ZStack {
                     Circle()
                         .stroke(Color.gray.opacity(0.3), lineWidth: 20)
                         .frame(width: 250, height: 250)
@@ -79,6 +105,7 @@ struct ContentView: View {
                                 .foregroundColor(fastingManager.isActive ? progressColor : .gray)
                         }
                     }
+                    }
                 }
 
                 // Progress Percentage
@@ -86,7 +113,7 @@ struct ContentView: View {
                     .font(.title2)
                     .foregroundColor(.secondary)
                     .padding(.top, 10)
-                    .padding(.bottom, 15)
+                    .padding(.bottom, 40)
 
                 // Streak Display
                 if fastingManager.currentStreak > 0 {
@@ -280,6 +307,9 @@ struct ContentView: View {
                 Button("No", role: .cancel) { }
             } message: {
                 Text("This will permanently delete the current fast without saving it to history.")
+            }
+            .sheet(item: $selectedStage) { stage in
+                FastingStageDetailView(stage: stage)
             }
         }
     }

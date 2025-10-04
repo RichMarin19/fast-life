@@ -32,6 +32,8 @@
 		A1000009000000000000001 /* FastingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010000000000000001 /* FastingManager.swift */; };
 		A1000011000000000000001 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012000000000000001 /* NotificationManager.swift */; };
 		A1000013000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000014000000000000001 /* Assets.xcassets */; };
+		FF00000100000000000000A1 /* FastingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A1 /* FastingStage.swift */; };
+		FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000400000000000000A1 /* FastingStageDetailView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +65,8 @@
 		A1000014000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000015000000000000001 /* Fast lIFe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fast lIFe.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000016000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		FF00000200000000000000A1 /* FastingStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStage.swift; sourceTree = "<group>"; };
+		FF00000400000000000000A1 /* FastingStageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStageDetailView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -87,6 +91,8 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				FF00000200000000000000A1 /* FastingStage.swift */,
+				FF00000400000000000000A1 /* FastingStageDetailView.swift */,
 				5243F2472E9029970051A731 /* MoodEntry.swift */,
 				5243F2482E9029970051A731 /* MoodManager.swift */,
 				5243F2492E9029970051A731 /* MoodTrackingView.swift */,
@@ -219,6 +225,8 @@
 				A1000009000000000000001 /* FastingManager.swift in Sources */,
 				5289E06D2E8D0DAD00254E70 /* InsightsView.swift in Sources */,
 				A1000011000000000000001 /* NotificationManager.swift in Sources */,
+				FF00000100000000000000A1 /* FastingStage.swift in Sources */,
+				FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
