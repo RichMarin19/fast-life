@@ -89,14 +89,23 @@ struct ContentView: View {
                             .font(.system(size: 40))
                             .foregroundColor(fastingManager.isActive ? .blue : .gray)
 
-                        // Elapsed Time
-                        VStack(spacing: 4) {
-                            Text("Fasting")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedElapsedTime)
-                                .font(.system(size: 32, weight: .bold, design: .monospaced))
+                        // Elapsed Time - Tappable to edit
+                        Button(action: {
+                            if fastingManager.isActive {
+                                showingEditStartTime = true
+                            }
+                        }) {
+                            VStack(spacing: 4) {
+                                Text("Fasting")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text(formattedElapsedTime)
+                                    .font(.system(size: 32, weight: .bold, design: .monospaced))
+                                    .foregroundColor(fastingManager.isActive ? .primary : .gray)
+                            }
                         }
+                        .buttonStyle(.plain)
+                        .disabled(!fastingManager.isActive)
 
                         // Countdown Time
                         VStack(spacing: 4) {
@@ -929,6 +938,9 @@ struct EditStartTimeView: View {
     @Environment(\.dismiss) var dismiss
     @State private var startTime: Date
     @State private var editingTime = false
+    @State private var editingDuration = false
+    @State private var durationHours: Int = 0
+    @State private var durationMinutes: Int = 0
 
     init() {
         _startTime = State(initialValue: Date())
@@ -970,109 +982,218 @@ struct EditStartTimeView: View {
 
                 ScrollView {
                     VStack(spacing: 24) {
-                        // Current Duration Card
-                        VStack(spacing: 16) {
-                            Image(systemName: "clock.arrow.circlepath")
-                                .font(.system(size: 40))
-                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
-
-                            Text("Current Duration")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-
-                            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                                Text("\(currentHours)")
-                                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                                    .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
-                                Text("h")
-                                    .font(.title2)
-                                    .foregroundColor(.secondary)
-                                Text("\(currentMinutes)")
-                                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                                    .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
-                                Text("m")
-                                    .font(.title2)
-                                    .foregroundColor(.secondary)
+                        // Current Duration Card - TAPPABLE
+                        Button(action: {
+                            withAnimation {
+                                editingDuration.toggle()
+                                if editingDuration {
+                                    editingTime = false
+                                }
                             }
+                        }) {
+                            VStack(spacing: 16) {
+                                Image(systemName: editingDuration ? "pencil.circle.fill" : "clock.arrow.circlepath")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+
+                                Text(editingDuration ? "Set Duration" : "Current Duration")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+
+                                HStack(alignment: .firstTextBaseline, spacing: 4) {
+                                    Text("\(currentHours)")
+                                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                                        .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                    Text("h")
+                                        .font(.title2)
+                                        .foregroundColor(.secondary)
+                                    Text("\(currentMinutes)")
+                                        .font(.system(size: 48, weight: .bold, design: .rounded))
+                                        .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                    Text("m")
+                                        .font(.title2)
+                                        .foregroundColor(.secondary)
+                                }
+
+                                // Tap to edit hint
+                                HStack(spacing: 6) {
+                                    Image(systemName: editingDuration ? "checkmark.circle.fill" : "hand.tap.fill")
+                                        .font(.caption)
+                                    Text(editingDuration ? "Tap to confirm" : "Tap to edit duration")
+                                        .font(.caption)
+                                }
+                                .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                .padding(.top, 4)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 32)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(Color.white)
+                                    .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(editingDuration ? 0.2 : 0.1), radius: 15, y: 5)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .strokeBorder(
+                                        Color(red: 0.4, green: 0.5, blue: 0.9).opacity(editingDuration ? 0.5 : 0),
+                                        lineWidth: 2
+                                    )
+                            )
                         }
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 32)
-                        .background(
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(Color.white)
-                                .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.1), radius: 15, y: 5)
-                        )
+                        .buttonStyle(.plain)
                         .padding(.top, 16)
 
-                        // Time Adjustment Card
-                        VStack(alignment: .leading, spacing: 20) {
-                            Text("Adjust Start Time")
-                                .font(.headline)
-                                .foregroundColor(.primary)
+                        // Duration Pickers - Shown when editing duration
+                        if editingDuration {
+                            VStack(spacing: 20) {
+                                Text("Set Fasting Duration")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                            // Start time
-                            VStack(spacing: 12) {
-                                Button(action: {
-                                    withAnimation { editingTime.toggle() }
-                                }) {
-                                    HStack {
-                                        HStack(spacing: 12) {
-                                            Image(systemName: "play.circle.fill")
-                                                .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
-                                                .font(.title3)
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text("Start Time")
-                                                    .font(.subheadline)
-                                                    .foregroundColor(.secondary)
-                                                Text(formatTimeDisplay(startTime))
-                                                    .font(.headline)
-                                                    .foregroundColor(.primary)
+                                HStack(spacing: 20) {
+                                    // Hours Picker
+                                    VStack(spacing: 8) {
+                                        Text("Hours")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+
+                                        Picker("Hours", selection: $durationHours) {
+                                            ForEach(0..<49) { hour in
+                                                Text("\(hour)").tag(hour)
                                             }
                                         }
-                                        Spacer()
-                                        Image(systemName: editingTime ? "chevron.up.circle.fill" : "chevron.down.circle")
-                                            .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
-                                            .font(.title2)
+                                        .pickerStyle(.wheel)
+                                        .frame(width: 80, height: 120)
+                                        .clipped()
                                     }
-                                    .padding()
-                                    .background(Color(red: 0.4, green: 0.8, blue: 0.6).opacity(0.1))
-                                    .cornerRadius(12)
-                                }
 
-                                if editingTime {
-                                    DatePicker(
-                                        "",
-                                        selection: $startTime,
-                                        in: ...Date(),
-                                        displayedComponents: [.date, .hourAndMinute]
-                                    )
-                                    .datePickerStyle(.graphical)
-                                    .labelsHidden()
-                                    .transition(.opacity)
+                                    // Minutes Picker
+                                    VStack(spacing: 8) {
+                                        Text("Minutes")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+
+                                        Picker("Minutes", selection: $durationMinutes) {
+                                            ForEach(0..<60) { minute in
+                                                Text("\(minute)").tag(minute)
+                                            }
+                                        }
+                                        .pickerStyle(.wheel)
+                                        .frame(width: 80, height: 120)
+                                        .clipped()
+                                    }
                                 }
+                                .frame(maxWidth: .infinity)
+
+                                HStack(spacing: 6) {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                        .font(.caption)
+                                    Text("Start time will be calculated automatically")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.top, 4)
                             }
+                            .padding(20)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                            .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
+                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                        }
 
-                            HStack(spacing: 6) {
-                                Image(systemName: "info.circle.fill")
-                                    .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
-                                    .font(.caption)
-                                Text("Adjust when your fast started. Your fast will continue.")
+                        // OR divider
+                        if !editingDuration {
+                            HStack {
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(height: 1)
+
+                                Text("OR")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
+                                    .padding(.horizontal, 12)
+
+                                Rectangle()
+                                    .fill(Color.gray.opacity(0.3))
+                                    .frame(height: 1)
                             }
-                            .padding(.top, 4)
+                            .padding(.vertical, 8)
                         }
-                        .padding(20)
-                        .background(Color.white)
-                        .cornerRadius(20)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
+
+                        // Time Adjustment Card - Hidden when editing duration
+                        if !editingDuration {
+                            VStack(alignment: .leading, spacing: 20) {
+                                Text("Adjust Start Time")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
+
+                                // Start time
+                                VStack(spacing: 12) {
+                                    Button(action: {
+                                        withAnimation { editingTime.toggle() }
+                                    }) {
+                                        HStack {
+                                            HStack(spacing: 12) {
+                                                Image(systemName: "play.circle.fill")
+                                                    .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                                                    .font(.title3)
+                                                VStack(alignment: .leading, spacing: 2) {
+                                                    Text("Start Time")
+                                                        .font(.subheadline)
+                                                        .foregroundColor(.secondary)
+                                                    Text(formatTimeDisplay(startTime))
+                                                        .font(.headline)
+                                                        .foregroundColor(.primary)
+                                                }
+                                            }
+                                            Spacer()
+                                            Image(systemName: editingTime ? "chevron.up.circle.fill" : "chevron.down.circle")
+                                                .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                                .font(.title2)
+                                        }
+                                        .padding()
+                                        .background(Color(red: 0.4, green: 0.8, blue: 0.6).opacity(0.1))
+                                        .cornerRadius(12)
+                                    }
+
+                                    if editingTime {
+                                        DatePicker(
+                                            "",
+                                            selection: $startTime,
+                                            in: ...Date(),
+                                            displayedComponents: [.date, .hourAndMinute]
+                                        )
+                                        .datePickerStyle(.graphical)
+                                        .labelsHidden()
+                                        .transition(.opacity)
+                                    }
+                                }
+
+                                HStack(spacing: 6) {
+                                    Image(systemName: "info.circle.fill")
+                                        .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                        .font(.caption)
+                                    Text("Choose exact date and time when fast started")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(.top, 4)
+                            }
+                            .padding(20)
+                            .background(Color.white)
+                            .cornerRadius(20)
+                            .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        }
 
                         Spacer()
-                            .frame(height: 180)
+                            .frame(height: 100)
                     }
                     .padding(.horizontal)
                 }
-                .scrollIndicators(.hidden)
+                .scrollIndicators(.visible)
 
                 // Bottom buttons
                 HStack(spacing: 16) {
@@ -1091,6 +1212,13 @@ struct EditStartTimeView: View {
                     }
 
                     Button(action: {
+                        // Calculate start time based on mode
+                        if editingDuration {
+                            // Calculate start time from duration
+                            let totalSeconds = TimeInterval(durationHours * 3600 + durationMinutes * 60)
+                            startTime = Date().addingTimeInterval(-totalSeconds)
+                        }
+
                         // Update the start time without stopping the fast
                         if var session = fastingManager.currentSession {
                             session.startTime = startTime
@@ -1136,7 +1264,17 @@ struct EditStartTimeView: View {
         .onAppear {
             if let session = fastingManager.currentSession {
                 startTime = session.startTime
+                // Initialize duration pickers with current duration
+                let duration = Date().timeIntervalSince(session.startTime)
+                durationHours = Int(duration) / 3600
+                durationMinutes = Int(duration) / 60 % 60
             }
+        }
+        .onChange(of: durationHours) { _ in
+            updateStartTimeFromDuration()
+        }
+        .onChange(of: durationMinutes) { _ in
+            updateStartTimeFromDuration()
         }
     }
 
@@ -1148,6 +1286,13 @@ struct EditStartTimeView: View {
     private var currentMinutes: Int {
         let duration = Date().timeIntervalSince(startTime)
         return Int(duration) / 60 % 60
+    }
+
+    private func updateStartTimeFromDuration() {
+        if editingDuration {
+            let totalSeconds = TimeInterval(durationHours * 3600 + durationMinutes * 60)
+            startTime = Date().addingTimeInterval(-totalSeconds)
+        }
     }
 
     private func formatTimeDisplay(_ date: Date) -> String {
