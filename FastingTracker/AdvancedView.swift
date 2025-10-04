@@ -71,15 +71,17 @@ struct AdvancedView: View {
                     .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
 
-                    // Coming Soon Features
-
-                    AdvancedFeatureCard(
-                        title: "Data Export & Backup",
-                        description: "Export your fasting data to CSV or backup to iCloud",
-                        icon: "square.and.arrow.up.fill",
-                        color: .green,
-                        isAvailable: false
-                    )
+                    // Notifications - AI-powered habit coaching
+                    Button(action: { navigationPath.append("notificationSettings") }) {
+                        AdvancedFeatureCard(
+                            title: "Notifications",
+                            description: "AI-powered coaching messages to keep you motivated",
+                            icon: "bell.badge.fill",
+                            color: .orange,
+                            isAvailable: true
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.horizontal)
 
                     // Settings - Placed at bottom
@@ -109,6 +111,8 @@ struct AdvancedView: View {
                     SleepTrackingView()
                 case "moodTracking":
                     MoodTrackingView()
+                case "notificationSettings":
+                    NotificationSettingsView()
                 case "settings":
                     AppSettingsView(
                         fastingManager: fastingManager,
