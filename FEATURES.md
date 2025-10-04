@@ -1,6 +1,6 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.2.1 (Build 9)**
+**Version 1.2.2 (Build 10)**
 *Your intelligent intermittent fasting companion with weight, hydration, sleep, and mood tracking*
 
 ---
@@ -38,6 +38,27 @@
   - Updates all calculations in real-time
 - **Edit Start & End Times (When Stopping)**: Modify both times before completing a fast
 - **Manual Fast Entry**: Add past fasts with custom start/end times and goals
+
+### 📱 Unified Timer Tab Experience
+**Everything about fasting in ONE scrollable view** (follows Weight Tracker pattern):
+
+**Flow:**
+1. **Fast LIFe Title** with educational stage icons around timer
+2. **Timer Circle** with progress ring and real-time stats
+3. **Goal Pill + Start/Stop Button**
+4. **Calendar View** → Visual streak feedback immediately after timer
+5. **Lifetime Stats Cards** → 4 key metrics (Days Fasted, Hours, Goal Days, Longest Streak)
+6. **Progress Chart** → Week/Month/Year time ranges with navigation
+7. **Recent Fasts List** → Tap any fast to edit
+
+**Why This Matters:**
+- ✅ No tab switching needed - everything in one place
+- ✅ Consistent with Weight/Sleep/Mood tracker patterns
+- ✅ Calendar right after timer = instant visual feedback
+- ✅ All fasting data accessible within 3 clicks
+
+Per Apple HIG: Consistent design patterns improve learnability
+Reference: https://developer.apple.com/design/human-interface-guidelines/consistency
 
 ---
 
@@ -307,10 +328,10 @@ Top 10 frequently asked questions with expandable answers:
 
 ### 📱 Intuitive Navigation
 - **Four-Tab Interface**:
-  - ⏱️ Timer: Active fasting tracking
-  - 💡 Insights: Educational content
-  - 📊 History: Analytics and past fasts
-  - ➕ More: Advanced features hub
+  - ⏱️ Timer: Active fasting tracking with embedded history (calendar, stats, chart, list)
+  - 💡 Insights: Educational content (fasting timeline, essentials, FAQ, myths, terms)
+  - 📊 Analytics: Cross-tracker insights hub (coming soon - correlations across all metrics)
+  - ➕ More: Advanced features hub (Weight, Hydration, Sleep, Mood, Settings)
 - **Segmented Controls**: Easy switching between view modes
 - **Expandable Sections**: Collapsible FAQ and content areas
 - **Interactive Elements**: Tap to expand, swipe to navigate
@@ -460,6 +481,7 @@ Top 10 frequently asked questions with expandable answers:
 - **v1.1.5**: Separate sync controls, app reset UX improvements, sleep tracking with HealthKit
 - **v1.2.0**: Mood & Energy tracking with 1-10 scale and trend graphs
 - **v1.2.1**: Educational fasting timeline with interactive stage icons around timer
+- **v1.2.2**: Timer tab restructure with embedded history + Analytics placeholder tab
 
 ---
 

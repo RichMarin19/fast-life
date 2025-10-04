@@ -14,6 +14,148 @@
 
 ---
 
+## 10. Timer Tab Restructure + Analytics Placeholder 📱📊
+
+**Added:** January 4, 2025
+**Version:** 1.2.2 (Build 10)
+
+### What Changed:
+
+MAJOR UX IMPROVEMENT - Timer tab now follows Weight Tracker pattern with all fasting data in ONE scrollable view.
+
+**Features:**
+- ✅ Unified scrollable Timer tab (matches Weight/Sleep/Mood pattern)
+- ✅ Embedded calendar, stats, chart, and recent fasts list
+- ✅ Calendar appears immediately after timer (instant visual feedback)
+- ✅ Improved spacing: title-to-timer 20pt → 50pt
+- ✅ New Analytics tab placeholder (replaces History tab)
+- ✅ Sleep tracking files now properly committed to git
+
+**New Flow:**
+```
+ScrollView:
+  1. Fast LIFe Title (with educational icons around timer)
+  2. Timer Circle (progress ring + real-time stats)
+  3. Goal Pill + Start/Stop Button
+  4. Calendar View → Visual streak right after timer!
+  5. Lifetime Stats Cards → 4 key metrics
+  6. Progress Chart → Week/Month/Year navigation
+  7. Recent Fasts List → Tap to edit
+```
+
+### Why This Matters:
+
+**Consistent UX Across All Trackers:**
+- Timer tab = Weight Tracker pattern ✅
+- Sleep tab = Weight Tracker pattern ✅
+- Mood tab = Weight Tracker pattern ✅
+- ALL trackers feel the same!
+
+**Better Information Architecture:**
+- No tab switching needed - everything in ONE place
+- Calendar right after timer = instant streak feedback
+- Related features grouped together
+- Follows 3-click rule (everything accessible in ≤3 clicks)
+
+**Future-Proof:**
+- Analytics tab ready for cross-tracker insights
+- Will show correlations: "Weight drops 0.5 lbs on fast days"
+- Will show trends across fasting, weight, sleep, mood
+- Will display comprehensive health timeline
+
+### Technical Implementation:
+
+**Files Modified:**
+```
+ContentView.swift
+- Wrapped body in ScrollView
+- Increased title-to-timer spacing (20pt → 50pt)
+- Embedded StreakCalendarView after buttons
+- Embedded TotalStatsView (4 stat cards)
+- Embedded FastingGraphView (with time range picker)
+- Embedded HistoryRowView list (tap to edit)
+- Added @State selectedDate for calendar interactions
+- Uses shared IdentifiableDate from HistoryView.swift
+- Removed excessive bottom padding from buttons
+
+FastingTrackerApp.swift
+- Changed History tab → Analytics tab
+- Updated icon: "list.bullet" → "chart.bar.xaxis"
+- Updated label: "History" → "Analytics"
+- Updated comment about embedded history in Timer tab
+
+HealthKitManager.swift
+- Added isSleepAuthorized() → Check sleep permissions
+- Added saveSleep(bedTime:wakeTime:) → Save to HealthKit
+- Added deleteSleep(bedTime:wakeTime:) → Delete from HealthKit
+- Added fetchSleepData(startDate:) → Fetch sleep, returns [SleepEntry]
+- Added startObservingSleep(query:) → Background observation
+- Added stopObservingSleep(query:) → Stop observation
+- Added .sleepAnalysis to read/write permissions
+
+project.pbxproj
+- Registered AnalyticsView.swift (PBXBuildFile, PBXFileReference, PBXGroup, PBXSourcesBuildPhase)
+```
+
+**Files Added:**
+```
+AnalyticsView.swift (NEW)
+- Beautiful "Coming Soon" placeholder
+- 4 feature preview cards:
+  1. Cross-Tracker Correlations
+  2. Trend Analysis
+  3. Smart Insights
+  4. Comprehensive Timeline
+- Explains future vision for Analytics hub
+- Consistent design with Insights tab
+
+SleepEntry.swift (Previously Uncommitted)
+- Data model for sleep sessions
+- Properties: id, bedTime, wakeTime, quality, source
+- Calculated properties: duration, formattedDuration
+
+SleepManager.swift (Previously Uncommitted)
+- Sleep persistence + HealthKit sync
+- ObservableObject for SwiftUI binding
+- Methods: addSleepEntry, deleteSleepEntry, syncFromHealthKit
+- Statistics: latestSleep, averageSleepHours, sleepTrend
+- HealthKit observer for automatic updates
+
+SleepTrackingView.swift (Previously Uncommitted)
+- UI for logging sleep sessions
+- Displays latest sleep, 7-day average, trend
+- Recent entries list with delete
+- HealthKit sync toggle
+```
+
+### Analytics Tab (Coming Soon):
+
+**Vision:**
+- **Cross-Tracker Correlations**: "Your weight drops 0.5 lbs on fast days"
+- **Trend Analysis**: Patterns between fasting, weight, sleep, mood over time
+- **Smart Insights**: Personalized observations about health metrics
+- **Comprehensive Timeline**: All health data on single unified timeline
+
+**Current State:**
+- Clean placeholder UI with icon: chart.bar.xaxis
+- 4 preview cards explaining future features
+- "Coming Soon" badge
+- Message: "In the meantime, explore your individual tracker analytics"
+
+### Apple HIG References:
+
+**Consistency:**
+> "Use consistent design patterns across features to improve learnability"
+> https://developer.apple.com/design/human-interface-guidelines/consistency
+
+**Information Architecture:**
+> "Group related features together and organize content logically"
+> https://developer.apple.com/design/human-interface-guidelines/organizing-your-information
+
+**Commit:** `06ac1bb` - "feat: restructure Timer tab with embedded history + Analytics placeholder"
+
+---
+
 ## 9. Educational Fasting Timeline 🕐🎓
 
 **Added:** January 4, 2025
