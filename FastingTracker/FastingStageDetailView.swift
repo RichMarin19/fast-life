@@ -10,7 +10,7 @@ struct FastingStageDetailView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
+                VStack(alignment: .leading, spacing: 12) {
                     // Header with icon and title
                     HStack(spacing: 16) {
                         Text(stage.icon)
@@ -29,40 +29,99 @@ struct FastingStageDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.bottom, 10)
 
-                    // Description
-                    VStack(alignment: .leading, spacing: 8) {
+                    // What's Happening
+                    VStack(alignment: .leading, spacing: 6) {
                         Text("What's Happening")
                             .font(.headline)
+                            .fontWeight(.semibold)
                             .foregroundColor(.blue)
 
                         ForEach(stage.description, id: \.self) { point in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
+                                    .font(.body)
                                     .fontWeight(.bold)
                                 Text(point)
+                                    .font(.body)
                                     .fixedSize(horizontal: false, vertical: true)
                             }
                         }
                     }
-                    .padding()
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.blue.opacity(0.08))
-                    .cornerRadius(12)
+                    .cornerRadius(10)
+
+                    // Physical Signs
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "heart.text.square.fill")
+                                .foregroundColor(.red)
+                            Text("Physical Signs")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+
+                        ForEach(stage.physicalSigns, id: \.self) { sign in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                    .font(.body)
+                                    .fontWeight(.bold)
+                                Text(sign)
+                                    .font(.body)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.red.opacity(0.08))
+                    .cornerRadius(10)
+
+                    // Recommendations
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "sparkles")
+                                .foregroundColor(.green)
+                            Text("Recommendations")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+
+                        ForEach(stage.recommendations, id: \.self) { rec in
+                            HStack(alignment: .top, spacing: 8) {
+                                Text("•")
+                                    .font(.body)
+                                    .fontWeight(.bold)
+                                Text(rec)
+                                    .font(.body)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color.green.opacity(0.08))
+                    .cornerRadius(10)
 
                     // Did You Know section
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 6) {
                             Image(systemName: "lightbulb.fill")
                                 .foregroundColor(.yellow)
                             Text("Did You Know?")
                                 .font(.headline)
+                                .fontWeight(.semibold)
                         }
 
                         Text(stage.didYouKnow)
+                            .font(.body)
                             .fixedSize(horizontal: false, vertical: true)
                     }
-                    .padding()
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.yellow.opacity(0.1))
-                    .cornerRadius(12)
+                    .cornerRadius(10)
                 }
                 .padding()
             }
