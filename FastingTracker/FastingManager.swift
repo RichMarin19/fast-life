@@ -61,8 +61,8 @@ class FastingManager: ObservableObject {
         saveCurrentSession()
         startTimer()
 
-        // Schedule notification with streak context
-        NotificationManager.shared.scheduleGoalNotification(
+        // Schedule all enabled notifications based on user settings
+        NotificationManager.shared.scheduleAllNotifications(
             for: session,
             goalHours: fastingGoalHours,
             currentStreak: currentStreak,

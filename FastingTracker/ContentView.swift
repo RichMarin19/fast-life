@@ -367,6 +367,16 @@ struct ContentView: View {
                 AddEditFastView(date: identifiableDate.date, fastingManager: fastingManager)
                     .environmentObject(fastingManager)
             }
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("OpenStageDetail"))) { notification in
+                // Handle deep linking from stage notification tap
+                // Reference: https://developer.apple.com/documentation/combine/notificationcenter/publisher
+                if let stageHour = notification.userInfo?["stageHour"] as? Int {
+                    // Find the stage that matches this hour
+                    if let stage = FastingStage.all.first(where: { $0.startHour == stageHour }) {
+                        selectedStage = stage
+                    }
+                }
+            }
         }
     }
 
@@ -1227,8 +1237,9 @@ struct EditStartTimeView: View {
                             // Persist the updated session to UserDefaults
                             fastingManager.saveCurrentSession()
 
-                            // Reschedule notifications with updated start time
-                            NotificationManager.shared.scheduleGoalNotification(
+                            // Reschedule ALL notifications with updated start time
+                            // This ensures stage, hydration, goal, and other notifications adjust to the new timeline
+                            NotificationManager.shared.rescheduleNotifications(
                                 for: session,
                                 goalHours: fastingManager.fastingGoalHours,
                                 currentStreak: fastingManager.currentStreak,

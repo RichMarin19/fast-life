@@ -6,6 +6,14 @@ import SwiftUI
 struct FastingStageDetailView: View {
     let stage: FastingStage
     @Environment(\.dismiss) private var dismiss
+    @State private var doNotShowAgain: Bool
+
+    init(stage: FastingStage) {
+        self.stage = stage
+        // Initialize checkbox state from UserDefaults
+        let stageKey = "disabledStage_\(stage.startHour)h"
+        _doNotShowAgain = State(initialValue: UserDefaults.standard.bool(forKey: stageKey))
+    }
 
     var body: some View {
         NavigationView {
@@ -121,6 +129,36 @@ struct FastingStageDetailView: View {
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(Color.yellow.opacity(0.1))
+                    .cornerRadius(10)
+
+                    // Do Not Show Again checkbox
+                    // Per Apple HIG: Give users control over notification preferences
+                    // Reference: https://developer.apple.com/design/human-interface-guidelines/notifications
+                    Toggle(isOn: Binding(
+                        get: { doNotShowAgain },
+                        set: { newValue in
+                            doNotShowAgain = newValue
+                            let stageKey = "disabledStage_\(stage.startHour)h"
+                            UserDefaults.standard.set(newValue, forKey: stageKey)
+                            print("Stage \(stage.startHour)h notifications \(newValue ? "disabled" : "enabled") from detail view")
+                        }
+                    )) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "bell.slash.fill")
+                                .foregroundColor(.orange)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Do Not Show Again")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                Text("Stop receiving notifications for this stage")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .toggleStyle(SwitchToggleStyle(tint: .orange))
+                    .padding(12)
+                    .background(Color.orange.opacity(0.08))
                     .cornerRadius(10)
                 }
                 .padding()

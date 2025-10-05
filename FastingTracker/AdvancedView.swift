@@ -588,6 +588,52 @@ struct AppSettingsView: View {
         UserDefaults.standard.removeObject(forKey: "moodEntries")
     }
 
+    private func clearNotificationPreferences() {
+        // Clear all disabled stage preferences
+        // This allows all stage notifications to show again after reset
+        let stageHours = [4, 6, 8, 10, 12, 14, 16, 18, 20, 24]
+        for hour in stageHours {
+            UserDefaults.standard.removeObject(forKey: "disabledStage_\(hour)h")
+        }
+
+        // Reset notification settings to defaults
+        UserDefaults.standard.removeObject(forKey: "notificationsEnabled")
+        UserDefaults.standard.removeObject(forKey: "notificationMode")
+        UserDefaults.standard.removeObject(forKey: "notif_hydration")
+        UserDefaults.standard.removeObject(forKey: "notif_didyouknow")
+        UserDefaults.standard.removeObject(forKey: "notif_milestones")
+        UserDefaults.standard.removeObject(forKey: "notif_stages")
+        UserDefaults.standard.removeObject(forKey: "notif_goalreminder")
+        UserDefaults.standard.removeObject(forKey: "trigger_hydration")
+        UserDefaults.standard.removeObject(forKey: "trigger_didyouknow")
+        UserDefaults.standard.removeObject(forKey: "trigger_milestones")
+        UserDefaults.standard.removeObject(forKey: "trigger_stages")
+        UserDefaults.standard.removeObject(forKey: "trigger_goalreminder")
+        UserDefaults.standard.removeObject(forKey: "expandedTriggersView")
+        UserDefaults.standard.removeObject(forKey: "wakeTime")
+
+        // Clear max per day settings
+        UserDefaults.standard.removeObject(forKey: "maxStageNotificationsPerDay")
+        UserDefaults.standard.removeObject(forKey: "maxHydrationNotificationsPerDay")
+        UserDefaults.standard.removeObject(forKey: "maxDidYouKnowNotificationsPerDay")
+        UserDefaults.standard.removeObject(forKey: "maxMilestoneNotificationsPerDay")
+        UserDefaults.standard.removeObject(forKey: "maxGoalReminderNotificationsPerDay")
+
+        // Clear rotation tracking data
+        UserDefaults.standard.removeObject(forKey: "lastNotificationScheduleDate")
+        UserDefaults.standard.removeObject(forKey: "sentStageIndicesToday")
+        UserDefaults.standard.removeObject(forKey: "sentHydrationIndicesToday")
+        UserDefaults.standard.removeObject(forKey: "sentMilestoneIndicesToday")
+
+        // Clear quiet hours settings (reset to defaults)
+        UserDefaults.standard.removeObject(forKey: "quietHoursEnabled")
+        UserDefaults.standard.removeObject(forKey: "quietHoursStart")
+        UserDefaults.standard.removeObject(forKey: "quietHoursEnd")
+
+        // Cancel all pending notifications
+        NotificationManager.shared.cancelAllNotifications()
+    }
+
     private func clearAllData() {
         // Clear fasting data (includes stopping active fast)
         clearAllFastingData()
@@ -618,6 +664,10 @@ struct AppSettingsView: View {
 
         // Remove hydration goal
         UserDefaults.standard.removeObject(forKey: "dailyHydrationGoal")
+
+        // Clear notification preferences and disabled stage settings
+        // This resets all notification settings to defaults when user clears all data
+        clearNotificationPreferences()
 
         // Ensure all UserDefaults changes are persisted to disk
         UserDefaults.standard.synchronize()
