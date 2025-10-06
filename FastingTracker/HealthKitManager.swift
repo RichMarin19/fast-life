@@ -359,9 +359,29 @@ class HealthKitManager: ObservableObject {
     }
 
     func saveSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
+        print("\n💾 === HEALTHKIT SAVE SLEEP ===")
+        print("Bed Time: \(bedTime)")
+        print("Wake Time: \(wakeTime)")
+        print("Duration: \(String(format: "%.1f", (wakeTime.timeIntervalSince(bedTime)) / 3600))h")
+
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            print("❌ Failed to get sleep type")
             completion(false, nil)
             return
+        }
+
+        // Check authorization status
+        let authStatus = healthStore.authorizationStatus(for: sleepType)
+        print("Authorization Status: \(authStatus.rawValue)")
+        switch authStatus {
+        case .notDetermined:
+            print("⚠️  Authorization not determined - user hasn't granted permission yet")
+        case .sharingDenied:
+            print("❌ Authorization denied - user declined HealthKit access")
+        case .sharingAuthorized:
+            print("✅ Authorization granted")
+        @unknown default:
+            print("⚠️  Unknown authorization status")
         }
 
         let sleepSample = HKCategorySample(
@@ -371,36 +391,70 @@ class HealthKitManager: ObservableObject {
             end: wakeTime
         )
 
+        print("🔄 Attempting to save to HealthKit...")
         healthStore.save(sleepSample) { success, error in
             DispatchQueue.main.async {
+                if success {
+                    print("✅ HealthKit save successful")
+                } else {
+                    print("❌ HealthKit save failed: \(String(describing: error))")
+                }
+                print("============================\n")
                 completion(success, error)
             }
         }
     }
 
     func deleteSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
+        print("\n🗑️  === HEALTHKIT DELETE SLEEP ===")
+        print("Bed Time: \(bedTime)")
+        print("Wake Time: \(wakeTime)")
+
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            print("❌ Failed to get sleep type")
             completion(false, nil)
             return
         }
 
+        // Check authorization status
+        let authStatus = healthStore.authorizationStatus(for: sleepType)
+        print("Authorization Status: \(authStatus.rawValue)")
+
         // Find the sample that matches these times
         let predicate = HKQuery.predicateForSamples(withStart: bedTime, end: wakeTime, options: .strictStartDate)
+        print("🔍 Searching for matching HealthKit sample...")
+
         let query = HKSampleQuery(
             sampleType: sleepType,
             predicate: predicate,
             limit: 1,
             sortDescriptors: nil
         ) { [weak self] _, samples, error in
-            guard let sample = samples?.first as? HKCategorySample else {
+            if let error = error {
+                print("❌ Query error: \(error.localizedDescription)")
                 DispatchQueue.main.async {
                     completion(false, error)
                 }
                 return
             }
 
+            guard let sample = samples?.first as? HKCategorySample else {
+                print("⚠️  No matching sample found in HealthKit (may not exist)")
+                DispatchQueue.main.async {
+                    completion(false, nil)
+                }
+                return
+            }
+
+            print("✅ Found matching sample, deleting...")
             self?.healthStore.delete(sample) { success, error in
                 DispatchQueue.main.async {
+                    if success {
+                        print("✅ HealthKit delete successful")
+                    } else {
+                        print("❌ HealthKit delete failed: \(String(describing: error))")
+                    }
+                    print("==============================\n")
                     completion(success, error)
                 }
             }

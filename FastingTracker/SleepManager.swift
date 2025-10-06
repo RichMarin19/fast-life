@@ -40,9 +40,16 @@ class SleepManager: ObservableObject {
     // MARK: - Add/Update Sleep Entry
 
     func addSleepEntry(_ entry: SleepEntry) {
+        print("\n➕ === ADD SLEEP ENTRY ===")
+        print("Bed Time: \(entry.bedTime)")
+        print("Wake Time: \(entry.wakeTime)")
+        print("Duration: \(String(format: "%.1f", entry.duration / 3600))h")
+        print("Source: \(entry.source)")
+        print("Sync Enabled: \(syncWithHealthKit)")
+
         // Validate that wake time is after bed time
         guard entry.wakeTime > entry.bedTime else {
-            print("Invalid sleep entry: wake time must be after bed time")
+            print("❌ Invalid sleep entry: wake time must be after bed time")
             return
         }
 
@@ -54,37 +61,73 @@ class SleepManager: ObservableObject {
         saveSleepEntries()
 
         // Sync to HealthKit if enabled and this is a manual entry
+        // NOTE: HealthKit entries (source == .healthKit) are NOT synced back (would create duplicates)
         if syncWithHealthKit && entry.source == .manual {
+            print("🔄 Syncing manual entry to HealthKit...")
             HealthKitManager.shared.saveSleep(
                 bedTime: entry.bedTime,
                 wakeTime: entry.wakeTime,
                 completion: { success, error in
-                    if !success {
-                        print("Failed to sync sleep to HealthKit: \(String(describing: error))")
+                    if success {
+                        print("✅ Synced to HealthKit successfully")
+                    } else {
+                        print("❌ Failed to sync sleep to HealthKit: \(String(describing: error))")
                     }
                 }
             )
+        } else if !syncWithHealthKit {
+            print("⏭️  Skipped HealthKit sync (sync disabled)")
+        } else {
+            print("⏭️  Skipped HealthKit sync (already from HealthKit)")
         }
+
+        print("✅ Sleep entry added to local storage")
+        print("========================\n")
     }
 
     // MARK: - Delete Sleep Entry
 
     func deleteSleepEntry(_ entry: SleepEntry) {
+        print("\n🗑️  === DELETE SLEEP ENTRY ===")
+        print("Bed Time: \(entry.bedTime)")
+        print("Wake Time: \(entry.wakeTime)")
+        print("Source: \(entry.source)")
+        print("Sync Enabled: \(syncWithHealthKit)")
+
         sleepEntries.removeAll { $0.id == entry.id }
         saveSleepEntries()
 
-        // Delete from HealthKit if this was synced from HealthKit
-        if syncWithHealthKit && entry.source == .healthKit {
+        // CRITICAL FIX (Blocker 4): Delete from HealthKit for ALL entries that could exist there
+        // Per Apple HealthKit best practices: maintain add/delete symmetry
+        // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614158-delete
+        //
+        // Previous Bug: Only deleted if source == .healthKit
+        // Problem: Manual entries (source = .manual) ARE synced TO HealthKit on add (line 57-67)
+        //          but were NOT deleted FROM HealthKit on remove → orphaned HealthKit entries
+        //
+        // Fixed: Delete from HealthKit for BOTH manual and HealthKit-sourced entries
+        //        since both can exist in HealthKit database
+        if syncWithHealthKit {
+            print("🔄 Attempting HealthKit deletion...")
             HealthKitManager.shared.deleteSleep(
                 bedTime: entry.bedTime,
                 wakeTime: entry.wakeTime,
                 completion: { success, error in
-                    if !success {
-                        print("Failed to delete sleep from HealthKit: \(String(describing: error))")
+                    if success {
+                        print("✅ Deleted from HealthKit successfully")
+                    } else {
+                        // This is not necessarily an error - entry might not exist in HealthKit
+                        // (e.g., if it was added before sync was enabled)
+                        print("⚠️  HealthKit deletion returned false: \(String(describing: error))")
                     }
                 }
             )
+        } else {
+            print("⏭️  Skipped HealthKit deletion (sync disabled)")
         }
+
+        print("✅ Sleep entry deleted from local storage")
+        print("============================\n")
     }
 
     // MARK: - Sync with HealthKit
@@ -98,16 +141,27 @@ class SleepManager: ObservableObject {
         HealthKitManager.shared.fetchSleepData(startDate: start) { [weak self] healthKitEntries in
             guard let self = self else { return }
 
+            print("\n🔄 === SYNC FROM HEALTHKIT ===")
+            print("Fetched \(healthKitEntries.count) entries from HealthKit")
+
             // Merge HealthKit entries with local entries
             for hkEntry in healthKitEntries {
-                // Check if we already have this exact entry (by bed time and wake time)
+                // CRITICAL FIX (Blocker 4 - Duplicate Prevention):
+                // Check if we already have this exact entry by TIME ONLY (not source)
+                // Previous Bug: Checked source == .healthKit which failed when comparing manual vs synced entries
+                // Problem: Manual entry (source=.manual) syncs TO HealthKit → observer fires →
+                //          syncFromHealthKit() pulls it back (source=.healthKit) → duplicate check fails
+                // Fixed: Match by time ONLY, regardless of source
+                // Reference: https://developer.apple.com/documentation/healthkit/hkobject/1614183-startdate
                 let isDuplicate = self.sleepEntries.contains(where: {
-                    $0.source == .healthKit &&
                     abs($0.bedTime.timeIntervalSince(hkEntry.bedTime)) < 60 && // Within 1 minute
                     abs($0.wakeTime.timeIntervalSince(hkEntry.wakeTime)) < 60   // Within 1 minute
                 })
 
-                if !isDuplicate {
+                if isDuplicate {
+                    print("⏭️  Skipped duplicate: \(hkEntry.bedTime) - \(hkEntry.wakeTime)")
+                } else {
+                    print("➕ Adding new entry: \(hkEntry.bedTime) - \(hkEntry.wakeTime)")
                     self.sleepEntries.append(hkEntry)
                 }
             }
