@@ -107,29 +107,45 @@ class WeightManager: ObservableObject {
     }
 
     func setSyncPreference(_ enabled: Bool) {
+        print("\n⚙️  === SET WEIGHT SYNC PREFERENCE ===")
+        print("Enabled: \(enabled)")
+
         syncWithHealthKit = enabled
         userDefaults.set(enabled, forKey: syncHealthKitKey)
 
         if enabled {
-            // Request HealthKit authorization if needed
-            if !HealthKitManager.shared.isAuthorized {
-                HealthKitManager.shared.requestAuthorization { success, error in
+            // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
+            // Per Apple best practices: Request permissions only when needed, per domain
+            // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+            let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
+            print("Weight Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+
+            if !isAuthorized {
+                print("📱 Requesting WEIGHT authorization (granular)...")
+                HealthKitManager.shared.requestWeightAuthorization { success, error in
                     if success {
+                        print("✅ Weight authorization granted → syncing from HealthKit")
                         self.syncFromHealthKit()
                         self.setupHealthKitObserver()
+                    } else {
+                        print("❌ Weight authorization denied: \(String(describing: error))")
                     }
                 }
             } else {
+                print("✅ Already authorized → syncing from HealthKit")
                 syncFromHealthKit()
                 setupHealthKitObserver()
             }
         } else {
+            print("⏭️  Sync disabled → stopping HealthKit observer")
             // Stop observing when sync is disabled
             if let query = observerQuery {
                 HealthKitManager.shared.stopObserving(query: query)
                 observerQuery = nil
             }
         }
+
+        print("======================================\n")
     }
 
     // MARK: - HealthKit Observer

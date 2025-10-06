@@ -20,6 +20,7 @@ struct OnboardingView: View {
 
     @Binding var isOnboardingComplete: Bool
 
+
     init(isOnboardingComplete: Binding<Bool>) {
         self._isOnboardingComplete = isOnboardingComplete
 
@@ -62,6 +63,15 @@ struct OnboardingView: View {
                 .tag(6)
         }
         .tabViewStyle(.page)
+        .onChange(of: currentPage) { oldValue, newValue in
+            print("\n📱 === ONBOARDING: PAGE CHANGED ===")
+            print("From page: \(oldValue) → To page: \(newValue)")
+            let pageNames = ["Welcome", "Current Weight", "Goal Weight", "Fasting Goal", "Hydration Goal", "HealthKit Sync", "Notifications"]
+            if newValue < pageNames.count {
+                print("Now showing: \(pageNames[newValue])")
+            }
+            print("===================================\n")
+        }
         // Default .page style shows dots AND enables lazy page rendering (Apple optimization)
         // UIPageControl.appearance() in init() sets colors for visibility
         // Pages render on-demand (not all at once) for better launch performance
@@ -117,6 +127,10 @@ struct OnboardingView: View {
             Spacer()
 
             Button(action: {
+                print("\n📱 === ONBOARDING: WELCOME PAGE ===")
+                print("✅ 'Get Started' button tapped")
+                print("→ Advancing to page 1 (Current Weight)")
+                print("===================================\n")
                 currentPage = 1
             }) {
                 Text("Get Started")
@@ -179,6 +193,11 @@ struct OnboardingView: View {
 
             HStack(spacing: 20) {
                 Button(action: {
+                    print("\n📱 === ONBOARDING: CURRENT WEIGHT PAGE ===")
+                    print("⬅️  'Back' button tapped")
+                    print("Current weight entered: '\(currentWeight)'")
+                    print("→ Going back to page 0 (Welcome)")
+                    print("=========================================\n")
                     dismissKeyboard()
                     currentPage = 0
                 }) {
@@ -192,6 +211,11 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
+                    print("\n📱 === ONBOARDING: CURRENT WEIGHT PAGE ===")
+                    print("✅ 'Next' button tapped")
+                    print("Current weight entered: '\(currentWeight)' lbs")
+                    print("→ Advancing to page 2 (Goal Weight)")
+                    print("=========================================\n")
                     currentPage = 2
                 }) {
                     Text("Next")
@@ -247,6 +271,11 @@ struct OnboardingView: View {
 
             HStack(spacing: 20) {
                 Button(action: {
+                    print("\n📱 === ONBOARDING: GOAL WEIGHT PAGE ===")
+                    print("⬅️  'Back' button tapped")
+                    print("Goal weight entered: '\(goalWeight)'")
+                    print("→ Going back to page 1 (Current Weight)")
+                    print("=======================================\n")
                     currentPage = 1
                 }) {
                     Text("Back")
@@ -259,6 +288,11 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
+                    print("\n📱 === ONBOARDING: GOAL WEIGHT PAGE ===")
+                    print("✅ 'Next' button tapped")
+                    print("Goal weight entered: '\(goalWeight)' lbs")
+                    print("→ Advancing to page 3 (Fasting Goal)")
+                    print("=======================================\n")
                     currentPage = 3
                 }) {
                     Text("Next")
@@ -352,7 +386,14 @@ struct OnboardingView: View {
                 .frame(height: 10)
 
             HStack(spacing: 20) {
-                Button(action: { currentPage = 2 }) {
+                Button(action: {
+                    print("\n📱 === ONBOARDING: FASTING GOAL PAGE ===")
+                    print("⬅️  'Back' button tapped")
+                    print("Fasting goal set: \(Int(fastingGoal)) hours")
+                    print("→ Going back to page 2 (Goal Weight)")
+                    print("========================================\n")
+                    currentPage = 2
+                }) {
                     Text("Back")
                         .font(.headline)
                         .foregroundColor(.blue)
@@ -362,7 +403,14 @@ struct OnboardingView: View {
                         .cornerRadius(15)
                 }
 
-                Button(action: { currentPage = 4 }) {
+                Button(action: {
+                    print("\n📱 === ONBOARDING: FASTING GOAL PAGE ===")
+                    print("✅ 'Next' button tapped")
+                    print("Fasting goal set: \(Int(fastingGoal)) hours")
+                    print("→ Advancing to page 4 (Hydration Goal)")
+                    print("========================================\n")
+                    currentPage = 4
+                }) {
                     Text("Next")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -449,7 +497,14 @@ struct OnboardingView: View {
                 .frame(height: 10)
 
             HStack(spacing: 20) {
-                Button(action: { currentPage = 3 }) {
+                Button(action: {
+                    print("\n📱 === ONBOARDING: HYDRATION GOAL PAGE ===")
+                    print("⬅️  'Back' button tapped")
+                    print("Hydration goal set: \(Int(hydrationGoal)) oz")
+                    print("→ Going back to page 3 (Fasting Goal)")
+                    print("==========================================\n")
+                    currentPage = 3
+                }) {
                     Text("Back")
                         .font(.headline)
                         .foregroundColor(.blue)
@@ -459,7 +514,14 @@ struct OnboardingView: View {
                         .cornerRadius(15)
                 }
 
-                Button(action: { currentPage = 5 }) {
+                Button(action: {
+                    print("\n📱 === ONBOARDING: HYDRATION GOAL PAGE ===")
+                    print("✅ 'Next' button tapped")
+                    print("Hydration goal set: \(Int(hydrationGoal)) oz")
+                    print("→ Advancing to page 5 (HealthKit Sync)")
+                    print("==========================================\n")
+                    currentPage = 5
+                }) {
                     Text("Next")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -507,16 +569,49 @@ struct OnboardingView: View {
 
             VStack(spacing: 15) {
                 Button(action: {
-                    // Request HealthKit authorization IMMEDIATELY (not later)
-                    // Access HealthKitManager.shared here (not during view init) to defer framework initialization
+                    print("\n📱 === ONBOARDING: HEALTHKIT SYNC PAGE ===")
+                    print("✅ 'Sync All Historical Data' button tapped")
+                    print("🔐 Requesting HealthKit authorization (shows native iOS dialog)")
+                    print("Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization")
+                    print("")
+
+                    // Request HealthKit authorization - shows native iOS permission dialog with toggles
+                    // This is the system dialog that appears as a modal sheet
                     HealthKitManager.shared.requestAuthorization { success, error in
                         if success {
-                            saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
-                            currentPage = 6
+                            print("✅ HealthKit authorization dialog completed")
+
+                            // Verify which permissions were actually granted
+                            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
+                            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
+                            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+
+                            print("🔍 Permissions granted:")
+                            print("  Weight: \(weightGranted ? "✅" : "❌")")
+                            print("  Water: \(waterGranted ? "✅" : "❌")")
+                            print("  Sleep: \(sleepGranted ? "✅" : "❌")")
+
+                            if weightGranted || waterGranted || sleepGranted {
+                                print("✅ At least one permission granted → sync enabled")
+                                print("💾 Saving preference: syncHealthKit=true, futureOnly=false")
+                                saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
+                                print("→ Advancing to page 6 (Notifications)")
+                                print("==========================================\n")
+                                currentPage = 6
+                            } else {
+                                print("⚠️  ZERO permissions granted")
+                                print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
+                                saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                                print("ℹ️  User can enable permissions later in app settings")
+                                print("==========================================\n")
+                                currentPage = 6
+                            }
                         } else {
-                            print("HealthKit authorization failed: \(String(describing: error))")
-                            // Still allow user to continue even if authorization fails
+                            print("❌ HealthKit authorization failed: \(String(describing: error))")
+                            print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
                             saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                            print("→ Advancing to page 6 (Notifications)")
+                            print("==========================================\n")
                             currentPage = 6
                         }
                     }
@@ -536,16 +631,49 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
-                    // Request HealthKit authorization IMMEDIATELY (not later)
-                    // Access HealthKitManager.shared here (not during view init) to defer framework initialization
+                    print("\n📱 === ONBOARDING: HEALTHKIT SYNC PAGE ===")
+                    print("✅ 'Sync Future Data Only' button tapped")
+                    print("🔐 Requesting HealthKit authorization (shows native iOS dialog)")
+                    print("Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization")
+                    print("")
+
+                    // Request HealthKit authorization - shows native iOS permission dialog with toggles
+                    // This is the system dialog that appears as a modal sheet
                     HealthKitManager.shared.requestAuthorization { success, error in
                         if success {
-                            saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
-                            currentPage = 6
+                            print("✅ HealthKit authorization dialog completed")
+
+                            // Verify which permissions were actually granted
+                            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
+                            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
+                            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+
+                            print("🔍 Permissions granted:")
+                            print("  Weight: \(weightGranted ? "✅" : "❌")")
+                            print("  Water: \(waterGranted ? "✅" : "❌")")
+                            print("  Sleep: \(sleepGranted ? "✅" : "❌")")
+
+                            if weightGranted || waterGranted || sleepGranted {
+                                print("✅ At least one permission granted → sync enabled")
+                                print("💾 Saving preference: syncHealthKit=true, futureOnly=true")
+                                saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
+                                print("→ Advancing to page 6 (Notifications)")
+                                print("==========================================\n")
+                                currentPage = 6
+                            } else {
+                                print("⚠️  ZERO permissions granted")
+                                print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
+                                saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                                print("ℹ️  User can enable permissions later in app settings")
+                                print("==========================================\n")
+                                currentPage = 6
+                            }
                         } else {
-                            print("HealthKit authorization failed: \(String(describing: error))")
-                            // Still allow user to continue even if authorization fails
+                            print("❌ HealthKit authorization failed: \(String(describing: error))")
+                            print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
                             saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                            print("→ Advancing to page 6 (Notifications)")
+                            print("==========================================\n")
                             currentPage = 6
                         }
                     }
@@ -565,7 +693,12 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
+                    print("\n📱 === ONBOARDING: HEALTHKIT SYNC PAGE ===")
+                    print("⏭️  'Skip for Now' button tapped")
+                    print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
                     saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                    print("→ Advancing to page 6 (Notifications)")
+                    print("==========================================\n")
                     currentPage = 6
                 }) {
                     Text("Skip for Now")
@@ -581,7 +714,13 @@ struct OnboardingView: View {
 
             Spacer()
 
-            Button(action: { currentPage = 4 }) {
+            Button(action: {
+                print("\n📱 === ONBOARDING: HEALTHKIT SYNC PAGE ===")
+                print("⬅️  'Back' button tapped")
+                print("→ Going back to page 4 (Hydration Goal)")
+                print("==========================================\n")
+                currentPage = 4
+            }) {
                 Text("Back")
                     .font(.headline)
                     .foregroundColor(.blue)
@@ -615,7 +754,13 @@ struct OnboardingView: View {
 
             VStack(spacing: 15) {
                 Button(action: {
+                    print("\n📱 === ONBOARDING: NOTIFICATION PAGE ===")
+                    print("✅ 'Enable Notifications' button tapped")
+                    print("🔐 Requesting notification authorization...")
                     NotificationManager.shared.requestAuthorization { granted in
+                        print("Notification authorization result: \(granted ? "✅ Granted" : "❌ Denied")")
+                        print("→ Completing onboarding...")
+                        print("========================================\n")
                         completeOnboarding()
                     }
                 }) {
@@ -629,6 +774,10 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
+                    print("\n📱 === ONBOARDING: NOTIFICATION PAGE ===")
+                    print("⏭️  'Maybe Later' button tapped")
+                    print("→ Completing onboarding (without notification permission)...")
+                    print("========================================\n")
                     completeOnboarding()
                 }) {
                     Text("Maybe Later")
@@ -644,7 +793,13 @@ struct OnboardingView: View {
 
             Spacer()
 
-            Button(action: { currentPage = 5 }) {
+            Button(action: {
+                print("\n📱 === ONBOARDING: NOTIFICATION PAGE ===")
+                print("⬅️  'Back' button tapped")
+                print("→ Going back to page 5 (HealthKit Sync)")
+                print("========================================\n")
+                currentPage = 5
+            }) {
                 Text("Back")
                     .font(.headline)
                     .foregroundColor(.blue)
@@ -663,53 +818,124 @@ struct OnboardingView: View {
     }
 
     private func saveHealthKitPreference(syncHealthKit: Bool, futureOnly: Bool) {
+        print("💾 === SAVE HEALTHKIT PREFERENCE ===")
+        print("Parameters received:")
+        print("  - syncHealthKit: \(syncHealthKit)")
+        print("  - futureOnly: \(futureOnly)")
+        print("Saving to @State variable healthKitSyncChoice...")
         healthKitSyncChoice = (syncHealthKit, futureOnly)
+        print("✅ healthKitSyncChoice updated: (enabled: \(healthKitSyncChoice.enabled), futureOnly: \(healthKitSyncChoice.futureOnly))")
+        print("ℹ️  Note: This is stored in @State, NOT UserDefaults (used later in completeOnboarding)")
+        print("====================================\n")
     }
 
     // MARK: - Complete Onboarding
 
     private func completeOnboarding() {
+        print("\n🚀 === COMPLETE ONBOARDING ===")
+        print("Creating manager instances...")
+
         // Create managers only when needed (at completion time, not during onboarding UI rendering)
         // This prevents lag during onboarding caused by expensive init() work
         let weightManager = WeightManager()
         let fastingManager = FastingManager()
         let hydrationManager = HydrationManager()
+        print("✅ Managers created: WeightManager, FastingManager, HydrationManager")
 
         // Save current weight
+        print("\n📊 Saving current weight...")
         if let weight = Double(currentWeight) {
             let entry = WeightEntry(date: Date(), weight: weight)
             weightManager.addWeightEntry(entry)
+            print("✅ Current weight saved: \(weight) lbs")
+        } else {
+            print("⚠️  No current weight entered (skipped)")
         }
 
         // Save goal weight to UserDefaults (WeightManager doesn't have goalWeight property)
+        print("\n📊 Saving goal weight...")
         if let goal = Double(goalWeight) {
             UserDefaults.standard.set(goal, forKey: "goalWeight")
+            print("✅ Goal weight saved to UserDefaults: \(goal) lbs")
+        } else {
+            print("⚠️  No goal weight entered (skipped)")
         }
 
         // Save fasting goal to UserDefaults
         // CRITICAL: Use setFastingGoal() to persist to UserDefaults, not direct property assignment
         // Direct assignment only sets in-memory value, doesn't persist across app launches
+        print("\n📊 Saving fasting goal...")
+        print("Calling fastingManager.setFastingGoal(hours: \(fastingGoal))...")
         fastingManager.setFastingGoal(hours: fastingGoal)
+        print("✅ Fasting goal saved: \(Int(fastingGoal)) hours")
 
         // Save hydration goal
         // CRITICAL: Use updateDailyGoal() to persist to UserDefaults, not direct property assignment
         // Direct assignment only sets in-memory @Published value, doesn't persist across app launches
         // Reference: https://developer.apple.com/documentation/foundation/userdefaults
+        print("\n📊 Saving hydration goal...")
+        print("Calling hydrationManager.updateDailyGoal(\(hydrationGoal))...")
         hydrationManager.updateDailyGoal(hydrationGoal)
+        print("✅ Hydration goal saved: \(Int(hydrationGoal)) oz")
 
         // Sync with HealthKit if requested (authorization was already requested on HealthKit page)
+        // CRITICAL: Only sync data for permissions that were actually granted (granular sync)
+        // Per Apple: "Respect the user's privacy preferences and only access authorized data"
+        // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+        print("\n🔐 Checking HealthKit sync preference...")
+        print("healthKitSyncChoice.enabled: \(healthKitSyncChoice.enabled)")
+        print("healthKitSyncChoice.futureOnly: \(healthKitSyncChoice.futureOnly)")
+
         if healthKitSyncChoice.enabled {
-            // Perform sync (authorization already granted on previous page)
-            if self.healthKitSyncChoice.futureOnly {
-                weightManager.syncFromHealthKit(startDate: Date())
+            print("✅ HealthKit sync enabled → checking granular permissions...")
+
+            // Check which specific permissions were granted
+            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
+            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
+            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+
+            print("🔍 Granular permission check:")
+            print("  Weight: \(weightGranted ? "✅ Granted" : "❌ Denied")")
+            print("  Water: \(waterGranted ? "✅ Granted" : "❌ Denied")")
+            print("  Sleep: \(sleepGranted ? "✅ Granted" : "❌ Denied")")
+
+            // Only sync data for authorized domains
+            if weightGranted {
+                print("\n💾 Syncing WEIGHT data...")
+                if self.healthKitSyncChoice.futureOnly {
+                    print("📅 Syncing FUTURE weight data only (startDate: \(Date()))...")
+                    weightManager.syncFromHealthKit(startDate: Date())
+                } else {
+                    print("📅 Syncing ALL HISTORICAL weight data...")
+                    weightManager.syncFromHealthKit()
+                }
+                print("✅ Weight sync completed")
             } else {
-                weightManager.syncFromHealthKit()
+                print("⏭️  Weight sync skipped (permission denied)")
             }
+
+            // Note: Water and Sleep sync would be implemented here when those managers support syncFromHealthKit()
+            // Currently only WeightManager has sync functionality
+            if waterGranted {
+                print("ℹ️  Water permission granted (sync not yet implemented in HydrationManager)")
+            }
+            if sleepGranted {
+                print("ℹ️  Sleep permission granted (sync not yet implemented in SleepManager)")
+            }
+
+            print("✅ HealthKit sync completed (all authorized domains)")
+        } else {
+            print("⏭️  HealthKit sync disabled (user skipped)")
         }
 
         // Mark onboarding as complete
+        print("\n💾 Marking onboarding as complete...")
+        print("Setting UserDefaults key 'onboardingCompleted' = true")
         UserDefaults.standard.set(true, forKey: "onboardingCompleted")
+        print("Setting isOnboardingComplete = true")
         isOnboardingComplete = true
+        print("✅ Onboarding completed successfully!")
+        print("==============================\n")
     }
 }
 

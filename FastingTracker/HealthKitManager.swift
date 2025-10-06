@@ -13,6 +13,21 @@ class HealthKitManager: ObservableObject {
 
     // MARK: - Authorization
 
+    // MARK: - Domain-Specific Authorization Checks
+
+    func isWeightAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            return false
+        }
+
+        let status = healthStore.authorizationStatus(for: weightType)
+        return status == .sharingAuthorized
+    }
+
     func isWaterAuthorized() -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else {
             return false
@@ -23,6 +38,19 @@ class HealthKitManager: ObservableObject {
         }
 
         let status = healthStore.authorizationStatus(for: waterType)
+        return status == .sharingAuthorized
+    }
+
+    func isSleepAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
+            return false
+        }
+
+        let status = healthStore.authorizationStatus(for: sleepType)
         return status == .sharingAuthorized
     }
 
@@ -43,6 +71,118 @@ class HealthKitManager: ObservableObject {
         isAuthorized = (weightStatus == .sharingAuthorized || waterStatus == .sharingAuthorized)
     }
 
+    // MARK: - Granular Authorization Requests
+    // Per Apple best practices: Request permissions only when needed, per domain
+    // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+
+    /// Request authorization for weight tracking only (bodyMass, BMI, body fat)
+    func requestWeightAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        print("\n🔐 === REQUEST WEIGHT AUTHORIZATION ===")
+        guard HKHealthStore.isHealthDataAvailable() else {
+            print("❌ HealthKit not available on this device")
+            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
+            return
+        }
+
+        // Weight-related types only
+        let readTypes: Set<HKObjectType> = [
+            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
+            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
+            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
+        ]
+
+        let writeTypes: Set<HKSampleType> = [
+            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
+            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
+            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
+        ]
+
+        print("🔄 Requesting authorization for weight tracking...")
+        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
+            DispatchQueue.main.async {
+                if success {
+                    print("✅ Weight authorization granted")
+                    self?.checkAuthorizationStatus()
+                } else {
+                    print("❌ Weight authorization failed: \(String(describing: error))")
+                }
+                print("=====================================\n")
+                completion(success, error)
+            }
+        }
+    }
+
+    /// Request authorization for hydration tracking only (dietary water)
+    func requestHydrationAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        print("\n🔐 === REQUEST HYDRATION AUTHORIZATION ===")
+        guard HKHealthStore.isHealthDataAvailable() else {
+            print("❌ HealthKit not available on this device")
+            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
+            return
+        }
+
+        // Hydration types only
+        let readTypes: Set<HKObjectType> = [
+            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
+        ]
+
+        let writeTypes: Set<HKSampleType> = [
+            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
+        ]
+
+        print("🔄 Requesting authorization for hydration tracking...")
+        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
+            DispatchQueue.main.async {
+                if success {
+                    print("✅ Hydration authorization granted")
+                    self?.checkAuthorizationStatus()
+                } else {
+                    print("❌ Hydration authorization failed: \(String(describing: error))")
+                }
+                print("=========================================\n")
+                completion(success, error)
+            }
+        }
+    }
+
+    /// Request authorization for sleep tracking only (sleep analysis)
+    func requestSleepAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        print("\n🔐 === REQUEST SLEEP AUTHORIZATION ===")
+        guard HKHealthStore.isHealthDataAvailable() else {
+            print("❌ HealthKit not available on this device")
+            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
+            return
+        }
+
+        // Sleep types only
+        let readTypes: Set<HKObjectType> = [
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+        ]
+
+        let writeTypes: Set<HKSampleType> = [
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+        ]
+
+        print("🔄 Requesting authorization for sleep tracking...")
+        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
+            DispatchQueue.main.async {
+                if success {
+                    print("✅ Sleep authorization granted")
+                    self?.checkAuthorizationStatus()
+                } else {
+                    print("❌ Sleep authorization failed: \(String(describing: error))")
+                }
+                print("======================================\n")
+                completion(success, error)
+            }
+        }
+    }
+
+    // MARK: - Legacy Authorization (For "Sync All" Features Only)
+    // NOTE: This method requests ALL permissions at once
+    // USAGE: Only use for "Sync All" features where requesting all permissions simultaneously is intentional
+    // For individual features, use domain-specific methods: requestWeightAuthorization(), requestHydrationAuthorization(), requestSleepAuthorization()
+    // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         guard HKHealthStore.isHealthDataAvailable() else {
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
@@ -344,19 +484,6 @@ class HealthKitManager: ObservableObject {
     }
 
     // MARK: - Sleep Tracking Methods
-
-    func isSleepAuthorized() -> Bool {
-        guard HKHealthStore.isHealthDataAvailable() else {
-            return false
-        }
-
-        guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
-            return false
-        }
-
-        let status = healthStore.authorizationStatus(for: sleepType)
-        return status == .sharingAuthorized
-    }
 
     func saveSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
         print("\n💾 === HEALTHKIT SAVE SLEEP ===")

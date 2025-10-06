@@ -173,29 +173,45 @@ class SleepManager: ObservableObject {
     }
 
     func setSyncPreference(_ enabled: Bool) {
+        print("\n⚙️  === SET SLEEP SYNC PREFERENCE ===")
+        print("Enabled: \(enabled)")
+
         syncWithHealthKit = enabled
         userDefaults.set(enabled, forKey: syncHealthKitKey)
 
         if enabled {
-            // Request HealthKit authorization if needed (check sleep-specific authorization)
-            if !HealthKitManager.shared.isSleepAuthorized() {
-                HealthKitManager.shared.requestAuthorization { success, error in
+            // BLOCKER 5 FIX: Request SLEEP authorization only (not all permissions)
+            // Per Apple best practices: Request permissions only when needed, per domain
+            // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+            let isAuthorized = HealthKitManager.shared.isSleepAuthorized()
+            print("Sleep Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+
+            if !isAuthorized {
+                print("📱 Requesting SLEEP authorization (granular)...")
+                HealthKitManager.shared.requestSleepAuthorization { success, error in
                     if success {
+                        print("✅ Sleep authorization granted → syncing from HealthKit")
                         self.syncFromHealthKit()
                         self.setupHealthKitObserver()
+                    } else {
+                        print("❌ Sleep authorization denied: \(String(describing: error))")
                     }
                 }
             } else {
+                print("✅ Already authorized → syncing from HealthKit")
                 syncFromHealthKit()
                 setupHealthKitObserver()
             }
         } else {
+            print("⏭️  Sync disabled → stopping HealthKit observer")
             // Stop observing when sync is disabled
             if let query = observerQuery {
                 HealthKitManager.shared.stopObservingSleep(query: query)
                 observerQuery = nil
             }
         }
+
+        print("======================================\n")
     }
 
     // MARK: - HealthKit Observer

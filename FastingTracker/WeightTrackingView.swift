@@ -117,10 +117,17 @@ struct WeightTrackingView: View {
                 showingFirstTimeSetup = true
             }
 
-            // Only request authorization on first appearance if needed
+            // BLOCKER 5 FIX: Request WEIGHT authorization only if needed (granular)
             // Don't auto-sync on every view appearance - user can manually sync
-            if weightManager.syncWithHealthKit && !healthKitManager.isAuthorized {
-                healthKitManager.requestAuthorization { _, _ in
+            // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+            if weightManager.syncWithHealthKit && !healthKitManager.isWeightAuthorized() {
+                print("📱 WeightTrackingView: Auto-requesting WEIGHT authorization (granular)...")
+                healthKitManager.requestWeightAuthorization { success, _ in
+                    if success {
+                        print("✅ WeightTrackingView: Weight authorization granted")
+                    } else {
+                        print("❌ WeightTrackingView: Weight authorization denied")
+                    }
                     // Authorization requested, user can manually sync if they want
                 }
             }
@@ -186,9 +193,15 @@ struct EmptyWeightStateView: View {
                 }
 
                 Button(action: {
-                    healthKitManager.requestAuthorization { success, _ in
+                    // BLOCKER 5 FIX: Request WEIGHT authorization only (granular)
+                    // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+                    print("📱 WeightTrackingView (EmptyState): Sync button tapped")
+                    healthKitManager.requestWeightAuthorization { success, _ in
                         if success {
+                            print("✅ WeightTrackingView (EmptyState): Weight authorization granted → syncing")
                             weightManager.syncFromHealthKit()
+                        } else {
+                            print("❌ WeightTrackingView (EmptyState): Weight authorization denied")
                         }
                     }
                 }) {

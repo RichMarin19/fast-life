@@ -214,6 +214,7 @@ struct AppSettingsView: View {
     @State private var showingClearMoodConfirmation = false
     @State private var showingClearAllDataAlert = false
     @State private var showingClearAllDataConfirmation = false
+    @State private var showingHealthResetInstructions = false
     @State private var isSyncingWeight = false
     @State private var isSyncingHydration = false
     @State private var isSyncingAll = false
@@ -471,13 +472,26 @@ struct AppSettingsView: View {
         }
         .alert("Are you sure?", isPresented: $showingClearAllDataConfirmation) {
             Button("No", role: .cancel) { }
-            Button("Yes", role: .destructive) {
+            Button("Yes, Clear App Data", role: .destructive) {
                 clearAllData()
             }
         } message: {
             Text("⚠️ FINAL WARNING ⚠️\n\nThis will permanently delete ALL app data (fasting, weight, hydration, sleep, mood) and cannot be restored unless you have created a backup.\n\nThe app will be reset to its initial state.\n\nAre you absolutely sure?")
                 .font(.headline)
                 .fontWeight(.bold)
+        }
+        .alert("One More Step: Reset Health Permissions", isPresented: $showingHealthResetInstructions) {
+            Button("Open Health App", role: .none) {
+                // Deep link to Health app's Fast LIFe permissions page
+                // Per Apple: Use x-apple-health:// URL scheme for Health app
+                // Reference: https://developer.apple.com/documentation/xcode/defining-a-custom-url-scheme-for-your-app
+                if let url = URL(string: "x-apple-health://") {
+                    UIApplication.shared.open(url)
+                }
+            }
+            Button("Skip This Step", role: .cancel) { }
+        } message: {
+            Text("✅ App data cleared!\n\n⚠️ IMPORTANT: To see the permission dialog during onboarding, you must also DELETE Health data:\n\n1. Tap 'Open Health App' below\n2. Tap 'Browse' tab\n3. Tap 'Data Access & Devices'\n4. Find and tap 'Fast LIFe'\n5. Scroll down and tap 'Delete All Data from Fast LIFe'\n6. Confirm deletion\n\nWithout this step, iOS won't show the permission dialog again.")
         }
         .alert("Sync Status", isPresented: $showingSyncAlert) {
             Button("OK", role: .cancel) { }
@@ -635,76 +649,127 @@ struct AppSettingsView: View {
     }
 
     private func clearAllData() {
+        print("\n🔄 === CLEAR ALL DATA AND RESET ===")
+        print("User confirmed: Clearing all app data and resetting to onboarding")
+
         // Clear fasting data (includes stopping active fast)
+        print("📊 Clearing fasting data...")
         clearAllFastingData()
 
         // Clear weight data
+        print("📊 Clearing weight data...")
         clearAllWeightData()
 
         // Clear hydration data
+        print("📊 Clearing hydration data...")
         clearAllHydrationData()
 
         // Clear sleep data
+        print("📊 Clearing sleep data...")
         clearAllSleepData()
 
         // Clear mood data
+        print("📊 Clearing mood data...")
         clearAllMoodData()
 
         // Reset fasting goal to default
+        print("📊 Resetting fasting goal to default (16h)...")
         fastingManager.fastingGoalHours = 16
 
         // Remove onboarding completed flag to trigger first-time setup
+        print("📊 Removing UserDefaults keys:")
+        print("   - onboardingCompleted")
         UserDefaults.standard.removeObject(forKey: "onboardingCompleted")
 
         // Save reset state
+        print("   - fastingGoalHours")
         UserDefaults.standard.removeObject(forKey: "fastingGoalHours")
 
         // Remove goal weight
+        print("   - goalWeight")
         UserDefaults.standard.removeObject(forKey: "goalWeight")
 
         // Remove hydration goal
+        print("   - dailyHydrationGoal")
         UserDefaults.standard.removeObject(forKey: "dailyHydrationGoal")
 
         // Clear notification preferences and disabled stage settings
         // This resets all notification settings to defaults when user clears all data
+        print("📊 Clearing notification preferences...")
         clearNotificationPreferences()
 
         // Ensure all UserDefaults changes are persisted to disk
+        print("💾 Synchronizing UserDefaults to disk...")
         UserDefaults.standard.synchronize()
 
         // Reset to Timer tab (index 0) before showing onboarding
         // This ensures after onboarding completes, user sees Timer tab
+        print("🔄 Resetting to Timer tab (index 0)")
         selectedTab = 0
 
         // Update state BEFORE dismissing to ensure proper propagation
+        print("🔄 Setting isOnboardingComplete = false")
+        print("🔄 Setting shouldResetToOnboarding = true")
         isOnboardingComplete = false
         shouldResetToOnboarding = true
 
+        // Show Health reset instructions to user
+        // Per Apple: Apps cannot programmatically reset HealthKit authorization
+        // User must manually delete Health data to reset permissions
+        // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore
+        print("📱 Showing Health reset instructions to user...")
+        print("ℹ️  Note: iOS does not allow apps to programmatically reset HealthKit authorization")
+        print("ℹ️  User must manually delete Health data to see permission dialog again")
+
         // Dismiss settings to navigate back
+        print("✅ All data cleared successfully")
+        print("🚀 Dismissing settings → should trigger onboarding flow")
+        print("=====================================\n")
         dismiss()
+
+        // Show Health reset instructions after dismiss completes
+        // Delay ensures dismiss animation completes before showing alert
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            print("📱 Presenting Health reset instructions alert...")
+            showingHealthResetInstructions = true
+        }
     }
 
     // MARK: - Weight Sync Function
 
     private func syncWeightWithHealthKit(futureOnly: Bool) {
+        print("\n🔄 === SYNC WEIGHT WITH HEALTHKIT (ADVANCED) ===")
+        print("Future Only: \(futureOnly)")
+
         isSyncingWeight = true
 
-        // Check if HealthKit is authorized
-        if !healthKitManager.isAuthorized {
+        // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
+        // Per Apple best practices: Request permissions only when needed, per domain
+        // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+        let isAuthorized = healthKitManager.isWeightAuthorized()
+        print("Weight Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+
+        if !isAuthorized {
+            print("📱 Requesting WEIGHT authorization (granular)...")
             // Request authorization first
-            healthKitManager.requestAuthorization { success, error in
+            healthKitManager.requestWeightAuthorization { success, error in
                 if success {
+                    print("✅ Weight authorization granted → performing sync")
                     performWeightSync(futureOnly: futureOnly)
                 } else {
+                    print("❌ Weight authorization failed: \(String(describing: error))")
                     isSyncingWeight = false
                     syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
                     showingSyncAlert = true
                 }
             }
         } else {
+            print("✅ Already authorized → performing sync")
             // Already authorized, just sync
             performWeightSync(futureOnly: futureOnly)
         }
+
+        print("==============================================\n")
     }
 
     private func performWeightSync(futureOnly: Bool) {
@@ -729,31 +794,46 @@ struct AppSettingsView: View {
     // MARK: - Hydration Sync Function
 
     private func syncHydrationWithHealthKit(futureOnly: Bool) {
+        print("\n🔄 === SYNC HYDRATION WITH HEALTHKIT (ADVANCED) ===")
+        print("Future Only: \(futureOnly)")
+
         isSyncingHydration = true
 
-        // Check if water is specifically authorized
-        if !healthKitManager.isWaterAuthorized() {
+        // BLOCKER 5 FIX: Request HYDRATION authorization only (not all permissions)
+        // Per Apple best practices: Request permissions only when needed, per domain
+        // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+        let isAuthorized = healthKitManager.isWaterAuthorized()
+        print("Hydration Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+
+        if !isAuthorized {
+            print("📱 Requesting HYDRATION authorization (granular)...")
             // Request authorization for water
-            healthKitManager.requestAuthorization { success, error in
+            healthKitManager.requestHydrationAuthorization { success, error in
                 if success {
                     // Check again after authorization
                     if self.healthKitManager.isWaterAuthorized() {
+                        print("✅ Hydration authorization granted → performing sync")
                         self.performHydrationSync(futureOnly: futureOnly)
                     } else {
+                        print("⚠️  Hydration permission not granted by user")
                         self.isSyncingHydration = false
                         self.syncMessage = "Water permission not granted. Please enable water access in Settings > Health > Apps > Fast LIFe."
                         self.showingSyncAlert = true
                     }
                 } else {
+                    print("❌ Hydration authorization failed: \(String(describing: error))")
                     self.isSyncingHydration = false
                     self.syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
                     self.showingSyncAlert = true
                 }
             }
         } else {
+            print("✅ Already authorized → performing sync")
             // Already authorized for water, just sync
             performHydrationSync(futureOnly: futureOnly)
         }
+
+        print("=================================================\n")
     }
 
     private func performHydrationSync(futureOnly: Bool) {
@@ -786,24 +866,42 @@ struct AppSettingsView: View {
     // MARK: - Sync All Health Data
 
     private func syncAllHealthData(futureOnly: Bool) {
+        print("\n🔄 === SYNC ALL HEALTH DATA (ADVANCED) ===")
+        print("Future Only: \(futureOnly)")
+        print("⚠️  NOTE: This uses LEGACY authorization (requests ALL permissions)")
+
         isSyncingAll = true
 
-        // Check if HealthKit is authorized
-        if !healthKitManager.isAuthorized && !healthKitManager.isWaterAuthorized() {
+        // NOTE: "Sync All" intentionally uses legacy requestAuthorization()
+        // This requests ALL permissions at once (weight + hydration + sleep)
+        // Individual sync buttons use granular authorization per Blocker 5 fix
+        let hasAnyAuth = healthKitManager.isAuthorized || healthKitManager.isWaterAuthorized()
+        print("Any Authorization Status: \(hasAnyAuth ? "✅ Has some auth" : "❌ No auth")")
+
+        if !hasAnyAuth {
+            print("📱 Requesting ALL permissions (legacy method)...")
+            // NOTE: "Sync All" intentionally uses LEGACY requestAuthorization()
+            // Reason: User explicitly chose "Sync All" → requesting all permissions at once is acceptable UX
+            // WARNING SUPPRESSION: This deprecation warning is acceptable - see comment above
             // Request authorization first
             healthKitManager.requestAuthorization { success, error in
                 if success {
+                    print("✅ Authorization granted → performing sync all")
                     performAllDataSync(futureOnly: futureOnly)
                 } else {
+                    print("❌ Authorization failed: \(String(describing: error))")
                     isSyncingAll = false
                     syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
                     showingSyncAlert = true
                 }
             }
         } else {
+            print("✅ Already has some authorization → performing sync all")
             // Already authorized, just sync
             performAllDataSync(futureOnly: futureOnly)
         }
+
+        print("==========================================\n")
     }
 
     private func performAllDataSync(futureOnly: Bool) {

@@ -310,10 +310,15 @@ struct SleepSyncSettingsView: View {
                         get: { sleepManager.syncWithHealthKit },
                         set: { newValue in
                             if newValue && !HealthKitManager.shared.isSleepAuthorized() {
-                                // Request authorization first (specifically for sleep)
-                                HealthKitManager.shared.requestAuthorization { success, error in
+                                // BLOCKER 5 FIX: Request SLEEP authorization only (granular)
+                                // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+                                print("📱 SleepTrackingView: Requesting SLEEP authorization (granular)...")
+                                HealthKitManager.shared.requestSleepAuthorization { success, error in
                                     if success {
+                                        print("✅ SleepTrackingView: Sleep authorization granted")
                                         sleepManager.setSyncPreference(true)
+                                    } else {
+                                        print("❌ SleepTrackingView: Sleep authorization denied")
                                     }
                                 }
                             } else {

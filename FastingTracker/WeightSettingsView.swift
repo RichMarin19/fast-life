@@ -105,22 +105,31 @@ struct WeightSettingsView: View {
     }
 
     private func syncWithHealthKit() {
+        print("\n🔄 WeightSettingsView: Sync with HealthKit button tapped")
         isSyncing = true
 
-        // Check if HealthKit is authorized
-        if !HealthKitManager.shared.isAuthorized {
-            // Request authorization first
-            HealthKitManager.shared.requestAuthorization { success, error in
+        // BLOCKER 5 FIX: Check WEIGHT authorization specifically (granular)
+        // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+        let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
+        print("Weight Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+
+        if !isAuthorized {
+            // Request WEIGHT authorization only (not all permissions)
+            print("📱 WeightSettingsView: Requesting WEIGHT authorization (granular)...")
+            HealthKitManager.shared.requestWeightAuthorization { success, error in
                 if success {
+                    print("✅ WeightSettingsView: Weight authorization granted")
                     // Authorization granted, now sync
                     performSync()
                 } else {
+                    print("❌ WeightSettingsView: Weight authorization denied")
                     isSyncing = false
                     syncMessage = error?.localizedDescription ?? "Failed to authorize HealthKit access. Please check Settings > Health > Data Access & Devices."
                     showingSyncAlert = true
                 }
             }
         } else {
+            print("✅ WeightSettingsView: Already authorized → performing sync")
             // Already authorized, just sync
             performSync()
         }
