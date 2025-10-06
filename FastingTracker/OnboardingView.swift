@@ -692,7 +692,10 @@ struct OnboardingView: View {
         fastingManager.setFastingGoal(hours: fastingGoal)
 
         // Save hydration goal
-        hydrationManager.dailyGoalOunces = hydrationGoal
+        // CRITICAL: Use updateDailyGoal() to persist to UserDefaults, not direct property assignment
+        // Direct assignment only sets in-memory @Published value, doesn't persist across app launches
+        // Reference: https://developer.apple.com/documentation/foundation/userdefaults
+        hydrationManager.updateDailyGoal(hydrationGoal)
 
         // Sync with HealthKit if requested (authorization was already requested on HealthKit page)
         if healthKitSyncChoice.enabled {

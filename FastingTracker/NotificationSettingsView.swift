@@ -325,7 +325,7 @@ struct NotificationSettingsView: View {
                                 Text("Milestone Celebrations")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                Text("Get congratulated when you hit 12h, 16h, 18h, and other goals")
+                                Text("Get congratulated at key milestones (4h, 8h, 12h, 16h, etc.) based on your goal")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                                     .fixedSize(horizontal: false, vertical: true)

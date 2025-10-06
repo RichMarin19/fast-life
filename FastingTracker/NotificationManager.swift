@@ -490,6 +490,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // MARK: - Milestone Notifications (Enhanced)
 
     private func scheduleMilestoneNotifications(for session: FastingSession, goalHours: Double, currentStreak: Int, longestStreak: Int) {
+        print("\n🎯 === MILESTONE NOTIFICATION SCHEDULING ===")
+        print("Goal: \(goalHours)h | Trigger offset: \(UserDefaults.standard.string(forKey: "trigger_milestones") ?? "whenreached")")
+
         let triggerSetting = UserDefaults.standard.string(forKey: "trigger_milestones") ?? "whenreached"
         let startTime = session.startTime
 
@@ -512,8 +515,24 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         default: offsetMinutes = 0
         }
 
-        // Schedule key milestones: 12h, 16h, and hourly after that
-        let allMilestones: [Double] = [12, 16] + (17...Int(goalHours)).map { Double($0) }
+        // Schedule key milestones based on user's goal
+        // Industry standard: Only notify for milestones user will actually reach
+        // Reference: https://developer.apple.com/design/human-interface-guidelines/notifications
+        // Key milestones: 4h, 8h, 12h, 16h, 18h, 20h, 24h
+        let keyMilestones: [Double] = [4, 8, 12, 16, 18, 20, 24]
+        let reachableMilestones = keyMilestones.filter { $0 <= goalHours }
+
+        print("📋 Key milestones: \(keyMilestones.map { "\($0)h" }.joined(separator: ", "))")
+        print("✅ Reachable milestones (≤ goal): \(reachableMilestones.map { "\($0)h" }.joined(separator: ", "))")
+
+        let skippedMilestones = keyMilestones.filter { $0 > goalHours }
+        if !skippedMilestones.isEmpty {
+            print("⏭️  Skipped milestones (> goal): \(skippedMilestones.map { "\($0)h" }.joined(separator: ", "))")
+        }
+
+        // Add hourly milestones after 24h for extended fasts
+        let hourlyMilestones = goalHours > 24 ? (25...Int(goalHours)).map { Double($0) } : []
+        let allMilestones = reachableMilestones + hourlyMilestones
 
         // Limit to max per day, prioritizing the goal completion and key milestones
         var selectedMilestones: [Double] = []
@@ -540,12 +559,26 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             }
         }
 
+        print("\n📍 Scheduling \(selectedMilestones.count) milestone notifications:")
+
+        var scheduledCount = 0
+        var skippedPast = 0
+        var skippedQuiet = 0
+
         for milestone in selectedMilestones {
             let notificationTime = startTime.addingTimeInterval(milestone * 3600 + Double(offsetMinutes * 60))
             let timeInterval = notificationTime.timeIntervalSinceNow
 
-            guard timeInterval > 0 else { continue }
-            guard !isQuietHours(date: notificationTime) else { continue }
+            if timeInterval <= 0 {
+                skippedPast += 1
+                continue
+            }
+
+            if isQuietHours(date: notificationTime) {
+                print("🔕 Skipped \(Int(milestone))h milestone (quiet hours)")
+                skippedQuiet += 1
+                continue
+            }
 
             let identifier = "\(milestoneIdentifierPrefix)\(Int(milestone))"
             let content = UNMutableNotificationContent()
@@ -560,10 +593,24 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
             notificationCenter.add(request) { error in
                 if let error = error {
-                    print("Error scheduling milestone: \(error)")
+                    print("❌ Error scheduling \(Int(milestone))h milestone: \(error)")
+                } else {
+                    let hoursUntil = timeInterval / 3600
+                    print("✅ Scheduled \(Int(milestone))h milestone - fires in \(String(format: "%.1f", hoursUntil))h")
                 }
             }
+            scheduledCount += 1
         }
+
+        print("\n📊 Milestone Scheduling Summary:")
+        print("   • Total scheduled: \(scheduledCount)")
+        if skippedPast > 0 {
+            print("   • Skipped (in past): \(skippedPast)")
+        }
+        if skippedQuiet > 0 {
+            print("   • Skipped (quiet hours): \(skippedQuiet)")
+        }
+        print("===========================================\n")
     }
 
     // MARK: - Stage Transitions
