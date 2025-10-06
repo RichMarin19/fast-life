@@ -3,7 +3,7 @@
 > Intermittent fasting timer with hydration tracking, weight management, and HealthKit integration
 
 ## 📱 Current Version
-**2.0.0** (Build 13) - January 5, 2025
+**2.0.0** (Build 13) - October 6, 2025
 
 ## ✨ Features
 

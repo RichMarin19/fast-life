@@ -16,7 +16,7 @@
 
 ## 13. Complete Notification System Overhaul + Configurable Quiet Hours 🔔🌙
 
-**Added:** January 5, 2025
+**Added:** October 6, 2025
 **Version:** 2.0.0 (Build 13) - **MAJOR VERSION BUMP**
 
 ### What Changed:
