@@ -15,18 +15,14 @@ class SleepManager: ObservableObject {
         loadSleepEntries()
         loadSyncPreference()
 
-        // Delay sync and observer setup to allow UI to render first
-        // This prevents perceived slowness on app launch (same pattern as WeightManager)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            guard let self = self else { return }
+        // REMOVED auto-sync on init per Apple HealthKit Best Practices
+        // Sync only when user explicitly enables it via setSyncPreference()
+        // or when view explicitly calls syncFromHealthKit()
+        // Reference: https://developer.apple.com/documentation/healthkit/setting_up_healthkit
 
-            // Automatically sync from HealthKit on launch if authorized and enabled (check sleep-specific authorization)
-            if self.syncWithHealthKit && HealthKitManager.shared.isSleepAuthorized() {
-                self.syncFromHealthKit()
-            }
-
-            // Setup observer for automatic updates
-            self.setupHealthKitObserver()
+        // Setup observer if sync is already enabled (app restart scenario)
+        if syncWithHealthKit && HealthKitManager.shared.isSleepAuthorized() {
+            setupHealthKitObserver()
         }
     }
 
@@ -40,16 +36,12 @@ class SleepManager: ObservableObject {
     // MARK: - Add/Update Sleep Entry
 
     func addSleepEntry(_ entry: SleepEntry) {
-        print("\n➕ === ADD SLEEP ENTRY ===")
-        print("Bed Time: \(entry.bedTime)")
-        print("Wake Time: \(entry.wakeTime)")
-        print("Duration: \(String(format: "%.1f", entry.duration / 3600))h")
-        print("Source: \(entry.source)")
-        print("Sync Enabled: \(syncWithHealthKit)")
+        let duration = entry.duration / 3600
+        Log.info("Adding sleep entry", category: .sleep, metadata: ["duration": String(format: "%.1fh", duration), "source": "\(entry.source)"])
 
         // Validate that wake time is after bed time
         guard entry.wakeTime > entry.bedTime else {
-            print("❌ Invalid sleep entry: wake time must be after bed time")
+            Log.error("Invalid sleep entry: wake time must be after bed time", category: .sleep)
             return
         }
 
@@ -63,36 +55,31 @@ class SleepManager: ObservableObject {
         // Sync to HealthKit if enabled and this is a manual entry
         // NOTE: HealthKit entries (source == .healthKit) are NOT synced back (would create duplicates)
         if syncWithHealthKit && entry.source == .manual {
-            print("🔄 Syncing manual entry to HealthKit...")
+            Log.debug("Syncing manual sleep entry to HealthKit", category: .sleep)
             HealthKitManager.shared.saveSleep(
                 bedTime: entry.bedTime,
                 wakeTime: entry.wakeTime,
                 completion: { success, error in
                     if success {
-                        print("✅ Synced to HealthKit successfully")
+                        Log.logSuccess("Sleep synced to HealthKit", category: .sleep)
                     } else {
-                        print("❌ Failed to sync sleep to HealthKit: \(String(describing: error))")
+                        Log.logFailure("Sleep sync to HealthKit", category: .sleep, error: error)
                     }
                 }
             )
         } else if !syncWithHealthKit {
-            print("⏭️  Skipped HealthKit sync (sync disabled)")
+            Log.debug("Skipped HealthKit sync (disabled)", category: .sleep)
         } else {
-            print("⏭️  Skipped HealthKit sync (already from HealthKit)")
+            Log.debug("Skipped HealthKit sync (already from HealthKit)", category: .sleep)
         }
 
-        print("✅ Sleep entry added to local storage")
-        print("========================\n")
+        Log.logSuccess("Sleep entry added to local storage", category: .sleep)
     }
 
     // MARK: - Delete Sleep Entry
 
     func deleteSleepEntry(_ entry: SleepEntry) {
-        print("\n🗑️  === DELETE SLEEP ENTRY ===")
-        print("Bed Time: \(entry.bedTime)")
-        print("Wake Time: \(entry.wakeTime)")
-        print("Source: \(entry.source)")
-        print("Sync Enabled: \(syncWithHealthKit)")
+        Log.info("Deleting sleep entry", category: .sleep, metadata: ["source": "\(entry.source)"])
 
         sleepEntries.removeAll { $0.id == entry.id }
         saveSleepEntries()
@@ -108,26 +95,25 @@ class SleepManager: ObservableObject {
         // Fixed: Delete from HealthKit for BOTH manual and HealthKit-sourced entries
         //        since both can exist in HealthKit database
         if syncWithHealthKit {
-            print("🔄 Attempting HealthKit deletion...")
+            Log.debug("Attempting HealthKit deletion", category: .sleep)
             HealthKitManager.shared.deleteSleep(
                 bedTime: entry.bedTime,
                 wakeTime: entry.wakeTime,
                 completion: { success, error in
                     if success {
-                        print("✅ Deleted from HealthKit successfully")
+                        Log.logSuccess("Sleep deleted from HealthKit", category: .sleep)
                     } else {
                         // This is not necessarily an error - entry might not exist in HealthKit
                         // (e.g., if it was added before sync was enabled)
-                        print("⚠️  HealthKit deletion returned false: \(String(describing: error))")
+                        Log.debug("HealthKit deletion returned false (may not exist)", category: .sleep)
                     }
                 }
             )
         } else {
-            print("⏭️  Skipped HealthKit deletion (sync disabled)")
+            Log.debug("Skipped HealthKit deletion (sync disabled)", category: .sleep)
         }
 
-        print("✅ Sleep entry deleted from local storage")
-        print("============================\n")
+        Log.logSuccess("Sleep entry deleted from local storage", category: .sleep)
     }
 
     // MARK: - Sync with HealthKit
@@ -141,10 +127,10 @@ class SleepManager: ObservableObject {
         HealthKitManager.shared.fetchSleepData(startDate: start) { [weak self] healthKitEntries in
             guard let self = self else { return }
 
-            print("\n🔄 === SYNC FROM HEALTHKIT ===")
-            print("Fetched \(healthKitEntries.count) entries from HealthKit")
+            Log.logCount(healthKitEntries.count, action: "Fetched sleep entries from HealthKit", category: .sleep)
 
             // Merge HealthKit entries with local entries
+            var addedCount = 0
             for hkEntry in healthKitEntries {
                 // CRITICAL FIX (Blocker 4 - Duplicate Prevention):
                 // Check if we already have this exact entry by TIME ONLY (not source)
@@ -158,12 +144,14 @@ class SleepManager: ObservableObject {
                     abs($0.wakeTime.timeIntervalSince(hkEntry.wakeTime)) < 60   // Within 1 minute
                 })
 
-                if isDuplicate {
-                    print("⏭️  Skipped duplicate: \(hkEntry.bedTime) - \(hkEntry.wakeTime)")
-                } else {
-                    print("➕ Adding new entry: \(hkEntry.bedTime) - \(hkEntry.wakeTime)")
+                if !isDuplicate {
                     self.sleepEntries.append(hkEntry)
+                    addedCount += 1
                 }
+            }
+
+            if addedCount > 0 {
+                Log.logCount(addedCount, action: "Added new sleep entries", category: .sleep)
             }
 
             // Sort by wake time (most recent first)
@@ -173,8 +161,7 @@ class SleepManager: ObservableObject {
     }
 
     func setSyncPreference(_ enabled: Bool) {
-        print("\n⚙️  === SET SLEEP SYNC PREFERENCE ===")
-        print("Enabled: \(enabled)")
+        Log.info("Setting sleep sync preference", category: .sleep, metadata: ["enabled": "\(enabled)"])
 
         syncWithHealthKit = enabled
         userDefaults.set(enabled, forKey: syncHealthKitKey)
@@ -184,34 +171,32 @@ class SleepManager: ObservableObject {
             // Per Apple best practices: Request permissions only when needed, per domain
             // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
             let isAuthorized = HealthKitManager.shared.isSleepAuthorized()
-            print("Sleep Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+            Log.logAuthResult("Sleep", granted: isAuthorized, category: .sleep)
 
             if !isAuthorized {
-                print("📱 Requesting SLEEP authorization (granular)...")
+                Log.logAuthRequest("Sleep", category: .sleep)
                 HealthKitManager.shared.requestSleepAuthorization { success, error in
                     if success {
-                        print("✅ Sleep authorization granted → syncing from HealthKit")
+                        Log.logSuccess("Sleep authorization granted, syncing from HealthKit", category: .sleep)
                         self.syncFromHealthKit()
                         self.setupHealthKitObserver()
                     } else {
-                        print("❌ Sleep authorization denied: \(String(describing: error))")
+                        Log.logFailure("Sleep authorization", category: .sleep, error: error)
                     }
                 }
             } else {
-                print("✅ Already authorized → syncing from HealthKit")
+                Log.info("Already authorized, syncing from HealthKit", category: .sleep)
                 syncFromHealthKit()
                 setupHealthKitObserver()
             }
         } else {
-            print("⏭️  Sync disabled → stopping HealthKit observer")
+            Log.info("Sleep sync disabled, stopping HealthKit observer", category: .sleep)
             // Stop observing when sync is disabled
             if let query = observerQuery {
                 HealthKitManager.shared.stopObservingSleep(query: query)
                 observerQuery = nil
             }
         }
-
-        print("======================================\n")
     }
 
     // MARK: - HealthKit Observer
@@ -230,13 +215,13 @@ class SleepManager: ObservableObject {
 
         let query = HKObserverQuery(sampleType: sleepType, predicate: nil) { [weak self] query, completionHandler, error in
             if let error = error {
-                print("Sleep observer query error: \(error.localizedDescription)")
+                Log.error("Sleep observer query error", category: .sleep, error: error)
                 completionHandler()
                 return
             }
 
             // New sleep data detected - sync from HealthKit
-            print("New sleep data detected in HealthKit - syncing...")
+            Log.info("New sleep data detected in HealthKit, syncing", category: .sleep)
             DispatchQueue.main.async {
                 self?.syncFromHealthKit()
             }

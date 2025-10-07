@@ -26,6 +26,8 @@
 		5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0802E8D700100254E70 /* HydrationTrackingView.swift */; };
 		5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0822E8D700200254E70 /* HydrationHistoryView.swift */; };
 		52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */; };
+		52B2CFBC2E949EE40061FCFF /* DebugLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFBA2E949EE40061FCFF /* DebugLogView.swift */; };
+		52B2CFBD2E949EE40061FCFF /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFBB2E949EE40061FCFF /* Logging.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -59,6 +61,8 @@
 		5289E0802E8D700100254E70 /* HydrationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationTrackingView.swift; sourceTree = "<group>"; };
 		5289E0822E8D700200254E70 /* HydrationHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationHistoryView.swift; sourceTree = "<group>"; };
 		52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
+		52B2CFBA2E949EE40061FCFF /* DebugLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogView.swift; sourceTree = "<group>"; };
+		52B2CFBB2E949EE40061FCFF /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -95,6 +99,8 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52B2CFBA2E949EE40061FCFF /* DebugLogView.swift */,
+				52B2CFBB2E949EE40061FCFF /* Logging.swift */,
 				52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */,
 				FF00000200000000000000A1 /* FastingStage.swift */,
 				FF00000400000000000000A1 /* FastingStageDetailView.swift */,
@@ -210,6 +216,8 @@
 				A1000001000000000000001 /* FastingTrackerApp.swift in Sources */,
 				5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */,
 				5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */,
+				52B2CFBC2E949EE40061FCFF /* DebugLogView.swift in Sources */,
+				52B2CFBD2E949EE40061FCFF /* Logging.swift in Sources */,
 				5243F23E2E8F27C70051A731 /* OnboardingView.swift in Sources */,
 				52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */,
@@ -369,7 +377,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = FastingTracker/FastingTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -383,7 +391,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fastlife.app;
 				PRODUCT_NAME = "Fast lIFe";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -399,7 +407,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = FastingTracker/FastingTracker.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 9;
 				DEVELOPMENT_ASSET_PATHS = "";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = NO;
@@ -413,7 +421,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.3.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fastlife.app;
 				PRODUCT_NAME = "Fast lIFe";
 				SWIFT_EMIT_LOC_STRINGS = YES;

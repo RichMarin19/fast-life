@@ -197,9 +197,12 @@ struct AppSettingsView: View {
     @Binding var shouldResetToOnboarding: Bool
     @Binding var isOnboardingComplete: Bool
     @Binding var selectedTab: Int
-    @StateObject private var weightManager = WeightManager()
-    @StateObject private var hydrationManager = HydrationManager()
-    @StateObject private var healthKitManager = HealthKitManager.shared
+
+    // REMOVED: @StateObject managers that were created on view init
+    // Per Apple SwiftUI Best Practices: Don't create managers in views that don't own them
+    // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
+    // Managers are now created on-demand only when sync operations are needed
+
     @Environment(\.dismiss) var dismiss
 
     @State private var showingClearFastingAlert = false
@@ -223,17 +226,32 @@ struct AppSettingsView: View {
     @State private var showingWeightSyncOptions = false
     @State private var showingHydrationSyncOptions = false
     @State private var showingAllDataSyncOptions = false
+    @State private var versionTapCount = 0
+    @State private var showingDebugLog = false
 
     var body: some View {
         List {
             // App Info Section
             Section(header: Text("App Information")) {
-                HStack {
-                    Text("App Version")
-                    Spacer()
-                    Text(appVersion)
-                        .foregroundColor(.secondary)
+                Button(action: {
+                    versionTapCount += 1
+                    if versionTapCount >= 5 {
+                        showingDebugLog = true
+                        versionTapCount = 0
+                    }
+                    // Reset counter after 2 seconds if not reached 5
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        versionTapCount = 0
+                    }
+                }) {
+                    HStack {
+                        Text("App Version")
+                        Spacer()
+                        Text(appVersion)
+                            .foregroundColor(.secondary)
+                    }
                 }
+                .buttonStyle(.plain)
 
                 HStack {
                     Text("Build")
@@ -498,6 +516,9 @@ struct AppSettingsView: View {
         } message: {
             Text(syncMessage)
         }
+        .sheet(isPresented: $showingDebugLog) {
+            DebugLogView()
+        }
         .confirmationDialog("Weight Sync Options", isPresented: $showingWeightSyncOptions, titleVisibility: .visible) {
             Button("Sync All Data") {
                 syncWeightWithHealthKit(futureOnly: false)
@@ -746,13 +767,13 @@ struct AppSettingsView: View {
         // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
         // Per Apple best practices: Request permissions only when needed, per domain
         // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-        let isAuthorized = healthKitManager.isWeightAuthorized()
+        let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
         print("Weight Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
 
         if !isAuthorized {
             print("📱 Requesting WEIGHT authorization (granular)...")
             // Request authorization first
-            healthKitManager.requestWeightAuthorization { success, error in
+            HealthKitManager.shared.requestWeightAuthorization { success, error in
                 if success {
                     print("✅ Weight authorization granted → performing sync")
                     performWeightSync(futureOnly: futureOnly)
@@ -773,6 +794,11 @@ struct AppSettingsView: View {
     }
 
     private func performWeightSync(futureOnly: Bool) {
+        // Create manager on-demand for sync operation only
+        // Per Apple SwiftUI Best Practices: Create managers when needed, not on view init
+        // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
+        let weightManager = WeightManager()
+
         if futureOnly {
             // Sync only from today forward
             weightManager.syncFromHealthKit(startDate: Date())
@@ -802,16 +828,16 @@ struct AppSettingsView: View {
         // BLOCKER 5 FIX: Request HYDRATION authorization only (not all permissions)
         // Per Apple best practices: Request permissions only when needed, per domain
         // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-        let isAuthorized = healthKitManager.isWaterAuthorized()
+        let isAuthorized = HealthKitManager.shared.isWaterAuthorized()
         print("Hydration Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
 
         if !isAuthorized {
             print("📱 Requesting HYDRATION authorization (granular)...")
             // Request authorization for water
-            healthKitManager.requestHydrationAuthorization { success, error in
+            HealthKitManager.shared.requestHydrationAuthorization { success, error in
                 if success {
                     // Check again after authorization
-                    if self.healthKitManager.isWaterAuthorized() {
+                    if HealthKitManager.shared.isWaterAuthorized() {
                         print("✅ Hydration authorization granted → performing sync")
                         self.performHydrationSync(futureOnly: futureOnly)
                     } else {
@@ -837,6 +863,11 @@ struct AppSettingsView: View {
     }
 
     private func performHydrationSync(futureOnly: Bool) {
+        // Create manager on-demand for sync operation only
+        // Per Apple SwiftUI Best Practices: Create managers when needed, not on view init
+        // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
+        let hydrationManager = HydrationManager()
+
         if futureOnly {
             // Sync only from today forward - TO HealthKit
             hydrationManager.syncToHealthKit()
@@ -875,7 +906,7 @@ struct AppSettingsView: View {
         // NOTE: "Sync All" intentionally uses legacy requestAuthorization()
         // This requests ALL permissions at once (weight + hydration + sleep)
         // Individual sync buttons use granular authorization per Blocker 5 fix
-        let hasAnyAuth = healthKitManager.isAuthorized || healthKitManager.isWaterAuthorized()
+        let hasAnyAuth = HealthKitManager.shared.isAuthorized || HealthKitManager.shared.isWaterAuthorized()
         print("Any Authorization Status: \(hasAnyAuth ? "✅ Has some auth" : "❌ No auth")")
 
         if !hasAnyAuth {
@@ -884,7 +915,7 @@ struct AppSettingsView: View {
             // Reason: User explicitly chose "Sync All" → requesting all permissions at once is acceptable UX
             // WARNING SUPPRESSION: This deprecation warning is acceptable - see comment above
             // Request authorization first
-            healthKitManager.requestAuthorization { success, error in
+            HealthKitManager.shared.requestAuthorization { success, error in
                 if success {
                     print("✅ Authorization granted → performing sync all")
                     performAllDataSync(futureOnly: futureOnly)
@@ -905,6 +936,12 @@ struct AppSettingsView: View {
     }
 
     private func performAllDataSync(futureOnly: Bool) {
+        // Create managers on-demand for sync operation only
+        // Per Apple SwiftUI Best Practices: Create managers when needed, not on view init
+        // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
+        let weightManager = WeightManager()
+        let hydrationManager = HydrationManager()
+
         if futureOnly {
             // Sync weight from today forward
             weightManager.syncFromHealthKit(startDate: Date())

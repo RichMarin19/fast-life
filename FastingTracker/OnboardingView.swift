@@ -575,9 +575,11 @@ struct OnboardingView: View {
                     print("Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization")
                     print("")
 
-                    // Request HealthKit authorization - shows native iOS permission dialog with toggles
-                    // This is the system dialog that appears as a modal sheet
-                    HealthKitManager.shared.requestAuthorization { success, error in
+                    // CRITICAL: Request authorization on main thread
+                    // Per Apple documentation: UI operations must happen on main thread
+                    // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
+                    DispatchQueue.main.async {
+                        HealthKitManager.shared.requestAuthorization { success, error in
                         if success {
                             print("✅ HealthKit authorization dialog completed")
 
@@ -614,6 +616,7 @@ struct OnboardingView: View {
                             print("==========================================\n")
                             currentPage = 6
                         }
+                        }
                     }
                 }) {
                     VStack(spacing: 8) {
@@ -637,9 +640,11 @@ struct OnboardingView: View {
                     print("Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization")
                     print("")
 
-                    // Request HealthKit authorization - shows native iOS permission dialog with toggles
-                    // This is the system dialog that appears as a modal sheet
-                    HealthKitManager.shared.requestAuthorization { success, error in
+                    // CRITICAL: Request authorization on main thread
+                    // Per Apple documentation: UI operations must happen on main thread
+                    // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
+                    DispatchQueue.main.async {
+                        HealthKitManager.shared.requestAuthorization { success, error in
                         if success {
                             print("✅ HealthKit authorization dialog completed")
 
@@ -675,6 +680,7 @@ struct OnboardingView: View {
                             print("→ Advancing to page 6 (Notifications)")
                             print("==========================================\n")
                             currentPage = 6
+                        }
                         }
                     }
                 }) {

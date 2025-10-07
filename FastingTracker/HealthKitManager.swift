@@ -56,7 +56,7 @@ class HealthKitManager: ObservableObject {
 
     func checkAuthorizationStatus() {
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("HealthKit is not available on this device")
+            Log.warning("HealthKit is not available on this device", category: .healthkit)
             return
         }
 
@@ -77,9 +77,9 @@ class HealthKitManager: ObservableObject {
 
     /// Request authorization for weight tracking only (bodyMass, BMI, body fat)
     func requestWeightAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        print("\n🔐 === REQUEST WEIGHT AUTHORIZATION ===")
+        Log.logAuthRequest("Weight", category: .healthkit)
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("❌ HealthKit not available on this device")
+            Log.warning("HealthKit not available on this device", category: .healthkit)
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
             return
         }
@@ -97,16 +97,18 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
         ]
 
-        print("🔄 Requesting authorization for weight tracking...")
+        Log.info("Requesting authorization for weight tracking", category: .healthkit)
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    print("✅ Weight authorization granted")
+                    Log.logAuthResult("Weight", granted: true, category: .healthkit)
                     self?.checkAuthorizationStatus()
                 } else {
-                    print("❌ Weight authorization failed: \(String(describing: error))")
+                    Log.logAuthResult("Weight", granted: false, category: .healthkit)
+                    if let error = error {
+                        Log.error("Weight authorization error", category: .healthkit, error: error)
+                    }
                 }
-                print("=====================================\n")
                 completion(success, error)
             }
         }
@@ -114,9 +116,9 @@ class HealthKitManager: ObservableObject {
 
     /// Request authorization for hydration tracking only (dietary water)
     func requestHydrationAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        print("\n🔐 === REQUEST HYDRATION AUTHORIZATION ===")
+        Log.logAuthRequest("Hydration", category: .healthkit)
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("❌ HealthKit not available on this device")
+            Log.warning("HealthKit not available on this device", category: .healthkit)
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
             return
         }
@@ -130,16 +132,18 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .dietaryWater)!
         ]
 
-        print("🔄 Requesting authorization for hydration tracking...")
+        Log.info("Requesting authorization for hydration tracking", category: .healthkit)
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    print("✅ Hydration authorization granted")
+                    Log.logAuthResult("Hydration", granted: true, category: .healthkit)
                     self?.checkAuthorizationStatus()
                 } else {
-                    print("❌ Hydration authorization failed: \(String(describing: error))")
+                    Log.logAuthResult("Hydration", granted: false, category: .healthkit)
+                    if let error = error {
+                        Log.error("Hydration authorization error", category: .healthkit, error: error)
+                    }
                 }
-                print("=========================================\n")
                 completion(success, error)
             }
         }
@@ -147,9 +151,9 @@ class HealthKitManager: ObservableObject {
 
     /// Request authorization for sleep tracking only (sleep analysis)
     func requestSleepAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        print("\n🔐 === REQUEST SLEEP AUTHORIZATION ===")
+        Log.logAuthRequest("Sleep", category: .healthkit)
         guard HKHealthStore.isHealthDataAvailable() else {
-            print("❌ HealthKit not available on this device")
+            Log.warning("HealthKit not available on this device", category: .healthkit)
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
             return
         }
@@ -163,16 +167,18 @@ class HealthKitManager: ObservableObject {
             HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
         ]
 
-        print("🔄 Requesting authorization for sleep tracking...")
+        Log.info("Requesting authorization for sleep tracking", category: .healthkit)
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    print("✅ Sleep authorization granted")
+                    Log.logAuthResult("Sleep", granted: true, category: .healthkit)
                     self?.checkAuthorizationStatus()
                 } else {
-                    print("❌ Sleep authorization failed: \(String(describing: error))")
+                    Log.logAuthResult("Sleep", granted: false, category: .healthkit)
+                    if let error = error {
+                        Log.error("Sleep authorization error", category: .healthkit, error: error)
+                    }
                 }
-                print("======================================\n")
                 completion(success, error)
             }
         }
@@ -229,7 +235,9 @@ class HealthKitManager: ObservableObject {
         let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] query, results, error in
 
             guard let samples = results as? [HKQuantitySample], error == nil else {
-                print("Error fetching weight data: \(String(describing: error))")
+                if let error = error {
+                    Log.error("Error fetching weight data", category: .healthkit, error: error)
+                }
                 completion([])
                 return
             }
@@ -359,7 +367,9 @@ class HealthKitManager: ObservableObject {
         healthStore.save(samplesToSave) { success, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    print("Error saving weight data: \(error.localizedDescription)")
+                    Log.error("Error saving weight data", category: .healthkit, error: error)
+                } else {
+                    Log.logSuccess("Weight data saved", category: .weight)
                 }
                 completion(success, error)
             }
@@ -413,7 +423,9 @@ class HealthKitManager: ObservableObject {
         let query = HKSampleQuery(sampleType: waterType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { query, results, error in
 
             guard let samples = results as? [HKQuantitySample], error == nil else {
-                print("Error fetching water data: \(String(describing: error))")
+                if let error = error {
+                    Log.error("Error fetching water data", category: .healthkit, error: error)
+                }
                 completion([])
                 return
             }
@@ -446,7 +458,9 @@ class HealthKitManager: ObservableObject {
         healthStore.save(waterSample) { success, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    print("Error saving water data: \(error.localizedDescription)")
+                    Log.error("Error saving water data", category: .healthkit, error: error)
+                } else {
+                    Log.logSuccess("Water data saved", category: .hydration)
                 }
                 completion(success, error)
             }
@@ -463,9 +477,9 @@ class HealthKitManager: ObservableObject {
 
         healthStore.enableBackgroundDelivery(for: weightType, frequency: .immediate) { success, error in
             if let error = error {
-                print("Failed to enable background delivery: \(error.localizedDescription)")
+                Log.error("Failed to enable background delivery", category: .healthkit, error: error)
             } else if success {
-                print("Background delivery enabled for weight data")
+                Log.info("Background delivery enabled for weight data", category: .healthkit)
             }
         }
     }
@@ -478,7 +492,7 @@ class HealthKitManager: ObservableObject {
 
         healthStore.disableBackgroundDelivery(for: weightType) { success, error in
             if let error = error {
-                print("Failed to disable background delivery: \(error.localizedDescription)")
+                Log.error("Failed to disable background delivery", category: .healthkit, error: error)
             }
         }
     }
@@ -486,30 +500,18 @@ class HealthKitManager: ObservableObject {
     // MARK: - Sleep Tracking Methods
 
     func saveSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
-        print("\n💾 === HEALTHKIT SAVE SLEEP ===")
-        print("Bed Time: \(bedTime)")
-        print("Wake Time: \(wakeTime)")
-        print("Duration: \(String(format: "%.1f", (wakeTime.timeIntervalSince(bedTime)) / 3600))h")
+        let duration = (wakeTime.timeIntervalSince(bedTime)) / 3600
+        Log.info("Saving sleep to HealthKit", category: .sleep, metadata: ["duration": String(format: "%.1fh", duration)])
 
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
-            print("❌ Failed to get sleep type")
+            Log.error("Failed to get sleep type", category: .healthkit)
             completion(false, nil)
             return
         }
 
         // Check authorization status
         let authStatus = healthStore.authorizationStatus(for: sleepType)
-        print("Authorization Status: \(authStatus.rawValue)")
-        switch authStatus {
-        case .notDetermined:
-            print("⚠️  Authorization not determined - user hasn't granted permission yet")
-        case .sharingDenied:
-            print("❌ Authorization denied - user declined HealthKit access")
-        case .sharingAuthorized:
-            print("✅ Authorization granted")
-        @unknown default:
-            print("⚠️  Unknown authorization status")
-        }
+        Log.debug("Sleep authorization status: \(authStatus.rawValue)", category: .healthkit)
 
         let sleepSample = HKCategorySample(
             type: sleepType,
@@ -518,38 +520,34 @@ class HealthKitManager: ObservableObject {
             end: wakeTime
         )
 
-        print("🔄 Attempting to save to HealthKit...")
         healthStore.save(sleepSample) { success, error in
             DispatchQueue.main.async {
                 if success {
-                    print("✅ HealthKit save successful")
+                    Log.logSuccess("Sleep data saved to HealthKit", category: .sleep)
                 } else {
-                    print("❌ HealthKit save failed: \(String(describing: error))")
+                    Log.logFailure("Sleep data save", category: .sleep, error: error)
                 }
-                print("============================\n")
                 completion(success, error)
             }
         }
     }
 
     func deleteSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
-        print("\n🗑️  === HEALTHKIT DELETE SLEEP ===")
-        print("Bed Time: \(bedTime)")
-        print("Wake Time: \(wakeTime)")
+        Log.info("Deleting sleep from HealthKit", category: .sleep)
 
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
-            print("❌ Failed to get sleep type")
+            Log.error("Failed to get sleep type", category: .healthkit)
             completion(false, nil)
             return
         }
 
         // Check authorization status
         let authStatus = healthStore.authorizationStatus(for: sleepType)
-        print("Authorization Status: \(authStatus.rawValue)")
+        Log.debug("Sleep authorization status: \(authStatus.rawValue)", category: .healthkit)
 
         // Find the sample that matches these times
         let predicate = HKQuery.predicateForSamples(withStart: bedTime, end: wakeTime, options: .strictStartDate)
-        print("🔍 Searching for matching HealthKit sample...")
+        Log.debug("Searching for matching HealthKit sleep sample", category: .sleep)
 
         let query = HKSampleQuery(
             sampleType: sleepType,
@@ -558,7 +556,7 @@ class HealthKitManager: ObservableObject {
             sortDescriptors: nil
         ) { [weak self] _, samples, error in
             if let error = error {
-                print("❌ Query error: \(error.localizedDescription)")
+                Log.error("Sleep query error", category: .healthkit, error: error)
                 DispatchQueue.main.async {
                     completion(false, error)
                 }
@@ -566,22 +564,21 @@ class HealthKitManager: ObservableObject {
             }
 
             guard let sample = samples?.first as? HKCategorySample else {
-                print("⚠️  No matching sample found in HealthKit (may not exist)")
+                Log.warning("No matching sleep sample found in HealthKit", category: .sleep)
                 DispatchQueue.main.async {
                     completion(false, nil)
                 }
                 return
             }
 
-            print("✅ Found matching sample, deleting...")
+            Log.debug("Found matching sleep sample, deleting", category: .sleep)
             self?.healthStore.delete(sample) { success, error in
                 DispatchQueue.main.async {
                     if success {
-                        print("✅ HealthKit delete successful")
+                        Log.logSuccess("Sleep data deleted from HealthKit", category: .sleep)
                     } else {
-                        print("❌ HealthKit delete failed: \(String(describing: error))")
+                        Log.logFailure("Sleep data deletion", category: .sleep, error: error)
                     }
-                    print("==============================\n")
                     completion(success, error)
                 }
             }
@@ -638,7 +635,7 @@ class HealthKitManager: ObservableObject {
 
         healthStore.enableBackgroundDelivery(for: sleepType, frequency: .immediate) { success, error in
             if let error = error {
-                print("Failed to enable background delivery: \(error.localizedDescription)")
+                Log.error("Failed to enable sleep background delivery", category: .healthkit, error: error)
             }
         }
     }
@@ -650,7 +647,7 @@ class HealthKitManager: ObservableObject {
 
         healthStore.disableBackgroundDelivery(for: sleepType) { success, error in
             if let error = error {
-                print("Failed to disable background delivery: \(error.localizedDescription)")
+                Log.error("Failed to disable sleep background delivery", category: .healthkit, error: error)
             }
         }
     }

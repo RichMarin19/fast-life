@@ -83,9 +83,9 @@ class HydrationManager: ObservableObject {
         if healthKitManager.isWaterAuthorized() {
             healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
                 if let error = error {
-                    print("Failed to auto-sync drink to HealthKit: \(error.localizedDescription)")
+                    Log.logFailure("Drink auto-sync to HealthKit", category: .hydration, error: error)
                 } else if success {
-                    print("Successfully synced drink to HealthKit as water: \(entry.amount)oz")
+                    Log.debug("Synced drink to HealthKit as water", category: .hydration, metadata: ["amount": "\(entry.amount)oz"])
                 }
             }
         }
@@ -289,32 +289,32 @@ class HydrationManager: ObservableObject {
         let healthKitManager = HealthKitManager.shared
 
         guard healthKitManager.isWaterAuthorized() else {
-            print("HealthKit not authorized for water - cannot sync hydration")
+            Log.warning("HealthKit not authorized for water, cannot sync hydration", category: .hydration)
             return
         }
 
-        print("Starting hydration sync to HealthKit - \(drinkEntries.count) total drinks")
+        Log.logCount(drinkEntries.count, action: "Starting hydration sync to HealthKit", category: .hydration)
 
         // Sync all drink entries to HealthKit as water
         var syncedCount = 0
         for entry in drinkEntries {
             healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
                 if let error = error {
-                    print("Failed to sync drink to HealthKit: \(error.localizedDescription)")
+                    Log.logFailure("Drink sync to HealthKit", category: .hydration, error: error)
                 } else if success {
                     syncedCount += 1
                 }
             }
         }
 
-        print("Completed hydration sync attempt for \(drinkEntries.count) drinks")
+        Log.logCount(drinkEntries.count, action: "Completed hydration sync attempt", category: .hydration)
     }
 
     func syncFromHealthKit(startDate: Date? = nil, completion: (() -> Void)? = nil) {
         let healthKitManager = HealthKitManager.shared
 
         guard healthKitManager.isAuthorized else {
-            print("HealthKit not authorized for hydration import")
+            Log.warning("HealthKit not authorized for hydration import", category: .hydration)
             completion?()
             return
         }
@@ -328,7 +328,7 @@ class HydrationManager: ObservableObject {
                 return
             }
 
-            print("Importing \(waterData.count) water entries from HealthKit")
+            Log.logCount(waterData.count, action: "Importing water entries from HealthKit", category: .hydration)
 
             // Import water data as "Water" type DrinkEntry
             var importedCount = 0
@@ -345,7 +345,9 @@ class HydrationManager: ObservableObject {
                 }
             }
 
-            print("Successfully imported \(importedCount) new drink entries from HealthKit")
+            if importedCount > 0 {
+                Log.logCount(importedCount, action: "Successfully imported new drink entries from HealthKit", category: .hydration)
+            }
 
             // Sort and save
             self.drinkEntries.sort { $0.date > $1.date }
