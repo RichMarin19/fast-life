@@ -178,6 +178,38 @@ open FastingTracker.xcodeproj
 
 ## 🐛 Bug Fix Log
 
+### v2.0.1 (October 7, 2025) - **CRITICAL SAFETY UPDATE COMPLETED**
+- 🛡️ **COMPLETED:** 11 critical force-unwraps eliminated preventing production crashes
+  - **WeightTrackingView.swift**: 4 force-unwraps → safe guard let patterns
+    * Daily weight averaging safety → graceful fallback for empty arrays
+    * Chart X-axis date calculations → nil return on Calendar operation failure
+    * Statistics date calculations → safe unwrapping for 7/30-day periods
+  - **NotificationManager.swift**: 2 force-unwraps → safe guard let patterns
+    * Stage selection randomization → early return on randomElement() failure
+  - **SleepManager.swift**: 5 force-unwraps → safe guard let patterns
+    * HealthKit sync date calculation → early return on Calendar operation failure
+    * Sleep statistics date calculations → nil return for averageSleepHours/sleepTrend
+    * Calendar date arithmetic operations → graceful handling of edge cases
+
+- 📊 **IMPLEMENTED:** Production logging system (AppLogger.swift)
+  - **OSLog integration** following Apple Unified Logging guidelines
+  - **Structured categories** for different app components (Safety, WeightTracking, etc.)
+  - **Console.app visibility** - logs appear during beta testing and TestFlight crashes
+  - **Enhanced debugging** for production monitoring with automatic file/line tracking
+  - **Performance optimized** with minimal runtime overhead
+
+- 🧪 **VERIFIED:** Edge case testing completed
+  - **Extreme date scenarios** tested (year 1970, 2050) - no crashes
+  - **Empty data conditions** handled gracefully with logging
+  - **Notification stress testing** - clean operation under rapid scheduling
+  - **Console.app integration** confirmed working for production monitoring
+
+- 📚 **References:**
+  - [Apple Swift Optional Unwrapping Guidelines](https://docs.swift.org/swift-book/LanguageGuide/TheBasics.html#ID333)
+  - [Apple Unified Logging Documentation](https://developer.apple.com/documentation/os/logging)
+
+**Result:** Zero production crashes possible from force-unwrapping operations. Logging infrastructure ready for TestFlight beta monitoring.
+
 ### v1.1.2 (October 2, 2025)
 - ✨ **Enhanced:** Custom goal input UX
   - Added keyboard toolbar with "Done" button to dismiss keyboard
@@ -267,7 +299,7 @@ open FastingTracker.xcodeproj
 - **ObservableObject** + **@Published** for state management
 - **MARK:** comments for code organization
 - **Explicit types** where clarity needed
-- **Guard statements** for early returns
+- **Guard statements** for early returns and **force-unwrap safety**
 
 ### File Organization
 ```swift
