@@ -1,4 +1,48 @@
 import SwiftUI
+import Foundation
+
+// MARK: - Inline Sync Status Component
+// Following Apple Human Interface Guidelines for Settings inline status display
+// Reference: https://developer.apple.com/design/human-interface-guidelines/patterns/settings/
+
+struct InlineSyncStatus: View {
+    let lastSyncDate: Date?
+    let syncError: String?
+
+    var body: some View {
+        if let error = syncError {
+            // Error state
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.red)
+                    .font(.caption)
+                Text(error)
+                    .font(.caption)
+                    .foregroundColor(.red)
+            }
+        } else if let lastSync = lastSyncDate {
+            // Success state with timestamp
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.caption)
+                Text("Last synced \(RelativeDateTimeFormatter().localizedString(for: lastSync, relativeTo: Date()))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        } else {
+            // Never synced state
+            HStack(spacing: 4) {
+                Image(systemName: "minus.circle.fill")
+                    .foregroundColor(.secondary)
+                    .font(.caption)
+                Text("Not synced")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+}
 
 struct AdvancedView: View {
     @EnvironmentObject var fastingManager: FastingManager
@@ -322,68 +366,116 @@ struct AppSettingsView: View {
                 }
             }
 
-            // Apple Health Section
+            // Apple Health - Individual Sync Options with Inline Status
+            // Following Apple Human Interface Guidelines for Settings inline status display
+            // Reference: https://developer.apple.com/design/human-interface-guidelines/patterns/settings/
             Section(header: Text("Apple Health"), footer: Text("Sync your fasting, weight, and hydration data with Apple Health. Fasting sessions are saved as workouts. Water, coffee, and tea are saved as water intake.")) {
-                Button(action: { showingFastingSyncOptions = true }) {
-                    HStack {
-                        if isSyncingFasting {
-                            ProgressView()
-                                .padding(.trailing, 8)
-                        } else {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .foregroundColor(.orange)
-                        }
-                        Text(isSyncingFasting ? "Syncing..." : "Sync Fasting with Apple Health")
-                            .foregroundColor(.primary)
-                    }
-                }
-                .disabled(isSyncingFasting || isSyncingAll)
 
-                Button(action: { showingWeightSyncOptions = true }) {
-                    HStack {
-                        if isSyncingWeight {
-                            ProgressView()
-                                .padding(.trailing, 8)
-                        } else {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .foregroundColor(.blue)
+                // Fasting Sync with Status
+                VStack(alignment: .leading, spacing: 4) {
+                    Button(action: { showingFastingSyncOptions = true }) {
+                        HStack {
+                            if isSyncingFasting {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(.orange)
+                            }
+                            Text(isSyncingFasting ? "Syncing..." : "Sync Fasting with Apple Health")
+                                .foregroundColor(.primary)
+                            Spacer()
                         }
-                        Text(isSyncingWeight ? "Syncing..." : "Sync Weight with Apple Health")
-                            .foregroundColor(.primary)
                     }
-                }
-                .disabled(isSyncingWeight || isSyncingAll)
+                    .disabled(isSyncingFasting || isSyncingAll)
 
-                Button(action: { showingHydrationSyncOptions = true }) {
-                    HStack {
-                        if isSyncingHydration {
-                            ProgressView()
-                                .padding(.trailing, 8)
-                        } else {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .foregroundColor(.cyan)
-                        }
-                        Text(isSyncingHydration ? "Syncing..." : "Sync Hydration with Apple Health")
-                            .foregroundColor(.primary)
-                    }
+                    // Inline sync status for fasting
+                    InlineSyncStatus(
+                        lastSyncDate: HealthKitManager.shared.lastFastingSyncDate,
+                        syncError: HealthKitManager.shared.lastFastingSyncError
+                    )
+                    .padding(.leading, 28) // Align with text above
                 }
-                .disabled(isSyncingHydration || isSyncingAll)
 
-                Button(action: { showingAllDataSyncOptions = true }) {
-                    HStack {
-                        if isSyncingAll {
-                            ProgressView()
-                                .padding(.trailing, 8)
-                        } else {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .foregroundColor(.green)
+                // Weight Sync with Status
+                VStack(alignment: .leading, spacing: 4) {
+                    Button(action: { showingWeightSyncOptions = true }) {
+                        HStack {
+                            if isSyncingWeight {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(.blue)
+                            }
+                            Text(isSyncingWeight ? "Syncing..." : "Sync Weight with Apple Health")
+                                .foregroundColor(.primary)
+                            Spacer()
                         }
-                        Text(isSyncingAll ? "Syncing..." : "Sync All Health Data")
-                            .foregroundColor(.primary)
                     }
+                    .disabled(isSyncingWeight || isSyncingAll)
+
+                    // Inline sync status for weight
+                    InlineSyncStatus(
+                        lastSyncDate: HealthKitManager.shared.lastWeightSyncDate,
+                        syncError: HealthKitManager.shared.lastWeightSyncError
+                    )
+                    .padding(.leading, 28)
                 }
-                .disabled(isSyncingFasting || isSyncingWeight || isSyncingHydration || isSyncingAll)
+
+                // Hydration Sync with Status
+                VStack(alignment: .leading, spacing: 4) {
+                    Button(action: { showingHydrationSyncOptions = true }) {
+                        HStack {
+                            if isSyncingHydration {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(.cyan)
+                            }
+                            Text(isSyncingHydration ? "Syncing..." : "Sync Hydration with Apple Health")
+                                .foregroundColor(.primary)
+                            Spacer()
+                        }
+                    }
+                    .disabled(isSyncingHydration || isSyncingAll)
+
+                    // Inline sync status for hydration
+                    InlineSyncStatus(
+                        lastSyncDate: HealthKitManager.shared.lastWaterSyncDate,
+                        syncError: HealthKitManager.shared.lastWaterSyncError
+                    )
+                    .padding(.leading, 28)
+                }
+
+                // Sync All Health Data - Overall Status
+                VStack(alignment: .leading, spacing: 4) {
+                    Button(action: { showingAllDataSyncOptions = true }) {
+                        HStack {
+                            if isSyncingAll {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(.green)
+                            }
+                            Text(isSyncingAll ? "Syncing..." : "Sync All Health Data")
+                                .foregroundColor(.primary)
+                            Spacer()
+                        }
+                    }
+                    .disabled(isSyncingAll || isSyncingFasting || isSyncingWeight || isSyncingHydration)
+
+                    // Overall sync status
+                    InlineSyncStatus(
+                        lastSyncDate: HealthKitManager.shared.lastOverallSyncDate,
+                        syncError: HealthKitManager.shared.hasSyncErrors ? "Some data types have errors" : nil
+                    )
+                    .padding(.leading, 28)
+                }
             }
+
 
             // Danger Zone Section
             Section(header: Text("Danger Zone"), footer: Text("These actions cannot be undone. All data will be permanently deleted.")) {
@@ -1000,6 +1092,8 @@ struct AppSettingsView: View {
                     print("❌ Fasting authorization failed: \(String(describing: error))")
                     self.isSyncingFasting = false
                     self.syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
+                    // Update sync status tracking - failed authorization
+                    HealthKitManager.shared.updateFastingSyncStatus(success: false, error: "Authorization failed")
                     self.showingSyncAlert = true
                 }
             }
@@ -1086,10 +1180,16 @@ struct AppSettingsView: View {
 
                 if errorCount == 0 && skippedCount == 0 {
                     self.syncMessage = "Successfully synced \(syncedCount) fasting sessions to Apple Health."
+                    // Update sync status tracking - successful sync
+                    HealthKitManager.shared.updateFastingSyncStatus(success: true)
                 } else if errorCount == 0 && skippedCount > 0 {
                     self.syncMessage = "Synced \(syncedCount) new sessions. Skipped \(skippedCount) already synced."
+                    // Update sync status tracking - successful sync (skipped items still count as success)
+                    HealthKitManager.shared.updateFastingSyncStatus(success: true)
                 } else {
                     self.syncMessage = "Synced \(syncedCount) sessions. Skipped \(skippedCount) duplicates. \(errorCount) failed."
+                    // Update sync status tracking - partial failure
+                    HealthKitManager.shared.updateFastingSyncStatus(success: syncedCount > 0, error: errorCount > 0 ? "Some sessions failed to sync" : nil)
                 }
                 self.showingSyncAlert = true
             }
@@ -1121,6 +1221,8 @@ struct AppSettingsView: View {
                     print("❌ Weight authorization failed: \(String(describing: error))")
                     isSyncingWeight = false
                     syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
+                    // Update sync status tracking - failed authorization
+                    HealthKitManager.shared.updateWeightSyncStatus(success: false, error: "Authorization failed")
                     showingSyncAlert = true
                 }
             }
@@ -1153,6 +1255,8 @@ struct AppSettingsView: View {
             let count = weightManager.weightEntries.count
             let timeframe = futureOnly ? "from today forward" : "from Apple Health"
             syncMessage = count > 0 ? "Successfully synced \(count) weight entries \(timeframe)." : "No weight data found in Apple Health."
+            // Update sync status tracking
+            HealthKitManager.shared.updateWeightSyncStatus(success: true)
             showingSyncAlert = true
         }
     }
@@ -1190,6 +1294,8 @@ struct AppSettingsView: View {
                     print("❌ Hydration authorization failed: \(String(describing: error))")
                     self.isSyncingHydration = false
                     self.syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
+                    // Update sync status tracking - failed authorization
+                    HealthKitManager.shared.updateWaterSyncStatus(success: false, error: "Authorization failed")
                     self.showingSyncAlert = true
                 }
             }
@@ -1217,6 +1323,8 @@ struct AppSettingsView: View {
                 isSyncingHydration = false
                 let count = hydrationManager.drinkEntries.count
                 syncMessage = "Successfully synced \(count) drink entries going forward. Future drinks will automatically sync to Apple Health."
+                // Update sync status tracking
+                HealthKitManager.shared.updateWaterSyncStatus(success: true)
                 showingSyncAlert = true
             }
         } else {
@@ -1229,6 +1337,8 @@ struct AppSettingsView: View {
                 isSyncingHydration = false
                 let count = hydrationManager.drinkEntries.count
                 syncMessage = count > 0 ? "Successfully synced \(count) drink entries from Apple Health." : "No hydration data found in Apple Health."
+                // Update sync status tracking
+                HealthKitManager.shared.updateWaterSyncStatus(success: true)
                 showingSyncAlert = true
             }
         }
@@ -1328,6 +1438,137 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Sync Status Display Component
+// Following Apple Human Interface Guidelines for status indicators
+// Reference: https://developer.apple.com/design/human-interface-guidelines/components/status/indicators/
+
+struct SyncStatusView: View {
+    private let healthKitManager = HealthKitManager.shared
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Overall sync status
+            HStack {
+                Image(systemName: healthKitManager.hasSyncErrors ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                    .foregroundColor(healthKitManager.hasSyncErrors ? .orange : .green)
+                VStack(alignment: .leading) {
+                    Text("All Data")
+                        .font(.system(size: 16, weight: .medium))
+                    Text(healthKitManager.hasSyncErrors ? "Some sync issues" : formatSyncStatus(healthKitManager.lastOverallSyncDate))
+                        .font(.system(size: 14))
+                        .foregroundColor(healthKitManager.hasSyncErrors ? .orange : .secondary)
+                }
+                Spacer()
+            }
+
+            Divider()
+                .padding(.vertical, 4)
+
+            // Individual data type sync status
+            SyncStatusRow(
+                icon: "figure.walk",
+                title: "Fasting Sessions",
+                lastSyncDate: healthKitManager.lastFastingSyncDate,
+                syncError: healthKitManager.lastFastingSyncError
+            )
+
+            SyncStatusRow(
+                icon: "scalemass",
+                title: "Weight Data",
+                lastSyncDate: healthKitManager.lastWeightSyncDate,
+                syncError: healthKitManager.lastWeightSyncError
+            )
+
+            SyncStatusRow(
+                icon: "drop.fill",
+                title: "Hydration Data",
+                lastSyncDate: healthKitManager.lastWaterSyncDate,
+                syncError: healthKitManager.lastWaterSyncError
+            )
+
+            SyncStatusRow(
+                icon: "bed.double.fill",
+                title: "Sleep Data",
+                lastSyncDate: healthKitManager.lastSleepSyncDate,
+                syncError: healthKitManager.lastSleepSyncError
+            )
+        }
+        .padding(.vertical, 4)
+    }
+
+    /// Formats sync timestamp following iOS Settings app patterns
+    /// Reference: Apple's relative date formatting in Settings > [Account] > iCloud
+    private func formatSyncStatus(_ date: Date?) -> String {
+        guard let date = date else {
+            return "Never synced"
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .full
+        return "Last synced \(formatter.localizedString(for: date, relativeTo: Date()))"
+    }
+}
+
+struct SyncStatusRow: View {
+    let icon: String
+    let title: String
+    let lastSyncDate: Date?
+    let syncError: String?
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(.secondary)
+                .frame(width: 20)
+
+            VStack(alignment: .leading) {
+                Text(title)
+                    .font(.system(size: 15))
+
+                // Show error message if present, otherwise show sync time
+                if let error = syncError {
+                    Text("Error: \(error)")
+                        .font(.system(size: 13))
+                        .foregroundColor(.red)
+                        .lineLimit(2)
+                } else {
+                    Text(formatLastSync(lastSyncDate))
+                        .font(.system(size: 13))
+                        .foregroundColor(.secondary)
+                }
+            }
+
+            Spacer()
+
+            // Status indicator
+            if syncError != nil {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(.red)
+                    .font(.system(size: 12))
+            } else if lastSyncDate != nil {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(.green)
+                    .font(.system(size: 12))
+            } else {
+                Image(systemName: "minus.circle.fill")
+                    .foregroundColor(.gray)
+                    .font(.system(size: 12))
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private func formatLastSync(_ date: Date?) -> String {
+        guard let date = date else {
+            return "Not synced"
+        }
+
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
+    }
 }
 
 #Preview {
