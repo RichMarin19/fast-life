@@ -14,6 +14,179 @@
 
 ---
 
+## 14. 🚨 CRITICAL FIX: HealthKit Authorization Dialog + Production Logging 🍎📝
+
+**Fixed:** October 6, 2025
+**Version:** 1.3.0 (Build 9)
+
+### ⚠️ CRITICAL BUG FIX - NEVER LET THIS HAPPEN AGAIN
+
+**THE PROBLEM:**
+Native iOS HealthKit permission dialog was NOT appearing during onboarding when users tapped "Sync All Historical Data". The authorization request was completing immediately with ZERO permissions granted, preventing users from granting access to HealthKit data.
+
+**ROOT CAUSE:**
+HealthKit authorization requests MUST be explicitly dispatched to the main thread. Even though button actions are already on the main thread, iOS requires **EXPLICIT guarantee** via `DispatchQueue.main.async` for UI operations like the authorization sheet.
+
+**THE FIX:**
+Wrapped both HealthKit authorization calls in `OnboardingView.swift` with `DispatchQueue.main.async { }` to guarantee main thread execution.
+
+**FILES CHANGED:**
+- `OnboardingView.swift:581` - "Sync All Historical Data" button
+- `OnboardingView.swift:646` - "Sync Future Data Only" button
+
+**APPLE REFERENCE:**
+https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
+
+### 🔒 CRITICAL RULE FOR FUTURE
+
+**⚠️ NEVER REMOVE THE MAIN THREAD DISPATCH FROM HEALTHKIT AUTHORIZATION CALLS**
+
+```swift
+// ✅ CORRECT - ALWAYS USE THIS PATTERN:
+Button(action: {
+    DispatchQueue.main.async {
+        HealthKitManager.shared.requestAuthorization { success, error in
+            // Handle completion
+        }
+    }
+})
+
+// ❌ WRONG - DIALOG WON'T APPEAR:
+Button(action: {
+    HealthKitManager.shared.requestAuthorization { success, error in
+        // Handle completion
+    }
+})
+```
+
+**WHY THIS MATTERS:**
+- Without explicit main thread dispatch, iOS silently fails to show the permission dialog
+- The authorization request completes with `success=true` but ZERO permissions granted
+- Users cannot grant permissions, making HealthKit features completely broken
+- This is a non-negotiable requirement for HealthKit UI operations
+
+**TESTING CHECKLIST FOR FUTURE HEALTHKIT CHANGES:**
+- [ ] Delete app completely from device
+- [ ] Verify "Fast LIFe" removed from iOS Settings → Health → Data Access & Devices
+- [ ] Rebuild and fresh install from Xcode
+- [ ] Go through onboarding to HealthKit Sync page
+- [ ] Tap "Sync All Historical Data"
+- [ ] **VERIFY:** Native iOS permission dialog appears with toggles
+- [ ] **VERIFY:** User can toggle permissions on/off
+- [ ] **VERIFY:** App advances to next page after granting/denying
+
+---
+
+### 🎯 NEW FEATURE: Production-Grade Unified Logging System
+
+Implemented Apple Unified Logging (OSLog) to replace print statements with structured, privacy-safe, production-ready logging system.
+
+**NEW FILES:**
+
+**1. Logging.swift (317 lines)**
+- Production logging facade with 6 log levels: debug, info, notice, warning, error, fault
+- 12 categories: healthkit, weight, sleep, hydration, fasting, charts, notifications, onboarding, settings, storage, performance, general
+- Privacy-safe helpers: `logCount()`, `logSuccess()`, `logFailure()`, `logAuthResult()`
+- Runtime log level control via UserDefaults
+- Performance signpost support for Instruments profiling
+
+**2. DebugLogView.swift (148 lines)**
+- Hidden debug screen for runtime log level control
+- **Access:** Tap version number 5 times in Settings
+- Live log level adjustment without rebuild
+- Displays active log level, build type, all categories
+- Instructions for Console.app and Instruments viewing
+
+**LOG LEVEL DEFAULTS:**
+- **DEBUG build:** `.debug` (all logs visible for development)
+- **TESTFLIGHT build:** `.info` (useful info without debug spam)
+- **RELEASE build:** `.notice` (production default, important events only)
+
+**MIGRATED MANAGERS (76 print statements → Log calls):**
+- ✅ HealthKitManager.swift: 22 print → Log (authorization, sync, errors)
+- ✅ WeightManager.swift: 15 print → Log (sync, observer, CRUD operations)
+- ✅ SleepManager.swift: 30 print → Log (sync, observer, duplicate prevention)
+- ✅ HydrationManager.swift: 9 print → Log (sync, streak calculation)
+
+**HOW TO VIEW LOGS:**
+
+**Console.app (Mac):**
+1. Connect device to Mac
+2. Open Console.app
+3. Select device in sidebar
+4. Filter: `subsystem:ai.fastlife.app`
+
+**Instruments (Performance):**
+1. Open Xcode → Product → Profile
+2. Choose 'os_signpost' template
+3. View chart rendering & sync performance
+
+**APPLE REFERENCES:**
+- https://developer.apple.com/documentation/os/logging
+- https://developer.apple.com/documentation/os/logger
+
+---
+
+### 🔧 ARCHITECTURE FIXES
+
+**1. REMOVED auto-sync from manager init() methods**
+- WeightManager.init() no longer auto-syncs on app launch
+- SleepManager.init() no longer auto-syncs on app launch
+- Sync only when user explicitly enables or requests it
+- Per Apple HealthKit Best Practices: Don't access HealthKit on app launch
+
+**2. FIXED Settings view unwanted HealthKit operations**
+- Removed `@StateObject` managers from AppSettingsView
+- Create managers on-demand only when sync requested
+- Prevents observer setup when navigating to Settings
+
+**3. RESTORED working HealthKitManager initialization**
+- Reverted to working version from commit f04c800
+- Simple `requestAuthorization()` completion handler
+- Removed experimental diagnostic logging that broke flow
+
+**FILES CHANGED:**
+- `AdvancedView.swift` - Removed `@StateObject` managers, on-demand creation
+- `WeightManager.swift` - Removed auto-sync from init()
+- `SleepManager.swift` - Removed auto-sync from init()
+- `HealthKitManager.swift` - Restored working version + main thread fix
+- `OnboardingView.swift` - Added explicit main thread dispatch
+
+---
+
+### 📊 TESTING PERFORMED
+
+✅ **Fresh app install → onboarding → "Sync All Historical Data" → Dialog appears**
+✅ **Settings navigation → No unwanted sync operations**
+✅ **Debug log screen access → 5-tap on version number works**
+✅ **Log level changes → Runtime changes persist and apply immediately**
+✅ **HealthKit authorization → Native iOS dialog shows toggles**
+✅ **Permission granting → App receives permissions correctly**
+
+---
+
+### 🎓 LESSONS LEARNED
+
+**NEVER DO THIS AGAIN:**
+1. ❌ Don't remove working code without understanding why it worked
+2. ❌ Don't add "experimental" logging to critical authorization flows
+3. ❌ Don't assume button actions are automatically on main thread for iOS APIs
+4. ❌ Don't skip testing fresh app installs after HealthKit changes
+5. ❌ Don't trust that authorization requests will show UI without explicit main thread dispatch
+
+**ALWAYS DO THIS:**
+1. ✅ Test HealthKit changes with fresh app install (delete app completely)
+2. ✅ Verify native iOS dialogs actually appear on screen
+3. ✅ Use explicit `DispatchQueue.main.async` for ALL HealthKit authorization calls
+4. ✅ Reference Apple documentation before changing working code
+5. ✅ Add tests for critical user flows like onboarding authorization
+
+---
+
+**Commit:** `9d8b9d8` - "fix: Critical HealthKit authorization dialog fix + production logging (v1.3.0 Build 9)"
+
+---
+
 ## 13. Complete Notification System Overhaul + Configurable Quiet Hours 🔔🌙
 
 **Added:** October 6, 2025

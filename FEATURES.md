@@ -1,6 +1,6 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.2.4 (Build 12)**
+**Version 1.3.0 (Build 9)**
 *Your intelligent intermittent fasting companion with weight, hydration, sleep, and mood tracking*
 
 ---
