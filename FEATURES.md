@@ -1,9 +1,9 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 2.0.1 (Build 14)**
+**Version 2.0.2 (Build 15)**
 *Your intelligent intermittent fasting companion with weight, hydration, sleep, mood tracking, and Apple Health integration*
 
-**Latest Update:** Critical safety infrastructure completed - force-unwrap elimination and production logging system
+**Latest Update:** Comprehensive sync status tracking system with improved Settings UI layout following Apple Human Interface Guidelines
 
 ---
 
@@ -415,10 +415,17 @@ Top 10 frequently asked questions with expandable answers:
 
 ### ⚙️ Settings & Data Control
 - **App Information**: View current version and build number
-- **Apple Health Sync**: Three sync options with dialog controls:
+- **Apple Health Sync**: Four sync options with inline status display:
+  - **Sync Fasting with Apple Health**: Import/export fasting workout data
   - **Sync Weight with Apple Health**: Import/export weight data
   - **Sync Hydration with Apple Health**: Import/export water data
-  - **Sync All Health Data**: Sync both weight and hydration together
+  - **Sync All Health Data**: Sync fasting, weight, and hydration together
+- **Real-time Sync Status**: Following Apple Human Interface Guidelines
+  - **Inline Status Display**: Status appears directly below each sync option
+  - **Visual Indicators**: Green checkmark (✓), red warning (⚠️), gray minus (−)
+  - **Relative Timestamps**: "Last synced 2 minutes ago", "Today at 3:25 PM", etc.
+  - **Error State Display**: Clear error messages with visual indicators
+  - **Immediate Updates**: Status changes in real-time when sync operations complete
 - **Sync Options for Each Type**:
   - Sync All Data: Import entire history from HealthKit
   - Sync Future Data Only: Start syncing from today forward
