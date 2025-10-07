@@ -218,19 +218,59 @@ struct AppSettingsView: View {
     @State private var showingClearAllDataAlert = false
     @State private var showingClearAllDataConfirmation = false
     @State private var showingHealthResetInstructions = false
+    @State private var isSyncingFasting = false
     @State private var isSyncingWeight = false
     @State private var isSyncingHydration = false
     @State private var isSyncingAll = false
     @State private var syncMessage = ""
     @State private var showingSyncAlert = false
+    @State private var showingFastingSyncOptions = false
     @State private var showingWeightSyncOptions = false
     @State private var showingHydrationSyncOptions = false
     @State private var showingAllDataSyncOptions = false
     @State private var versionTapCount = 0
     @State private var showingDebugLog = false
+    @State private var showingExportSheet = false
+    @State private var exportedFileURL: URL?
+    @State private var isExporting = false
+    @State private var showingImportFilePicker = false
+    @State private var showingImportPreview = false
+    @State private var importPreview: ImportPreview?
+    @State private var importFileURL: URL?
+    @State private var showingImportResult = false
+    @State private var importResultMessage = ""
 
     var body: some View {
         List {
+            // Data Import & Export Section
+            Section(header: Text("Data Import & Export"), footer: Text("Export your data for backup or import previously exported data to restore.")) {
+                // Export button
+                Button(action: { exportData() }) {
+                    HStack {
+                        if isExporting {
+                            ProgressView()
+                                .padding(.trailing, 8)
+                        } else {
+                            Image(systemName: "square.and.arrow.up")
+                                .foregroundColor(.blue)
+                        }
+                        Text(isExporting ? "Exporting..." : "Export All Data to CSV")
+                            .foregroundColor(.primary)
+                    }
+                }
+                .disabled(isExporting)
+
+                // Import button
+                Button(action: { showingImportFilePicker = true }) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.down")
+                            .foregroundColor(.green)
+                        Text("Import Data from CSV")
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+
             // App Info Section
             Section(header: Text("App Information")) {
                 Button(action: {
@@ -283,7 +323,22 @@ struct AppSettingsView: View {
             }
 
             // Apple Health Section
-            Section(header: Text("Apple Health"), footer: Text("Sync your weight and hydration data with Apple Health. Water, coffee, and tea are saved as water intake.")) {
+            Section(header: Text("Apple Health"), footer: Text("Sync your fasting, weight, and hydration data with Apple Health. Fasting sessions are saved as workouts. Water, coffee, and tea are saved as water intake.")) {
+                Button(action: { showingFastingSyncOptions = true }) {
+                    HStack {
+                        if isSyncingFasting {
+                            ProgressView()
+                                .padding(.trailing, 8)
+                        } else {
+                            Image(systemName: "arrow.triangle.2.circlepath")
+                                .foregroundColor(.orange)
+                        }
+                        Text(isSyncingFasting ? "Syncing..." : "Sync Fasting with Apple Health")
+                            .foregroundColor(.primary)
+                    }
+                }
+                .disabled(isSyncingFasting || isSyncingAll)
+
                 Button(action: { showingWeightSyncOptions = true }) {
                     HStack {
                         if isSyncingWeight {
@@ -327,7 +382,7 @@ struct AppSettingsView: View {
                             .foregroundColor(.primary)
                     }
                 }
-                .disabled(isSyncingWeight || isSyncingHydration || isSyncingAll)
+                .disabled(isSyncingFasting || isSyncingWeight || isSyncingHydration || isSyncingAll)
             }
 
             // Danger Zone Section
@@ -519,6 +574,14 @@ struct AppSettingsView: View {
         .sheet(isPresented: $showingDebugLog) {
             DebugLogView()
         }
+        .confirmationDialog("Fasting Sync Options", isPresented: $showingFastingSyncOptions, titleVisibility: .visible) {
+            Button("Backfill All Fasting History") {
+                syncFastingWithHealthKit()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Sync all your fasting history to Apple Health as workouts. This allows you to view your fasting data in the Health app.")
+        }
         .confirmationDialog("Weight Sync Options", isPresented: $showingWeightSyncOptions, titleVisibility: .visible) {
             Button("Sync All Data") {
                 syncWeightWithHealthKit(futureOnly: false)
@@ -552,6 +615,166 @@ struct AppSettingsView: View {
         } message: {
             Text("Choose whether to import all weight and hydration history from Apple Health or only sync new entries going forward.")
         }
+        .sheet(isPresented: $showingExportSheet) {
+            if let url = exportedFileURL {
+                ShareSheet(items: [url])
+            }
+        }
+        .fileImporter(
+            isPresented: $showingImportFilePicker,
+            allowedContentTypes: [.commaSeparatedText],  // Only accept .csv files
+            allowsMultipleSelection: false
+        ) { result in
+            handleFileImport(result)
+        }
+        .alert("Import Preview", isPresented: $showingImportPreview) {
+            Button("Cancel", role: .cancel) {
+                importFileURL = nil
+                importPreview = nil
+            }
+            Button("Import") {
+                performImport()
+            }
+        } message: {
+            if let preview = importPreview {
+                Text("""
+                Found \(preview.totalCount) entries:
+
+                • Fasting: \(preview.fastingCount)
+                • Weight: \(preview.weightCount)
+                • Hydration: \(preview.hydrationCount)
+                • Sleep: \(preview.sleepCount)
+                • Mood: \(preview.moodCount)
+
+                Duplicates will be skipped.
+                """)
+            }
+        }
+        .alert("Import Complete", isPresented: $showingImportResult) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(importResultMessage)
+        }
+    }
+
+    // MARK: - Data Export Function
+
+    private func exportData() {
+        print("\n📤 === USER TRIGGERED CSV EXPORT ===")
+
+        // Show loading indicator
+        isExporting = true
+
+        // Run export on background thread to avoid blocking UI
+        // Reference: https://developer.apple.com/documentation/dispatch/dispatchqueue
+        DispatchQueue.global(qos: .userInitiated).async {
+            print("📊 Exporting on background thread...")
+
+            // Export data using DataExportManager (heavy work)
+            let fileURL = DataExportManager.shared.exportAllDataToCSV()
+
+            // Update UI on main thread
+            DispatchQueue.main.async {
+                self.isExporting = false
+
+                if let url = fileURL {
+                    print("✅ Export successful, showing share sheet")
+                    self.exportedFileURL = url
+                    self.showingExportSheet = true
+                } else {
+                    print("❌ Export failed")
+                    self.syncMessage = "Failed to export data. Please try again."
+                    self.showingSyncAlert = true
+                }
+
+                print("====================================\n")
+            }
+        }
+    }
+
+    // MARK: - Data Import Functions
+
+    private func handleFileImport(_ result: Result<[URL], Error>) {
+        print("\n📥 === USER SELECTED CSV FILE ===")
+
+        switch result {
+        case .success(let urls):
+            guard let url = urls.first else {
+                print("❌ No file selected")
+                return
+            }
+
+            print("Selected file: \(url.lastPathComponent)")
+
+            // Validate and preview CSV
+            let previewResult = CSVImporter.shared.validateAndPreviewCSV(from: url)
+
+            switch previewResult {
+            case .success(let preview):
+                print("✅ Validation successful")
+                importPreview = preview
+                importFileURL = url
+                showingImportPreview = true
+
+            case .failure(let error):
+                print("❌ Validation failed: \(error.localizedDescription)")
+                syncMessage = error.localizedDescription
+                showingSyncAlert = true
+            }
+
+        case .failure(let error):
+            print("❌ File selection failed: \(error.localizedDescription)")
+            syncMessage = "Failed to select file: \(error.localizedDescription)"
+            showingSyncAlert = true
+        }
+
+        print("====================================\n")
+    }
+
+    private func performImport() {
+        print("\n📥 === USER CONFIRMED IMPORT ===")
+
+        guard let url = importFileURL else {
+            print("❌ No file URL")
+            return
+        }
+
+        // Import data
+        let importResult = CSVImporter.shared.importData(from: url)
+
+        switch importResult {
+        case .success(let result):
+            print("✅ Import successful")
+            importResultMessage = """
+            Import Complete! ✅
+
+            Imported:
+            • Fasting: \(result.fastingImported)
+            • Weight: \(result.weightImported)
+            • Hydration: \(result.hydrationImported)
+            • Sleep: \(result.sleepImported)
+            • Mood: \(result.moodImported)
+
+            Skipped \(result.totalSkipped) duplicates
+            """
+            showingImportResult = true
+
+            // Reload FastingManager to pick up imported data
+            // Reference: https://developer.apple.com/library/archive/documentation/General/Conceptual/DevPedia-CocoaCore/Singleton.html
+            print("🔄 Reloading FastingManager after import...")
+            fastingManager.loadHistoryAsync()
+
+            // Clear import state
+            importFileURL = nil
+            importPreview = nil
+
+        case .failure(let error):
+            print("❌ Import failed: \(error.localizedDescription)")
+            syncMessage = "Import failed: \(error.localizedDescription)"
+            showingSyncAlert = true
+        }
+
+        print("====================================\n")
     }
 
     // MARK: - App Info Helpers
@@ -753,6 +976,123 @@ struct AppSettingsView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             print("📱 Presenting Health reset instructions alert...")
             showingHealthResetInstructions = true
+        }
+    }
+
+    // MARK: - Fasting Sync Function
+
+    private func syncFastingWithHealthKit() {
+        print("\n🔄 === SYNC FASTING WITH HEALTHKIT (BACKFILL) ===")
+
+        isSyncingFasting = true
+
+        // Check if fasting (workouts) authorization is granted
+        let isAuthorized = HealthKitManager.shared.isFastingAuthorized()
+        print("Fasting (Workout) Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+
+        if !isAuthorized {
+            print("📱 Requesting FASTING (workout) authorization...")
+            HealthKitManager.shared.requestFastingAuthorization { success, error in
+                if success {
+                    print("✅ Fasting authorization granted → performing backfill")
+                    self.performFastingBackfill()
+                } else {
+                    print("❌ Fasting authorization failed: \(String(describing: error))")
+                    self.isSyncingFasting = false
+                    self.syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
+                    self.showingSyncAlert = true
+                }
+            }
+        } else {
+            print("✅ Already authorized → performing backfill")
+            performFastingBackfill()
+        }
+
+        print("==============================================\n")
+    }
+
+    private func performFastingBackfill() {
+        // Get all completed fasting sessions
+        let allSessions = fastingManager.fastingHistory.filter { $0.isComplete }
+        print("📊 Found \(allSessions.count) completed fasting sessions to sync")
+
+        guard !allSessions.isEmpty else {
+            isSyncingFasting = false
+            syncMessage = "No completed fasting sessions found to sync."
+            showingSyncAlert = true
+            return
+        }
+
+        // STEP 1: Fetch existing Fast LIFe workouts from HealthKit to avoid duplicates
+        // Query for the earliest session date to minimize data fetched
+        let earliestDate = allSessions.map { $0.startTime }.min() ?? Date()
+        print("🔍 Checking for existing workouts since: \(earliestDate)")
+
+        HealthKitManager.shared.fetchFastingData(startDate: earliestDate) { existingWorkouts in
+            print("📦 Found \(existingWorkouts.count) existing Fast LIFe workouts in HealthKit")
+
+            // Create a set of existing workout start times for fast lookup
+            // Use time rounded to nearest second to avoid floating-point comparison issues
+            let existingStartTimes = Set(existingWorkouts.map { workout in
+                Int(workout.startTime.timeIntervalSince1970)
+            })
+
+            // STEP 2: Filter out sessions that already exist
+            let sessionsToSync = allSessions.filter { session in
+                let startTimeRounded = Int(session.startTime.timeIntervalSince1970)
+                let alreadyExists = existingStartTimes.contains(startTimeRounded)
+                if alreadyExists {
+                    print("⏭️  Skipping already synced session: \(session.startTime)")
+                }
+                return !alreadyExists
+            }
+
+            print("✨ \(sessionsToSync.count) new sessions to sync (skipped \(allSessions.count - sessionsToSync.count) duplicates)")
+
+            guard !sessionsToSync.isEmpty else {
+                DispatchQueue.main.async {
+                    self.isSyncingFasting = false
+                    self.syncMessage = "All fasting sessions are already synced to Apple Health."
+                    self.showingSyncAlert = true
+                }
+                return
+            }
+
+            // STEP 3: Sync only new sessions
+            var syncedCount = 0
+            var errorCount = 0
+            let dispatchGroup = DispatchGroup()
+
+            for session in sessionsToSync {
+                dispatchGroup.enter()
+
+                HealthKitManager.shared.saveFastingSession(session) { success, error in
+                    if success {
+                        syncedCount += 1
+                        print("✅ Synced session: \(session.startTime)")
+                    } else {
+                        errorCount += 1
+                        print("❌ Failed to sync session: \(error?.localizedDescription ?? "Unknown error")")
+                    }
+                    dispatchGroup.leave()
+                }
+            }
+
+            // STEP 4: Report results
+            dispatchGroup.notify(queue: .main) {
+                self.isSyncingFasting = false
+
+                let skippedCount = allSessions.count - sessionsToSync.count
+
+                if errorCount == 0 && skippedCount == 0 {
+                    self.syncMessage = "Successfully synced \(syncedCount) fasting sessions to Apple Health."
+                } else if errorCount == 0 && skippedCount > 0 {
+                    self.syncMessage = "Synced \(syncedCount) new sessions. Skipped \(skippedCount) already synced."
+                } else {
+                    self.syncMessage = "Synced \(syncedCount) sessions. Skipped \(skippedCount) duplicates. \(errorCount) failed."
+                }
+                self.showingSyncAlert = true
+            }
         }
     }
 
@@ -975,6 +1315,19 @@ struct AppSettingsView: View {
             }
         }
     }
+}
+
+// MARK: - ShareSheet for sharing exported CSV files
+
+struct ShareSheet: UIViewControllerRepresentable {
+    let items: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        let controller = UIActivityViewController(activityItems: items, applicationActivities: nil)
+        return controller
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
 #Preview {

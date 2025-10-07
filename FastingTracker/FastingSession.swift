@@ -5,6 +5,7 @@ struct FastingSession: Codable, Identifiable {
     var startTime: Date
     var endTime: Date?
     var goalHours: Double?
+    var eatingWindowDuration: TimeInterval? // Duration of eating window before this fast (in seconds)
 
     var duration: TimeInterval {
         guard let end = endTime else {
@@ -23,10 +24,16 @@ struct FastingSession: Codable, Identifiable {
         return duration >= goal * 3600
     }
 
-    init(id: UUID = UUID(), startTime: Date, endTime: Date? = nil, goalHours: Double? = nil) {
+    var eatingWindowHours: Double? {
+        guard let eatingWindow = eatingWindowDuration else { return nil }
+        return eatingWindow / 3600
+    }
+
+    init(id: UUID = UUID(), startTime: Date, endTime: Date? = nil, goalHours: Double? = nil, eatingWindowDuration: TimeInterval? = nil) {
         self.id = id
         self.startTime = startTime
         self.endTime = endTime
         self.goalHours = goalHours
+        self.eatingWindowDuration = eatingWindowDuration
     }
 }

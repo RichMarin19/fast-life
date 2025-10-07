@@ -66,7 +66,17 @@ class FastingManager: ObservableObject {
         print("Goal: \(fastingGoalHours)h")
         print("Current Streak: \(currentStreak)")
 
-        let session = FastingSession(startTime: Date(), goalHours: fastingGoalHours)
+        // Calculate eating window duration if there's a previous fast
+        var eatingWindowDuration: TimeInterval? = nil
+        if let lastFast = fastingHistory.first, let lastEndTime = lastFast.endTime {
+            eatingWindowDuration = Date().timeIntervalSince(lastEndTime)
+            let hours = eatingWindowDuration! / 3600
+            print("🍽️  Eating window: \(String(format: "%.1f", hours))h (since last fast ended)")
+        } else {
+            print("🍽️  No previous fast found - first fast or no history")
+        }
+
+        let session = FastingSession(startTime: Date(), goalHours: fastingGoalHours, eatingWindowDuration: eatingWindowDuration)
         currentSession = session
         saveCurrentSession()
         startTimer()
@@ -154,7 +164,18 @@ class FastingManager: ObservableObject {
         print("End: \(endTime)")
         print("Goal: \(goalHours)h")
 
-        var session = FastingSession(startTime: startTime, goalHours: goalHours)
+        // Calculate eating window if there's a previous fast before this manual entry
+        var eatingWindowDuration: TimeInterval? = nil
+        if let lastFast = fastingHistory.first, let lastEndTime = lastFast.endTime {
+            // Only calculate if the manual fast starts after the previous fast ended
+            if startTime > lastEndTime {
+                eatingWindowDuration = startTime.timeIntervalSince(lastEndTime)
+                let hours = eatingWindowDuration! / 3600
+                print("🍽️  Eating window: \(String(format: "%.1f", hours))h (since last fast ended)")
+            }
+        }
+
+        var session = FastingSession(startTime: startTime, goalHours: goalHours, eatingWindowDuration: eatingWindowDuration)
         session.endTime = endTime
 
         let duration = endTime.timeIntervalSince(startTime) / 3600

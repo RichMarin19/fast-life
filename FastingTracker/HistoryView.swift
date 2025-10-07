@@ -95,6 +95,7 @@ struct HistoryRowView: View {
     // Pre-calculate these values once
     private let formattedDateValue: String
     private let formattedDurationValue: String
+    private let formattedEatingWindowValue: String?
 
     init(session: FastingSession) {
         self.session = session
@@ -109,6 +110,15 @@ struct HistoryRowView: View {
         let hours = Int(durationSeconds) / 3600
         let minutes = Int(durationSeconds) / 60 % 60
         self.formattedDurationValue = "\(hours)h \(minutes)m"
+
+        // Format eating window if available
+        if let eatingWindow = session.eatingWindowDuration {
+            let ewHours = Int(eatingWindow) / 3600
+            let ewMinutes = Int(eatingWindow) / 60 % 60
+            self.formattedEatingWindowValue = "\(ewHours)h \(ewMinutes)m"
+        } else {
+            self.formattedEatingWindowValue = nil
+        }
     }
 
     var body: some View {
@@ -137,9 +147,20 @@ struct HistoryRowView: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock")
                     .foregroundColor(.secondary)
-                Text("Duration: \(formattedDurationValue)")
+                Text("Fast: \(formattedDurationValue)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+            }
+
+            // Show eating window if available
+            if let eatingWindow = formattedEatingWindowValue {
+                HStack(spacing: 4) {
+                    Image(systemName: "fork.knife")
+                        .foregroundColor(.orange)
+                    Text("Ate for: \(eatingWindow)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
             }
         }
         .padding(.vertical, 4)

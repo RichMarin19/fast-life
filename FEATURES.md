@@ -1,7 +1,7 @@
 # Fast LIFe - Complete Features Guide
 
-**Version 1.3.0 (Build 9)**
-*Your intelligent intermittent fasting companion with weight, hydration, sleep, and mood tracking*
+**Version 1.5.0 (Build 11)**
+*Your intelligent intermittent fasting companion with weight, hydration, sleep, mood tracking, and Apple Health integration*
 
 ---
 
@@ -66,6 +66,40 @@
 
 Per Apple HIG: Consistent design patterns improve learnability
 Reference: https://developer.apple.com/design/human-interface-guidelines/consistency
+
+---
+
+## 🍎 Apple Health Fasting Sync
+
+### 🔄 Sync Fasting Sessions to Health
+- **Workouts Integration**: Fasting sessions sync to Apple Health as "Other" workouts
+- **Complete Data**: Duration, goal hours, and eating window stored as metadata
+- **One-Time Backfill**: "Backfill All Fasting History" syncs all past completed fasts
+- **Smart Duplicate Detection**: Automatically skips sessions already synced
+- **Consistent Chart Display**: Normalized times ensure Health app shows uniform 16hr bars
+- **Metadata Preservation**: Real start/end times stored for accuracy
+
+### 📊 Health App Display
+- **Workout Type**: Displays as "Other" workout type
+- **Duration**: Shows correct fasting duration (e.g., 16 hr)
+- **Weekly Chart**: Consistent bar heights matching Fast LIFe app
+- **Source**: Branded as "Fast LIFe" for easy identification
+- **Custom Metadata**: FastingGoal, FastingDuration, EatingWindowDuration, ActualStartTime, ActualEndTime
+
+### 🔧 Technical Implementation
+- **Modern API**: Uses `HKWorkoutBuilder` (iOS 17+ recommended approach)
+- **No Deprecation Warnings**: Replaces deprecated `HKWorkout()` initializer
+- **Normalized Times**: Centers workouts around noon on end date to prevent Health from splitting across calendar days
+- **Industry Standard**: Follows pattern used by major fitness apps for consistent visualization
+
+### 🎯 How to Use
+1. Go to **Advanced → Settings**
+2. Tap **"Sync Fasting with Apple Health"**
+3. Tap **"Backfill All Fasting History"**
+4. Grant workout permissions (first time only)
+5. View in **Health app → Browse → Activity → Workouts**
+
+**Reference**: Apple Health splits workouts spanning midnight across calendar days. Our normalization ensures consistent chart display.
 
 ---
 

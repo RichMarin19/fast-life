@@ -14,6 +14,137 @@
 
 ---
 
+## 15. 🍎 Apple Health Fasting Sync - Workouts Integration ⏱️
+
+**Added:** October 7, 2025
+**Version:** 1.5.0 (Build 11)
+
+### ✨ THE FEATURE
+
+Fast LIFe now syncs completed fasting sessions to Apple Health as workouts! Your fasting data appears in the Health app alongside your other workouts, with perfect chart visualization matching Fast LIFe's display.
+
+### 🎯 WHAT IT DOES
+
+**Sync Fasting Sessions:**
+- Completed fasts sync to Health as "Other" workouts
+- Duration displayed correctly (16 hr, 18 hr, etc.)
+- Metadata includes: fasting goal, eating window, actual start/end times
+- Smart duplicate detection prevents re-syncing existing sessions
+
+**Health App Integration:**
+- Workouts appear in **Browse → Activity → Workouts**
+- Weekly chart shows consistent bar heights (all 16hr bars same height)
+- Average workout time accurately reflects fasting duration
+- Source branded as "Fast LIFe" for easy identification
+
+### 🔧 TECHNICAL IMPLEMENTATION
+
+**Problem Solved:**
+Apple Health splits workouts spanning midnight across calendar days. For example, a fast starting Oct 5 at 6:00 PM and ending Oct 6 at 10:00 AM would display as 6 hrs on Oct 5 and 10 hrs on Oct 6 in the chart, even though it's a 16-hour fast.
+
+**Solution:**
+- **Normalized Workout Times**: Center workouts around noon on the end date
+- **Example**: 16-hour fast → Oct 6 at 4:00 AM to 8:00 PM (all within one calendar day)
+- **Result**: Health chart shows uniform 16 hr bars, matching Fast LIFe UI
+
+**Modern API Usage:**
+- Uses `HKWorkoutBuilder` (iOS 17+ recommended)
+- Replaces deprecated `HKWorkout()` initializer
+- No compiler warnings
+- Future-proof implementation
+
+**Metadata Preservation:**
+```swift
+"ActualStartTime": session.startTime.timeIntervalSince1970
+"ActualEndTime": endTime.timeIntervalSince1970
+"FastingDuration": 57600 // 16 hours in seconds
+"FastingGoal": 16.0
+"EatingWindowDuration": eatingWindowDuration (if available)
+```
+
+### 📋 FILES CHANGED
+
+**HealthKitManager.swift:**
+- Added `isFastingAuthorized()` - Check workout permissions
+- Added `requestFastingAuthorization()` - Request workout write access
+- Added `saveFastingSession()` - Save completed fast using HKWorkoutBuilder
+- Added `deleteFastingSession()` - Remove fast from Health
+- Added `fetchFastingData()` - Read Fast LIFe workouts from Health
+- **Key Change**: Normalized workout start/end times to prevent chart splitting
+
+**AdvancedView.swift (Settings):**
+- Added "Sync Fasting with Apple Health" button
+- Added `syncFastingWithHealthKit()` function
+- Added `performFastingBackfill()` with duplicate detection
+- Fetches existing workouts before syncing to skip duplicates
+- Reports synced vs. skipped counts
+
+**Info.plist:**
+- Updated `NSHealthShareUsageDescription` to mention fasting sessions
+- Updated `NSHealthUpdateUsageDescription` to explain workouts storage
+
+### 🧪 TESTING PERFORMED
+
+**Tested Scenarios:**
+1. ✅ Initial sync of 4 fasting sessions (16 hr each)
+2. ✅ Duplicate detection (skips already synced sessions)
+3. ✅ Health app chart displays uniform 16 hr bars
+4. ✅ Average workout time shows 16 hr (not split across days)
+5. ✅ Individual workout details show correct duration
+6. ✅ Metadata preserved (FastingGoal, ActualStartTime, etc.)
+7. ✅ No deprecation warnings with HKWorkoutBuilder
+
+**Health App Verification:**
+- Weekly chart: All bars same height ✅
+- Average time: 16 hr ✅
+- Individual workout: 16 hr duration ✅
+- Source: "Fast LIFe" ✅
+
+### 📚 INDUSTRY STANDARDS FOLLOWED
+
+**Apple HealthKit Best Practices:**
+- Use metadata for additional context (actual times preserved)
+- Request permissions granularly (workout-specific authorization)
+- Use modern APIs (HKWorkoutBuilder vs deprecated initializers)
+- Reference: https://developer.apple.com/documentation/healthkit/hkworkoutbuilder
+
+**Similar App Patterns:**
+- AutoSleep normalizes overnight sessions for single-day display
+- Fitness apps use metadata extensively for custom data
+- Workout time normalization is industry-accepted for better UX
+
+### 🎯 HOW TO USE
+
+1. Complete a fast in Fast LIFe
+2. Go to **Advanced → Settings**
+3. Tap **"Sync Fasting with Apple Health"**
+4. Tap **"Backfill All Fasting History"**
+5. Grant workout permissions (first time)
+6. Open Health app → Workouts to verify
+
+### ⚠️ IMPORTANT NOTES
+
+**Chart Display Behavior:**
+- Health app aggregates workouts by calendar day
+- Workouts spanning midnight get split in the chart
+- **Our solution**: Normalize times to single calendar day
+- **Result**: Consistent visualization matching Fast LIFe
+
+**Data Accuracy:**
+- Duration is always correct (16 hours = 57600 seconds)
+- Start/End times are normalized for display
+- **Real times preserved in metadata** for accuracy
+
+### 🚀 FUTURE ENHANCEMENTS
+
+**Potential Additions:**
+- Auto-sync on fast completion (optional setting)
+- Sync from Health → Fast LIFe (import workouts)
+- Filter by workout type in History view
+- Export metadata to CSV
+
+---
+
 ## 14. 🚨 CRITICAL FIX: HealthKit Authorization Dialog + Production Logging 🍎📝
 
 **Fixed:** October 6, 2025

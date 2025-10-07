@@ -28,6 +28,8 @@
 		52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */; };
 		52B2CFBC2E949EE40061FCFF /* DebugLogView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFBA2E949EE40061FCFF /* DebugLogView.swift */; };
 		52B2CFBD2E949EE40061FCFF /* Logging.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFBB2E949EE40061FCFF /* Logging.swift */; };
+		52B2CFBF2E94B3290061FCFF /* DataExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFBE2E94B3290061FCFF /* DataExportManager.swift */; };
+		52B2CFC12E94B8A40061FCFF /* CSVImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC02E94B8A40061FCFF /* CSVImporter.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -63,6 +65,8 @@
 		52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
 		52B2CFBA2E949EE40061FCFF /* DebugLogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLogView.swift; sourceTree = "<group>"; };
 		52B2CFBB2E949EE40061FCFF /* Logging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Logging.swift; sourceTree = "<group>"; };
+		52B2CFBE2E94B3290061FCFF /* DataExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataExportManager.swift; sourceTree = "<group>"; };
+		52B2CFC02E94B8A40061FCFF /* CSVImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImporter.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -99,6 +103,8 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52B2CFC02E94B8A40061FCFF /* CSVImporter.swift */,
+				52B2CFBE2E94B3290061FCFF /* DataExportManager.swift */,
 				52B2CFBA2E949EE40061FCFF /* DebugLogView.swift */,
 				52B2CFBB2E949EE40061FCFF /* Logging.swift */,
 				52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */,
@@ -223,6 +229,7 @@
 				5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */,
 				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
 				5243F2432E900F440051A731 /* SleepManager.swift in Sources */,
+				52B2CFC12E94B8A40061FCFF /* CSVImporter.swift in Sources */,
 				5243F2442E900F440051A731 /* SleepTrackingView.swift in Sources */,
 				5289E0782E8D5F6500254E70 /* WeightTrackingView.swift in Sources */,
 				5243F24A2E9029970051A731 /* MoodEntry.swift in Sources */,
@@ -230,6 +237,7 @@
 				5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */,
 				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,
 				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
+				52B2CFBF2E94B3290061FCFF /* DataExportManager.swift in Sources */,
 				5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */,
 				5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */,
 				5289E07D2E8D700000254E70 /* HydrationManager.swift in Sources */,

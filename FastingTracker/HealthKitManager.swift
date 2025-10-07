@@ -54,6 +54,17 @@ class HealthKitManager: ObservableObject {
         return status == .sharingAuthorized
     }
 
+    func isFastingAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        // Fasting sessions are stored as workouts in HealthKit
+        let workoutType = HKObjectType.workoutType()
+        let status = healthStore.authorizationStatus(for: workoutType)
+        return status == .sharingAuthorized
+    }
+
     func checkAuthorizationStatus() {
         guard HKHealthStore.isHealthDataAvailable() else {
             Log.warning("HealthKit is not available on this device", category: .healthkit)
@@ -177,6 +188,43 @@ class HealthKitManager: ObservableObject {
                     Log.logAuthResult("Sleep", granted: false, category: .healthkit)
                     if let error = error {
                         Log.error("Sleep authorization error", category: .healthkit, error: error)
+                    }
+                }
+                completion(success, error)
+            }
+        }
+    }
+
+    /// Request authorization for fasting tracking (stored as workouts in HealthKit)
+    func requestFastingAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        Log.logAuthRequest("Fasting", category: .healthkit)
+        guard HKHealthStore.isHealthDataAvailable() else {
+            Log.warning("HealthKit not available on this device", category: .healthkit)
+            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
+            return
+        }
+
+        // Fasting sessions are stored as workouts
+        // Apple Health doesn't have a dedicated fasting category, so we use workouts
+        // This is the industry-standard approach used by major fasting apps
+        let readTypes: Set<HKObjectType> = [
+            HKObjectType.workoutType()
+        ]
+
+        let writeTypes: Set<HKSampleType> = [
+            HKObjectType.workoutType()
+        ]
+
+        Log.info("Requesting authorization for fasting tracking (as workouts)", category: .healthkit)
+        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
+            DispatchQueue.main.async {
+                if success {
+                    Log.logAuthResult("Fasting", granted: true, category: .healthkit)
+                    self?.checkAuthorizationStatus()
+                } else {
+                    Log.logAuthResult("Fasting", granted: false, category: .healthkit)
+                    if let error = error {
+                        Log.error("Fasting authorization error", category: .healthkit, error: error)
                     }
                 }
                 completion(success, error)
@@ -650,5 +698,215 @@ class HealthKitManager: ObservableObject {
                 Log.error("Failed to disable sleep background delivery", category: .healthkit, error: error)
             }
         }
+    }
+
+    // MARK: - Fasting Tracking Methods
+
+    /// Saves a completed fasting session to HealthKit as a workout
+    /// Industry Standard: Fasting apps store fasting sessions as low-intensity workouts
+    /// Reference: HKWorkoutActivityType.other is used for non-traditional activities
+    /// Note: Explicit duration parameter is intentional for accurate Health app chart display
+    func saveFastingSession(_ session: FastingSession, completion: @escaping (Bool, Error?) -> Void) {
+        guard session.isComplete else {
+            Log.warning("Attempted to save incomplete fasting session to HealthKit", category: .fasting)
+            completion(false, NSError(domain: "HealthKit", code: 5, userInfo: [NSLocalizedDescriptionKey: "Cannot save incomplete fasting session"]))
+            return
+        }
+
+        guard let endTime = session.endTime else {
+            Log.warning("Fasting session missing end time", category: .fasting)
+            completion(false, NSError(domain: "HealthKit", code: 5, userInfo: [NSLocalizedDescriptionKey: "Fasting session missing end time"]))
+            return
+        }
+
+        let duration = session.duration
+        let durationHours = duration / 3600
+        Log.info("Saving fasting session to HealthKit", category: .fasting, metadata: ["duration": String(format: "%.1fh", durationHours)])
+
+        // SOLUTION: Normalize workout times to prevent Health app from splitting across calendar days
+        // Per Apple Health behavior: Workouts spanning midnight get split in chart view
+        // Strategy: Store workout on the END DATE at noon, with duration properly set
+        // This keeps the entire workout within a single calendar day for consistent chart display
+        // Reference: Apple Health splits multi-day activities (confirmed via user testing)
+
+        let calendar = Calendar.current
+        let endDateOnly = calendar.startOfDay(for: endTime) // Midnight of end date
+        let noonOnEndDate = calendar.date(bySettingHour: 12, minute: 0, second: 0, of: endDateOnly)!
+
+        // Center the workout around noon on the end date
+        let normalizedStart = noonOnEndDate.addingTimeInterval(duration / -2) // Start 8 hours before noon (4 AM for 16h fast)
+        let normalizedEnd = noonOnEndDate.addingTimeInterval(duration / 2) // End 8 hours after noon (8 PM for 16h fast)
+
+        // Create workout with metadata - preserve REAL times in metadata for accuracy
+        var metadata: [String: Any] = [
+            HKMetadataKeyWorkoutBrandName: "Fast LIFe",
+            "FastingDuration": duration,
+            "FastingGoal": session.goalHours ?? 0,
+            "ActualStartTime": session.startTime.timeIntervalSince1970, // Store real start time
+            "ActualEndTime": endTime.timeIntervalSince1970 // Store real end time
+        ]
+
+        // Add eating window if available
+        if let eatingWindow = session.eatingWindowDuration {
+            metadata["EatingWindowDuration"] = eatingWindow
+        }
+
+        // Create workout using HKWorkoutBuilder (iOS 17+ recommended approach)
+        // This replaces the deprecated HKWorkout initializer
+        // Reference: https://developer.apple.com/documentation/healthkit/hkworkoutbuilder
+
+        let configuration = HKWorkoutConfiguration()
+        configuration.activityType = .other // Used for non-traditional activities like fasting
+
+        let builder = HKWorkoutBuilder(healthStore: healthStore, configuration: configuration, device: .local())
+
+        // Begin the workout collection
+        builder.beginCollection(withStart: normalizedStart) { success, error in
+            guard success else {
+                DispatchQueue.main.async {
+                    Log.logFailure("Workout builder begin collection", category: .fasting, error: error)
+                    completion(false, error)
+                }
+                return
+            }
+
+            // End the workout collection
+            builder.endCollection(withEnd: normalizedEnd) { success, error in
+                guard success else {
+                    DispatchQueue.main.async {
+                        Log.logFailure("Workout builder end collection", category: .fasting, error: error)
+                        completion(false, error)
+                    }
+                    return
+                }
+
+                // Add metadata to the builder
+                builder.addMetadata(metadata) { success, error in
+                    guard success else {
+                        DispatchQueue.main.async {
+                            Log.logFailure("Workout builder add metadata", category: .fasting, error: error)
+                            completion(false, error)
+                        }
+                        return
+                    }
+
+                    // Finish the workout
+                    builder.finishWorkout { workout, error in
+                        DispatchQueue.main.async {
+                            if workout != nil {
+                                Log.logSuccess("Fasting session saved to HealthKit", category: .fasting)
+                                completion(true, nil)
+                            } else {
+                                Log.logFailure("Workout builder finish", category: .fasting, error: error)
+                                completion(false, error)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// Deletes a fasting session from HealthKit
+    func deleteFastingSession(_ session: FastingSession, completion: @escaping (Bool, Error?) -> Void) {
+        guard let endTime = session.endTime else {
+            Log.warning("Cannot delete fasting session without end time", category: .fasting)
+            completion(false, nil)
+            return
+        }
+
+        Log.info("Deleting fasting session from HealthKit", category: .fasting)
+
+        let workoutType = HKObjectType.workoutType()
+        let predicate = HKQuery.predicateForSamples(withStart: session.startTime, end: endTime, options: .strictStartDate)
+
+        let query = HKSampleQuery(
+            sampleType: workoutType,
+            predicate: predicate,
+            limit: HKObjectQueryNoLimit,
+            sortDescriptors: nil
+        ) { [weak self] _, samples, error in
+            if let error = error {
+                Log.error("Fasting session query error", category: .healthkit, error: error)
+                DispatchQueue.main.async {
+                    completion(false, error)
+                }
+                return
+            }
+
+            // Filter for Fast LIFe workouts only
+            guard let workouts = samples as? [HKWorkout],
+                  let fastingWorkout = workouts.first(where: { workout in
+                      workout.metadata?[HKMetadataKeyWorkoutBrandName] as? String == "Fast LIFe"
+                  }) else {
+                Log.warning("No matching fasting workout found in HealthKit", category: .fasting)
+                DispatchQueue.main.async {
+                    completion(false, nil)
+                }
+                return
+            }
+
+            Log.debug("Found matching fasting workout, deleting", category: .fasting)
+            self?.healthStore.delete(fastingWorkout) { success, error in
+                DispatchQueue.main.async {
+                    if success {
+                        Log.logSuccess("Fasting session deleted from HealthKit", category: .fasting)
+                    } else {
+                        Log.logFailure("Fasting session deletion", category: .fasting, error: error)
+                    }
+                    completion(success, error)
+                }
+            }
+        }
+
+        healthStore.execute(query)
+    }
+
+    /// Fetches all fasting sessions (workouts marked as Fast LIFe) from HealthKit
+    func fetchFastingData(startDate: Date, completion: @escaping ([FastingSession]) -> Void) {
+        let workoutType = HKObjectType.workoutType()
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: Date(), options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        let query = HKSampleQuery(
+            sampleType: workoutType,
+            predicate: predicate,
+            limit: HKObjectQueryNoLimit,
+            sortDescriptors: [sortDescriptor]
+        ) { _, samples, error in
+            guard let workouts = samples as? [HKWorkout], error == nil else {
+                DispatchQueue.main.async {
+                    completion([])
+                }
+                return
+            }
+
+            // Filter for Fast LIFe fasting workouts only
+            let fastingSessions = workouts.compactMap { workout -> FastingSession? in
+                // Only return workouts created by Fast LIFe (identified by metadata brand name)
+                guard workout.metadata?[HKMetadataKeyWorkoutBrandName] as? String == "Fast LIFe" else {
+                    return nil
+                }
+
+                // Extract optional metadata (goal hours and eating window)
+                let goalHours = workout.metadata?["FastingGoal"] as? Double
+                let eatingWindow = workout.metadata?["EatingWindowDuration"] as? TimeInterval
+
+                // FastingSession calculates duration automatically from startDate/endDate
+                // No need to read FastingDuration from metadata since it's a computed property
+                return FastingSession(
+                    startTime: workout.startDate,
+                    endTime: workout.endDate,
+                    goalHours: goalHours,
+                    eatingWindowDuration: eatingWindow
+                )
+            }
+
+            DispatchQueue.main.async {
+                completion(fastingSessions)
+            }
+        }
+
+        healthStore.execute(query)
     }
 }
