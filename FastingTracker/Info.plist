@@ -54,9 +54,5 @@
 	<string>Fast LIFe needs access to read your health data (fasting sessions, weight, BMI, body fat, water intake, and sleep) from Apple Health to help you track your fasting progress and overall wellness.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Fast LIFe needs permission to save your health data (fasting sessions, weight, BMI, body fat, water intake, and sleep) to Apple Health so your progress is synced across all your devices and health apps. Fasting sessions are saved as workouts.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>processing</string>
-	</array>
 </dict>
 </plist>

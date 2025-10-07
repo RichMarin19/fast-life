@@ -76,37 +76,48 @@ Following [Apple Swift Safety Guidelines](https://docs.swift.org/swift-book/Lang
 
 ## 🚨 **CRITICAL BLOCKERS - MUST COMPLETE BEFORE BETA**
 
-### **IMMEDIATE FIXES (Blockers) - 5 REMAINING**
+### **IMMEDIATE FIXES (Blockers) - 3 REMAINING**
 
-#### **3. HealthKit HKAnchoredObjectQuery Implementation** ❌
-**Issue**: Current code lacks anchored fetches - risk of duplicates/drift
-**Reference**: [Apple HealthKit HKAnchoredObjectQuery](https://developer.apple.com/documentation/healthkit/hkanchoredobjectquery)
+#### **3. HealthKit HKAnchoredObjectQuery Implementation - COMPLETE** ✅
+**Status**: All HealthKit sync operations now use HKAnchoredObjectQuery
+**Implementation Date**: October 7, 2025 (during sync status tracking work)
 
-**Required Implementation:**
+**Architecture Implemented:**
+- **Centralized Design**: All managers use `HealthKitManager.shared` methods
+- **WeightManager**: Uses `HealthKitManager.shared.fetchWeightData()` → HKAnchoredObjectQuery ✓
+- **HydrationManager**: Uses `HealthKitManager.shared.fetchWaterData()` → HKAnchoredObjectQuery ✓
+- **SleepManager**: Uses `HealthKitManager.shared.fetchSleepData()` → HKAnchoredObjectQuery ✓
+- **FastingManager**: Uses `HealthKitManager.shared.fetchFastingData()` → HKAnchoredObjectQuery ✓
+
+**Technical Implementation:**
 ```swift
-// Need to implement per type: weight, dietaryWater, sleep
+// Implemented in HealthKitManager.swift with proper anchor persistence
 let query = HKAnchoredObjectQuery(
-    type: weightType,
+    type: dataType,
     predicate: predicate,
-    anchor: persistedAnchor, // Must persist this
+    anchor: savedAnchor, // Persisted with NSKeyedArchiver
     limit: HKObjectQueryNoLimit
 )
 ```
 
-**Files to Update:**
-- WeightManager.swift
-- HydrationManager.swift
-- SleepManager.swift
+**Result**: Prevents HealthKit sync reliability issues and duplicate data problems
 
-**Critical**: Prevents HealthKit sync reliability issues
+#### **4. Info.plist Background Modes Cleanup - COMPLETE** ✅
+**Implementation Date**: October 7, 2025
+**Action Taken**: Removed unnecessary UIBackgroundModes 'processing' from Info.plist
 
-#### **4. Info.plist Background Modes Cleanup** ❌
-**Issue**: Remove UIBackgroundModes 'processing' unless required
-**Reference**: [Apple Background App Refresh](https://developer.apple.com/documentation/uikit/app_and_environment/scenes/preparing_your_ui_to_run_in_the_background)
+**Analysis Results:**
+- ✅ **No background processing code found** in codebase
+- ✅ **No BGTaskScheduler usage** - background modes not needed
+- ✅ **HealthKit background delivery** works without 'processing' mode
+- ✅ **Reduced App Store review risk** by removing unnecessary permission
 
-**Why Critical**: Reduces App Store review risk - HealthKit background delivery doesn't need it
+**Technical Details:**
+- Removed lines 57-60 from Info.plist: UIBackgroundModes array with 'processing'
+- App still supports HealthKit background delivery via `enableBackgroundDelivery()`
+- Cleaner permission profile following Apple best practices
 
-**Action**: Review Info.plist and remove unnecessary background modes
+**Result**: Reduced App Store review risk and unnecessary background permissions
 
 #### **5. Crash Reporting Integration** ❌
 **Issue**: No production crash visibility
