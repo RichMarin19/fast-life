@@ -122,7 +122,10 @@ class SleepManager: ObservableObject {
         guard syncWithHealthKit else { return }
 
         // Default to fetching last 30 days if no start date provided
-        let start = startDate ?? Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+        guard let start = startDate ?? Calendar.current.date(byAdding: .day, value: -30, to: Date()) else {
+            AppLogger.logSafetyWarning("Failed to calculate 30 days ago date for HealthKit sync")
+            return // Cannot sync without valid start date
+        }
 
         HealthKitManager.shared.fetchSleepData(startDate: start) { [weak self] healthKitEntries in
             guard let self = self else { return }
@@ -246,7 +249,10 @@ class SleepManager: ObservableObject {
         guard !sleepEntries.isEmpty else { return nil }
 
         let calendar = Calendar.current
-        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date())!
+        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date()) else {
+            AppLogger.logSafetyWarning("Failed to calculate 7 days ago date for average sleep")
+            return nil
+        }
 
         let recentEntries = sleepEntries.filter { $0.wakeTime >= sevenDaysAgo }
         guard !recentEntries.isEmpty else { return nil }
@@ -259,8 +265,11 @@ class SleepManager: ObservableObject {
     var sleepTrend: Double? {
         let calendar = Calendar.current
         let today = Date()
-        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today)!
-        let fourteenDaysAgo = calendar.date(byAdding: .day, value: -14, to: today)!
+        guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today),
+              let fourteenDaysAgo = calendar.date(byAdding: .day, value: -14, to: today) else {
+            AppLogger.logSafetyWarning("Failed to calculate date range for sleep trend")
+            return nil
+        }
 
         let recentEntries = sleepEntries.filter { $0.wakeTime >= sevenDaysAgo && $0.wakeTime <= today }
         let olderEntries = sleepEntries.filter { $0.wakeTime >= fourteenDaysAgo && $0.wakeTime < sevenDaysAgo }
@@ -281,7 +290,10 @@ class SleepManager: ObservableObject {
     /// Last night's sleep (most recent entry within last 24 hours)
     var lastNightSleep: SleepEntry? {
         let calendar = Calendar.current
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: Date())!
+        guard let yesterday = calendar.date(byAdding: .day, value: -1, to: Date()) else {
+            AppLogger.logSafetyWarning("Failed to calculate yesterday date for last night sleep")
+            return nil
+        }
 
         return sleepEntries.first(where: { $0.wakeTime >= yesterday })
     }
