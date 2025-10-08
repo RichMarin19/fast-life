@@ -10,7 +10,7 @@ class FastingManager: ObservableObject {
     @Published var longestStreak: Int = 0
 
     private var timer: AnyCancellable?
-    private let userDefaults = UserDefaults.standard
+    private let dataStore: DataStore = AppDataStore.shared
     private let currentSessionKey = "currentFastingSession"
     private let historyKey = "fastingHistory"
     private let goalKey = "fastingGoalHours"
@@ -293,36 +293,44 @@ class FastingManager: ObservableObject {
 
     func saveCurrentSession() {
         guard let session = currentSession else { return }
-        if let encoded = try? JSONEncoder().encode(session) {
-            userDefaults.set(encoded, forKey: currentSessionKey)
+        let success = dataStore.safeSave(session, forKey: currentSessionKey)
+        if !success {
+            CrashReportManager.shared.recordFastingError(
+                NSError(domain: "Persistence", code: 1001, userInfo: [NSLocalizedDescriptionKey: "Failed to save current session"]),
+                context: ["operation": "saveCurrentSession"]
+            )
         }
     }
 
     private func loadCurrentSession() {
-        guard let data = userDefaults.data(forKey: currentSessionKey),
-              let session = try? JSONDecoder().decode(FastingSession.self, from: data) else {
-            return
-        }
-        currentSession = session
+        currentSession = dataStore.safeLoad(FastingSession.self, forKey: currentSessionKey)
     }
 
     private func clearCurrentSession() {
-        userDefaults.removeObject(forKey: currentSessionKey)
+        let success = dataStore.safeRemove(forKey: currentSessionKey)
+        if !success {
+            CrashReportManager.shared.recordFastingError(
+                NSError(domain: "Persistence", code: 1002, userInfo: [NSLocalizedDescriptionKey: "Failed to clear current session"]),
+                context: ["operation": "clearCurrentSession"]
+            )
+        }
     }
 
     private func saveHistory() {
-        if let encoded = try? JSONEncoder().encode(fastingHistory) {
-            userDefaults.set(encoded, forKey: historyKey)
+        let success = dataStore.safeSave(fastingHistory, forKey: historyKey)
+        if !success {
+            CrashReportManager.shared.recordFastingError(
+                NSError(domain: "Persistence", code: 1004, userInfo: [NSLocalizedDescriptionKey: "Failed to save fasting history"]),
+                context: ["operation": "saveHistory", "count": fastingHistory.count]
+            )
         }
     }
 
     private func loadHistory() {
-        guard let data = userDefaults.data(forKey: historyKey),
-              let history = try? JSONDecoder().decode([FastingSession].self, from: data) else {
-            return
+        if let history = dataStore.safeLoad([FastingSession].self, forKey: historyKey) {
+            // Filter out any incomplete sessions from history (safety check)
+            fastingHistory = history.filter { $0.isComplete }.sorted { $0.startTime > $1.startTime }
         }
-        // Filter out any incomplete sessions from history (safety check)
-        fastingHistory = history.filter { $0.isComplete }.sorted { $0.startTime > $1.startTime }
     }
 
     /// Loads fasting history asynchronously on background thread
@@ -340,8 +348,7 @@ class FastingManager: ObservableObject {
             print("📍 Loading history on historyQueue")
 
             // Load and decode history on background thread
-            guard let data = self.userDefaults.data(forKey: self.historyKey),
-                  let history = try? JSONDecoder().decode([FastingSession].self, from: data) else {
+            guard let history = self.dataStore.safeLoad([FastingSession].self, forKey: self.historyKey) else {
                 print("⚠️  No history found or decode failed")
                 return
             }
@@ -364,12 +371,17 @@ class FastingManager: ObservableObject {
 
     func setFastingGoal(hours: Double) {
         fastingGoalHours = hours
-        userDefaults.set(hours, forKey: goalKey)
+        let success = dataStore.safeSave(hours, forKey: goalKey)
+        if !success {
+            CrashReportManager.shared.recordFastingError(
+                NSError(domain: "Persistence", code: 1005, userInfo: [NSLocalizedDescriptionKey: "Failed to save fasting goal"]),
+                context: ["operation": "setGoal", "hours": hours]
+            )
+        }
     }
 
     private func loadGoal() {
-        let savedGoal = userDefaults.double(forKey: goalKey)
-        if savedGoal > 0 {
+        if let savedGoal = dataStore.safeLoad(Double.self, forKey: goalKey), savedGoal > 0 {
             fastingGoalHours = savedGoal
         }
     }
@@ -515,18 +527,30 @@ class FastingManager: ObservableObject {
     }
 
     private func saveStreak() {
-        userDefaults.set(currentStreak, forKey: streakKey)
+        let success = dataStore.safeSave(currentStreak, forKey: streakKey)
+        if !success {
+            CrashReportManager.shared.recordFastingError(
+                NSError(domain: "Persistence", code: 1006, userInfo: [NSLocalizedDescriptionKey: "Failed to save current streak"]),
+                context: ["operation": "saveStreak", "streak": currentStreak]
+            )
+        }
     }
 
     private func loadStreak() {
-        currentStreak = userDefaults.integer(forKey: streakKey)
+        currentStreak = dataStore.safeLoad(Int.self, forKey: streakKey) ?? 0
     }
 
     private func saveLongestStreak() {
-        userDefaults.set(longestStreak, forKey: longestStreakKey)
+        let success = dataStore.safeSave(longestStreak, forKey: longestStreakKey)
+        if !success {
+            CrashReportManager.shared.recordFastingError(
+                NSError(domain: "Persistence", code: 1007, userInfo: [NSLocalizedDescriptionKey: "Failed to save longest streak"]),
+                context: ["operation": "saveLongestStreak", "streak": longestStreak]
+            )
+        }
     }
 
     private func loadLongestStreak() {
-        longestStreak = userDefaults.integer(forKey: longestStreakKey)
+        longestStreak = dataStore.safeLoad(Int.self, forKey: longestStreakKey) ?? 0
     }
 }

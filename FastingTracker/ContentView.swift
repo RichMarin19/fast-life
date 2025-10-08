@@ -2,12 +2,15 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject var fastingManager: FastingManager
+    @StateObject private var nudgeManager = HealthKitNudgeManager.shared
     @State private var showingGoalSettings = false
     @State private var showingStopConfirmation = false
     @State private var showingDeleteConfirmation = false
     @State private var showingEditTimes = false
     @State private var showingEditStartTime = false
     @State private var selectedStage: FastingStage?
+    @State private var showHealthKitNudge = false
+    @State private var showingSyncOptions = false
 
     @State private var selectedDate: Date?
 
@@ -31,8 +34,32 @@ struct ContentView: View {
                         .foregroundColor(.cyan)
                 }
 
+                // HealthKit Nudge for first-time users who skipped onboarding
+                // Following industry standards - main screen contextual permissions
+                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .fasting) {
+                    FastingHealthKitNudgeView(
+                        onConnect: {
+                            // Show sync options modal instead of direct authorization
+                            // Matching onboarding pattern with historical vs future sync choice
+                            showingSyncOptions = true
+                        },
+                        onDismiss: {
+                            // Temporary dismiss - will show again in 5 visits
+                            nudgeManager.dismissNudge(for: .fasting)
+                            showHealthKitNudge = false
+                        },
+                        onPermanentDismiss: {
+                            // Permanent dismiss - never show again
+                            nudgeManager.permanentlyDismissTimerNudge()
+                            showHealthKitNudge = false
+                        }
+                    )
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
+
                 Spacer()
-                    .frame(height: 50)
+                    .frame(height: showHealthKitNudge && nudgeManager.shouldShowNudge(for: .fasting) ? 20 : 50)
 
                 // Progress Ring with Educational Stage Icons
                 ZStack {
@@ -319,6 +346,13 @@ struct ContentView: View {
                 if fastingManager.fastingGoalHours == 0 {
                     showingGoalSettings = true
                 }
+
+                // Show HealthKit nudge for first-time users who skipped onboarding
+                // Following Lose It pattern - contextual reminder on main screen
+                showHealthKitNudge = nudgeManager.shouldShowNudge(for: .fasting)
+                if showHealthKitNudge {
+                    print("📱 ContentView: Showing HealthKit nudge for first-time user")
+                }
             }
             .sheet(isPresented: $showingGoalSettings) {
                 GoalSettingsView()
@@ -351,6 +385,35 @@ struct ContentView: View {
                     }
                 )
                 .presentationDetents([.height(400)])
+            }
+            .sheet(isPresented: $showingSyncOptions) {
+                FastingSyncOptionsView(
+                    onSyncAll: {
+                        // CRITICAL: Dismiss modal FIRST, then request authorization after delay
+                        // Apple's HealthKit dialog can't present while another modal is open
+                        showingSyncOptions = false
+                        showHealthKitNudge = false
+
+                        // Small delay to ensure modal is fully dismissed before authorization
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            syncAllFastingData()
+                        }
+                    },
+                    onSyncFuture: {
+                        // CRITICAL: Dismiss modal FIRST, then request authorization after delay
+                        showingSyncOptions = false
+                        showHealthKitNudge = false
+
+                        // Small delay to ensure modal is fully dismissed before authorization
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            syncFutureFastingData()
+                        }
+                    },
+                    onCancel: {
+                        showingSyncOptions = false
+                    }
+                )
+                .presentationDetents([.height(350)])
             }
             .alert("Are you sure?", isPresented: $showingDeleteConfirmation) {
                 Button("Yes", role: .destructive) {
@@ -471,6 +534,72 @@ struct ContentView: View {
             return Color(red: 0.4, green: 0.9, blue: 0.4)
         } else {
             return Color(red: 0.3, green: 0.85, blue: 0.3)
+        }
+    }
+
+    // MARK: - HealthKit Sync Methods
+
+    /// Sync all historical fasting data with HealthKit
+    /// Following same pattern as AdvancedView.swift comprehensive sync
+    private func syncAllFastingData() {
+        print("📱 ContentView: Starting sync all fasting data from nudge")
+        print("📱 About to request fasting authorization...")
+
+        HealthKitManager.shared.requestFastingAuthorization { success, error in
+            DispatchQueue.main.async {
+                if success {
+                    print("✅ ContentView: Fasting authorization granted - syncing all historical data")
+
+                    // IMPORTANT: Auto-dismiss nudge when user enables HealthKit
+                    // Following Apple HIG - don't continue showing permission requests after granted
+                    nudgeManager.handleAuthorizationGranted(for: .fasting)
+
+                    // Sync all completed fasting sessions to HealthKit
+                    let completedSessions = fastingManager.fastingHistory.filter { $0.isComplete }
+                    print("📊 Found \(completedSessions.count) completed sessions to sync")
+
+                    if !completedSessions.isEmpty {
+                        // Export sessions to HealthKit (same as AdvancedView logic)
+                        for session in completedSessions {
+                            HealthKitManager.shared.saveFastingSession(session) { success, error in
+                                if success {
+                                    print("✅ Synced session: \(session.startTime)")
+                                } else {
+                                    print("❌ Failed to sync session: \(error?.localizedDescription ?? "Unknown error")")
+                                }
+                            }
+                        }
+                        // Update sync timestamp
+                        HealthKitManager.shared.updateFastingSyncStatus(success: true)
+                    }
+                } else {
+                    print("❌ ContentView: Fasting authorization denied from nudge")
+                }
+            }
+        }
+    }
+
+    /// Sync future fasting data only with HealthKit
+    /// Following same pattern as onboarding "Sync Future Data Only"
+    private func syncFutureFastingData() {
+        print("📱 ContentView: Starting sync future fasting data from nudge")
+
+        HealthKitManager.shared.requestFastingAuthorization { success, error in
+            DispatchQueue.main.async {
+                if success {
+                    print("✅ ContentView: Fasting authorization granted - syncing future data only")
+
+                    // IMPORTANT: Auto-dismiss nudge when user enables HealthKit
+                    // Following Apple HIG - don't continue showing permission requests after granted
+                    nudgeManager.handleAuthorizationGranted(for: .fasting)
+
+                    // Just enable sync for future sessions, don't export historical data
+                    // Update sync timestamp to mark sync as enabled
+                    HealthKitManager.shared.updateFastingSyncStatus(success: true)
+                } else {
+                    print("❌ ContentView: Fasting authorization denied from nudge")
+                }
+            }
         }
     }
 }
@@ -1319,6 +1448,185 @@ struct EditStartTimeView: View {
         } else {
             formatter.dateFormat = "MMM d, h:mm a"
             return formatter.string(from: date)
+        }
+    }
+}
+
+
+// MARK: - Fasting Sync Options View
+
+/// Sync options modal for fasting HealthKit integration
+/// Matching onboarding pattern with historical vs future sync choice
+/// Following Apple HIG and industry standards (MyFitnessPal, Lose It)
+struct FastingSyncOptionsView: View {
+    let onSyncAll: () -> Void
+    let onSyncFuture: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 30) {
+                Spacer()
+                    .frame(height: 20)
+
+                // Header
+                VStack(spacing: 16) {
+                    Image(systemName: "heart.fill")
+                        .font(.system(size: 60))
+                        .foregroundColor(.red)
+
+                    Text("Sync Fasting Data")
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .multilineTextAlignment(.center)
+
+                    Text("Choose how you'd like to sync your fasting sessions with Apple Health")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal)
+                }
+
+                Spacer()
+
+                // Sync Options
+                VStack(spacing: 15) {
+                    Button(action: onSyncAll) {
+                        VStack(spacing: 8) {
+                            Text("Sync All Data")
+                                .font(.headline)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text("Import all fasting sessions from your history")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 12)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(15)
+                    }
+
+                    Button(action: onSyncFuture) {
+                        VStack(spacing: 8) {
+                            Text("Sync Future Data Only")
+                                .font(.headline)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
+                            Text("Only sync new fasting sessions going forward")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .lineLimit(2)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .padding(.horizontal, 12)
+                        .background(Color.cyan)
+                        .foregroundColor(.white)
+                        .cornerRadius(15)
+                    }
+                }
+                .padding(.horizontal, 30)
+
+                Spacer()
+            }
+            .navigationTitle("HealthKit Sync")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        onCancel()
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+// MARK: - Fasting HealthKit Nudge View
+
+/// Specialized nudge for fasting with smart persistence
+/// Offers both temporary dismiss (show again in 5 visits) and permanent dismiss
+/// Following industry standards: Strava, MyFitnessPal persistence patterns
+struct FastingHealthKitNudgeView: View {
+    let onConnect: () -> Void
+    let onDismiss: () -> Void
+    let onPermanentDismiss: () -> Void
+
+    @State private var showingDismissOptions = false
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(spacing: 12) {
+                // Icon
+                Image(systemName: "heart.fill")
+                    .font(.title3)
+                    .foregroundColor(.red)
+
+                // Content
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Sync with Apple Health")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+
+                    Text("Export your fasting progress automatically")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .lineLimit(nil)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+
+                // Action buttons
+                HStack(spacing: 8) {
+                    Button("Connect") {
+                        onConnect()
+                    }
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(20)
+
+                    Button(action: {
+                        showingDismissOptions = true
+                    }) {
+                        Image(systemName: "xmark")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .frame(width: 24, height: 24)
+                }
+            }
+        }
+        .padding(16)
+        .background(Color(.systemBackground))
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(Color(.systemGray4), lineWidth: 1)
+        )
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+        .confirmationDialog("Dismiss Options", isPresented: $showingDismissOptions, titleVisibility: .visible) {
+            Button("Remind me later") {
+                onDismiss()
+            }
+            Button("Don't show again", role: .destructive) {
+                onPermanentDismiss()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("You can choose to be reminded again in a few visits, or stop seeing this reminder completely.")
         }
     }
 }

@@ -124,6 +124,12 @@ class WeightManager: ObservableObject {
                         self.setupHealthKitObserver()
                     } else {
                         Log.logFailure("Weight authorization", category: .weight, error: error)
+                        // Record authorization failure for production debugging
+                        if let error = error {
+                            CrashReportManager.shared.recordWeightError(error, context: [
+                                "operation": "requestWeightAuthorization"
+                            ])
+                        }
                     }
                 }
             } else {

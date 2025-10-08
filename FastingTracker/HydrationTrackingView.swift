@@ -2,15 +2,53 @@ import SwiftUI
 
 struct HydrationTrackingView: View {
     @StateObject private var hydrationManager = HydrationManager()
+    @StateObject private var nudgeManager = HealthKitNudgeManager.shared
     @State private var showingGoalSettings = false
     @State private var showingDrinkPicker = false
     @State private var selectedDrinkType: DrinkType = .water
+    @State private var showHealthKitNudge = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 30) {
                 Spacer()
                     .frame(height: 20)
+
+                // HealthKit Nudge for first-time users who skipped onboarding
+                // Following Lose It app pattern - contextual banner with single Connect action
+                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .hydration) {
+                    HealthKitNudgeView(
+                        dataType: .hydration,
+                        onConnect: {
+                            // DIRECT AUTHORIZATION: Same pattern as existing hydration sync
+                            // Request hydration permissions immediately when user wants to connect
+                            print("📱 HydrationTrackingView: HealthKit nudge - requesting hydration authorization")
+                            HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                                DispatchQueue.main.async {
+                                    if success {
+                                        print("✅ HydrationTrackingView: Hydration authorization granted from nudge")
+                                        // Enable sync automatically when granted from nudge
+                                        // Note: HydrationManager doesn't have enableSync() method yet
+                                        // For now, we'll just hide the nudge
+                                        showHealthKitNudge = false
+                                    } else {
+                                        print("❌ HydrationTrackingView: Hydration authorization denied from nudge")
+                                        // Still hide nudge if user denied (don't keep asking)
+                                        nudgeManager.dismissNudge(for: .hydration)
+                                        showHealthKitNudge = false
+                                    }
+                                }
+                            }
+                        },
+                        onDismiss: {
+                            // Mark nudge as dismissed - won't show again
+                            nudgeManager.dismissNudge(for: .hydration)
+                            showHealthKitNudge = false
+                        }
+                    )
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
 
                 // Progress Ring (Multi-colored by drink type)
                 ZStack {
@@ -170,8 +208,38 @@ struct HydrationTrackingView: View {
             if hydrationManager.dailyGoalOunces == 0 {
                 showingGoalSettings = true
             }
+
+            // Show HealthKit nudge for first-time users who skipped onboarding
+            // Following Lose It pattern - contextual reminder on first tracker access
+            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .hydration)
+            if showHealthKitNudge {
+                print("📱 HydrationTrackingView: Showing HealthKit nudge for first-time user")
+            }
         }
         .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    // DIRECT AUTHORIZATION: Unified experience - same pattern as WeightTrackingView
+                    // Request hydration permissions immediately when user wants to sync
+                    print("📱 HydrationTrackingView: Requesting hydration authorization directly")
+                    HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                        DispatchQueue.main.async {
+                            if success {
+                                print("✅ HydrationTrackingView: Hydration authorization granted - enabling sync")
+                                // Sync existing data to HealthKit
+                                hydrationManager.syncToHealthKit()
+                            } else {
+                                print("❌ HydrationTrackingView: Hydration authorization denied")
+                            }
+                        }
+                    }
+                }) {
+                    Label("Sync with Apple Health", systemImage: "heart.fill")
+                        .font(.caption)
+                        .foregroundColor(.cyan)
+                }
+            }
+
             ToolbarItem(placement: .navigationBarTrailing) {
                 NavigationLink(destination: HydrationHistoryView(hydrationManager: hydrationManager)) {
                     Image(systemName: "chart.bar.fill")

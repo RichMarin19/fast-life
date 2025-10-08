@@ -7,6 +7,20 @@ struct FastLifeApp: App {
     @State private var shouldResetToOnboarding = false  // Trigger full app reset
     @State private var isOnboardingComplete: Bool = UserDefaults.standard.bool(forKey: "onboardingCompleted")
 
+    init() {
+        // Initialize crash reporting system for production monitoring
+        // Following Firebase Crashlytics setup guide for iOS
+        // Reference: https://firebase.google.com/docs/crashlytics/get-started?platform=ios
+        CrashReportManager.shared.initialize()
+
+        // Set anonymous user context for crash reports (privacy-compliant)
+        let anonymousUserID = UIDevice.current.identifierForVendor?.uuidString ?? "unknown"
+        CrashReportManager.shared.setUserIdentifier(anonymousUserID)
+
+        // Log app launch for production debugging
+        CrashReportManager.shared.logCustomMessage("App launched successfully", level: .info)
+    }
+
     var body: some Scene {
         WindowGroup {
             if isOnboardingComplete && !shouldResetToOnboarding {

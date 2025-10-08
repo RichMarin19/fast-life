@@ -2,8 +2,11 @@ import SwiftUI
 
 struct SleepTrackingView: View {
     @StateObject private var sleepManager = SleepManager()
+    @StateObject private var nudgeManager = HealthKitNudgeManager.shared
     @State private var showingAddSleep = false
     @State private var showingSyncSettings = false
+    @State private var showHealthKitNudge = false
+    // Removed: @State private var showingHealthDataSelection - unified direct authorization
 
     // Recommended sleep hours (CDC recommendation for adults)
     private let recommendedSleep: Double = 7.0
@@ -13,6 +16,42 @@ struct SleepTrackingView: View {
             VStack(spacing: 30) {
                 Spacer()
                     .frame(height: 20)
+
+                // HealthKit Nudge for first-time users who skipped onboarding
+                // Following Lose It app pattern - contextual banner with single Connect action
+                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .sleep) {
+                    HealthKitNudgeView(
+                        dataType: .sleep,
+                        onConnect: {
+                            // DIRECT AUTHORIZATION: Same pattern as existing sleep sync
+                            // Request sleep permissions immediately when user wants to connect
+                            print("📱 SleepTrackingView: HealthKit nudge - requesting sleep authorization")
+                            HealthKitManager.shared.requestSleepAuthorization { success, error in
+                                DispatchQueue.main.async {
+                                    if success {
+                                        print("✅ SleepTrackingView: Sleep authorization granted from nudge")
+                                        // Enable sync automatically when granted from nudge
+                                        sleepManager.setSyncPreference(true)
+                                        // Hide nudge after successful connection
+                                        showHealthKitNudge = false
+                                    } else {
+                                        print("❌ SleepTrackingView: Sleep authorization denied from nudge")
+                                        // Still hide nudge if user denied (don't keep asking)
+                                        nudgeManager.dismissNudge(for: .sleep)
+                                        showHealthKitNudge = false
+                                    }
+                                }
+                            }
+                        },
+                        onDismiss: {
+                            // Mark nudge as dismissed - won't show again
+                            nudgeManager.dismissNudge(for: .sleep)
+                            showHealthKitNudge = false
+                        }
+                    )
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+                }
 
                 // Sleep Progress Ring
                 ZStack {
@@ -148,6 +187,14 @@ struct SleepTrackingView: View {
         }
         .navigationTitle("Sleep Tracker")
         .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            // Show HealthKit nudge for first-time users who skipped onboarding
+            // Following Lose It pattern - contextual reminder on first tracker access
+            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .sleep)
+            if showHealthKitNudge {
+                print("📱 SleepTrackingView: Showing HealthKit nudge for first-time user")
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
@@ -301,6 +348,7 @@ struct SleepSyncSettingsView: View {
     @ObservedObject var sleepManager: SleepManager
     @Environment(\.dismiss) var dismiss
     @State private var showingSyncConfirmation = false
+    // Removed: @State private var showingHealthDataSelection - unified direct authorization
 
     var body: some View {
         NavigationView {
@@ -309,20 +357,24 @@ struct SleepSyncSettingsView: View {
                     Toggle("Sync with HealthKit", isOn: Binding(
                         get: { sleepManager.syncWithHealthKit },
                         set: { newValue in
-                            if newValue && !HealthKitManager.shared.isSleepAuthorized() {
-                                // BLOCKER 5 FIX: Request SLEEP authorization only (granular)
-                                // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-                                print("📱 SleepTrackingView: Requesting SLEEP authorization (granular)...")
+                            if newValue {
+                                // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
+                                // Request sleep permissions immediately when user enables sleep sync
+                                // UNIFIED EXPERIENCE: Same pattern as WeightTrackingView
+                                print("📱 SleepTrackingView: Requesting sleep authorization directly")
                                 HealthKitManager.shared.requestSleepAuthorization { success, error in
-                                    if success {
-                                        print("✅ SleepTrackingView: Sleep authorization granted")
-                                        sleepManager.setSyncPreference(true)
-                                    } else {
-                                        print("❌ SleepTrackingView: Sleep authorization denied")
+                                    DispatchQueue.main.async {
+                                        if success {
+                                            print("✅ SleepTrackingView: Sleep authorization granted - enabling sync")
+                                            sleepManager.setSyncPreference(true)
+                                        } else {
+                                            print("❌ SleepTrackingView: Sleep authorization denied")
+                                            sleepManager.setSyncPreference(false)
+                                        }
                                     }
                                 }
                             } else {
-                                sleepManager.setSyncPreference(newValue)
+                                sleepManager.setSyncPreference(false)
                             }
                         }
                     ))
@@ -371,8 +423,11 @@ struct SleepSyncSettingsView: View {
             } message: {
                 Text("This will import sleep data from Apple Health for the last 30 days.")
             }
+            // Removed: HealthDataSelectionView sheet - unified direct authorization per Apple HIG
         }
     }
+
+    // Removed: handleHealthDataSelection - unified direct authorization pattern
 }
 
 #Preview {

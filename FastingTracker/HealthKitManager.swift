@@ -511,6 +511,11 @@ class HealthKitManager: ObservableObject {
                     AppLogger.error("Error fetching weight data with anchored query", category: AppLogger.healthKit, error: error)
                     // Save error state for UI display
                     self?.saveSyncError(for: SyncErrorKeys.weight, error: error.localizedDescription)
+                    // Record for production crash analysis
+                    CrashReportManager.shared.recordHealthKitError(error, context: [
+                        "operation": "fetchWeightData_anchored",
+                        "startDate": startDate.description
+                    ])
                 }
                 completion([])
                 return
@@ -806,6 +811,11 @@ class HealthKitManager: ObservableObject {
                 if let error = error {
                     AppLogger.error("Error fetching water data with anchored query", category: AppLogger.healthKit, error: error)
                     self?.saveSyncError(for: SyncErrorKeys.water, error: error.localizedDescription)
+                    // Record for production crash analysis
+                    CrashReportManager.shared.recordHealthKitError(error, context: [
+                        "operation": "fetchWaterData_anchored",
+                        "startDate": startDate.description
+                    ])
                 }
                 completion([])
                 return
@@ -988,6 +998,13 @@ class HealthKitManager: ObservableObject {
     func fetchSleepData(startDate: Date, completion: @escaping ([SleepEntry]) -> Void) {
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
             AppLogger.error("Failed to create sleep analysis type", category: AppLogger.healthKit)
+            // Record critical HealthKit setup failure
+            let error = NSError(domain: "HealthKit", code: 1001, userInfo: [
+                NSLocalizedDescriptionKey: "Failed to create sleep analysis type"
+            ])
+            CrashReportManager.shared.recordHealthKitError(error, context: [
+                "operation": "createSleepAnalysisType"
+            ])
             completion([])
             return
         }

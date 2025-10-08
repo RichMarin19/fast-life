@@ -4,14 +4,17 @@ import Charts
 struct WeightTrackingView: View {
     @StateObject private var weightManager = WeightManager()
     @StateObject private var healthKitManager = HealthKitManager.shared
+    @StateObject private var nudgeManager = HealthKitNudgeManager.shared
     @State private var showingAddWeight = false
     @State private var showingSettings = false
     @State private var showingFirstTimeSetup = false
     @State private var showingGoalEditor = false  // Quick access goal editor
     @State private var showingTrends = false  // Weight trends detail view
+    // Removed: @State private var showingHealthDataSelection - no longer needed with direct authorization
     @State private var selectedTimeRange: WeightTimeRange = .month
     @State private var showGoalLine = false
     @State private var weightGoal: Double = 180.0
+    @State private var showHealthKitNudge = false
 
     // UserDefaults keys for persistence
     private let showGoalLineKey = "showGoalLine"
@@ -35,6 +38,42 @@ struct WeightTrackingView: View {
                             .font(.system(size: 48, weight: .bold, design: .rounded))
                             .foregroundColor(.cyan)
                     }
+                }
+
+                // HealthKit Nudge for first-time users who skipped onboarding
+                // Following Lose It app pattern - contextual banner with single Connect action
+                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .weight) {
+                    HealthKitNudgeView(
+                        dataType: .weight,
+                        onConnect: {
+                            // DIRECT AUTHORIZATION: Same pattern as existing weight sync
+                            // Request weight permissions immediately when user wants to connect
+                            print("📱 WeightTrackingView: HealthKit nudge - requesting weight authorization")
+                            HealthKitManager.shared.requestWeightAuthorization { success, error in
+                                DispatchQueue.main.async {
+                                    if success {
+                                        print("✅ WeightTrackingView: Weight authorization granted from nudge")
+                                        // Enable sync automatically when granted from nudge
+                                        weightManager.syncWithHealthKit = true
+                                        // Hide nudge after successful connection
+                                        showHealthKitNudge = false
+                                    } else {
+                                        print("❌ WeightTrackingView: Weight authorization denied from nudge")
+                                        // Still hide nudge if user denied (don't keep asking)
+                                        nudgeManager.dismissNudge(for: .weight)
+                                        showHealthKitNudge = false
+                                    }
+                                }
+                            }
+                        },
+                        onDismiss: {
+                            // Mark nudge as dismissed - won't show again
+                            nudgeManager.dismissNudge(for: .weight)
+                            showHealthKitNudge = false
+                        }
+                    )
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
                 }
 
                 if weightManager.weightEntries.isEmpty {
@@ -100,6 +139,7 @@ struct WeightTrackingView: View {
         .sheet(isPresented: $showingTrends) {
             WeightTrendsView(weightManager: weightManager)
         }
+        // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
         .sheet(isPresented: $showingFirstTimeSetup) {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
@@ -117,20 +157,16 @@ struct WeightTrackingView: View {
                 showingFirstTimeSetup = true
             }
 
-            // BLOCKER 5 FIX: Request WEIGHT authorization only if needed (granular)
-            // Don't auto-sync on every view appearance - user can manually sync
-            // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-            if weightManager.syncWithHealthKit && !healthKitManager.isWeightAuthorized() {
-                print("📱 WeightTrackingView: Auto-requesting WEIGHT authorization (granular)...")
-                healthKitManager.requestWeightAuthorization { success, _ in
-                    if success {
-                        print("✅ WeightTrackingView: Weight authorization granted")
-                    } else {
-                        print("❌ WeightTrackingView: Weight authorization denied")
-                    }
-                    // Authorization requested, user can manually sync if they want
-                }
+            // Show HealthKit nudge for first-time users who skipped onboarding
+            // Following Lose It pattern - contextual reminder on first tracker access
+            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
+            if showHealthKitNudge {
+                print("📱 WeightTrackingView: Showing HealthKit nudge for first-time user")
             }
+
+            // Note: Removed auto-authorization logic - now uses nudge banner pattern like HydrationTrackingView
+            // User must explicitly tap "Connect" in nudge banner to authorize
+            // This follows Lose It app pattern and Apple HIG contextual permission guidelines
         }
         .onChange(of: showGoalLine) { _, _ in
             saveGoalSettings()
@@ -156,6 +192,8 @@ struct WeightTrackingView: View {
         UserDefaults.standard.set(showGoalLine, forKey: showGoalLineKey)
         UserDefaults.standard.set(weightGoal, forKey: weightGoalKey)
     }
+
+    // Removed: handleHealthDataSelection - no longer needed with direct authorization
 }
 
 // MARK: - Empty State View
@@ -164,6 +202,7 @@ struct EmptyWeightStateView: View {
     @Binding var showingAddWeight: Bool
     let healthKitManager: HealthKitManager
     let weightManager: WeightManager
+    // Removed: @State private var showingHealthDataSelection - no longer needed
 
     var body: some View {
         VStack(spacing: 20) {
@@ -193,13 +232,15 @@ struct EmptyWeightStateView: View {
                 }
 
                 Button(action: {
-                    // BLOCKER 5 FIX: Request WEIGHT authorization only (granular)
-                    // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-                    print("📱 WeightTrackingView (EmptyState): Sync button tapped")
-                    healthKitManager.requestWeightAuthorization { success, _ in
+                    // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
+                    // Request weight permissions immediately when user wants to sync weight data
+                    print("📱 WeightTrackingView (EmptyState): Sync button tapped - requesting weight authorization directly")
+                    HealthKitManager.shared.requestWeightAuthorization { success, error in
                         if success {
-                            print("✅ WeightTrackingView (EmptyState): Weight authorization granted → syncing")
-                            weightManager.syncFromHealthKit()
+                            print("✅ WeightTrackingView (EmptyState): Weight authorization granted - starting sync")
+                            DispatchQueue.main.async {
+                                weightManager.syncFromHealthKit()
+                            }
                         } else {
                             print("❌ WeightTrackingView (EmptyState): Weight authorization denied")
                         }
@@ -218,7 +259,10 @@ struct EmptyWeightStateView: View {
         }
         .frame(maxHeight: .infinity)
         .padding(.top, 60)
+        // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
     }
+
+    // Removed: handleHealthDataSelection - no longer needed with direct authorization
 }
 
 // MARK: - Current Weight Card
