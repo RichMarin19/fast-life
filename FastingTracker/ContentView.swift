@@ -21,27 +21,15 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: 30)
 
-                    // Fast LIFe Title
-                HStack(spacing: 0) {
-                    Text("Fast L")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(.blue)
-                    Text("IF")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(.green)
-                    Text("e")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(.cyan)
-                }
-
                 // HealthKit Nudge for first-time users who skipped onboarding
-                // Following industry standards - main screen contextual permissions
+                // Following Apple HIG: Important information at top of screen
+                // Industry standard: Contextual permissions above primary content
                 if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .fasting) {
                     FastingHealthKitNudgeView(
                         onConnect: {
-                            // Show sync options modal instead of direct authorization
-                            // Matching onboarding pattern with historical vs future sync choice
-                            showingSyncOptions = true
+                            // CORRECTED FLOW: Request basic HealthKit authorization first
+                            // Following Apple HIG: "Request permission immediately before you need it"
+                            requestBasicHealthKitAccess()
                         },
                         onDismiss: {
                             // Temporary dismiss - will show again in 5 visits
@@ -56,6 +44,19 @@ struct ContentView: View {
                     )
                     .padding(.horizontal)
                     .padding(.bottom, 8)
+                }
+
+                    // Fast LIFe Title
+                HStack(spacing: 0) {
+                    Text("Fast L")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(.blue)
+                    Text("IF")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                    Text("e")
+                        .font(.system(size: 72, weight: .bold, design: .rounded))
+                        .foregroundColor(.cyan)
                 }
 
                 Spacer()
@@ -207,7 +208,7 @@ struct ContentView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .padding(.bottom, 15)
+                .padding(.bottom, 8)  // Reduced from 15 to 8 - raises button area
 
                 // Buttons
                 if fastingManager.isActive {
@@ -598,6 +599,30 @@ struct ContentView: View {
                     HealthKitManager.shared.updateFastingSyncStatus(success: true)
                 } else {
                     print("❌ ContentView: Fasting authorization denied from nudge")
+                }
+            }
+        }
+    }
+
+    // MARK: - Corrected Authorization Flow
+
+    /// Request basic HealthKit authorization first, then show sync options
+    /// Following Apple HIG: "Request permission immediately before you need it"
+    /// Industry standard: Basic permissions before feature-specific choices
+    private func requestBasicHealthKitAccess() {
+        AppLogger.info("Requesting basic HealthKit authorization before sync options", category: AppLogger.healthKit)
+
+        // Request basic workout write permission (minimum needed for fasting sync)
+        HealthKitManager.shared.requestFastingAuthorization { success, error in
+            DispatchQueue.main.async {
+                if success {
+                    AppLogger.info("Basic HealthKit authorization granted - showing sync options", category: AppLogger.healthKit)
+                    // NOW show sync options after getting basic permission
+                    showingSyncOptions = true
+                } else {
+                    AppLogger.info("Basic HealthKit authorization denied", category: AppLogger.healthKit)
+                    // Show user-friendly message about HealthKit permissions
+                    // Don't show sync options since we don't have basic access
                 }
             }
         }
@@ -1465,12 +1490,12 @@ struct FastingSyncOptionsView: View {
 
     var body: some View {
         NavigationView {
-            VStack(spacing: 30) {
+            VStack(spacing: 40) {  // Increased from 30 to 40 - prevents overlapping
                 Spacer()
-                    .frame(height: 20)
+                    .frame(height: 30)  // Increased from 20 to 30 - more top padding
 
                 // Header
-                VStack(spacing: 16) {
+                VStack(spacing: 20) {  // Increased from 16 to 20 - more header spacing
                     Image(systemName: "heart.fill")
                         .font(.system(size: 60))
                         .foregroundColor(.red)
@@ -1490,7 +1515,7 @@ struct FastingSyncOptionsView: View {
                 Spacer()
 
                 // Sync Options
-                VStack(spacing: 15) {
+                VStack(spacing: 20) {  // Increased from 15 to 20 - prevents button overlapping
                     Button(action: onSyncAll) {
                         VStack(spacing: 8) {
                             Text("Sync All Data")

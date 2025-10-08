@@ -132,26 +132,38 @@ class HealthKitNudgeManager: ObservableObject {
     }
 
     /// Smart persistence logic for Timer tab nudge
-    /// Show every 5 visits until user enables HealthKit or permanently dismisses
+    /// Following Apple HIG: Show immediately like other trackers, but with enhanced dismiss options
+    /// Industry standard: Lose It shows contextual prompts immediately, not after multiple visits
     private func shouldShowTimerNudge() -> Bool {
         // Don't show if permanently dismissed
         if userDefaults.bool(forKey: timerNudgePermanentlyDismissedKey) {
             return false
         }
 
-        // Increment visit count
-        let currentCount = userDefaults.integer(forKey: timerVisitCountKey)
-        let newCount = currentCount + 1
-        userDefaults.set(newCount, forKey: timerVisitCountKey)
+        // Check if user has temporarily dismissed recently
+        let timerDismissed = userDefaults.bool(forKey: nudgeDismissedPrefix + "fasting")
+        if timerDismissed {
+            // Check if enough visits have passed since temporary dismiss
+            let currentCount = userDefaults.integer(forKey: timerVisitCountKey)
+            let newCount = currentCount + 1
+            userDefaults.set(newCount, forKey: timerVisitCountKey)
 
-        // Show every 5th visit
-        let shouldShow = (newCount % visitThreshold) == 0
+            // Show again after 5 visits from temporary dismiss
+            let shouldShow = (newCount % visitThreshold) == 0
 
-        if shouldShow {
-            AppLogger.info("Timer nudge: Showing on visit #\(newCount) (every \(visitThreshold) visits)", category: AppLogger.general)
+            if shouldShow {
+                // Clear temporary dismiss flag - user gets another chance
+                userDefaults.removeObject(forKey: nudgeDismissedPrefix + "fasting")
+                AppLogger.info("Timer nudge: Re-showing after \(visitThreshold) visits from temporary dismiss", category: AppLogger.general)
+            }
+
+            return shouldShow
+        } else {
+            // First time or not temporarily dismissed - show immediately
+            // This matches behavior of Weight/Hydration/Sleep trackers per Apple HIG
+            AppLogger.info("Timer nudge: Showing immediately (consistent with other trackers)", category: AppLogger.general)
+            return true
         }
-
-        return shouldShow
     }
 
     /// Mark nudge as dismissed for specific data type
@@ -159,8 +171,10 @@ class HealthKitNudgeManager: ObservableObject {
     /// For other trackers: Permanent dismiss
     func dismissNudge(for dataType: HealthDataType) {
         if dataType == .fasting {
-            // For Timer tab: Just temporary dismiss - no permanent flag set
-            // Will show again after 5 more visits
+            // For Timer tab: Set temporary dismiss flag and reset visit counter
+            let dismissKey = nudgeDismissedPrefix + dataType.rawValue
+            userDefaults.set(true, forKey: dismissKey)
+            userDefaults.set(0, forKey: timerVisitCountKey) // Reset counter
             AppLogger.info("Timer nudge temporarily dismissed - will show again in \(visitThreshold) visits", category: AppLogger.general)
         } else {
             // For other trackers: Permanent dismiss
