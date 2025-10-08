@@ -40,6 +40,7 @@ class HealthKitManager: ObservableObject {
         static let water = "HealthKitSyncError_Water"
         static let sleep = "HealthKitSyncError_Sleep"
         static let fasting = "HealthKitSyncError_Fasting"
+        static let allData = "HealthKitSyncError_AllData"
     }
 
     private init() {
@@ -102,7 +103,7 @@ class HealthKitManager: ObservableObject {
 
     func checkAuthorizationStatus() {
         guard HKHealthStore.isHealthDataAvailable() else {
-            Log.warning("HealthKit is not available on this device", category: .healthkit)
+            AppLogger.warning("HealthKit is not available on this device", category: AppLogger.healthKit)
             return
         }
 
@@ -123,9 +124,9 @@ class HealthKitManager: ObservableObject {
 
     /// Request authorization for weight tracking only (bodyMass, BMI, body fat)
     func requestWeightAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        Log.logAuthRequest("Weight", category: .healthkit)
+        AppLogger.info("Requesting authorization for Weight", category: AppLogger.healthKit)
         guard HKHealthStore.isHealthDataAvailable() else {
-            Log.warning("HealthKit not available on this device", category: .healthkit)
+            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
             return
         }
@@ -143,16 +144,23 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
         ]
 
-        Log.info("Requesting authorization for weight tracking", category: .healthkit)
+        AppLogger.info("Requesting authorization for weight tracking", category: AppLogger.healthKit)
+        AppLogger.info("DEBUG: readTypes count: \(readTypes.count), writeTypes count: \(writeTypes.count)", category: AppLogger.healthKit)
+        AppLogger.info("DEBUG: readTypes: \(readTypes)", category: AppLogger.healthKit)
+        AppLogger.info("DEBUG: writeTypes: \(writeTypes)", category: AppLogger.healthKit)
+
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
             DispatchQueue.main.async {
+                AppLogger.info("DEBUG: Authorization callback - success: \(success), error: \(String(describing: error))", category: AppLogger.healthKit)
                 if success {
-                    Log.logAuthResult("Weight", granted: true, category: .healthkit)
+                    AppLogger.info("Weight authorization granted", category: AppLogger.healthKit)
                     self?.checkAuthorizationStatus()
                 } else {
-                    Log.logAuthResult("Weight", granted: false, category: .healthkit)
+                    AppLogger.info("Weight authorization denied", category: AppLogger.healthKit)
                     if let error = error {
-                        Log.error("Weight authorization error", category: .healthkit, error: error)
+                        AppLogger.error("Weight authorization error", category: AppLogger.healthKit, error: error)
+                    } else {
+                        AppLogger.warning("Weight authorization denied with no error - this means Apple dialog never appeared", category: AppLogger.healthKit)
                     }
                 }
                 completion(success, error)
@@ -162,9 +170,9 @@ class HealthKitManager: ObservableObject {
 
     /// Request authorization for hydration tracking only (dietary water)
     func requestHydrationAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        Log.logAuthRequest("Hydration", category: .healthkit)
+        AppLogger.info("Requesting authorization for Hydration", category: AppLogger.healthKit)
         guard HKHealthStore.isHealthDataAvailable() else {
-            Log.warning("HealthKit not available on this device", category: .healthkit)
+            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
             return
         }
@@ -178,16 +186,16 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .dietaryWater)!
         ]
 
-        Log.info("Requesting authorization for hydration tracking", category: .healthkit)
+        AppLogger.info("Requesting authorization for hydration tracking", category: AppLogger.healthKit)
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    Log.logAuthResult("Hydration", granted: true, category: .healthkit)
+                    AppLogger.info("Hydration authorization granted", category: AppLogger.healthKit)
                     self?.checkAuthorizationStatus()
                 } else {
-                    Log.logAuthResult("Hydration", granted: false, category: .healthkit)
+                    AppLogger.info("Hydration authorization denied", category: AppLogger.healthKit)
                     if let error = error {
-                        Log.error("Hydration authorization error", category: .healthkit, error: error)
+                        AppLogger.error("Hydration authorization error", category: AppLogger.healthKit, error: error)
                     }
                 }
                 completion(success, error)
@@ -197,9 +205,9 @@ class HealthKitManager: ObservableObject {
 
     /// Request authorization for sleep tracking only (sleep analysis)
     func requestSleepAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        Log.logAuthRequest("Sleep", category: .healthkit)
+        AppLogger.info("Requesting authorization for Sleep", category: AppLogger.healthKit)
         guard HKHealthStore.isHealthDataAvailable() else {
-            Log.warning("HealthKit not available on this device", category: .healthkit)
+            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
             return
         }
@@ -213,16 +221,16 @@ class HealthKitManager: ObservableObject {
             HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
         ]
 
-        Log.info("Requesting authorization for sleep tracking", category: .healthkit)
+        AppLogger.info("Requesting authorization for sleep tracking", category: AppLogger.healthKit)
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    Log.logAuthResult("Sleep", granted: true, category: .healthkit)
+                    AppLogger.info("Sleep authorization granted", category: AppLogger.healthKit)
                     self?.checkAuthorizationStatus()
                 } else {
-                    Log.logAuthResult("Sleep", granted: false, category: .healthkit)
+                    AppLogger.info("Sleep authorization denied", category: AppLogger.healthKit)
                     if let error = error {
-                        Log.error("Sleep authorization error", category: .healthkit, error: error)
+                        AppLogger.error("Sleep authorization error", category: AppLogger.healthKit, error: error)
                     }
                 }
                 completion(success, error)
@@ -232,9 +240,9 @@ class HealthKitManager: ObservableObject {
 
     /// Request authorization for fasting tracking (stored as workouts in HealthKit)
     func requestFastingAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        Log.logAuthRequest("Fasting", category: .healthkit)
+        AppLogger.info("Requesting authorization for Fasting", category: AppLogger.healthKit)
         guard HKHealthStore.isHealthDataAvailable() else {
-            Log.warning("HealthKit not available on this device", category: .healthkit)
+            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
             completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
             return
         }
@@ -250,16 +258,16 @@ class HealthKitManager: ObservableObject {
             HKObjectType.workoutType()
         ]
 
-        Log.info("Requesting authorization for fasting tracking (as workouts)", category: .healthkit)
+        AppLogger.info("Requesting authorization for fasting tracking (as workouts)", category: AppLogger.healthKit)
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
             DispatchQueue.main.async {
                 if success {
-                    Log.logAuthResult("Fasting", granted: true, category: .healthkit)
+                    AppLogger.info("Fasting authorization granted", category: AppLogger.healthKit)
                     self?.checkAuthorizationStatus()
                 } else {
-                    Log.logAuthResult("Fasting", granted: false, category: .healthkit)
+                    AppLogger.info("Fasting authorization denied", category: AppLogger.healthKit)
                     if let error = error {
-                        Log.error("Fasting authorization error", category: .healthkit, error: error)
+                        AppLogger.error("Fasting authorization error", category: AppLogger.healthKit, error: error)
                     }
                 }
                 completion(success, error)
@@ -284,7 +292,8 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
             HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
+            HKObjectType.workoutType() // Required for fasting sessions
         ]
 
         // Types to write to HealthKit
@@ -293,7 +302,8 @@ class HealthKitManager: ObservableObject {
             HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
             HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
             HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
+            HKObjectType.workoutType() // Required for fasting sessions
         ]
 
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
@@ -391,16 +401,10 @@ class HealthKitManager: ObservableObject {
         return loadSyncTimestamp(for: SyncTimestampKeys.fasting)
     }
 
-    /// Returns the most recent sync timestamp across all data types
-    public var lastOverallSyncDate: Date? {
-        let syncDates = [
-            lastWeightSyncDate,
-            lastWaterSyncDate,
-            lastSleepSyncDate,
-            lastFastingSyncDate
-        ].compactMap { $0 }
-
-        return syncDates.max()
+    /// Returns the timestamp for when "Sync All Health Data" was last executed
+    /// This is separate from individual data type syncs to avoid confusion
+    public var lastAllDataSyncDate: Date? {
+        return loadSyncTimestamp(for: SyncTimestampKeys.allData)
     }
 
     // MARK: - Public Error State API
@@ -475,6 +479,17 @@ class HealthKitManager: ObservableObject {
             saveSyncError(for: SyncErrorKeys.fasting, error: nil)
         } else {
             saveSyncError(for: SyncErrorKeys.fasting, error: error ?? "Sync failed")
+        }
+    }
+
+    /// Manually update sync timestamp for "Sync All Health Data" operation
+    /// Only call this when the comprehensive sync operation is performed
+    public func updateAllDataSyncStatus(success: Bool, error: String? = nil) {
+        if success {
+            saveSyncTimestamp(for: SyncTimestampKeys.allData)
+            saveSyncError(for: SyncErrorKeys.allData, error: nil)
+        } else {
+            saveSyncError(for: SyncErrorKeys.allData, error: error ?? "Comprehensive sync failed")
         }
     }
 
@@ -558,7 +573,7 @@ class HealthKitManager: ObservableObject {
 
             guard let samples = results as? [HKQuantitySample], error == nil else {
                 if let error = error {
-                    Log.error("Error fetching weight data", category: .healthkit, error: error)
+                    AppLogger.error("Error fetching weight data", category: AppLogger.healthKit, error: error)
                 }
                 completion([])
                 return
@@ -742,9 +757,9 @@ class HealthKitManager: ObservableObject {
         healthStore.save(samplesToSave) { success, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    Log.error("Error saving weight data", category: .healthkit, error: error)
+                    AppLogger.error("Error saving weight data", category: AppLogger.healthKit, error: error)
                 } else {
-                    Log.logSuccess("Weight data saved", category: .weight)
+                    AppLogger.info("Weight data saved", category: AppLogger.weightTracking)
                 }
                 completion(success, error)
             }
@@ -864,9 +879,9 @@ class HealthKitManager: ObservableObject {
         healthStore.save(waterSample) { success, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    Log.error("Error saving water data", category: .healthkit, error: error)
+                    AppLogger.error("Error saving water data", category: AppLogger.healthKit, error: error)
                 } else {
-                    Log.logSuccess("Water data saved", category: .hydration)
+                    AppLogger.info("Water data saved", category: AppLogger.healthKit)
                 }
                 completion(success, error)
             }
@@ -883,9 +898,9 @@ class HealthKitManager: ObservableObject {
 
         healthStore.enableBackgroundDelivery(for: weightType, frequency: .immediate) { success, error in
             if let error = error {
-                Log.error("Failed to enable background delivery", category: .healthkit, error: error)
+                AppLogger.error("Failed to enable background delivery", category: AppLogger.healthKit, error: error)
             } else if success {
-                Log.info("Background delivery enabled for weight data", category: .healthkit)
+                AppLogger.info("Background delivery enabled for weight data", category: AppLogger.healthKit)
             }
         }
     }
@@ -898,7 +913,7 @@ class HealthKitManager: ObservableObject {
 
         healthStore.disableBackgroundDelivery(for: weightType) { success, error in
             if let error = error {
-                Log.error("Failed to disable background delivery", category: .healthkit, error: error)
+                AppLogger.error("Failed to disable background delivery", category: AppLogger.healthKit, error: error)
             }
         }
     }
@@ -907,17 +922,17 @@ class HealthKitManager: ObservableObject {
 
     func saveSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
         let duration = (wakeTime.timeIntervalSince(bedTime)) / 3600
-        Log.info("Saving sleep to HealthKit", category: .sleep, metadata: ["duration": String(format: "%.1fh", duration)])
+        AppLogger.info("Saving sleep to HealthKit - duration: \(String(format: "%.1fh", duration))", category: AppLogger.healthKit)
 
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
-            Log.error("Failed to get sleep type", category: .healthkit)
+            AppLogger.error("Failed to get sleep type", category: AppLogger.healthKit)
             completion(false, nil)
             return
         }
 
         // Check authorization status
         let authStatus = healthStore.authorizationStatus(for: sleepType)
-        Log.debug("Sleep authorization status: \(authStatus.rawValue)", category: .healthkit)
+        AppLogger.info("Sleep authorization status: \(authStatus.rawValue)", category: AppLogger.healthKit)
 
         let sleepSample = HKCategorySample(
             type: sleepType,
@@ -929,9 +944,9 @@ class HealthKitManager: ObservableObject {
         healthStore.save(sleepSample) { success, error in
             DispatchQueue.main.async {
                 if success {
-                    Log.logSuccess("Sleep data saved to HealthKit", category: .sleep)
+                    AppLogger.info("Sleep data saved to HealthKit", category: AppLogger.healthKit)
                 } else {
-                    Log.logFailure("Sleep data save", category: .sleep, error: error)
+                    AppLogger.error("Sleep data save", category: AppLogger.healthKit, error: error)
                 }
                 completion(success, error)
             }
@@ -939,21 +954,21 @@ class HealthKitManager: ObservableObject {
     }
 
     func deleteSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
-        Log.info("Deleting sleep from HealthKit", category: .sleep)
+        AppLogger.info("Deleting sleep from HealthKit", category: AppLogger.healthKit)
 
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
-            Log.error("Failed to get sleep type", category: .healthkit)
+            AppLogger.error("Failed to get sleep type", category: AppLogger.healthKit)
             completion(false, nil)
             return
         }
 
         // Check authorization status
         let authStatus = healthStore.authorizationStatus(for: sleepType)
-        Log.debug("Sleep authorization status: \(authStatus.rawValue)", category: .healthkit)
+        AppLogger.info("Sleep authorization status: \(authStatus.rawValue)", category: AppLogger.healthKit)
 
         // Find the sample that matches these times
         let predicate = HKQuery.predicateForSamples(withStart: bedTime, end: wakeTime, options: .strictStartDate)
-        Log.debug("Searching for matching HealthKit sleep sample", category: .sleep)
+        AppLogger.info("Searching for matching HealthKit sleep sample", category: AppLogger.healthKit)
 
         let query = HKSampleQuery(
             sampleType: sleepType,
@@ -962,7 +977,7 @@ class HealthKitManager: ObservableObject {
             sortDescriptors: nil
         ) { [weak self] _, samples, error in
             if let error = error {
-                Log.error("Sleep query error", category: .healthkit, error: error)
+                AppLogger.error("Sleep query error", category: AppLogger.healthKit, error: error)
                 DispatchQueue.main.async {
                     completion(false, error)
                 }
@@ -970,20 +985,20 @@ class HealthKitManager: ObservableObject {
             }
 
             guard let sample = samples?.first as? HKCategorySample else {
-                Log.warning("No matching sleep sample found in HealthKit", category: .sleep)
+                AppLogger.warning("No matching sleep sample found in HealthKit", category: AppLogger.healthKit)
                 DispatchQueue.main.async {
                     completion(false, nil)
                 }
                 return
             }
 
-            Log.debug("Found matching sleep sample, deleting", category: .sleep)
+            AppLogger.info("Found matching sleep sample, deleting", category: AppLogger.healthKit)
             self?.healthStore.delete(sample) { success, error in
                 DispatchQueue.main.async {
                     if success {
-                        Log.logSuccess("Sleep data deleted from HealthKit", category: .sleep)
+                        AppLogger.info("Sleep data deleted from HealthKit", category: AppLogger.healthKit)
                     } else {
-                        Log.logFailure("Sleep data deletion", category: .sleep, error: error)
+                        AppLogger.error("Sleep data deletion", category: AppLogger.healthKit, error: error)
                     }
                     completion(success, error)
                 }
@@ -1076,7 +1091,7 @@ class HealthKitManager: ObservableObject {
 
         healthStore.enableBackgroundDelivery(for: sleepType, frequency: .immediate) { success, error in
             if let error = error {
-                Log.error("Failed to enable sleep background delivery", category: .healthkit, error: error)
+                AppLogger.error("Failed to enable sleep background delivery", category: AppLogger.healthKit, error: error)
             }
         }
     }
@@ -1088,7 +1103,7 @@ class HealthKitManager: ObservableObject {
 
         healthStore.disableBackgroundDelivery(for: sleepType) { success, error in
             if let error = error {
-                Log.error("Failed to disable sleep background delivery", category: .healthkit, error: error)
+                AppLogger.error("Failed to disable sleep background delivery", category: AppLogger.healthKit, error: error)
             }
         }
     }
@@ -1101,20 +1116,20 @@ class HealthKitManager: ObservableObject {
     /// Note: Explicit duration parameter is intentional for accurate Health app chart display
     func saveFastingSession(_ session: FastingSession, completion: @escaping (Bool, Error?) -> Void) {
         guard session.isComplete else {
-            Log.warning("Attempted to save incomplete fasting session to HealthKit", category: .fasting)
+            AppLogger.warning("Attempted to save incomplete fasting session to HealthKit", category: AppLogger.healthKit)
             completion(false, NSError(domain: "HealthKit", code: 5, userInfo: [NSLocalizedDescriptionKey: "Cannot save incomplete fasting session"]))
             return
         }
 
         guard let endTime = session.endTime else {
-            Log.warning("Fasting session missing end time", category: .fasting)
+            AppLogger.warning("Fasting session missing end time", category: AppLogger.healthKit)
             completion(false, NSError(domain: "HealthKit", code: 5, userInfo: [NSLocalizedDescriptionKey: "Fasting session missing end time"]))
             return
         }
 
         let duration = session.duration
         let durationHours = duration / 3600
-        Log.info("Saving fasting session to HealthKit", category: .fasting, metadata: ["duration": String(format: "%.1fh", durationHours)])
+        AppLogger.info("Saving fasting session to HealthKit - duration: \(String(format: "%.1fh", durationHours))", category: AppLogger.healthKit)
 
         // SOLUTION: Normalize workout times to prevent Health app from splitting across calendar days
         // Per Apple Health behavior: Workouts spanning midnight get split in chart view
@@ -1157,7 +1172,7 @@ class HealthKitManager: ObservableObject {
         builder.beginCollection(withStart: normalizedStart) { success, error in
             guard success else {
                 DispatchQueue.main.async {
-                    Log.logFailure("Workout builder begin collection", category: .fasting, error: error)
+                    AppLogger.error("Workout builder begin collection", category: AppLogger.healthKit, error: error)
                     completion(false, error)
                 }
                 return
@@ -1167,7 +1182,7 @@ class HealthKitManager: ObservableObject {
             builder.endCollection(withEnd: normalizedEnd) { success, error in
                 guard success else {
                     DispatchQueue.main.async {
-                        Log.logFailure("Workout builder end collection", category: .fasting, error: error)
+                        AppLogger.error("Workout builder end collection", category: AppLogger.healthKit, error: error)
                         completion(false, error)
                     }
                     return
@@ -1177,7 +1192,7 @@ class HealthKitManager: ObservableObject {
                 builder.addMetadata(metadata) { success, error in
                     guard success else {
                         DispatchQueue.main.async {
-                            Log.logFailure("Workout builder add metadata", category: .fasting, error: error)
+                            AppLogger.error("Workout builder add metadata", category: AppLogger.healthKit, error: error)
                             completion(false, error)
                         }
                         return
@@ -1187,10 +1202,10 @@ class HealthKitManager: ObservableObject {
                     builder.finishWorkout { workout, error in
                         DispatchQueue.main.async {
                             if workout != nil {
-                                Log.logSuccess("Fasting session saved to HealthKit", category: .fasting)
+                                AppLogger.info("Fasting session saved to HealthKit", category: AppLogger.healthKit)
                                 completion(true, nil)
                             } else {
-                                Log.logFailure("Workout builder finish", category: .fasting, error: error)
+                                AppLogger.error("Workout builder finish", category: AppLogger.healthKit, error: error)
                                 completion(false, error)
                             }
                         }
@@ -1203,12 +1218,12 @@ class HealthKitManager: ObservableObject {
     /// Deletes a fasting session from HealthKit
     func deleteFastingSession(_ session: FastingSession, completion: @escaping (Bool, Error?) -> Void) {
         guard let endTime = session.endTime else {
-            Log.warning("Cannot delete fasting session without end time", category: .fasting)
+            AppLogger.warning("Cannot delete fasting session without end time", category: AppLogger.healthKit)
             completion(false, nil)
             return
         }
 
-        Log.info("Deleting fasting session from HealthKit", category: .fasting)
+        AppLogger.info("Deleting fasting session from HealthKit", category: AppLogger.healthKit)
 
         let workoutType = HKObjectType.workoutType()
         let predicate = HKQuery.predicateForSamples(withStart: session.startTime, end: endTime, options: .strictStartDate)
@@ -1220,7 +1235,7 @@ class HealthKitManager: ObservableObject {
             sortDescriptors: nil
         ) { [weak self] _, samples, error in
             if let error = error {
-                Log.error("Fasting session query error", category: .healthkit, error: error)
+                AppLogger.error("Fasting session query error", category: AppLogger.healthKit, error: error)
                 DispatchQueue.main.async {
                     completion(false, error)
                 }
@@ -1232,20 +1247,20 @@ class HealthKitManager: ObservableObject {
                   let fastingWorkout = workouts.first(where: { workout in
                       workout.metadata?[HKMetadataKeyWorkoutBrandName] as? String == "Fast LIFe"
                   }) else {
-                Log.warning("No matching fasting workout found in HealthKit", category: .fasting)
+                AppLogger.warning("No matching fasting workout found in HealthKit", category: AppLogger.healthKit)
                 DispatchQueue.main.async {
                     completion(false, nil)
                 }
                 return
             }
 
-            Log.debug("Found matching fasting workout, deleting", category: .fasting)
+            AppLogger.info("Found matching fasting workout, deleting", category: AppLogger.healthKit)
             self?.healthStore.delete(fastingWorkout) { success, error in
                 DispatchQueue.main.async {
                     if success {
-                        Log.logSuccess("Fasting session deleted from HealthKit", category: .fasting)
+                        AppLogger.info("Fasting session deleted from HealthKit", category: AppLogger.healthKit)
                     } else {
-                        Log.logFailure("Fasting session deletion", category: .fasting, error: error)
+                        AppLogger.error("Fasting session deletion", category: AppLogger.healthKit, error: error)
                     }
                     completion(success, error)
                 }

@@ -48,7 +48,7 @@ class WeightManager: ObservableObject {
         if syncWithHealthKit && entry.source == .manual {
             HealthKitManager.shared.saveWeight(weight: entry.weight, bmi: entry.bmi, bodyFat: entry.bodyFat, date: entry.date) { success, error in
                 if !success {
-                    Log.logFailure("Weight sync to HealthKit", category: .weight, error: error)
+                    AppLogger.error("Failed to sync weight to HealthKit", category: AppLogger.weightTracking, error: error)
                 }
             }
         }
@@ -64,7 +64,7 @@ class WeightManager: ObservableObject {
         if syncWithHealthKit && entry.source == .healthKit {
             HealthKitManager.shared.deleteWeight(for: entry.date) { success, error in
                 if !success {
-                    Log.logFailure("Weight deletion from HealthKit", category: .weight, error: error)
+                    AppLogger.error("Failed to delete weight from HealthKit", category: AppLogger.weightTracking, error: error)
                 }
             }
         }
@@ -103,7 +103,7 @@ class WeightManager: ObservableObject {
     }
 
     func setSyncPreference(_ enabled: Bool) {
-        Log.info("Setting weight sync preference", category: .weight, metadata: ["enabled": "\(enabled)"])
+        AppLogger.info("Setting weight sync preference to \(enabled)", category: AppLogger.weightTracking)
 
         syncWithHealthKit = enabled
         userDefaults.set(enabled, forKey: syncHealthKitKey)
@@ -112,33 +112,33 @@ class WeightManager: ObservableObject {
             // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
             // Per Apple best practices: Request permissions only when needed, per domain
             // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-            let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
-            Log.logAuthResult("Weight", granted: isAuthorized, category: .weight)
+            let isAuthorized = HealthKitManager.shared.isAuthorized
+            AppLogger.info("Comprehensive HealthKit authorization status: \(isAuthorized ? "granted" : "denied")", category: AppLogger.weightTracking)
 
             if !isAuthorized {
-                Log.logAuthRequest("Weight", category: .weight)
-                HealthKitManager.shared.requestWeightAuthorization { success, error in
+                AppLogger.info("Requesting comprehensive HealthKit authorization", category: AppLogger.weightTracking)
+                HealthKitManager.shared.requestAuthorization { success, error in
                     if success {
-                        Log.logSuccess("Weight authorization granted, syncing from HealthKit", category: .weight)
+                        AppLogger.info("Comprehensive HealthKit authorization granted, syncing weight from HealthKit", category: AppLogger.weightTracking)
                         self.syncFromHealthKit()
                         self.setupHealthKitObserver()
                     } else {
-                        Log.logFailure("Weight authorization", category: .weight, error: error)
+                        AppLogger.error("Comprehensive HealthKit authorization failed", category: AppLogger.weightTracking, error: error)
                         // Record authorization failure for production debugging
                         if let error = error {
                             CrashReportManager.shared.recordWeightError(error, context: [
-                                "operation": "requestWeightAuthorization"
+                                "operation": "requestComprehensiveAuthorization"
                             ])
                         }
                     }
                 }
             } else {
-                Log.info("Already authorized, syncing from HealthKit", category: .weight)
+                AppLogger.info("Already authorized, syncing from HealthKit", category: AppLogger.weightTracking)
                 syncFromHealthKit()
                 setupHealthKitObserver()
             }
         } else {
-            Log.info("Weight sync disabled, stopping HealthKit observer", category: .weight)
+            AppLogger.info("Weight sync disabled, stopping HealthKit observer", category: AppLogger.weightTracking)
             // Stop observing when sync is disabled
             if let query = observerQuery {
                 HealthKitManager.shared.stopObserving(query: query)
@@ -163,13 +163,13 @@ class WeightManager: ObservableObject {
 
         let query = HKObserverQuery(sampleType: weightType, predicate: nil) { [weak self] query, completionHandler, error in
             if let error = error {
-                Log.error("Weight observer query error", category: .weight, error: error)
+                AppLogger.error("Weight observer query error", category: AppLogger.weightTracking, error: error)
                 completionHandler()
                 return
             }
 
             // New weight data detected - sync from HealthKit
-            Log.info("New weight data detected in HealthKit, syncing", category: .weight)
+            AppLogger.info("New weight data detected in HealthKit, syncing", category: AppLogger.weightTracking)
             DispatchQueue.main.async {
                 self?.syncFromHealthKit()
             }

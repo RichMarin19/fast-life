@@ -1,11 +1,12 @@
 import Foundation
 import OSLog
+import UIKit
 
 /// Centralized crash reporting and analytics manager
 /// Following Apple best practices for production error tracking
 /// Reference: https://firebase.google.com/docs/crashlytics/get-started?platform=ios
-class CrashReportManager {
-    static let shared = CrashReportManager()
+public class CrashReportManager {
+    public static let shared = CrashReportManager()
 
     private let logger = AppLogger.general
     private var isInitialized = false
@@ -34,7 +35,7 @@ class CrashReportManager {
 
     /// Initialize crash reporting system
     /// Call this from FastingTrackerApp.init() following Firebase setup guide
-    func initialize() {
+    public func initialize() {
         guard !isInitialized else {
             AppLogger.warning("CrashReportManager already initialized", category: AppLogger.general)
             return
@@ -55,52 +56,52 @@ class CrashReportManager {
     // MARK: - Crash Reporting Methods
 
     /// Record a non-fatal error for HealthKit operations
-    func recordHealthKitError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordHealthKitError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .healthkit, context: context)
     }
 
     /// Record a non-fatal error for hydration tracking
-    func recordHydrationError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordHydrationError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .hydration, context: context)
     }
 
     /// Record a non-fatal error for weight tracking
-    func recordWeightError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordWeightError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .weight, context: context)
     }
 
     /// Record a non-fatal error for sleep tracking
-    func recordSleepError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordSleepError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .sleep, context: context)
     }
 
     /// Record a non-fatal error for fasting operations
-    func recordFastingError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordFastingError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .fasting, context: context)
     }
 
     /// Record a non-fatal error for chart rendering
-    func recordChartError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordChartError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .charts, context: context)
     }
 
     /// Record a non-fatal error for notifications
-    func recordNotificationError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordNotificationError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .notifications, context: context)
     }
 
     /// Record a non-fatal error for UI operations
-    func recordUIError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordUIError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .ui, context: context)
     }
 
     /// Record a non-fatal error for persistence operations
-    func recordPersistenceError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordPersistenceError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .persistence, context: context)
     }
 
     /// Record a general non-fatal error
-    func recordGeneralError(_ error: Error, context: [String: Any] = [:]) {
+    public func recordGeneralError(_ error: Error, context: [String: Any] = [:]) {
         recordError(error, category: .general, context: context)
     }
 
@@ -132,7 +133,12 @@ class CrashReportManager {
 
     /// Log a custom message for debugging production issues
     /// Useful for tracking user actions that lead to crashes
-    func logCustomMessage(_ message: String, category: CrashCategory = .general, level: LogLevel = .info) {
+    public func logCustomMessage(_ message: String, level: LogLevel = .info) {
+        logCustomMessage(message, category: .general, level: level)
+    }
+
+    /// Internal method with category parameter
+    private func logCustomMessage(_ message: String, category: CrashCategory = .general, level: LogLevel = .info) {
         let logMessage = "Custom[\(category.rawValue)]: \(message)"
 
         switch level {
@@ -140,14 +146,14 @@ class CrashReportManager {
             AppLogger.debug(logMessage, category: AppLogger.general)
         case .info:
             AppLogger.info(logMessage, category: AppLogger.general)
+        case .notice:
+            AppLogger.info(logMessage, category: AppLogger.general)
         case .warning:
             AppLogger.warning(logMessage, category: AppLogger.general)
         case .error:
             AppLogger.error(logMessage, category: AppLogger.general)
         case .fault:
             AppLogger.error(logMessage, category: AppLogger.general)
-        default:
-            AppLogger.info(logMessage, category: AppLogger.general)
         }
 
         #if !DEBUG
@@ -160,7 +166,7 @@ class CrashReportManager {
 
     /// Set user identifier for crash reports (use anonymized ID, never personal info)
     /// Following Apple privacy guidelines - use hashed identifiers only
-    func setUserIdentifier(_ identifier: String) {
+    public func setUserIdentifier(_ identifier: String) {
         let hashedID = identifier.hash.description // Simple hash for anonymization
 
         AppLogger.info("Setting user context: \(hashedID)", category: AppLogger.general)
@@ -172,7 +178,7 @@ class CrashReportManager {
     }
 
     /// Set custom key-value pairs for crash context
-    func setCustomValue(_ value: Any, forKey key: String) {
+    public func setCustomValue(_ value: Any, forKey key: String) {
         AppLogger.debug("Setting custom value: \(key)=\(value)", category: AppLogger.general)
 
         #if !DEBUG
@@ -182,24 +188,14 @@ class CrashReportManager {
     }
 }
 
-// MARK: - LogLevel Extension
-
-extension CrashReportManager {
-    enum LogLevel {
-        case debug
-        case info
-        case warning
-        case error
-        case fault
-    }
-}
+// LogLevel is defined in Logging.swift
 
 // MARK: - Convenience Extensions
 
 extension CrashReportManager {
 
     /// Quick method to record and log an error in one call
-    func handleError(_ error: Error, in component: String, category: CrashCategory = .general, context: [String: Any] = [:]) {
+    private func handleError(_ error: Error, in component: String, category: CrashCategory = .general, context: [String: Any] = [:]) {
         var fullContext = context
         fullContext["component"] = component
 
@@ -207,7 +203,7 @@ extension CrashReportManager {
     }
 
     /// Record performance issues (slow operations)
-    func recordPerformanceIssue(operation: String, duration: TimeInterval, threshold: TimeInterval = 2.0) {
+    public func recordPerformanceIssue(operation: String, duration: TimeInterval, threshold: TimeInterval = 2.0) {
         if duration > threshold {
             let context = [
                 "operation": operation,

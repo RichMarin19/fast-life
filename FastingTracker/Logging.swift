@@ -4,7 +4,7 @@ import OSLog
 // MARK: - Log Levels
 
 /// Log severity levels matching OSLog's LogType
-enum LogLevel: Int, Comparable {
+public enum LogLevel: Int, Comparable {
     case debug = 0      // Verbose, development-only
     case info = 1       // General informational messages
     case notice = 2     // Default level, notable events
@@ -12,7 +12,7 @@ enum LogLevel: Int, Comparable {
     case error = 4      // Errors that don't crash
     case fault = 5      // Critical failures
 
-    static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
+    public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
         return lhs.rawValue < rhs.rawValue
     }
 
@@ -80,7 +80,7 @@ class Log {
     static func setRuntimeLevel(_ level: LogLevel) {
         runtimeLevel = level
         UserDefaults.standard.set(level.rawValue, forKey: "LogRuntimeLevel")
-        Log.notice("Runtime log level changed", category: .general, metadata: ["level": "\(level)"])
+        notice("Runtime log level changed", category: .general, metadata: ["level": "\(level)"])
     }
 
     /// Get current runtime level
@@ -174,8 +174,8 @@ class Log {
     }
 
     /// Log a failed operation with error details
-    static func logFailure(_ operation: String, category: LogCategory, error: Error? = nil) {
-        Log.error("❌ \(operation) failed", category: category, error: error)
+    static func logFailure(_ operation: String, category: LogCategory, error errorDetails: Error? = nil) {
+        error("❌ \(operation) failed", category: category, error: errorDetails)
     }
 
     /// Log an authorization request (never log the result, only the request)

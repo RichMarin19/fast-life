@@ -934,6 +934,12 @@ struct OnboardingView: View {
             print("⏭️  HealthKit sync disabled (user skipped)")
         }
 
+        // Save HealthKit skip status for nudge system
+        print("\n💾 Saving HealthKit skip status for nudge system...")
+        let skippedHealthKit = !healthKitSyncChoice.enabled
+        UserDefaults.standard.set(skippedHealthKit, forKey: "healthKitSkippedOnboarding")
+        print("healthKitSkippedOnboarding = \(skippedHealthKit)")
+
         // Mark onboarding as complete
         print("\n💾 Marking onboarding as complete...")
         print("Setting UserDefaults key 'onboardingCompleted' = true")

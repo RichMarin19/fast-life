@@ -30,6 +30,12 @@ struct AppLogger {
     /// HealthKit integration events
     static let healthKit = OSLog(subsystem: subsystem, category: "HealthKit")
 
+    /// Sleep tracking operations
+    static let sleep = OSLog(subsystem: subsystem, category: "Sleep")
+
+    /// Hydration tracking operations
+    static let hydration = OSLog(subsystem: subsystem, category: "Hydration")
+
     /// User interface and navigation events
     static let ui = OSLog(subsystem: subsystem, category: "UI")
 

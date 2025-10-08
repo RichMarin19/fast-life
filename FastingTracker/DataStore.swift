@@ -180,6 +180,139 @@ class UserDefaultsDataStore: DataStore {
     func exists(forKey key: String) -> Bool {
         return userDefaults.object(forKey: key) != nil
     }
+
+    // MARK: - Data Migration Methods
+    // Following Apple Data Migration Guidelines
+    // Reference: https://developer.apple.com/documentation/coredata/lightweight_migration
+
+    /// Migrates old UserDefaults data to new Codable format
+    /// Call this once during app upgrade to preserve existing user data
+    func migrateIfNeeded() {
+        var migrationCount = 0
+
+        // Migrate simple value types
+        if hasOldFormatData(forKey: "fastingGoalHours") {
+            migrateDoubleValue(forKey: "fastingGoalHours")
+            migrationCount += 1
+        }
+
+        if hasOldFormatData(forKey: "currentStreak") {
+            migrateIntValue(forKey: "currentStreak")
+            migrationCount += 1
+        }
+
+        if hasOldFormatData(forKey: "longestStreak") {
+            migrateIntValue(forKey: "longestStreak")
+            migrationCount += 1
+        }
+
+        // Migrate complex types (arrays)
+        if hasOldFormatData(forKey: "fastingHistory") {
+            migrateFastingHistory()
+            migrationCount += 1
+        }
+
+        if hasOldFormatData(forKey: "currentFastingSession") {
+            migrateCurrentSession()
+            migrationCount += 1
+        }
+
+        if migrationCount > 0 {
+            AppLogger.info("Migrated \(migrationCount) data keys from old format", category: AppLogger.general)
+            CrashReportManager.shared.logCustomMessage("Data migration completed successfully", level: .info)
+        }
+    }
+
+    /// Checks if key exists in old UserDefaults format (not JSON data)
+    private func hasOldFormatData(forKey key: String) -> Bool {
+        guard let object = userDefaults.object(forKey: key) else { return false }
+
+        // If it's Data, it's likely our new JSON format
+        if object is Data { return false }
+
+        // If it's a basic type (String, Number, Array, Dict), it's old format
+        return object is String || object is NSNumber || object is Array<Any> || object is Dictionary<String, Any>
+    }
+
+    /// Migrates Double value from old format
+    private func migrateDoubleValue(forKey key: String) {
+        guard let value = userDefaults.object(forKey: key) as? Double else { return }
+
+        do {
+            try save(value, forKey: key)
+            AppLogger.debug("Migrated \(key): \(value)", category: AppLogger.general)
+        } catch {
+            AppLogger.error("Failed to migrate \(key): \(error)", category: AppLogger.general)
+        }
+    }
+
+    /// Migrates Int value from old format
+    private func migrateIntValue(forKey key: String) {
+        guard let value = userDefaults.object(forKey: key) as? Int else { return }
+
+        do {
+            try save(value, forKey: key)
+            AppLogger.debug("Migrated \(key): \(value)", category: AppLogger.general)
+        } catch {
+            AppLogger.error("Failed to migrate \(key): \(error)", category: AppLogger.general)
+        }
+    }
+
+    /// Migrates fasting history array from old UserDefaults format
+    private func migrateFastingHistory() {
+        guard let historyData = userDefaults.array(forKey: "fastingHistory") as? [[String: Any]] else { return }
+
+        var migratedSessions: [FastingSession] = []
+
+        for sessionDict in historyData {
+            if let session = createFastingSession(from: sessionDict) {
+                migratedSessions.append(session)
+            }
+        }
+
+        do {
+            try save(migratedSessions, forKey: "fastingHistory")
+            AppLogger.debug("Migrated fastingHistory: \(migratedSessions.count) sessions", category: AppLogger.general)
+        } catch {
+            AppLogger.error("Failed to migrate fastingHistory: \(error)", category: AppLogger.general)
+        }
+    }
+
+    /// Migrates current session from old UserDefaults format
+    private func migrateCurrentSession() {
+        guard let sessionDict = userDefaults.dictionary(forKey: "currentFastingSession") else { return }
+
+        if let session = createFastingSession(from: sessionDict) {
+            do {
+                try save(session, forKey: "currentFastingSession")
+                AppLogger.debug("Migrated currentFastingSession", category: AppLogger.general)
+            } catch {
+                AppLogger.error("Failed to migrate currentFastingSession: \(error)", category: AppLogger.general)
+            }
+        }
+    }
+
+    /// Creates FastingSession from old dictionary format
+    private func createFastingSession(from dict: [String: Any]) -> FastingSession? {
+        // Extract required fields with safe conversion
+        guard let startTimeInterval = dict["startTime"] as? TimeInterval else { return nil }
+
+        let startTime = Date(timeIntervalSince1970: startTimeInterval)
+        let endTime: Date? = {
+            if let endTimeInterval = dict["endTime"] as? TimeInterval {
+                return Date(timeIntervalSince1970: endTimeInterval)
+            }
+            return nil
+        }()
+
+        let goalHours = dict["goalHours"] as? Double ?? 16.0
+
+        return FastingSession(
+            startTime: startTime,
+            endTime: endTime,
+            goalHours: goalHours
+        )
+    }
 }
 
 // MARK: - Safe DataStore Extension
@@ -224,9 +357,20 @@ extension DataStore {
 /// Shared data store instance for the entire app
 /// Replace direct UserDefaults.standard usage with this
 class AppDataStore {
-    static let shared: DataStore = UserDefaultsDataStore()
+    static let shared: DataStore = {
+        let store = UserDefaultsDataStore()
+        // Perform migration on first access to preserve existing user data
+        // Following Apple's data migration pattern for app updates
+        store.migrateIfNeeded()
+        return store
+    }()
 
     private init() {}
+
+    /// Access to migration functionality for testing
+    static var dataStore: UserDefaultsDataStore {
+        return shared as! UserDefaultsDataStore
+    }
 }
 
 // MARK: - Migration Helper

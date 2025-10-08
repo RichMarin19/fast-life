@@ -265,12 +265,14 @@ struct AppSettingsView: View {
     @State private var isSyncingFasting = false
     @State private var isSyncingWeight = false
     @State private var isSyncingHydration = false
+    @State private var isSyncingSleep = false
     @State private var isSyncingAll = false
     @State private var syncMessage = ""
     @State private var showingSyncAlert = false
     @State private var showingFastingSyncOptions = false
     @State private var showingWeightSyncOptions = false
     @State private var showingHydrationSyncOptions = false
+    @State private var showingSleepSyncOptions = false
     @State private var showingAllDataSyncOptions = false
     @State private var versionTapCount = 0
     @State private var showingDebugLog = false
@@ -283,6 +285,7 @@ struct AppSettingsView: View {
     @State private var importFileURL: URL?
     @State private var showingImportResult = false
     @State private var importResultMessage = ""
+    // Removed: @State private var showingHealthDataSelection - unified direct authorization
 
     var body: some View {
         List {
@@ -369,7 +372,7 @@ struct AppSettingsView: View {
             // Apple Health - Individual Sync Options with Inline Status
             // Following Apple Human Interface Guidelines for Settings inline status display
             // Reference: https://developer.apple.com/design/human-interface-guidelines/patterns/settings/
-            Section(header: Text("Apple Health"), footer: Text("Sync your fasting, weight, and hydration data with Apple Health. Fasting sessions are saved as workouts. Water, coffee, and tea are saved as water intake.")) {
+            Section(header: Text("Apple Health"), footer: Text("Sync your fasting, weight, hydration, and sleep data with Apple Health. Fasting sessions are saved as workouts. Water, coffee, and tea are saved as water intake.")) {
 
                 // Fasting Sync with Status
                 VStack(alignment: .leading, spacing: 4) {
@@ -387,7 +390,7 @@ struct AppSettingsView: View {
                             Spacer()
                         }
                     }
-                    .disabled(isSyncingFasting || isSyncingAll)
+                    .disabled(isSyncingFasting || isSyncingAll || isSyncingSleep)
 
                     // Inline sync status for fasting
                     InlineSyncStatus(
@@ -413,7 +416,7 @@ struct AppSettingsView: View {
                             Spacer()
                         }
                     }
-                    .disabled(isSyncingWeight || isSyncingAll)
+                    .disabled(isSyncingWeight || isSyncingAll || isSyncingSleep)
 
                     // Inline sync status for weight
                     InlineSyncStatus(
@@ -439,12 +442,38 @@ struct AppSettingsView: View {
                             Spacer()
                         }
                     }
-                    .disabled(isSyncingHydration || isSyncingAll)
+                    .disabled(isSyncingHydration || isSyncingAll || isSyncingSleep)
 
                     // Inline sync status for hydration
                     InlineSyncStatus(
                         lastSyncDate: HealthKitManager.shared.lastWaterSyncDate,
                         syncError: HealthKitManager.shared.lastWaterSyncError
+                    )
+                    .padding(.leading, 28)
+                }
+
+                // Sleep Sync with Status
+                VStack(alignment: .leading, spacing: 4) {
+                    Button(action: { showingSleepSyncOptions = true }) {
+                        HStack {
+                            if isSyncingSleep {
+                                ProgressView()
+                                    .padding(.trailing, 8)
+                            } else {
+                                Image(systemName: "arrow.triangle.2.circlepath")
+                                    .foregroundColor(.purple)
+                            }
+                            Text(isSyncingSleep ? "Syncing..." : "Sync Sleep with Apple Health")
+                                .foregroundColor(.primary)
+                            Spacer()
+                        }
+                    }
+                    .disabled(isSyncingSleep || isSyncingAll)
+
+                    // Inline sync status for sleep
+                    InlineSyncStatus(
+                        lastSyncDate: HealthKitManager.shared.lastSleepSyncDate,
+                        syncError: HealthKitManager.shared.lastSleepSyncError
                     )
                     .padding(.leading, 28)
                 }
@@ -465,11 +494,11 @@ struct AppSettingsView: View {
                             Spacer()
                         }
                     }
-                    .disabled(isSyncingAll || isSyncingFasting || isSyncingWeight || isSyncingHydration)
+                    .disabled(isSyncingAll || isSyncingFasting || isSyncingWeight || isSyncingHydration || isSyncingSleep)
 
                     // Overall sync status
                     InlineSyncStatus(
-                        lastSyncDate: HealthKitManager.shared.lastOverallSyncDate,
+                        lastSyncDate: HealthKitManager.shared.lastAllDataSyncDate,
                         syncError: HealthKitManager.shared.hasSyncErrors ? "Some data types have errors" : nil
                     )
                     .padding(.leading, 28)
@@ -666,6 +695,7 @@ struct AppSettingsView: View {
         .sheet(isPresented: $showingDebugLog) {
             DebugLogView()
         }
+        // Removed: HealthDataSelectionView sheet - unified direct authorization per Apple HIG
         .confirmationDialog("Fasting Sync Options", isPresented: $showingFastingSyncOptions, titleVisibility: .visible) {
             Button("Backfill All Fasting History") {
                 syncFastingWithHealthKit()
@@ -695,6 +725,17 @@ struct AppSettingsView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Choose whether to import all hydration history from Apple Health or only sync new entries going forward.")
+        }
+        .confirmationDialog("Sleep Sync Options", isPresented: $showingSleepSyncOptions, titleVisibility: .visible) {
+            Button("Sync All Data") {
+                syncSleepWithHealthKit(futureOnly: false)
+            }
+            Button("Sync Future Data Only") {
+                syncSleepWithHealthKit(futureOnly: true)
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Choose whether to import all sleep history from Apple Health or only sync new entries going forward.")
         }
         .confirmationDialog("Sync All Health Data", isPresented: $showingAllDataSyncOptions, titleVisibility: .visible) {
             Button("Sync All Data") {
@@ -1074,34 +1115,33 @@ struct AppSettingsView: View {
     // MARK: - Fasting Sync Function
 
     private func syncFastingWithHealthKit() {
-        print("\n🔄 === SYNC FASTING WITH HEALTHKIT (BACKFILL) ===")
+        AppLogger.info("Starting fasting sync with HealthKit", category: AppLogger.healthKit)
 
         isSyncingFasting = true
 
-        // Check if fasting (workouts) authorization is granted
-        let isAuthorized = HealthKitManager.shared.isFastingAuthorized()
-        print("Fasting (Workout) Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
-
-        if !isAuthorized {
-            print("📱 Requesting FASTING (workout) authorization...")
-            HealthKitManager.shared.requestFastingAuthorization { success, error in
+        // DIRECT AUTHORIZATION: Unified experience across all health features
+        // Request fasting permissions immediately when user wants to sync fasting data
+        HealthKitManager.shared.requestFastingAuthorization { [self] success, error in
+            DispatchQueue.main.async {
                 if success {
-                    print("✅ Fasting authorization granted → performing backfill")
-                    self.performFastingBackfill()
+                    AppLogger.info("Fasting authorization granted - proceeding with sync", category: AppLogger.healthKit)
+                    // Continue with sync logic below
+                    self.proceedWithFastingSync()
                 } else {
-                    print("❌ Fasting authorization failed: \(String(describing: error))")
                     self.isSyncingFasting = false
-                    self.syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
-                    // Update sync status tracking - failed authorization
-                    HealthKitManager.shared.updateFastingSyncStatus(success: false, error: "Authorization failed")
+                    self.syncMessage = "HealthKit authorization denied for fasting data."
                     self.showingSyncAlert = true
+                    AppLogger.info("Fasting authorization denied", category: AppLogger.healthKit)
                 }
             }
-        } else {
-            print("✅ Already authorized → performing backfill")
-            performFastingBackfill()
         }
+        return // Exit early, continuation happens in callback
+    }
 
+    private func proceedWithFastingSync() {
+        // Authorization already handled - proceed directly with sync
+        AppLogger.info("Proceeding with fasting backfill", category: AppLogger.healthKit)
+        performFastingBackfill()
         print("==============================================\n")
     }
 
@@ -1199,40 +1239,33 @@ struct AppSettingsView: View {
     // MARK: - Weight Sync Function
 
     private func syncWeightWithHealthKit(futureOnly: Bool) {
-        print("\n🔄 === SYNC WEIGHT WITH HEALTHKIT (ADVANCED) ===")
-        print("Future Only: \(futureOnly)")
+        AppLogger.info("Starting weight sync with HealthKit", category: AppLogger.weightTracking)
+        AppLogger.debug("Sync mode: \(futureOnly ? "future only" : "complete backfill")", category: AppLogger.weightTracking)
 
         isSyncingWeight = true
 
-        // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
-        // Per Apple best practices: Request permissions only when needed, per domain
-        // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-        let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
-        print("Weight Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
-
-        if !isAuthorized {
-            print("📱 Requesting WEIGHT authorization (granular)...")
-            // Request authorization first
-            HealthKitManager.shared.requestWeightAuthorization { success, error in
+        // DIRECT AUTHORIZATION: Unified experience across all health features
+        // Request weight permissions immediately when user wants to sync weight data
+        HealthKitManager.shared.requestWeightAuthorization { [self] success, error in
+            DispatchQueue.main.async {
                 if success {
-                    print("✅ Weight authorization granted → performing sync")
-                    performWeightSync(futureOnly: futureOnly)
+                    AppLogger.info("Weight authorization granted - proceeding with sync", category: AppLogger.weightTracking)
+                    self.proceedWithWeightSync(futureOnly: futureOnly)
                 } else {
-                    print("❌ Weight authorization failed: \(String(describing: error))")
-                    isSyncingWeight = false
-                    syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
-                    // Update sync status tracking - failed authorization
-                    HealthKitManager.shared.updateWeightSyncStatus(success: false, error: "Authorization failed")
-                    showingSyncAlert = true
+                    self.isSyncingWeight = false
+                    self.syncMessage = "HealthKit authorization denied for weight data."
+                    self.showingSyncAlert = true
+                    AppLogger.info("Weight authorization denied", category: AppLogger.weightTracking)
                 }
             }
-        } else {
-            print("✅ Already authorized → performing sync")
-            // Already authorized, just sync
-            performWeightSync(futureOnly: futureOnly)
         }
+        return // Exit early, continuation happens in callback
+    }
 
-        print("==============================================\n")
+    private func proceedWithWeightSync(futureOnly: Bool) {
+        // Authorization already handled - proceed directly with sync
+        AppLogger.info("Proceeding with weight sync", category: AppLogger.weightTracking)
+        performWeightSync(futureOnly: futureOnly)
     }
 
     private func performWeightSync(futureOnly: Bool) {
@@ -1269,41 +1302,28 @@ struct AppSettingsView: View {
 
         isSyncingHydration = true
 
-        // BLOCKER 5 FIX: Request HYDRATION authorization only (not all permissions)
-        // Per Apple best practices: Request permissions only when needed, per domain
-        // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-        let isAuthorized = HealthKitManager.shared.isWaterAuthorized()
-        print("Hydration Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
-
-        if !isAuthorized {
-            print("📱 Requesting HYDRATION authorization (granular)...")
-            // Request authorization for water
-            HealthKitManager.shared.requestHydrationAuthorization { success, error in
+        // DIRECT AUTHORIZATION: Unified experience across all health features
+        // Request hydration permissions immediately when user wants to sync hydration data
+        HealthKitManager.shared.requestHydrationAuthorization { [self] success, error in
+            DispatchQueue.main.async {
                 if success {
-                    // Check again after authorization
-                    if HealthKitManager.shared.isWaterAuthorized() {
-                        print("✅ Hydration authorization granted → performing sync")
-                        self.performHydrationSync(futureOnly: futureOnly)
-                    } else {
-                        print("⚠️  Hydration permission not granted by user")
-                        self.isSyncingHydration = false
-                        self.syncMessage = "Water permission not granted. Please enable water access in Settings > Health > Apps > Fast LIFe."
-                        self.showingSyncAlert = true
-                    }
+                    AppLogger.info("Hydration authorization granted - proceeding with sync", category: AppLogger.hydration)
+                    self.proceedWithHydrationSync(futureOnly: futureOnly)
                 } else {
-                    print("❌ Hydration authorization failed: \(String(describing: error))")
                     self.isSyncingHydration = false
-                    self.syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
-                    // Update sync status tracking - failed authorization
-                    HealthKitManager.shared.updateWaterSyncStatus(success: false, error: "Authorization failed")
+                    self.syncMessage = "HealthKit authorization denied for hydration data."
                     self.showingSyncAlert = true
+                    AppLogger.info("Hydration authorization denied", category: AppLogger.hydration)
                 }
             }
-        } else {
-            print("✅ Already authorized → performing sync")
-            // Already authorized for water, just sync
-            performHydrationSync(futureOnly: futureOnly)
         }
+        return // Exit early, continuation happens in callback
+    }
+
+    private func proceedWithHydrationSync(futureOnly: Bool) {
+        // Authorization already handled - proceed directly with sync
+        AppLogger.info("Proceeding with hydration sync", category: AppLogger.hydration)
+        performHydrationSync(futureOnly: futureOnly)
 
         print("=================================================\n")
     }
@@ -1315,31 +1335,93 @@ struct AppSettingsView: View {
         let hydrationManager = HydrationManager()
 
         if futureOnly {
-            // Sync only from today forward - TO HealthKit
-            hydrationManager.syncToHealthKit()
+            // STEP 1: Export local data to HealthKit (new entries only)
+            hydrationManager.syncToHealthKit() // Now has proper deduplication
 
-            // No import needed for future-only, complete immediately
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                isSyncingHydration = false
-                let count = hydrationManager.drinkEntries.count
-                syncMessage = "Successfully synced \(count) drink entries going forward. Future drinks will automatically sync to Apple Health."
-                // Update sync status tracking
-                HealthKitManager.shared.updateWaterSyncStatus(success: true)
-                showingSyncAlert = true
+            // STEP 2: Import from today forward
+            hydrationManager.syncFromHealthKit(startDate: Date()) {
+                DispatchQueue.main.async {
+                    self.isSyncingHydration = false
+                    let count = hydrationManager.drinkEntries.count
+                    self.syncMessage = "Successfully synced \(count) drink entries with Apple Health going forward."
+                    // Update sync status tracking
+                    HealthKitManager.shared.updateWaterSyncStatus(success: true)
+                    self.showingSyncAlert = true
+                }
             }
         } else {
-            // Sync all drinks to HealthKit first
-            hydrationManager.syncToHealthKit()
+            // STEP 1: Export local data to HealthKit (new entries only)
+            hydrationManager.syncToHealthKit() // Now has proper deduplication
 
-            // Then import from HealthKit with completion handler
+            // STEP 2: Import from HealthKit with completion handler
             hydrationManager.syncFromHealthKit {
-                // This runs AFTER import completes
-                isSyncingHydration = false
-                let count = hydrationManager.drinkEntries.count
-                syncMessage = count > 0 ? "Successfully synced \(count) drink entries from Apple Health." : "No hydration data found in Apple Health."
+                DispatchQueue.main.async {
+                    // This runs AFTER bidirectional sync completes
+                    self.isSyncingHydration = false
+                    let count = hydrationManager.drinkEntries.count
+                    self.syncMessage = count > 0 ? "Successfully synced \(count) drink entries with Apple Health." : "No hydration data found in Apple Health."
+                    // Update sync status tracking
+                    HealthKitManager.shared.updateWaterSyncStatus(success: true)
+                    self.showingSyncAlert = true
+                }
+            }
+        }
+    }
+
+    // MARK: - Sleep Sync Methods
+    // Following Apple HealthKit Best Practices for Sleep Data Authorization
+    // Reference: https://developer.apple.com/documentation/healthkit/hkcategorytype
+
+    private func syncSleepWithHealthKit(futureOnly: Bool) {
+        print("\n💤 === SLEEP SYNC (ADVANCED) ===")
+        print("Future Only: \(futureOnly)")
+
+        isSyncingSleep = true
+
+        // DIRECT AUTHORIZATION: Unified experience across all health features
+        // Request sleep permissions immediately when user wants to sync sleep data
+        HealthKitManager.shared.requestSleepAuthorization { [self] success, error in
+            DispatchQueue.main.async {
+                if success {
+                    AppLogger.info("Sleep authorization granted - proceeding with sync", category: AppLogger.sleep)
+                    self.proceedWithSleepSync(futureOnly: futureOnly)
+                } else {
+                    self.isSyncingSleep = false
+                    self.syncMessage = "HealthKit authorization denied for sleep data."
+                    self.showingSyncAlert = true
+                    AppLogger.info("Sleep authorization denied", category: AppLogger.sleep)
+                }
+            }
+        }
+        return // Exit early, continuation happens in callback
+    }
+
+    private func proceedWithSleepSync(futureOnly: Bool) {
+        // Authorization already handled - proceed directly with sync
+        AppLogger.info("Proceeding with sleep sync", category: AppLogger.sleep)
+        performSleepSync(futureOnly: futureOnly)
+
+        print("=================================================\n")
+    }
+
+    private func performSleepSync(futureOnly: Bool) {
+        let startDate = futureOnly ? Calendar.current.startOfDay(for: Date()) : Calendar.current.date(byAdding: .year, value: -5, to: Date()) ?? Date()
+
+        print("📊 Starting sleep data sync...")
+        print("Start Date: \(startDate)")
+
+        // Use HealthKitManager's fetchSleepData with HKAnchoredObjectQuery
+        HealthKitManager.shared.fetchSleepData(startDate: startDate) { sleepEntries in
+            DispatchQueue.main.async {
+                self.isSyncingSleep = false
+
                 // Update sync status tracking
-                HealthKitManager.shared.updateWaterSyncStatus(success: true)
-                showingSyncAlert = true
+                HealthKitManager.shared.updateSleepSyncStatus(success: true)
+
+                self.syncMessage = "Successfully synced \(sleepEntries.count) sleep entries from Apple Health."
+                self.showingSyncAlert = true
+
+                print("✅ Sleep sync completed: \(sleepEntries.count) entries")
             }
         }
     }
@@ -1347,45 +1429,41 @@ struct AppSettingsView: View {
     // MARK: - Sync All Health Data
 
     private func syncAllHealthData(futureOnly: Bool) {
-        print("\n🔄 === SYNC ALL HEALTH DATA (ADVANCED) ===")
-        print("Future Only: \(futureOnly)")
-        print("⚠️  NOTE: This uses LEGACY authorization (requests ALL permissions)")
+        AppLogger.info("Starting comprehensive health data sync", category: AppLogger.general)
+        AppLogger.debug("Sync mode: \(futureOnly ? "future only" : "complete backfill")", category: AppLogger.general)
 
         isSyncingAll = true
 
-        // NOTE: "Sync All" intentionally uses legacy requestAuthorization()
-        // This requests ALL permissions at once (weight + hydration + sleep)
-        // Individual sync buttons use granular authorization per Blocker 5 fix
-        let hasAnyAuth = HealthKitManager.shared.isAuthorized || HealthKitManager.shared.isWaterAuthorized()
-        print("Any Authorization Status: \(hasAnyAuth ? "✅ Has some auth" : "❌ No auth")")
-
-        if !hasAnyAuth {
-            print("📱 Requesting ALL permissions (legacy method)...")
-            // NOTE: "Sync All" intentionally uses LEGACY requestAuthorization()
-            // Reason: User explicitly chose "Sync All" → requesting all permissions at once is acceptable UX
-            // WARNING SUPPRESSION: This deprecation warning is acceptable - see comment above
-            // Request authorization first
-            HealthKitManager.shared.requestAuthorization { success, error in
+        // DIRECT AUTHORIZATION: Unified experience - request comprehensive HealthKit access
+        // This requests all health data types at once for comprehensive sync
+        HealthKitManager.shared.requestAuthorization { [self] success, error in
+            DispatchQueue.main.async {
                 if success {
-                    print("✅ Authorization granted → performing sync all")
-                    performAllDataSync(futureOnly: futureOnly)
+                    AppLogger.info("Comprehensive HealthKit authorization granted - proceeding with sync", category: AppLogger.healthKit)
+                    self.proceedWithComprehensiveSync(futureOnly: futureOnly)
                 } else {
-                    print("❌ Authorization failed: \(String(describing: error))")
-                    isSyncingAll = false
-                    syncMessage = error?.localizedDescription ?? "Failed to authorize Apple Health. Please check Settings > Health > Data Access & Devices."
-                    showingSyncAlert = true
+                    self.isSyncingAll = false
+                    self.syncMessage = "HealthKit authorization denied for comprehensive sync."
+                    self.showingSyncAlert = true
+                    AppLogger.info("Comprehensive authorization denied", category: AppLogger.healthKit)
                 }
             }
-        } else {
-            print("✅ Already has some authorization → performing sync all")
-            // Already authorized, just sync
-            performAllDataSync(futureOnly: futureOnly)
         }
-
-        print("==========================================\n")
+        return // Exit early, continuation happens in callback
     }
 
-    private func performAllDataSync(futureOnly: Bool) {
+    private func proceedWithComprehensiveSync(futureOnly: Bool) {
+        // Authorization already handled - proceed directly with sync
+        AppLogger.info("Proceeding with comprehensive health data sync", category: AppLogger.healthKit)
+
+        // Get all available data types for comprehensive sync
+        let allDataTypes: Set<HealthDataType> = [.weight, .hydration, .sleep, .fasting]
+        performComprehensiveSync(futureOnly: futureOnly, enabledTypes: allDataTypes)
+    }
+
+    private func performComprehensiveSync(futureOnly: Bool, enabledTypes: Set<HealthDataType>) {
+        AppLogger.info("Starting comprehensive sync for enabled data types", category: AppLogger.general)
+
         // Create managers on-demand for sync operation only
         // Per Apple SwiftUI Best Practices: Create managers when needed, not on view init
         // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
@@ -1393,38 +1471,83 @@ struct AppSettingsView: View {
         let hydrationManager = HydrationManager()
 
         if futureOnly {
-            // Sync weight from today forward
-            weightManager.syncFromHealthKit(startDate: Date())
+            AppLogger.info("Future-only sync mode - bidirectional sync with deduplication", category: AppLogger.general)
 
-            // Sync hydration to HealthKit only
-            hydrationManager.syncToHealthKit()
+            // Sync each enabled data type
+            if enabledTypes.contains(.hydration) {
+                hydrationManager.syncToHealthKit() // Export local to HealthKit
+                hydrationManager.syncFromHealthKit(startDate: Date()) {
+                    AppLogger.info("Completed hydration future sync", category: AppLogger.healthKit)
+                }
+            }
 
-            // No imports needed for future-only, complete after brief delay
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                isSyncingAll = false
+            if enabledTypes.contains(.fasting) {
+                performFastingBackfill() // Has built-in deduplication
+            }
+
+            if enabledTypes.contains(.weight) {
+                weightManager.syncFromHealthKit(startDate: Date())
+            }
+
+            if enabledTypes.contains(.sleep) {
+                HealthKitManager.shared.fetchSleepData(startDate: Calendar.current.startOfDay(for: Date())) { sleepEntries in
+                    AppLogger.info("Fetched \(sleepEntries.count) sleep entries from HealthKit (future only)", category: AppLogger.healthKit)
+                }
+            }
+
+            // Complete after brief delay to allow all operations to finish
+            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
+                self.isSyncingAll = false
                 let weightCount = weightManager.weightEntries.count
                 let drinkCount = hydrationManager.drinkEntries.count
-                syncMessage = "Successfully synced \(weightCount) weight entries and \(drinkCount) drink entries going forward."
-                showingSyncAlert = true
+
+                HealthKitManager.shared.updateAllDataSyncStatus(success: true)
+                self.syncMessage = "Future sync completed: \(weightCount) weight entries, \(drinkCount) drink entries synced with HealthKit."
+                self.showingSyncAlert = true
+                AppLogger.info("Comprehensive future sync completed", category: AppLogger.general)
             }
         } else {
-            // Sync weight from HealthKit
-            weightManager.syncFromHealthKit()
+            AppLogger.info("Full backfill sync mode - comprehensive historical sync", category: AppLogger.general)
 
-            // Sync hydration to HealthKit first
-            hydrationManager.syncToHealthKit()
+            // Full historical sync for each enabled data type
+            if enabledTypes.contains(.hydration) {
+                hydrationManager.syncToHealthKit() // Export all local data
+                hydrationManager.syncFromHealthKit(startDate: Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()) {
+                    AppLogger.info("Completed hydration backfill sync", category: AppLogger.healthKit)
+                }
+            }
 
-            // Then import hydration from HealthKit with completion
-            hydrationManager.syncFromHealthKit {
-                // This runs AFTER all syncs complete
-                isSyncingAll = false
+            if enabledTypes.contains(.fasting) {
+                performFastingBackfill()
+            }
+
+            if enabledTypes.contains(.weight) {
+                weightManager.syncFromHealthKit(startDate: Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date())
+            }
+
+            if enabledTypes.contains(.sleep) {
+                HealthKitManager.shared.fetchSleepData(startDate: Calendar.current.date(byAdding: .year, value: -1, to: Date()) ?? Date()) { sleepEntries in
+                    AppLogger.info("Fetched \(sleepEntries.count) sleep entries from HealthKit (backfill)", category: AppLogger.healthKit)
+                }
+            }
+
+            // Complete after delay for full sync
+            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
+                self.isSyncingAll = false
                 let weightCount = weightManager.weightEntries.count
                 let drinkCount = hydrationManager.drinkEntries.count
-                syncMessage = "Successfully synced \(weightCount) weight entries and \(drinkCount) drink entries from Apple Health."
-                showingSyncAlert = true
+
+                HealthKitManager.shared.updateAllDataSyncStatus(success: true)
+                self.syncMessage = "Full sync completed: \(weightCount) weight entries, \(drinkCount) drink entries synced with HealthKit."
+                self.showingSyncAlert = true
+                AppLogger.info("Comprehensive backfill sync completed", category: AppLogger.general)
             }
         }
     }
+
+
+
+    // Removed: handleHealthDataSelection - unified direct authorization pattern
 }
 
 // MARK: - ShareSheet for sharing exported CSV files
@@ -1456,7 +1579,7 @@ struct SyncStatusView: View {
                 VStack(alignment: .leading) {
                     Text("All Data")
                         .font(.system(size: 16, weight: .medium))
-                    Text(healthKitManager.hasSyncErrors ? "Some sync issues" : formatSyncStatus(healthKitManager.lastOverallSyncDate))
+                    Text(healthKitManager.hasSyncErrors ? "Some sync issues" : formatSyncStatus(healthKitManager.lastAllDataSyncDate))
                         .font(.system(size: 14))
                         .foregroundColor(healthKitManager.hasSyncErrors ? .orange : .secondary)
                 }

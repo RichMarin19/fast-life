@@ -83,9 +83,9 @@ class HydrationManager: ObservableObject {
         if healthKitManager.isWaterAuthorized() {
             healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
                 if let error = error {
-                    Log.logFailure("Drink auto-sync to HealthKit", category: .hydration, error: error)
+                    AppLogger.error("Failed to auto-sync drink to HealthKit", category: AppLogger.hydration, error: error)
                 } else if success {
-                    Log.debug("Synced drink to HealthKit as water", category: .hydration, metadata: ["amount": "\(entry.amount)oz"])
+                    AppLogger.info("Synced drink to HealthKit - amount: \(entry.amount)oz", category: AppLogger.hydration)
                 }
             }
         }
@@ -289,32 +289,66 @@ class HydrationManager: ObservableObject {
         let healthKitManager = HealthKitManager.shared
 
         guard healthKitManager.isWaterAuthorized() else {
-            Log.warning("HealthKit not authorized for water, cannot sync hydration", category: .hydration)
+            AppLogger.warning("HealthKit not authorized for water, cannot sync hydration", category: AppLogger.hydration)
             return
         }
 
-        Log.logCount(drinkEntries.count, action: "Starting hydration sync to HealthKit", category: .hydration)
+        // Get list of already exported entries to prevent duplicates
+        let exportedEntries = getExportedEntryIds()
 
-        // Sync all drink entries to HealthKit as water
+        // Filter to only new entries that haven't been exported yet
+        let newEntries = drinkEntries.filter { !exportedEntries.contains($0.id.uuidString) }
+
+        AppLogger.info("Starting hydration export to HealthKit - \(newEntries.count) new entries", category: AppLogger.hydration)
+
+        guard !newEntries.isEmpty else {
+            AppLogger.info("No new hydration entries to export - all up to date", category: AppLogger.hydration)
+            return
+        }
+
+        // Export only new drink entries to HealthKit as water
         var syncedCount = 0
-        for entry in drinkEntries {
+        let dispatchGroup = DispatchGroup()
+
+        for entry in newEntries {
+            dispatchGroup.enter()
             healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
                 if let error = error {
-                    Log.logFailure("Drink sync to HealthKit", category: .hydration, error: error)
+                    AppLogger.error("Failed to export drink to HealthKit", category: AppLogger.hydration, error: error)
                 } else if success {
                     syncedCount += 1
+                    // Mark this entry as exported
+                    self.markEntryAsExported(entry.id.uuidString)
                 }
+                dispatchGroup.leave()
             }
         }
 
-        Log.logCount(drinkEntries.count, action: "Completed hydration sync attempt", category: .hydration)
+        dispatchGroup.notify(queue: .main) {
+            AppLogger.info("Completed hydration export to HealthKit - \(syncedCount) entries synced", category: AppLogger.hydration)
+        }
+    }
+
+    // MARK: - Export Tracking for Deduplication
+
+    private let exportedEntriesKey = "exportedHydrationEntries"
+
+    private func getExportedEntryIds() -> Set<String> {
+        let exported = userDefaults.array(forKey: exportedEntriesKey) as? [String] ?? []
+        return Set(exported)
+    }
+
+    private func markEntryAsExported(_ entryId: String) {
+        var exported = getExportedEntryIds()
+        exported.insert(entryId)
+        userDefaults.set(Array(exported), forKey: exportedEntriesKey)
     }
 
     func syncFromHealthKit(startDate: Date? = nil, completion: (() -> Void)? = nil) {
         let healthKitManager = HealthKitManager.shared
 
         guard healthKitManager.isAuthorized else {
-            Log.warning("HealthKit not authorized for hydration import", category: .hydration)
+            AppLogger.warning("HealthKit not authorized for hydration import", category: AppLogger.hydration)
             completion?()
             return
         }
@@ -328,7 +362,7 @@ class HydrationManager: ObservableObject {
                 return
             }
 
-            Log.logCount(waterData.count, action: "Importing water entries from HealthKit", category: .hydration)
+            AppLogger.info("Importing \(waterData.count) water entries from HealthKit", category: AppLogger.hydration)
 
             // Import water data as "Water" type DrinkEntry
             var importedCount = 0
@@ -346,7 +380,7 @@ class HydrationManager: ObservableObject {
             }
 
             if importedCount > 0 {
-                Log.logCount(importedCount, action: "Successfully imported new drink entries from HealthKit", category: .hydration)
+                AppLogger.info("Successfully imported \(importedCount) new drink entries from HealthKit", category: AppLogger.hydration)
             }
 
             // Sort and save
