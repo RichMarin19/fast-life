@@ -69,7 +69,7 @@ struct HistoryView: View {
                                 HistoryRowView(session: session)
                                     .padding(.horizontal)
                                     .padding(.vertical, 8)
-                                    .contentShape(Rectangle())
+                                    .contentShape(RoundedRectangle(cornerRadius: 8))
                                     .onTapGesture {
                                         selectedDate = session.startTime
                                     }
@@ -132,10 +132,10 @@ struct HistoryRowView: View {
                 if session.metGoal {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Color("FLSuccess"))
                         Text("Goal Met")
                             .font(.subheadline)
-                            .foregroundColor(.green)
+                            .foregroundColor(Color("FLSuccess"))
                     }
                 } else {
                     Text("Incomplete")
@@ -187,7 +187,7 @@ struct TotalStatsView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "calendar.badge.clock")
                         .font(.title2)
-                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                        .foregroundColor(Color("FLSecondary"))
                     Text("\(totalDays)")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
@@ -198,14 +198,14 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(16)
+                .cornerRadius(8)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
                 // Total Hours
                 VStack(spacing: 8) {
                     Image(systemName: "clock.fill")
                         .font(.title2)
-                        .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                        .foregroundColor(Color("FLSuccess"))
                     Text("\(Int(totalHours))")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
@@ -216,7 +216,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(16)
+                .cornerRadius(8)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
             }
 
@@ -226,7 +226,7 @@ struct TotalStatsView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "target")
                         .font(.title2)
-                        .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.4))
+                        .foregroundColor(Color.orange)
                     Text("\(totalDaysToGoal)")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
@@ -238,14 +238,14 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(16)
+                .cornerRadius(8)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
                 // Longest Streak
                 VStack(spacing: 8) {
                     Image(systemName: "flame.fill")
                         .font(.title2)
-                        .foregroundColor(Color(red: 1.0, green: 0.5, blue: 0.0))
+                        .foregroundColor(Color.orange)
                     Text("\(longestStreak)")
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
@@ -257,7 +257,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(16)
+                .cornerRadius(8)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
             }
 
@@ -267,7 +267,7 @@ struct TotalStatsView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "chart.bar.fill")
                         .font(.title2)
-                        .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
+                        .foregroundColor(Color.purple)
                     Text(averageHoursText)
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
@@ -279,7 +279,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(16)
+                .cornerRadius(8)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
                 Spacer()
             }
@@ -338,7 +338,7 @@ struct FastingGraphView: View {
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(8)
         .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
         .sheet(isPresented: $showingCustomPicker) {
             CustomDateRangePickerView(startDate: $customStartDate, endDate: $customEndDate)
@@ -359,7 +359,7 @@ struct FastingGraphView: View {
                         Button(action: navigatePrevious) {
                             Image(systemName: "chevron.left")
                                 .font(.subheadline)
-                                .foregroundColor(canNavigatePrevious() ? .blue : .gray.opacity(0.3))
+                                .foregroundColor(canNavigatePrevious() ? Color("FLPrimary") : .gray.opacity(0.3))
                         }
                         .disabled(!canNavigatePrevious())
                     }
@@ -373,7 +373,7 @@ struct FastingGraphView: View {
                         Button(action: navigateNext) {
                             Image(systemName: "chevron.right")
                                 .font(.subheadline)
-                                .foregroundColor(canNavigateNext() ? .blue : .gray.opacity(0.3))
+                                .foregroundColor(canNavigateNext() ? Color("FLPrimary") : .gray.opacity(0.3))
                         }
                         .disabled(!canNavigateNext())
                     }
@@ -385,7 +385,7 @@ struct FastingGraphView: View {
             Button(action: { showGoalLine.toggle() }) {
                 HStack(spacing: 4) {
                     Image(systemName: showGoalLine ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                        .foregroundColor(Color("FLSecondary"))
                         .font(.system(size: 16))
                     Text("Goal")
                         .font(.caption)
@@ -426,7 +426,7 @@ struct FastingGraphView: View {
                     .foregroundColor(.secondary)
                 Spacer()
                 Image(systemName: "calendar")
-                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                    .foregroundColor(Color("FLSecondary"))
             }
             .padding(.vertical, 8)
         }
@@ -469,23 +469,23 @@ struct FastingGraphView: View {
                     // Goal line
                     if showGoalLine {
                         RuleMark(y: .value("Goal", fastingManager.fastingGoalHours))
-                            .foregroundStyle(Color(red: 0.4, green: 0.7, blue: 0.95).opacity(0.5))
+                            .foregroundStyle(Color("FLSecondary").opacity(0.5))
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                             .annotation(position: .top, alignment: .trailing) {
                                 Text("Goal: \(Int(fastingManager.fastingGoalHours))h")
                                     .font(.caption2)
-                                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                    .foregroundColor(Color("FLSecondary"))
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
                                     .background(Color.white.opacity(0.9))
-                                    .cornerRadius(4)
+                                    .cornerRadius(8)
                             }
                     }
 
                     // Selection indicator line
                     if let selected = selectedDataPoint {
                         RuleMark(x: .value("Selected", selected.date))
-                            .foregroundStyle(Color.blue.opacity(0.3))
+                            .foregroundStyle(Color("FLPrimary").opacity(0.3))
                             .lineStyle(StrokeStyle(lineWidth: 2))
                             .zIndex(-1)
                     }
@@ -498,7 +498,7 @@ struct FastingGraphView: View {
                         )
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color(red: 0.4, green: 0.8, blue: 0.6), Color(red: 0.3, green: 0.7, blue: 0.5)],
+                                colors: [Color("FLSuccess"), Color("FLSuccess")],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
@@ -513,7 +513,7 @@ struct FastingGraphView: View {
                             x: .value("Date", dataPoint.date),
                             y: .value("Hours", dataPoint.hours)
                         )
-                        .foregroundStyle(dataPoint.metGoal ? Color(red: 0.4, green: 0.8, blue: 0.6) : Color(red: 0.9, green: 0.6, blue: 0.4))
+                        .foregroundStyle(dataPoint.metGoal ? Color("FLSuccess") : Color.orange)
                         .symbolSize(dataPoint.date == selectedDataPoint?.date ? 120 : 80)
                     }
                 }
@@ -551,9 +551,9 @@ struct FastingGraphView: View {
                 }
                 .chartOverlay { proxy in
                     GeometryReader { geometry in
-                        Rectangle()
+                        RoundedRectangle(cornerRadius: 8)
                             .fill(.clear)
-                            .contentShape(Rectangle())
+                            .contentShape(RoundedRectangle(cornerRadius: 8))
                             .gesture(
                                 DragGesture(minimumDistance: 0)
                                     .onChanged { value in
@@ -587,9 +587,9 @@ struct FastingGraphView: View {
                 if selected.metGoal {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(Color("FLSuccess"))
                         Text("Goal Met")
-                            .foregroundColor(.green)
+                            .foregroundColor(Color("FLSuccess"))
                     }
                     .font(.caption)
                 } else {
@@ -621,7 +621,7 @@ struct FastingGraphView: View {
         HStack(spacing: 20) {
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color(red: 0.4, green: 0.8, blue: 0.6))
+                    .fill(Color("FLSuccess"))
                     .frame(width: 10, height: 10)
                 Text("Goal Met")
                     .font(.caption)
@@ -630,7 +630,7 @@ struct FastingGraphView: View {
 
             HStack(spacing: 6) {
                 Circle()
-                    .fill(Color(red: 0.9, green: 0.6, blue: 0.4))
+                    .fill(Color.orange)
                     .frame(width: 10, height: 10)
                 Text("Incomplete")
                     .font(.caption)
@@ -639,8 +639,8 @@ struct FastingGraphView: View {
 
             if showGoalLine {
                 HStack(spacing: 6) {
-                    Rectangle()
-                        .fill(Color(red: 0.4, green: 0.7, blue: 0.95).opacity(0.5))
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color("FLSecondary").opacity(0.5))
                         .frame(width: 16, height: 2)
                     Text("Goal Line")
                         .font(.caption)
@@ -1111,7 +1111,7 @@ struct StreakCalendarView: View {
         }
         .padding()
         .background(Color.gray.opacity(0.05))
-        .cornerRadius(16)
+        .cornerRadius(8)
     }
 
     @ViewBuilder
@@ -1216,7 +1216,7 @@ struct CalendarDayView: View {
                       Color.gray.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isToday() ? Color.blue : Color.clear, lineWidth: 2)
+                        .stroke(isToday() ? Color("FLPrimary") : Color.clear, lineWidth: 2)
                 )
 
             VStack(spacing: 4) {
@@ -1341,7 +1341,7 @@ struct AddEditFastView: View {
                     }
                     .padding()
                     .background(Color.white)
-                    .cornerRadius(12)
+                    .cornerRadius(8)
                     .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
                     .padding(.horizontal)
 
@@ -1400,7 +1400,7 @@ struct AddEditFastView: View {
 
                             Text("\(Int(goalHours)) hours")
                                 .font(.system(size: 36, weight: .bold, design: .rounded))
-                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                .foregroundColor(Color("FLSecondary"))
                         }
 
                         VStack(spacing: 12) {
@@ -1413,14 +1413,14 @@ struct AddEditFastView: View {
                                     }) {
                                         Text("\(Int(goal))h")
                                             .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(goalHours == goal && !isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
+                                            .foregroundColor(goalHours == goal && !isCustomGoal ? .white : Color("FLSecondary"))
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 10)
-                                            .background(goalHours == goal && !isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color(UIColor.secondarySystemGroupedBackground))
+                                            .background(goalHours == goal && !isCustomGoal ? Color("FLSecondary") : Color(UIColor.secondarySystemGroupedBackground))
                                             .cornerRadius(8)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(goalHours == goal && !isCustomGoal ? Color.clear : Color(red: 0.4, green: 0.7, blue: 0.95).opacity(0.3), lineWidth: 1)
+                                                    .stroke(goalHours == goal && !isCustomGoal ? Color.clear : Color("FLSecondary").opacity(0.3), lineWidth: 1)
                                             )
                                     }
                                 }
@@ -1437,14 +1437,14 @@ struct AddEditFastView: View {
                             }) {
                                 Text("Custom")
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(isCustomGoal ? .white : Color(red: 0.4, green: 0.7, blue: 0.95))
+                                    .foregroundColor(isCustomGoal ? .white : Color("FLSecondary"))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
-                                    .background(isCustomGoal ? Color(red: 0.4, green: 0.7, blue: 0.95) : Color(UIColor.secondarySystemGroupedBackground))
+                                    .background(isCustomGoal ? Color("FLSecondary") : Color(UIColor.secondarySystemGroupedBackground))
                                     .cornerRadius(8)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(isCustomGoal ? Color.clear : Color(red: 0.4, green: 0.7, blue: 0.95).opacity(0.3), lineWidth: 1)
+                                            .stroke(isCustomGoal ? Color.clear : Color("FLSecondary").opacity(0.3), lineWidth: 1)
                                     )
                             }
 
@@ -1470,7 +1470,7 @@ struct AddEditFastView: View {
                                                 Button("Done") {
                                                     isCustomGoalFocused = false
                                                 }
-                                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                                .foregroundColor(Color("FLSecondary"))
                                                 .fontWeight(.semibold)
                                             }
                                         }
@@ -1493,12 +1493,12 @@ struct AddEditFastView: View {
                             .padding()
                             .background(
                                 LinearGradient(
-                                    colors: [Color(red: 0.4, green: 0.7, blue: 0.95), Color(red: 0.5, green: 0.6, blue: 0.85)],
+                                    colors: [Color("FLSecondary"), Color("FLSecondary")],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .cornerRadius(12)
+                            .cornerRadius(8)
                     }
                     .padding(.horizontal)
                     .disabled(hours == 0 && minutes == 0)
@@ -1513,7 +1513,7 @@ struct AddEditFastView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(Color.red)
-                                .cornerRadius(12)
+                                .cornerRadius(8)
                         }
                         .padding(.horizontal)
                     }
@@ -1562,9 +1562,9 @@ struct AddEditFastView: View {
 
     private var durationColor: Color {
         if totalDurationHours >= goalHours {
-            return Color(red: 0.4, green: 0.8, blue: 0.6)
+            return Color("FLSuccess")
         } else {
-            return Color(red: 0.9, green: 0.6, blue: 0.4)
+            return Color.orange
         }
     }
 

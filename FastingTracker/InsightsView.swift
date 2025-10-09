@@ -57,7 +57,7 @@ struct EssentialsSection: View {
             VStack(spacing: 8) {
                 Image(systemName: "star.fill")
                     .font(.system(size: 40))
-                    .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                    .foregroundColor(Color("FLSuccess"))
                 Text("The 80/20 Rule")
                     .font(.title2)
                     .fontWeight(.bold)
@@ -71,35 +71,35 @@ struct EssentialsSection: View {
             VStack(spacing: 12) {
                 EssentialCard(
                     icon: "clock.fill",
-                    color: Color(red: 0.4, green: 0.7, blue: 0.95),
+                    color: Color("FLSecondary"),
                     title: "Fasting Window",
                     description: "The specific hours you abstain from food. Popular schedules are 16:8 (16 hours fasting, 8 hours eating)."
                 )
 
                 EssentialCard(
                     icon: "checkmark.circle.fill",
-                    color: Color(red: 0.4, green: 0.8, blue: 0.6),
+                    color: Color("FLSuccess"),
                     title: "Consistency Over Perfection",
                     description: "Sticking to your schedule most days is far more powerful than occasional strict fasting."
                 )
 
                 EssentialCard(
                     icon: "drop.fill",
-                    color: Color(red: 0.2, green: 0.6, blue: 0.9),
+                    color: Color("FLPrimary"),
                     title: "Hydration",
                     description: "Drinking water, black coffee, or tea during fasting is essential and keeps you feeling full."
                 )
 
                 EssentialCard(
                     icon: "leaf.fill",
-                    color: Color(red: 0.4, green: 0.8, blue: 0.6),
+                    color: Color("FLSuccess"),
                     title: "Food Quality Matters",
                     description: "While fasting helps control when you eat, food quality—lean protein, vegetables, whole foods—makes or breaks results."
                 )
 
                 EssentialCard(
                     icon: "heart.fill",
-                    color: Color(red: 0.9, green: 0.6, blue: 0.4),
+                    color: Color("FLWarning"),
                     title: "Listen to Your Body",
                     description: "Hunger adaptation takes time. Start gradually and adjust your eating window as needed."
                 )
@@ -169,7 +169,7 @@ struct FastingTimelineSection: View {
             VStack(spacing: 8) {
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 40))
-                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                    .foregroundColor(Color("FLSecondary"))
                 Text("Fasting Timeline")
                     .font(.title2)
                     .fontWeight(.bold)
@@ -218,7 +218,7 @@ struct TimelineStageCard: View {
                     Spacer()
 
                     Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
-                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                        .foregroundColor(Color("FLSecondary"))
                         .font(.title3)
                 }
             }
@@ -233,7 +233,7 @@ struct TimelineStageCard: View {
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                     .fontWeight(.bold)
-                                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                    .foregroundColor(Color("FLSecondary"))
                                 Text(point)
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
@@ -259,7 +259,7 @@ struct TimelineStageCard: View {
                     }
                     .padding()
                     .background(Color.yellow.opacity(0.1))
-                    .cornerRadius(8)
+                    .cornerRadius(12)
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -280,7 +280,7 @@ struct FAQSection: View {
             VStack(spacing: 8) {
                 Image(systemName: "questionmark.circle.fill")
                     .font(.system(size: 40))
-                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                    .foregroundColor(Color("FLSecondary"))
                 Text("Frequently Asked Questions")
                     .font(.title2)
                     .fontWeight(.bold)
@@ -369,7 +369,7 @@ struct FAQItem: View {
                     Spacer()
 
                     Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
-                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                        .foregroundColor(Color("FLSecondary"))
                         .font(.title3)
                 }
             }
@@ -398,7 +398,7 @@ struct MythBustersSection: View {
             VStack(spacing: 8) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .font(.system(size: 40))
-                    .foregroundColor(Color(red: 0.9, green: 0.6, blue: 0.4))
+                    .foregroundColor(Color.orange)
                 Text("Myth Busters")
                     .font(.title2)
                     .fontWeight(.bold)
@@ -485,13 +485,13 @@ struct MythCard: View {
             HStack(alignment: .top, spacing: 12) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.title3)
-                    .foregroundColor(.green)
+                    .foregroundColor(Color("FLSuccess"))
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text("TRUTH")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.green)
+                        .foregroundColor(Color("FLSuccess"))
 
                     Text(truth)
                         .font(.subheadline)
@@ -516,7 +516,7 @@ struct GlossarySection: View {
             VStack(spacing: 8) {
                 Image(systemName: "book.fill")
                     .font(.system(size: 40))
-                    .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
+                    .foregroundColor(Color.purple)
                 Text("Key Terms")
                     .font(.title2)
                     .fontWeight(.bold)
@@ -592,7 +592,7 @@ struct GlossaryItem: View {
             Text(term)
                 .font(.headline)
                 .fontWeight(.bold)
-                .foregroundColor(Color(red: 0.6, green: 0.4, blue: 0.9))
+                .foregroundColor(Color.purple)
 
             Text(definition)
                 .font(.subheadline)

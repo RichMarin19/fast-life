@@ -5,6 +5,11 @@ struct WeightTrackingView: View {
     @StateObject private var weightManager = WeightManager()
     @StateObject private var healthKitManager = HealthKitManager.shared
     @StateObject private var nudgeManager = HealthKitNudgeManager.shared
+
+    // PHASE 1: Unit preferences integration
+    // Following Apple's reactive UI pattern for settings changes
+    // Reference: https://developer.apple.com/documentation/swiftui/observedobject
+    // Unit preferences removed for v1.0 - will add in v1.1
     @State private var showingAddWeight = false
     @State private var showingSettings = false
     @State private var showingFirstTimeSetup = false
@@ -30,13 +35,13 @@ struct WeightTrackingView: View {
                     HStack(spacing: 0) {
                         Text("Weight Tr")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color("FLPrimary"))
                         Text("ac")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .foregroundColor(.green)
+                            .foregroundColor(Color("FLSuccess"))
                         Text("ker")
                             .font(.system(size: 48, weight: .bold, design: .rounded))
-                            .foregroundColor(.cyan)
+                            .foregroundColor(Color("FLSecondary"))
                     }
                 }
 
@@ -227,8 +232,8 @@ struct EmptyWeightStateView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.blue)
-                        .cornerRadius(12)
+                        .background(Color("FLPrimary"))
+                        .cornerRadius(8)
                 }
 
                 Button(action: {
@@ -251,8 +256,8 @@ struct EmptyWeightStateView: View {
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color.green)
-                        .cornerRadius(12)
+                        .background(Color("FLSuccess"))
+                        .cornerRadius(8)
                 }
             }
             .padding(.horizontal, 40)
@@ -291,7 +296,7 @@ struct CurrentWeightCard: View {
         return (amount: abs(change), isLoss: change > 0)
     }
 
-    /// Returns celebration emoji based on weight loss amount
+    /// Returns celebration emoji based on weight loss amount (in pounds internally)
     /// More loss = more exciting emoji! 🎉
     private func celebrationEmoji(for lbs: Double) -> String {
         switch lbs {
@@ -304,22 +309,22 @@ struct CurrentWeightCard: View {
         }
     }
 
-    /// Returns gentle message for weight gain - progressively softer as gain increases
+    /// Returns gentle message for weight gain - progressively softer as gain increases (in pounds internally)
     /// Psychology: More gain = MORE supportive, not harsh
     private func gentleGainMessage(for lbs: Double) -> (emoji: String, message: String, color: Color) {
         switch lbs {
         case 0..<1:
             // Tiny fluctuation - totally normal
-            return ("💧", "Just water weight", .blue)
+            return ("💧", "Just water weight", Color("FLPrimary"))
         case 1..<2:
             // Small gain - gentle
-            return ("🤝", "Small fluctuation, you've got this", .blue)
+            return ("🤝", "Small fluctuation, you've got this", Color("FLPrimary"))
         case 2..<3:
             // Medium gain - supportive
             return ("💙", "Keep going, progress isn't always linear", .cyan)
         case 3..<5:
             // Larger gain - very supportive
-            return ("🌱", "Every journey has ups and downs", .green.opacity(0.7))
+            return ("🌱", "Every journey has ups and downs", Color("FLSuccess").opacity(0.7))
         default:
             // Large gain - SUPER gentle and encouraging
             return ("🫂", "You're still on the journey, one day at a time", .purple)
@@ -393,12 +398,12 @@ struct CurrentWeightCard: View {
                         .foregroundColor(.secondary)
 
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(latest.weight, specifier: "%.1f")")
+                        Text("\(weightManager.displayWeight(for: latest), specifier: "%.1f")")
                             .font(.system(size: 48, weight: .bold))
-                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+                            .foregroundColor(Color("FLPrimary"))
                         Text("lbs")
                             .font(.title2)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Color("FLSuccess"))
                     }
 
                     Text(latest.date, style: .date)
@@ -426,7 +431,7 @@ struct CurrentWeightCard: View {
                                     .font(.system(size: 28))
 
                                 // Weight lost - LARGE and PROUD
-                                Text("\(progress.amount, specifier: "%.1f") lbs lost!")
+                                Text("\((progress.amount), specifier: "%.1f") \("lbs") lost!")
                                     .font(.system(size: 24, weight: .heavy, design: .rounded))
                                     .foregroundColor(.white)
 
@@ -439,13 +444,13 @@ struct CurrentWeightCard: View {
                             .background(
                                 // Gradient background - exciting and vibrant
                                 LinearGradient(
-                                    colors: [Color.green, Color.green.opacity(0.8)],
+                                    colors: [Color("FLSuccess"), Color("FLSuccess").opacity(0.8)],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
-                            .cornerRadius(12)
-                            .shadow(color: Color.green.opacity(0.3), radius: 8, x: 0, y: 4)
+                            .cornerRadius(8)
+                            .shadow(color: Color("FLSuccess").opacity(0.3), radius: 8, x: 0, y: 4)
                             .contentShape(Rectangle())  // Make entire pill tappable
                             .onTapGesture {
                                 showingTrends = true
@@ -470,7 +475,7 @@ struct CurrentWeightCard: View {
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(gentleMessage.color.opacity(0.08))
-                            .cornerRadius(10)
+                            .cornerRadius(8)
                             .contentShape(Rectangle())  // Make entire message tappable
                             .onTapGesture {
                                 showingTrends = true
@@ -500,10 +505,10 @@ struct CurrentWeightCard: View {
                             // Goal label and value - COMPACT but still EXCITING!
                             (Text("GOAL: ")
                                 .font(.system(size: 32, weight: .heavy, design: .rounded))
-                                .foregroundColor(.green)
-                            + Text("\(Int(weightGoal)) lbs")
+                                .foregroundColor(Color("FLSuccess"))
+                            + Text("\(Int((weightGoal))) \("lbs")")
                                 .font(.system(size: 32, weight: .heavy, design: .rounded))
-                                .foregroundColor(.green))
+                                .foregroundColor(Color("FLSuccess")))
 
                             // Gear icon visual indicator that this is editable
                             // No longer a separate button - entire pill is tappable
@@ -516,12 +521,12 @@ struct CurrentWeightCard: View {
                         .background(
                             // Subtle green background for extra pop
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.green.opacity(0.08))
+                                .fill(Color("FLSuccess").opacity(0.08))
                         )
                         .overlay(
                             // Green border for emphasis
                             RoundedRectangle(cornerRadius: 16)
-                                .strokeBorder(Color.green.opacity(0.3), lineWidth: 2)
+                                .strokeBorder(Color("FLSuccess").opacity(0.3), lineWidth: 2)
                         )
                     }
                     .buttonStyle(.plain)  // Removes default button styling, keeps custom design
@@ -571,7 +576,7 @@ struct CurrentWeightCard: View {
         .frame(maxWidth: .infinity)
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
@@ -711,7 +716,7 @@ struct WeightChartView: View {
                 Text(label)
                     .font(.title3)
                     .fontWeight(.bold)
-                    .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+                    .foregroundColor(Color("FLPrimary"))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
 
@@ -725,14 +730,14 @@ struct WeightChartView: View {
                             x: .value("Date", entry.date),
                             y: .value("Weight", entry.weight)
                         )
-                        .foregroundStyle(Color(red: 0.2, green: 0.6, blue: 0.86))
+                        .foregroundStyle(Color("FLPrimary"))
                         .interpolationMethod(.catmullRom)
 
                         PointMark(
                             x: .value("Date", entry.date),
                             y: .value("Weight", entry.weight)
                         )
-                        .foregroundStyle(Color(red: 0.2, green: 0.6, blue: 0.86))
+                        .foregroundStyle(Color("FLPrimary"))
                     }
 
                     if showGoalLine {
@@ -742,7 +747,7 @@ struct WeightChartView: View {
                             .annotation(position: .top, alignment: .trailing) {
                                 Text("Goal")
                                     .font(.caption)
-                                    .foregroundColor(.green)
+                                    .foregroundColor(Color("FLSuccess"))
                             }
                     }
 
@@ -753,14 +758,14 @@ struct WeightChartView: View {
                             .lineStyle(StrokeStyle(lineWidth: 2))
                             .annotation(position: .top, alignment: .center) {
                                 VStack(spacing: 4) {
-                                    Text("\(selectedEntry.weight, specifier: "%.1f") lbs")
+                                    Text("\(weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
                                         .font(.caption)
                                         .fontWeight(.semibold)
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(Color(red: 0.2, green: 0.6, blue: 0.86))
-                                        .cornerRadius(6)
+                                        .background(Color("FLPrimary"))
+                                        .cornerRadius(8)
                                 }
                             }
                     }
@@ -950,10 +955,10 @@ struct WeightChartView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
 
-                            Text("\(selectedEntry.weight, specifier: "%.1f") lbs")
+                            Text("\(weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
                                 .font(.title3)
                                 .fontWeight(.bold)
-                                .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+                                .foregroundColor(Color("FLPrimary"))
 
                             HStack(spacing: 8) {
                                 Text(selectedEntry.date, style: .date)
@@ -1015,7 +1020,7 @@ struct WeightChartView: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 
@@ -1668,7 +1673,7 @@ struct WeightStatsView: View {
                 StatCard(
                     title: "Average Weight",
                     value: weightManager.averageWeight
-                        .map { String(format: "%.1f lbs", $0) } ?? "N/A",
+                        .map { String(format: "%.1f \("lbs")", ($0)) } ?? "N/A",
                     icon: "chart.bar",
                     color: .orange
                 )
@@ -1683,7 +1688,7 @@ struct WeightStatsView: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
@@ -1712,7 +1717,7 @@ struct StatCard: View {
         .frame(maxWidth: .infinity)
         .padding()
         .background(Color(.secondarySystemBackground))
-        .cornerRadius(10)
+        .cornerRadius(8)
     }
 }
 
@@ -1730,7 +1735,7 @@ struct WeightChangeStatCard: View {
 
                 // Weight change value with arrow
                 HStack(spacing: 4) {
-                    Text(String(format: "%.1f lbs", abs(change)))
+                    Text(String(format: "%.1f \("lbs")", (abs(change))))
                         .font(.title3)
                         .fontWeight(.bold)
                     Image(systemName: change >= 0 ? "arrow.up" : "arrow.down")
@@ -1757,7 +1762,7 @@ struct WeightChangeStatCard: View {
         .frame(maxWidth: .infinity)
         .padding()
         .background(Color(.secondarySystemBackground))
-        .cornerRadius(10)
+        .cornerRadius(8)
     }
 }
 
@@ -1786,7 +1791,7 @@ struct WeightHistoryListView: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 }
@@ -1830,10 +1835,10 @@ struct WeightHistoryRow: View {
 
             Spacer()
 
-            Text("\(entry.weight, specifier: "%.1f") lbs")
+            Text("\(weightManager.displayWeight(for: entry), specifier: "%.1f") \("lbs")")
                 .font(.title3)
                 .fontWeight(.semibold)
-                .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+                .foregroundColor(Color("FLPrimary"))
         }
         .contentShape(Rectangle())
         .contextMenu {
@@ -1886,7 +1891,7 @@ struct FirstTimeWeightSetupView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "scalemass.fill")
                             .font(.system(size: 60))
-                            .foregroundColor(Color(red: 0.2, green: 0.6, blue: 0.86))
+                            .foregroundColor(Color("FLPrimary"))
 
                         Text("Welcome to Weight Tracking")
                             .font(.title2)
@@ -1914,7 +1919,7 @@ struct FirstTimeWeightSetupView: View {
                                 .multilineTextAlignment(.center)
                                 .padding()
                                 .background(Color(.systemGray6))
-                                .cornerRadius(12)
+                                .cornerRadius(8)
 
                             Text("lbs")
                                 .font(.title3)
@@ -1936,7 +1941,7 @@ struct FirstTimeWeightSetupView: View {
                                 .multilineTextAlignment(.center)
                                 .padding()
                                 .background(Color(.systemGray6))
-                                .cornerRadius(12)
+                                .cornerRadius(8)
 
                             Text("lbs")
                                 .font(.title3)
@@ -1959,8 +1964,8 @@ struct FirstTimeWeightSetupView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color(red: 0.2, green: 0.6, blue: 0.86))
-                            .cornerRadius(12)
+                            .background(Color("FLPrimary"))
+                            .cornerRadius(8)
                     }
                     .padding(.horizontal)
                     .padding(.top, 20)
@@ -2026,7 +2031,7 @@ struct QuickGoalEditorView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "target")
                         .font(.system(size: 60))
-                        .foregroundColor(.green)
+                        .foregroundColor(Color("FLSuccess"))
 
                     Text("Set Your Goal Weight")
                         .font(.title2)
@@ -2051,7 +2056,7 @@ struct QuickGoalEditorView: View {
                             .multilineTextAlignment(.center)
                             .padding()
                             .background(Color(.systemGray6))
-                            .cornerRadius(12)
+                            .cornerRadius(8)
                             .focused($isTextFieldFocused)  // Bind focus state
 
                         Text("lbs")
@@ -2151,7 +2156,7 @@ struct CircularProgressRing: View {
                     .trim(from: 0, to: CGFloat(percentage / 100))
                     .stroke(
                         AngularGradient(
-                            colors: [Color.blue, Color.cyan, Color.green],
+                            colors: [Color("FLPrimary"), Color.cyan, Color("FLSuccess")],
                             center: .center,
                             startAngle: .degrees(0),
                             endAngle: .degrees(360 * (percentage / 100))
@@ -2185,9 +2190,9 @@ struct CircularProgressRing: View {
             HStack(spacing: 24) {
                 // Weight Lost (left)
                 VStack(spacing: 2) {
-                    Text("\(weightLost, specifier: "%.1f") lbs")
+                    Text("\((weightLost), specifier: "%.1f") \("lbs")")
                         .font(.system(size: 18, weight: .bold, design: .rounded))
-                        .foregroundColor(.green)
+                        .foregroundColor(Color("FLSuccess"))
                     Text("LOST")
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                         .foregroundColor(.secondary)
@@ -2202,7 +2207,7 @@ struct CircularProgressRing: View {
                 // Weight To Go (right)
                 if let toGo = weightToGo, toGo > 0 {
                     VStack(spacing: 2) {
-                        Text("\(toGo, specifier: "%.1f") lbs")
+                        Text("\((toGo), specifier: "%.1f") \("lbs")")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
                             .foregroundColor(.orange)
                         Text("TO GO")
@@ -2256,7 +2261,7 @@ struct CircularProgressRing: View {
     /// Returns color for percentage text based on progress
     private func progressColor(for percentage: Double) -> Color {
         switch percentage {
-        case 0..<33:    return .blue
+        case 0..<33:    return Color("FLPrimary")
         case 33..<66:   return .cyan
         default:        return .green
         }
@@ -2277,13 +2282,13 @@ struct CircularProgressRing: View {
             // Distribute colors evenly across 10 milestones
             switch milestone {
             case 1...3:
-                return .blue
+                return Color("FLPrimary")
             case 4...6:
                 return .cyan
             case 7...10:
                 return .green
             default:
-                return .blue
+                return Color("FLPrimary")
             }
         } else {
             // Empty dots: light gray
@@ -2356,14 +2361,14 @@ struct WeightTrendsView: View {
                     VStack(spacing: 16) {
                         // Row 1: 7 days and 30 days
                         HStack(spacing: 16) {
-                            TrendCard(title: "7 DAYS", trend: calculateTrend(days: 7))
-                            TrendCard(title: "30 DAYS", trend: calculateTrend(days: 30))
+                            TrendCard( title: "7 DAYS", trend: calculateTrend(days: 7))
+                            TrendCard( title: "30 DAYS", trend: calculateTrend(days: 30))
                         }
 
                         // Row 2: 90 days and All Time
                         HStack(spacing: 16) {
-                            TrendCard(title: "90 DAYS", trend: calculateTrend(days: 90))
-                            TrendCard(title: "ALL TIME", trend: calculateTrend(days: nil))
+                            TrendCard( title: "90 DAYS", trend: calculateTrend(days: 90))
+                            TrendCard( title: "ALL TIME", trend: calculateTrend(days: nil))
                         }
                     }
                     .padding(.horizontal)
@@ -2482,7 +2487,7 @@ struct TrendCard: View {
             case "7 DAYS":
                 // Recent: Blue gradient
                 return LinearGradient(
-                    colors: [Color.blue, Color.blue.opacity(0.7)],
+                    colors: [Color("FLPrimary"), Color("FLPrimary").opacity(0.7)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -2496,7 +2501,7 @@ struct TrendCard: View {
             case "90 DAYS":
                 // Long-term: Green gradient
                 return LinearGradient(
-                    colors: [Color.green, Color.green.opacity(0.7)],
+                    colors: [Color("FLSuccess"), Color("FLSuccess").opacity(0.7)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -2510,7 +2515,7 @@ struct TrendCard: View {
             default:
                 // Fallback: Green
                 return LinearGradient(
-                    colors: [Color.green, Color.green.opacity(0.7)],
+                    colors: [Color("FLSuccess"), Color("FLSuccess").opacity(0.7)],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -2534,15 +2539,15 @@ struct TrendCard: View {
         if trend.isLoss {
             switch title {
             case "7 DAYS":
-                return Color.blue.opacity(0.3)
+                return Color("FLPrimary").opacity(0.3)
             case "30 DAYS":
                 return Color.cyan.opacity(0.3)
             case "90 DAYS":
-                return Color.green.opacity(0.3)
+                return Color("FLSuccess").opacity(0.3)
             case "ALL TIME":
                 return Color.orange.opacity(0.3)
             default:
-                return Color.green.opacity(0.3)
+                return Color("FLSuccess").opacity(0.3)
             }
         } else {
             return Color.red.opacity(0.3)

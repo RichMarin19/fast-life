@@ -248,14 +248,14 @@ struct MoodEnergyGraphsView: View {
                                 x: .value("Date", entry.date),
                                 y: .value("Energy", entry.energyLevel)
                             )
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color("FLPrimary"))
                             .interpolationMethod(.catmullRom)
 
                             PointMark(
                                 x: .value("Date", entry.date),
                                 y: .value("Energy", entry.energyLevel)
                             )
-                            .foregroundStyle(.blue)
+                            .foregroundStyle(Color("FLPrimary"))
                         }
                         .chartYScale(domain: 0...10)
                         .frame(height: 200)
@@ -416,7 +416,7 @@ struct AddMoodEntryView: View {
                             }
 
                             Slider(value: $energyLevel, in: 1...10, step: 1)
-                                .tint(.blue)
+                                .tint(Color("FLPrimary"))
 
                             HStack {
                                 Text("1")

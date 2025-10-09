@@ -14,7 +14,7 @@ struct AnalyticsView: View {
                     // Icon
                     Image(systemName: "chart.bar.xaxis")
                         .font(.system(size: 80))
-                        .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                        .foregroundColor(Color("FLSecondary"))
 
                     // Title
                     Text("Analytics Hub")
@@ -35,7 +35,7 @@ struct AnalyticsView: View {
                         .padding(.vertical, 8)
                         .background(
                             Capsule()
-                                .fill(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                .fill(Color("FLSecondary"))
                         )
 
                     // Description
@@ -102,7 +102,7 @@ struct FeaturePreviewCard: View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: icon)
                 .font(.title2)
-                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                .foregroundColor(Color("FLSecondary"))
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 6) {

@@ -50,13 +50,13 @@ struct ContentView: View {
                 HStack(spacing: 0) {
                     Text("Fast L")
                         .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(.blue)
+                        .foregroundColor(Color("FLPrimary"))
                     Text("IF")
                         .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(.green)
+                        .foregroundColor(Color("FLSuccess"))
                     Text("e")
                         .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(.cyan)
+                        .foregroundColor(Color("FLSecondary"))
                 }
 
                 Spacer()
@@ -167,7 +167,7 @@ struct ContentView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
                     .background(Color.orange.opacity(0.1))
-                    .cornerRadius(20)
+                    .cornerRadius(8)
                 }
 
                 // Goal Display - Styled like Weight Tracker for consistency
@@ -184,27 +184,27 @@ struct ContentView: View {
                         // Goal label and value - COMPACT but still EXCITING!
                         (Text("GOAL: ")
                             .font(.system(size: 32, weight: .heavy, design: .rounded))
-                            .foregroundColor(.green)
+                            .foregroundColor(Color("FLSuccess"))
                         + Text("\(Int(fastingManager.fastingGoalHours))h")
                             .font(.system(size: 32, weight: .heavy, design: .rounded))
-                            .foregroundColor(.green))
+                            .foregroundColor(Color("FLSuccess")))
 
                         // Gear icon visual indicator that this is editable
                         Image(systemName: "gearshape.fill")
                             .font(.system(size: 24))
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color("FLWarning"))
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(
                         // Subtle green background for extra pop
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.green.opacity(0.08))
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color("FLSuccess").opacity(0.08))
                     )
                     .overlay(
                         // Green border for emphasis
-                        RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(Color.green.opacity(0.3), lineWidth: 2)
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color("FLSuccess").opacity(0.3), lineWidth: 2)
                     )
                 }
                 .buttonStyle(.plain)
@@ -261,7 +261,7 @@ struct ContentView: View {
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(Color(red: 0.9, green: 0.95, blue: 0.7))
+                        .background(Color("FLWarning"))
                         .cornerRadius(8)
                     }
                     .padding(.horizontal, 40)
@@ -278,7 +278,7 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .background(Color.red)
-                            .cornerRadius(15)
+                            .cornerRadius(8)
                     }
                     .padding(.horizontal, 40)
                 } else {
@@ -292,8 +292,8 @@ struct ContentView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(Color.green)
-                            .cornerRadius(15)
+                            .background(Color("FLSuccess"))
+                            .cornerRadius(8)
                     }
                     .padding(.horizontal, 40)
                 }
@@ -328,7 +328,7 @@ struct ContentView: View {
                             HistoryRowView(session: session)
                                 .padding(.horizontal)
                                 .padding(.vertical, 8)
-                                .contentShape(Rectangle())
+                                .contentShape(RoundedRectangle(cornerRadius: 12))
                                 .onTapGesture {
                                     selectedDate = session.startTime
                                 }
@@ -340,8 +340,16 @@ struct ContentView: View {
                 }
             }
             }
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationBarHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Settings") {
+                        // TODO: Add settings functionality
+                        print("Settings tapped")
+                    }
+                }
+            }
             .onAppear {
                 // Check if fasting goal needs to be set
                 if fastingManager.fastingGoalHours == 0 {
@@ -664,7 +672,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .cornerRadius(8)
                 }
 
                 // Stop Button - GREEN, BOLD, LARGER
@@ -675,7 +683,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.green)
-                        .cornerRadius(12)
+                        .cornerRadius(8)
                 }
 
                 // Delete Button
@@ -686,7 +694,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.red.opacity(0.1))
-                        .cornerRadius(12)
+                        .cornerRadius(8)
                 }
 
                 // Cancel Button
@@ -697,7 +705,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color(.systemGray6))
-                        .cornerRadius(12)
+                        .cornerRadius(8)
                 }
             }
             .padding(.horizontal, 30)
@@ -779,7 +787,7 @@ struct GoalSettingsView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
-                        .cornerRadius(15)
+                        .cornerRadius(8)
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 40)
@@ -839,8 +847,8 @@ struct EditFastTimesView: View {
             // Soft wellness gradient background
             LinearGradient(
                 colors: [
-                    Color(red: 0.95, green: 0.97, blue: 1.0),  // Soft blue-white
-                    Color(red: 0.98, green: 0.95, blue: 1.0)   // Soft lavender
+                    Color(UIColor.secondarySystemBackground),  // Soft blue-white
+                    Color(UIColor.secondarySystemBackground)   // Soft lavender
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -853,7 +861,7 @@ struct EditFastTimesView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
-                            .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                            .foregroundColor(Color("FLPrimary"))
                     }
                     Spacer()
                     Text("Edit Fast")
@@ -874,7 +882,7 @@ struct EditFastTimesView: View {
                         VStack(spacing: 16) {
                             Image(systemName: "timer")
                                 .font(.system(size: 40))
-                                .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                .foregroundColor(Color("FLSecondary"))
 
                             Text("Total Duration")
                                 .font(.subheadline)
@@ -883,13 +891,13 @@ struct EditFastTimesView: View {
                             HStack(alignment: .firstTextBaseline, spacing: 4) {
                                 Text("\(hours)")
                                     .font(.system(size: 48, weight: .bold, design: .rounded))
-                                    .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                    .foregroundColor(Color("FLPrimary"))
                                 Text("h")
                                     .font(.title2)
                                     .foregroundColor(.secondary)
                                 Text("\(minutes)")
                                     .font(.system(size: 48, weight: .bold, design: .rounded))
-                                    .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                    .foregroundColor(Color("FLPrimary"))
                                 Text("m")
                                     .font(.title2)
                                     .foregroundColor(.secondary)
@@ -898,9 +906,9 @@ struct EditFastTimesView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 32)
                         .background(
-                            RoundedRectangle(cornerRadius: 20)
+                            RoundedRectangle(cornerRadius: 12)
                                 .fill(Color.white)
-                                .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.1), radius: 15, y: 5)
+                                .shadow(color: Color("FLPrimary").opacity(0.1), radius: 15, y: 5)
                         )
                         .padding(.top, 16)
 
@@ -919,7 +927,7 @@ struct EditFastTimesView: View {
                                     HStack {
                                         HStack(spacing: 12) {
                                             Image(systemName: "play.circle.fill")
-                                                .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                                                .foregroundColor(Color("FLSuccess"))
                                                 .font(.title3)
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text("Start Time")
@@ -932,12 +940,12 @@ struct EditFastTimesView: View {
                                         }
                                         Spacer()
                                         Image(systemName: editingStart ? "chevron.up.circle.fill" : "chevron.down.circle")
-                                            .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                            .foregroundColor(Color("FLPrimary"))
                                             .font(.title2)
                                     }
                                     .padding()
-                                    .background(Color(red: 0.4, green: 0.8, blue: 0.6).opacity(0.1))
-                                    .cornerRadius(12)
+                                    .background(Color("FLSuccess").opacity(0.1))
+                                    .cornerRadius(8)
                                 }
 
                                 if editingStart {
@@ -961,7 +969,7 @@ struct EditFastTimesView: View {
                                     HStack {
                                         HStack(spacing: 12) {
                                             Image(systemName: "stop.circle.fill")
-                                                .foregroundColor(Color(red: 0.9, green: 0.5, blue: 0.5))
+                                                .foregroundColor(Color.red)
                                                 .font(.title3)
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text("End Time")
@@ -974,12 +982,12 @@ struct EditFastTimesView: View {
                                         }
                                         Spacer()
                                         Image(systemName: editingEnd ? "chevron.up.circle.fill" : "chevron.down.circle")
-                                            .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                            .foregroundColor(Color("FLPrimary"))
                                             .font(.title2)
                                     }
                                     .padding()
-                                    .background(Color(red: 0.9, green: 0.5, blue: 0.5).opacity(0.1))
-                                    .cornerRadius(12)
+                                    .background(Color.red.opacity(0.1))
+                                    .cornerRadius(8)
                                 }
 
                                 if editingEnd {
@@ -996,7 +1004,7 @@ struct EditFastTimesView: View {
 
                             HStack(spacing: 6) {
                                 Image(systemName: "info.circle.fill")
-                                    .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                    .foregroundColor(Color("FLPrimary"))
                                     .font(.caption)
                                 Text("Tap to adjust your fasting start and end times")
                                     .font(.caption)
@@ -1006,7 +1014,7 @@ struct EditFastTimesView: View {
                         }
                         .padding(20)
                         .background(Color.white)
-                        .cornerRadius(20)
+                        .cornerRadius(8)
                         .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
 
                         Spacer()
@@ -1027,7 +1035,7 @@ struct EditFastTimesView: View {
                             .background(Color.white)
                             .cornerRadius(16)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
+                                RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                             )
                     }
@@ -1044,15 +1052,15 @@ struct EditFastTimesView: View {
                             .background(
                                 LinearGradient(
                                     colors: [
-                                        Color(red: 0.4, green: 0.7, blue: 0.95),
-                                        Color(red: 0.3, green: 0.5, blue: 0.85)
+                                        Color("FLSecondary"),
+                                        Color("FLPrimary")
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
                             .cornerRadius(16)
-                            .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.3), radius: 8, y: 4)
+                            .shadow(color: Color("FLPrimary").opacity(0.3), radius: 8, y: 4)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -1115,8 +1123,8 @@ struct EditStartTimeView: View {
             // Soft wellness gradient background
             LinearGradient(
                 colors: [
-                    Color(red: 0.95, green: 0.97, blue: 1.0),  // Soft blue-white
-                    Color(red: 0.98, green: 0.95, blue: 1.0)   // Soft lavender
+                    Color(UIColor.secondarySystemBackground),  // Soft blue-white
+                    Color(UIColor.secondarySystemBackground)   // Soft lavender
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
@@ -1129,7 +1137,7 @@ struct EditStartTimeView: View {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
                             .font(.title2)
-                            .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                            .foregroundColor(Color("FLPrimary"))
                     }
                     Spacer()
                     Text("Edit Start Time")
@@ -1158,7 +1166,7 @@ struct EditStartTimeView: View {
                             VStack(spacing: 16) {
                                 Image(systemName: editingDuration ? "pencil.circle.fill" : "clock.arrow.circlepath")
                                     .font(.system(size: 40))
-                                    .foregroundColor(Color(red: 0.4, green: 0.7, blue: 0.95))
+                                    .foregroundColor(Color("FLSecondary"))
 
                                 Text(editingDuration ? "Set Duration" : "Current Duration")
                                     .font(.subheadline)
@@ -1167,13 +1175,13 @@ struct EditStartTimeView: View {
                                 HStack(alignment: .firstTextBaseline, spacing: 4) {
                                     Text("\(currentHours)")
                                         .font(.system(size: 48, weight: .bold, design: .rounded))
-                                        .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                        .foregroundColor(Color("FLPrimary"))
                                     Text("h")
                                         .font(.title2)
                                         .foregroundColor(.secondary)
                                     Text("\(currentMinutes)")
                                         .font(.system(size: 48, weight: .bold, design: .rounded))
-                                        .foregroundColor(Color(red: 0.3, green: 0.5, blue: 0.85))
+                                        .foregroundColor(Color("FLPrimary"))
                                     Text("m")
                                         .font(.title2)
                                         .foregroundColor(.secondary)
@@ -1186,20 +1194,20 @@ struct EditStartTimeView: View {
                                     Text(editingDuration ? "Tap to confirm" : "Tap to edit duration")
                                         .font(.caption)
                                 }
-                                .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                .foregroundColor(Color("FLPrimary"))
                                 .padding(.top, 4)
                             }
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 32)
                             .background(
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: 12)
                                     .fill(Color.white)
-                                    .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(editingDuration ? 0.2 : 0.1), radius: 15, y: 5)
+                                    .shadow(color: Color("FLPrimary").opacity(editingDuration ? 0.2 : 0.1), radius: 15, y: 5)
                             )
                             .overlay(
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: 12)
                                     .strokeBorder(
-                                        Color(red: 0.4, green: 0.5, blue: 0.9).opacity(editingDuration ? 0.5 : 0),
+                                        Color("FLPrimary").opacity(editingDuration ? 0.5 : 0),
                                         lineWidth: 2
                                     )
                             )
@@ -1252,7 +1260,7 @@ struct EditStartTimeView: View {
 
                                 HStack(spacing: 6) {
                                     Image(systemName: "info.circle.fill")
-                                        .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                        .foregroundColor(Color("FLPrimary"))
                                         .font(.caption)
                                     Text("Start time will be calculated automatically")
                                         .font(.caption)
@@ -1262,7 +1270,7 @@ struct EditStartTimeView: View {
                             }
                             .padding(20)
                             .background(Color.white)
-                            .cornerRadius(20)
+                            .cornerRadius(8)
                             .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
                             .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
@@ -1270,7 +1278,7 @@ struct EditStartTimeView: View {
                         // OR divider
                         if !editingDuration {
                             HStack {
-                                Rectangle()
+                                RoundedRectangle(cornerRadius: 12)
                                     .fill(Color.gray.opacity(0.3))
                                     .frame(height: 1)
 
@@ -1279,7 +1287,7 @@ struct EditStartTimeView: View {
                                     .foregroundColor(.secondary)
                                     .padding(.horizontal, 12)
 
-                                Rectangle()
+                                RoundedRectangle(cornerRadius: 12)
                                     .fill(Color.gray.opacity(0.3))
                                     .frame(height: 1)
                             }
@@ -1301,7 +1309,7 @@ struct EditStartTimeView: View {
                                         HStack {
                                             HStack(spacing: 12) {
                                                 Image(systemName: "play.circle.fill")
-                                                    .foregroundColor(Color(red: 0.4, green: 0.8, blue: 0.6))
+                                                    .foregroundColor(Color("FLSuccess"))
                                                     .font(.title3)
                                                 VStack(alignment: .leading, spacing: 2) {
                                                     Text("Start Time")
@@ -1314,12 +1322,12 @@ struct EditStartTimeView: View {
                                             }
                                             Spacer()
                                             Image(systemName: editingTime ? "chevron.up.circle.fill" : "chevron.down.circle")
-                                                .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                                .foregroundColor(Color("FLPrimary"))
                                                 .font(.title2)
                                         }
                                         .padding()
-                                        .background(Color(red: 0.4, green: 0.8, blue: 0.6).opacity(0.1))
-                                        .cornerRadius(12)
+                                        .background(Color("FLSuccess").opacity(0.1))
+                                        .cornerRadius(8)
                                     }
 
                                     if editingTime {
@@ -1337,7 +1345,7 @@ struct EditStartTimeView: View {
 
                                 HStack(spacing: 6) {
                                     Image(systemName: "info.circle.fill")
-                                        .foregroundColor(Color(red: 0.4, green: 0.5, blue: 0.9))
+                                        .foregroundColor(Color("FLPrimary"))
                                         .font(.caption)
                                     Text("Choose exact date and time when fast started")
                                         .font(.caption)
@@ -1347,7 +1355,7 @@ struct EditStartTimeView: View {
                             }
                             .padding(20)
                             .background(Color.white)
-                            .cornerRadius(20)
+                            .cornerRadius(8)
                             .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }
@@ -1370,7 +1378,7 @@ struct EditStartTimeView: View {
                             .background(Color.white)
                             .cornerRadius(16)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 16)
+                                RoundedRectangle(cornerRadius: 12)
                                     .stroke(Color.gray.opacity(0.3), lineWidth: 1)
                             )
                     }
@@ -1410,15 +1418,15 @@ struct EditStartTimeView: View {
                             .background(
                                 LinearGradient(
                                     colors: [
-                                        Color(red: 0.4, green: 0.7, blue: 0.95),
-                                        Color(red: 0.3, green: 0.5, blue: 0.85)
+                                        Color("FLSecondary"),
+                                        Color("FLPrimary")
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
                                 )
                             )
                             .cornerRadius(16)
-                            .shadow(color: Color(red: 0.4, green: 0.5, blue: 0.9).opacity(0.3), radius: 8, y: 4)
+                            .shadow(color: Color("FLPrimary").opacity(0.3), radius: 8, y: 4)
                     }
                 }
                 .padding(.horizontal, 20)
@@ -1533,7 +1541,7 @@ struct FastingSyncOptionsView: View {
                         .padding(.horizontal, 12)
                         .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(15)
+                        .cornerRadius(8)
                     }
 
                     Button(action: onSyncFuture) {
@@ -1553,7 +1561,7 @@ struct FastingSyncOptionsView: View {
                         .padding(.horizontal, 12)
                         .background(Color.cyan)
                         .foregroundColor(.white)
-                        .cornerRadius(15)
+                        .cornerRadius(8)
                     }
                 }
                 .padding(.horizontal, 30)
@@ -1619,9 +1627,9 @@ struct FastingHealthKitNudgeView: View {
                     .fontWeight(.semibold)
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
-                    .background(Color.blue)
+                    .background(Color("FLPrimary"))
                     .foregroundColor(.white)
-                    .cornerRadius(20)
+                    .cornerRadius(8)
 
                     Button(action: {
                         showingDismissOptions = true
@@ -1640,7 +1648,7 @@ struct FastingHealthKitNudgeView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color(.systemGray4), lineWidth: 1)
         )
-        .cornerRadius(12)
+        .cornerRadius(8)
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         .confirmationDialog("Dismiss Options", isPresented: $showingDismissOptions, titleVisibility: .visible) {
             Button("Remind me later") {
