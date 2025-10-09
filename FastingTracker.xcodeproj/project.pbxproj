@@ -38,6 +38,8 @@
 		52B2CFD02E96C3060061FCFF /* HealthDataType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCE2E96C3060061FCFF /* HealthDataType.swift */; };
 		52B2CFD12E96C3060061FCFF /* HealthDataPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCC2E96C3060061FCFF /* HealthDataPreferences.swift */; };
 		52B2CFD32E96DB460061FCFF /* HealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD22E96DB460061FCFF /* HealthKitNudgeView.swift */; };
+		52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */; };
+		52B2CFD72E9746610061FCFF /* FastingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -83,6 +85,8 @@
 		52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataSelectionView.swift; sourceTree = "<group>"; };
 		52B2CFCE2E96C3060061FCFF /* HealthDataType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataType.swift; sourceTree = "<group>"; };
 		52B2CFD22E96DB460061FCFF /* HealthKitNudgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitNudgeView.swift; sourceTree = "<group>"; };
+		52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingSettingsView.swift; sourceTree = "<group>"; };
+		52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitNudgeTestHelper.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -119,6 +123,8 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */,
+				52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */,
 				52B2CFD22E96DB460061FCFF /* HealthKitNudgeView.swift */,
 				52B2CFCC2E96C3060061FCFF /* HealthDataPreferences.swift */,
 				52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */,
@@ -282,6 +288,8 @@
 				A1000011000000000000001 /* NotificationManager.swift in Sources */,
 				FF00000100000000000000A1 /* FastingStage.swift in Sources */,
 				FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */,
+				52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */,
+				52B2CFD72E9746610061FCFF /* FastingSettingsView.swift in Sources */,
 				FF00000500000000000000A1 /* AnalyticsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -431,7 +439,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fastlife.app;
 				PRODUCT_NAME = "Fast lIFe";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -461,7 +469,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.3.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.fastlife.app;
 				PRODUCT_NAME = "Fast lIFe";
 				SWIFT_EMIT_LOC_STRINGS = YES;
