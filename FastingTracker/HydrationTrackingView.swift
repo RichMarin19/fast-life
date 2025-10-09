@@ -3,6 +3,11 @@ import SwiftUI
 struct HydrationTrackingView: View {
     @StateObject private var hydrationManager = HydrationManager()
     @StateObject private var nudgeManager = HealthKitNudgeManager.shared
+
+    // PHASE 1: Unit preferences integration
+    // Following Apple's reactive UI pattern for settings changes
+    // Reference: https://developer.apple.com/documentation/swiftui/observedobject
+    @StateObject private var appSettings = AppSettings.shared
     @State private var showingGoalSettings = false
     @State private var showingDrinkPicker = false
     @State private var selectedDrinkType: DrinkType = .water
@@ -97,7 +102,7 @@ struct HydrationTrackingView: View {
                             Text("Today")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("\(Int(hydrationManager.todaysTotalOunces())) oz")
+                            Text("\(Int(hydrationManager.todaysTotalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                         }
 
@@ -106,7 +111,7 @@ struct HydrationTrackingView: View {
                             Text("Goal")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("\(Int(hydrationManager.dailyGoalOunces)) oz")
+                            Text("\(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
                                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                                 .foregroundColor(.cyan)
                         }
@@ -123,7 +128,7 @@ struct HydrationTrackingView: View {
                     showingGoalSettings = true
                 }) {
                     HStack {
-                        Text("Daily Goal: \(Int(hydrationManager.dailyGoalOunces)) oz")
+                        Text("Daily Goal: \(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
                             .font(.headline)
                             .foregroundColor(.secondary)
                         Image(systemName: "gearshape.fill")
@@ -358,23 +363,28 @@ struct HydrationGoalSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @State private var goalInput: String = ""
 
+    // PHASE 1: Unit preferences integration for goal settings
+    // Following Apple's reactive UI pattern for settings changes
+    // Reference: https://developer.apple.com/documentation/swiftui/observedobject
+    @StateObject private var appSettings = AppSettings.shared
+
     var body: some View {
         NavigationView {
             Form {
                 Section(header: Text("Daily Hydration Goal")) {
                     HStack {
-                        TextField("Goal (oz)", text: $goalInput)
+                        TextField("Goal (\(hydrationManager.currentUnitAbbreviation))", text: $goalInput)
                             .keyboardType(.numberPad)
                             .onAppear {
-                                goalInput = String(Int(hydrationManager.dailyGoalOunces))
+                                goalInput = String(Int(hydrationManager.dailyGoalInPreferredUnit()))
                             }
-                        Text("oz")
+                        Text(hydrationManager.currentUnitAbbreviation)
                             .foregroundColor(.secondary)
                     }
                 }
 
                 Section {
-                    Text("Recommended daily water intake is 64 oz (8 glasses). Adjust based on your activity level and climate.")
+                    Text("Recommended daily water intake is \(Int(appSettings.hydrationUnit.fromOunces(64))) \(appSettings.hydrationUnit.abbreviation) (8 glasses). Adjust based on your activity level and climate.")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -390,7 +400,7 @@ struct HydrationGoalSettingsView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         if let newGoal = Double(goalInput), newGoal > 0 {
-                            hydrationManager.updateDailyGoal(newGoal)
+                            hydrationManager.updateDailyGoalFromPreferredUnit(newGoal)
                         }
                         dismiss()
                     }
@@ -500,7 +510,7 @@ struct DrinkAmountPickerView: View {
                                             }
                                         }
 
-                                    Text("oz")
+                                    Text(hydrationManager.currentUnitAbbreviation)
                                         .foregroundColor(.secondary)
                                 }
                             }

@@ -1,0 +1,1082 @@
+import SwiftUI
+import Charts
+// MARK: - Weight Chart View
+
+enum WeightTimeRange: String, CaseIterable {
+    case day = "Day"
+    case week = "Week"
+    case month = "Month"
+    case threeMonths = "3 Months"
+    case year = "Year"
+    case all = "All"
+
+    var days: Int? {
+        switch self {
+        case .day: return 1
+        case .week: return 7
+        case .month: return 30
+        case .threeMonths: return 90
+        case .year: return 365
+        case .all: return nil
+        }
+    }
+}
+
+struct WeightChartView: View {
+    @ObservedObject var weightManager: WeightManager
+    @Binding var selectedTimeRange: WeightTimeRange
+    @Binding var showGoalLine: Bool
+    @Binding var weightGoal: Double
+
+    @State private var selectedDate: Date?
+
+    var filteredEntries: [WeightEntry] {
+        let calendar = Calendar.current
+
+        // Special handling for Day view: show current calendar day (12am to now)
+        if selectedTimeRange == .day {
+            let startOfToday = calendar.startOfDay(for: Date())
+            return weightManager.weightEntries.filter { $0.date >= startOfToday }
+        }
+
+        // For other views: use rolling time window (last N days)
+        guard let days = selectedTimeRange.days else {
+            return weightManager.weightEntries
+        }
+
+        let cutoffDate = calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        return weightManager.weightEntries.filter { $0.date >= cutoffDate }
+    }
+
+    // MARK: - Daily Averaged Entries for Week/Month/3Months/Year/All View
+
+    /// For Week/Month/3Months/Year/All view: Groups entries by calendar day and averages weights for each day
+    /// This ensures one data point per day even if multiple weigh-ins occurred
+    var dailyAveragedEntries: [WeightEntry] {
+        let calendar = Calendar.current
+
+        // Group entries by calendar day
+        let groupedByDay = Dictionary(grouping: filteredEntries) { entry in
+            calendar.startOfDay(for: entry.date)
+        }
+
+        // Calculate average weight for each day
+        let averagedEntries = groupedByDay.map { (day, entries) -> WeightEntry in
+            let avgWeight = entries.reduce(0.0) { $0 + $1.weight } / Double(entries.count)
+            let avgBMI = entries.compactMap { $0.bmi }.isEmpty ? nil : entries.compactMap { $0.bmi }.reduce(0.0, +) / Double(entries.compactMap { $0.bmi }.count)
+            let avgBodyFat = entries.compactMap { $0.bodyFat }.isEmpty ? nil : entries.compactMap { $0.bodyFat }.reduce(0.0, +) / Double(entries.compactMap { $0.bodyFat }.count)
+
+            // Use the most recent entry's metadata for the day
+            let mostRecentEntry = entries.sorted { $0.date > $1.date }.first!
+
+            return WeightEntry(
+                id: mostRecentEntry.id,
+                date: day, // Use start of day for consistent X-axis positioning
+                weight: avgWeight,
+                bmi: avgBMI,
+                bodyFat: avgBodyFat,
+                source: mostRecentEntry.source
+            )
+        }
+
+        // Sort by date (oldest to newest for chart rendering)
+        return averagedEntries.sorted { $0.date < $1.date }
+    }
+
+    /// Returns the appropriate data set based on selected time range
+    var chartData: [WeightEntry] {
+        switch selectedTimeRange {
+        case .day:
+            // Day view: Show ALL individual data points (no averaging)
+            return filteredEntries
+        case .week, .month, .threeMonths, .year, .all:
+            // Week/Month/3Months/Year/All view: Show daily averaged data (one point per day)
+            return dailyAveragedEntries
+        }
+    }
+
+    /// Find the weight entry closest to the selected date
+    var selectedEntry: WeightEntry? {
+        guard let selectedDate = selectedDate else { return nil }
+
+        return chartData.min(by: { entry1, entry2 in
+            abs(entry1.date.timeIntervalSince(selectedDate)) < abs(entry2.date.timeIntervalSince(selectedDate))
+        })
+    }
+
+    /// Get current time range label for display (e.g., "September 2025" for Month view)
+    var timeRangeLabel: String? {
+        guard selectedTimeRange == .month else { return nil }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM yyyy"
+        return formatter.string(from: Date())
+    }
+
+    // Progress percentage calculation moved to CurrentWeightCard
+    // Removed duplicate function to keep code DRY (Don't Repeat Yourself)
+
+    var body: some View {
+        VStack(spacing: 16) {
+            HStack {
+                Text("Weight Chart")
+                    .font(.headline)
+                Spacer()
+                Picker("Time Range", selection: $selectedTimeRange) {
+                    ForEach(WeightTimeRange.allCases, id: \.self) { range in
+                        Text(range.rawValue).tag(range)
+                    }
+                }
+                .pickerStyle(.menu)
+            }
+
+            // Display current time range (Month/Year) for Month view
+            if let label = timeRangeLabel {
+                Text(label)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(Color("FLPrimary"))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            // Progress percentage moved to CurrentWeightCard (below goal pill)
+            // This keeps related information grouped together per Apple HIG
+
+            if !chartData.isEmpty {
+                Chart {
+                    ForEach(chartData) { entry in
+                        LineMark(
+                            x: .value("Date", entry.date),
+                            y: .value("Weight", entry.weight)
+                        )
+                        .foregroundStyle(Color("FLPrimary"))
+                        .interpolationMethod(.catmullRom)
+
+                        PointMark(
+                            x: .value("Date", entry.date),
+                            y: .value("Weight", entry.weight)
+                        )
+                        .foregroundStyle(Color("FLPrimary"))
+                    }
+
+                    if showGoalLine {
+                        RuleMark(y: .value("Goal", weightGoal))
+                            .foregroundStyle(.green)
+                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                            .annotation(position: .top, alignment: .trailing) {
+                                Text("Goal")
+                                    .font(.caption)
+                                    .foregroundColor(Color("FLSuccess"))
+                            }
+                    }
+
+                    // Selection indicator: vertical line at selected point
+                    if let selectedEntry = selectedEntry {
+                        RuleMark(x: .value("Selected", selectedEntry.date))
+                            .foregroundStyle(.gray.opacity(0.5))
+                            .lineStyle(StrokeStyle(lineWidth: 2))
+                            .annotation(position: .top, alignment: .center) {
+                                VStack(spacing: 4) {
+                                    Text("\(weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
+                                        .font(.caption)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.white)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(Color("FLPrimary"))
+                                        .cornerRadius(8)
+                                }
+                            }
+                    }
+                }
+                .frame(height: 250)
+                .chartXAxis {
+                    if selectedTimeRange == .day {
+                        // Day view: Show 3-hour increments starting from 6am
+                        AxisMarks(values: dayXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    } else if selectedTimeRange == .week {
+                        // Week view: Show all 7 days
+                        AxisMarks(values: weekXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    } else if selectedTimeRange == .month {
+                        // Month view: Adaptive marks based on data range
+                        AxisMarks(values: monthXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    } else if selectedTimeRange == .threeMonths {
+                        // 3 Months view: Show 12 marks (4 per month)
+                        AxisMarks(values: threeMonthsXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    } else if selectedTimeRange == .year {
+                        // Year view: Show 12 marks (one per month)
+                        AxisMarks(values: yearXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    } else if selectedTimeRange == .all {
+                        // All view: Adaptive marks based on data span
+                        AxisMarks(values: allXAxisValues) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    } else {
+                        // Fallback: automatic marks
+                        AxisMarks(values: .automatic) { value in
+                            if let date = value.as(Date.self) {
+                                AxisValueLabel {
+                                    Text(xAxisLabel(for: date))
+                                        .font(.caption2)
+                                }
+                                AxisGridLine()
+                                AxisTick()
+                            }
+                        }
+                    }
+                }
+                .chartYAxis {
+                    if selectedTimeRange == .day {
+                        // Day view: Show fewer marks with "lbs" suffix
+                        AxisMarks(position: .leading, values: dayYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(weight)) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else if selectedTimeRange == .week {
+                        // Week view: Show weight values at 1lb intervals with "lbs" suffix
+                        AxisMarks(position: .leading, values: weekYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(weight)) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else if selectedTimeRange == .month {
+                        // Month view: Show 10 evenly-spaced marks with "lbs" suffix
+                        AxisMarks(position: .leading, values: monthYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(round(weight))) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else if selectedTimeRange == .threeMonths {
+                        // 3 Months view: Show 10 evenly-spaced marks with "lbs" suffix
+                        AxisMarks(position: .leading, values: threeMonthsYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(round(weight))) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else if selectedTimeRange == .year {
+                        // Year view: Show 10 evenly-spaced marks with "lbs" suffix
+                        AxisMarks(position: .leading, values: yearYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(round(weight))) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else if selectedTimeRange == .all {
+                        // All view: Show 10 evenly-spaced marks with "lbs" suffix
+                        AxisMarks(position: .leading, values: allYAxisValues) { value in
+                            if let weight = value.as(Double.self) {
+                                AxisValueLabel {
+                                    Text("\(Int(round(weight))) lbs")
+                                        .font(.caption2)
+                                }
+                            }
+                            AxisGridLine()
+                            AxisTick()
+                        }
+                    } else {
+                        AxisMarks(position: .leading)
+                    }
+                }
+                .chartYScale(domain: yAxisDomain)
+                .modifier(XAxisScaleModifier(domain: xAxisDomain))
+                .chartXSelection(value: $selectedDate)
+            } else {
+                Text("No data for selected time range")
+                    .foregroundColor(.secondary)
+                    .frame(height: 250)
+            }
+
+            // Selected data point details
+            if let selectedEntry = selectedEntry {
+                VStack(spacing: 8) {
+                    Divider()
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Selected Point")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Text("\(weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color("FLPrimary"))
+
+                            HStack(spacing: 8) {
+                                Text(selectedEntry.date, style: .date)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+
+                                if let displayTime = selectedEntryDisplayTime {
+                                    Text("•")
+                                        .foregroundColor(.secondary)
+                                    Text(displayTime, style: .time)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                            }
+                        }
+
+                        Spacer()
+
+                        if selectedEntry.bmi != nil || selectedEntry.bodyFat != nil {
+                            VStack(alignment: .trailing, spacing: 4) {
+                                if let bmi = selectedEntry.bmi {
+                                    HStack(spacing: 4) {
+                                        Text("BMI:")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("\(bmi, specifier: "%.1f")")
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+
+                                if let bodyFat = selectedEntry.bodyFat {
+                                    HStack(spacing: 4) {
+                                        Text("Body Fat:")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("\(bodyFat, specifier: "%.1f")%")
+                                            .font(.caption)
+                                            .fontWeight(.semibold)
+                                    }
+                                }
+                            }
+                        }
+
+                        Button(action: {
+                            selectedDate = nil
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                                .font(.title3)
+                        }
+                    }
+                }
+                .transition(.opacity)
+            }
+
+            Toggle("Show Goal Line", isOn: $showGoalLine)
+                .font(.subheadline)
+        }
+        .padding()
+        .background(Color(.systemBackground))
+        .cornerRadius(8)
+        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+    }
+
+    // MARK: - X-Axis Labels
+
+    private func xAxisLabel(for date: Date) -> String {
+        let calendar = Calendar.current
+
+        switch selectedTimeRange {
+        case .day:
+            // Show hour for Day view (e.g., "12am", "1am", "2pm")
+            let formatter = DateFormatter()
+            formatter.dateFormat = "ha" // Hour with am/pm
+            return formatter.string(from: date).lowercased()
+
+        case .week:
+            // Show month/day for last 7 days (e.g., "Sep 24", "Sep 25", "Oct 1")
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d" // "Sep 24", "Oct 1"
+            return formatter.string(from: date)
+
+        case .month:
+            // Show day of month (1, 3, 6, 9, 12, 15, 18, 21, 24, 27, 30)
+            let day = calendar.component(.day, from: date)
+            return "\(day)"
+
+        case .threeMonths:
+            // Show month/day for 3 months
+            let formatter = DateFormatter()
+            formatter.dateFormat = "M/d"
+            return formatter.string(from: date)
+
+        case .year:
+            // Show month abbreviation (Jan, Feb, Mar...)
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM"
+            return formatter.string(from: date)
+
+        case .all:
+            // Show month/year for all time
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM yy"
+            return formatter.string(from: date)
+        }
+    }
+
+
+    // MARK: - X-Axis Domain for Day View
+
+    /// Returns the X-axis date range for Day/Month view
+    /// Day view: 6am to 12am (midnight) by default, adjusts if entries before 6am
+    /// Month view: Extends slightly beyond data range for easier point selection
+    var xAxisDomain: ClosedRange<Date>? {
+        let calendar = Calendar.current
+
+        switch selectedTimeRange {
+        case .day:
+            guard !chartData.isEmpty else { return nil }
+
+            let today = calendar.startOfDay(for: Date())
+
+            // Default start: 6am today
+            guard let defaultStart = calendar.date(bySettingHour: 6, minute: 0, second: 0, of: today) else {
+                return nil
+            }
+
+            // Default end: 12am (midnight) next day
+            guard let defaultEnd = calendar.date(byAdding: .day, value: 1, to: today) else {
+                return nil
+            }
+
+            // Find the earliest entry time
+            let dates = chartData.map { $0.date }
+            guard let minDate = dates.min() else { return nil }
+
+            // If earliest entry is before 6am, adjust start time to that entry
+            let rangeStart = min(defaultStart, minDate)
+
+            // Always end at midnight (12am next day)
+            return rangeStart...defaultEnd
+
+        case .month:
+            guard !chartData.isEmpty else { return nil }
+
+            // Extend domain by 1 day on each side for easier point selection
+            let dates = chartData.map { $0.date }
+            guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
+
+            guard let rangeStart = calendar.date(byAdding: .day, value: -1, to: minDate),
+                  let rangeEnd = calendar.date(byAdding: .day, value: 1, to: maxDate) else {
+                return nil
+            }
+
+            return rangeStart...rangeEnd
+
+        case .threeMonths:
+            guard !chartData.isEmpty else { return nil }
+
+            // Extend domain by 2 days on each side for easier point selection
+            let dates = chartData.map { $0.date }
+            guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
+
+            guard let rangeStart = calendar.date(byAdding: .day, value: -2, to: minDate),
+                  let rangeEnd = calendar.date(byAdding: .day, value: 2, to: maxDate) else {
+                return nil
+            }
+
+            return rangeStart...rangeEnd
+
+        case .year:
+            guard !chartData.isEmpty else { return nil }
+
+            // Extend domain by 3 days on each side for easier point selection
+            let dates = chartData.map { $0.date }
+            guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
+
+            guard let rangeStart = calendar.date(byAdding: .day, value: -3, to: minDate),
+                  let rangeEnd = calendar.date(byAdding: .day, value: 3, to: maxDate) else {
+                return nil
+            }
+
+            return rangeStart...rangeEnd
+
+        case .all:
+            guard !chartData.isEmpty else { return nil }
+
+            // Extend domain by 5 days on each side for easier point selection
+            let dates = chartData.map { $0.date }
+            guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
+
+            guard let rangeStart = calendar.date(byAdding: .day, value: -5, to: minDate),
+                  let rangeEnd = calendar.date(byAdding: .day, value: 5, to: maxDate) else {
+                return nil
+            }
+
+            return rangeStart...rangeEnd
+
+        default:
+            return nil
+        }
+    }
+
+    // MARK: - X-Axis Values for Day View
+
+    /// Generates X-axis time marks every 3 hours starting from 6am (or earlier if data exists)
+    var dayXAxisValues: [Date] {
+        guard selectedTimeRange == .day, let domain = xAxisDomain else { return [] }
+
+        let calendar = Calendar.current
+        let startDate = domain.lowerBound
+        let endDate = domain.upperBound
+
+        var values: [Date] = []
+
+        // Get the starting hour (e.g., 6 for 6am, or earlier if adjusted)
+        let startHour = calendar.component(.hour, from: startDate)
+
+        // Round down to nearest 3-hour mark if needed
+        let adjustedStartHour = (startHour / 3) * 3
+
+        // Get today's midnight as reference
+        let today = calendar.startOfDay(for: Date())
+
+        // Generate marks every 3 hours from adjusted start to midnight (24:00)
+        var currentHour = adjustedStartHour
+        while currentHour <= 24 {
+            if let date = calendar.date(bySettingHour: currentHour % 24, minute: 0, second: 0, of: currentHour < 24 ? today : calendar.date(byAdding: .day, value: 1, to: today)!) {
+                if date >= startDate && date <= endDate {
+                    values.append(date)
+                }
+            }
+            currentHour += 3
+        }
+
+        return values
+    }
+
+    // MARK: - X-Axis Values for Week View
+
+    /// Generates X-axis marks for each of the last 7 days
+    var weekXAxisValues: [Date] {
+        guard selectedTimeRange == .week else { return [] }
+
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        // Generate last 7 days (including today)
+        var values: [Date] = []
+        for daysAgo in (0..<7).reversed() {
+            if let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// Generates X-axis marks for Month view: Adaptive based on data range
+    /// Shows 6-10 evenly-spaced dates depending on how much data exists
+    var monthXAxisValues: [Date] {
+        guard selectedTimeRange == .month else { return [] }
+        guard !chartData.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
+
+        // Calculate the number of days in the actual data range
+        let daysBetween = calendar.dateComponents([.day], from: minDate, to: maxDate).day ?? 0
+
+        // Determine number of marks based on data range
+        // 1-7 days: show every day (or every other day)
+        // 8-15 days: show ~6 marks
+        // 16-30 days: show ~8 marks
+        let numberOfMarks: Int
+        if daysBetween <= 7 {
+            numberOfMarks = max(daysBetween + 1, 4) // Show all days, minimum 4 marks
+        } else if daysBetween <= 15 {
+            numberOfMarks = 6
+        } else {
+            numberOfMarks = 8
+        }
+
+        // Generate evenly-spaced dates
+        var values: [Date] = []
+        let interval = Double(daysBetween) / Double(numberOfMarks - 1)
+
+        for i in 0..<numberOfMarks {
+            let daysToAdd = Int(round(Double(i) * interval))
+            if let date = calendar.date(byAdding: .day, value: daysToAdd, to: calendar.startOfDay(for: minDate)) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// Generates X-axis marks for 3 Months view: 12 marks over last 90 days (4 per month)
+    /// Creates marks at ~7-8 day intervals for balanced visual spacing
+    var threeMonthsXAxisValues: [Date] {
+        guard selectedTimeRange == .threeMonths else { return [] }
+        guard !chartData.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
+
+        // Calculate the number of days in the actual data range
+        let daysBetween = calendar.dateComponents([.day], from: minDate, to: maxDate).day ?? 0
+
+        // For 3 months view, always show 12 marks (4 per month) for consistency
+        // This creates ~7-8 day intervals across 90 days
+        let numberOfMarks = 12
+
+        // Generate evenly-spaced dates
+        var values: [Date] = []
+        let interval = Double(daysBetween) / Double(numberOfMarks - 1)
+
+        for i in 0..<numberOfMarks {
+            let daysToAdd = Int(round(Double(i) * interval))
+            if let date = calendar.date(byAdding: .day, value: daysToAdd, to: calendar.startOfDay(for: minDate)) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// Generates X-axis marks for Year view: 12 marks (one per month) over last 365 days
+    /// Shows month abbreviations for clear temporal reference
+    var yearXAxisValues: [Date] {
+        guard selectedTimeRange == .year else { return [] }
+        guard !chartData.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
+
+        // Calculate number of months in data range
+        let monthsBetween = calendar.dateComponents([.month], from: minDate, to: maxDate).month ?? 0
+
+        // Always show 12 marks for Year view (one per month)
+        let numberOfMarks = 12
+
+        // Generate evenly-spaced dates across the data range
+        var values: [Date] = []
+        let interval = Double(monthsBetween) / Double(numberOfMarks - 1)
+
+        for i in 0..<numberOfMarks {
+            let monthsToAdd = Int(round(Double(i) * interval))
+            if let date = calendar.date(byAdding: .month, value: monthsToAdd, to: calendar.startOfDay(for: minDate)) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// Generates X-axis marks for All view: Adaptive based on total data span
+    /// Scales from months to years depending on data range
+    var allXAxisValues: [Date] {
+        guard selectedTimeRange == .all else { return [] }
+        guard !chartData.isEmpty else { return [] }
+
+        let calendar = Calendar.current
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
+
+        // Calculate the span in months
+        let monthsBetween = calendar.dateComponents([.month], from: minDate, to: maxDate).month ?? 0
+
+        // Determine appropriate number of marks and interval type
+        let numberOfMarks: Int
+        let intervalComponent: Calendar.Component
+
+        if monthsBetween <= 12 {
+            // Less than a year: show monthly marks (up to 12)
+            numberOfMarks = min(monthsBetween + 1, 12)
+            intervalComponent = .month
+        } else if monthsBetween <= 36 {
+            // 1-3 years: show ~12 marks at quarterly intervals
+            numberOfMarks = 12
+            intervalComponent = .month
+        } else {
+            // 3+ years: show ~12 marks at larger intervals
+            numberOfMarks = 12
+            intervalComponent = .month
+        }
+
+        // Generate evenly-spaced dates
+        var values: [Date] = []
+        let interval = Double(monthsBetween) / Double(numberOfMarks - 1)
+
+        for i in 0..<numberOfMarks {
+            let unitsToAdd = Int(round(Double(i) * interval))
+            if let date = calendar.date(byAdding: intervalComponent, value: unitsToAdd, to: calendar.startOfDay(for: minDate)) {
+                values.append(date)
+            }
+        }
+
+        return values
+    }
+
+    /// For Week/Month/3Months/Year/All view: Returns actual time if day has single entry, nil if multiple entries
+    /// This ensures we show accurate weigh-in times or omit time for averaged data
+    var selectedEntryDisplayTime: Date? {
+        guard let selectedEntry = selectedEntry else { return nil }
+
+        // For Day view (without averaging), always show the actual time
+        guard selectedTimeRange == .week || selectedTimeRange == .month || selectedTimeRange == .threeMonths || selectedTimeRange == .year || selectedTimeRange == .all else {
+            return selectedEntry.date
+        }
+
+        // For Week/Month/3Months/Year/All view: Check how many entries exist for the selected day
+        let calendar = Calendar.current
+        let selectedDay = calendar.startOfDay(for: selectedEntry.date)
+
+        let entriesForDay = filteredEntries.filter { entry in
+            calendar.isDate(entry.date, inSameDayAs: selectedDay)
+        }
+
+        // If exactly one entry for this day, return its actual time
+        // If multiple entries (averaged), return nil to hide time
+        return entriesForDay.count == 1 ? entriesForDay.first?.date : nil
+    }
+
+    // MARK: - Y-Axis Values
+
+    /// For Day view: Generates 5-6 evenly-spaced values for cleaner Y-axis
+    private var dayYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Create ~5 marks: every 2 lbs for 10lb range
+        let step = 2.0
+        return stride(from: min, through: max, by: step).map { $0 }
+    }
+
+    /// For Week view: Generates evenly-spaced values at 1lb intervals for 5lb range
+    private var weekYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Round boundaries to whole pounds to ensure axis marks align properly
+        let minRounded = ceil(min)
+        let maxRounded = floor(max)
+
+        // Use 1lb steps for 5lb range (cleaner, easier to read)
+        let step = 1.0
+        return stride(from: minRounded, through: maxRounded, by: step).map { $0 }
+    }
+
+    /// For Month view: Generates 10 evenly-spaced Y-axis marks
+    private var monthYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Generate 10 evenly-spaced values (11 marks including min and max)
+        let range = max - min
+        let step = range / 10.0
+
+        return stride(from: min, through: max, by: step).map { $0 }
+    }
+
+    /// For 3 Months view: Generates 10 evenly-spaced Y-axis marks
+    private var threeMonthsYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Generate 10 evenly-spaced values for clean visualization
+        let range = max - min
+        let step = range / 10.0
+
+        return stride(from: min, through: max, by: step).map { $0 }
+    }
+
+    /// For Year view: Generates 10 evenly-spaced Y-axis marks
+    private var yearYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Generate 10 evenly-spaced values for year-long trends
+        let range = max - min
+        let step = range / 10.0
+
+        return stride(from: min, through: max, by: step).map { $0 }
+    }
+
+    /// For All view: Generates 10 evenly-spaced Y-axis marks
+    private var allYAxisValues: [Double] {
+        let domain = yAxisDomain
+        let min = domain.lowerBound
+        let max = domain.upperBound
+
+        // Generate 10 evenly-spaced values for all-time view
+        let range = max - min
+        let step = range / 10.0
+
+        return stride(from: min, through: max, by: step).map { $0 }
+    }
+
+    // MARK: - Y-Axis Domain
+
+    private var yAxisDomain: ClosedRange<Double> {
+        guard !chartData.isEmpty else {
+            return 0...200 // Default range
+        }
+
+        let weights = chartData.map { $0.weight }
+        let minWeight = weights.min() ?? 0
+        let maxWeight = weights.max() ?? 200
+
+        switch selectedTimeRange {
+        case .day:
+            // For Day view: 10lb range (average ± 5 lbs) with 1lb increments
+            // Calculate average weight for the day
+            let avgWeight = weights.reduce(0.0, +) / Double(weights.count)
+
+            // Create 10lb range: 5 lbs above and 5 lbs below average
+            let rangeMin = round(avgWeight) - 5
+            let rangeMax = round(avgWeight) + 5
+
+            return rangeMin...rangeMax
+
+        case .week:
+            // For Week view: Default 5lb range (average ± 2.5 lbs), adaptive if needed
+            // Calculate average weight for the week
+            let avgWeight = weights.reduce(0.0, +) / Double(weights.count)
+
+            // Default 5lb range: 2.5 lbs above and below average
+            // Round to whole numbers to ensure goal line aligns with axis marks
+            let centerWeight = round(avgWeight)
+            let defaultRangeMin = centerWeight - 2.5
+            let defaultRangeMax = centerWeight + 2.5
+
+            // Check if actual data fits within default range
+            let dataRange = maxWeight - minWeight
+
+            if dataRange <= 5 {
+                // Data fits within 5lb range, use default
+                return defaultRangeMin...defaultRangeMax
+            } else {
+                // Data exceeds 5lb range, expand adaptively
+                // Add 10% padding to actual data range
+                let padding = dataRange * 0.1
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+                return rangeMin...rangeMax
+            }
+
+        case .month:
+            // For Month view: Adaptive range based on weight fluctuation over 30 days
+            // With dynamic adjustment when goal line is shown
+            let dataRange = maxWeight - minWeight
+
+            if showGoalLine {
+                // Goal line is shown: Start Y-axis just below goal weight
+                // Determine appropriate padding based on relationship between data and goal
+                let highestValue = max(maxWeight, weightGoal)
+
+                // Start 5-20 lbs below goal depending on data spread
+                let belowGoalPadding: Double
+                if dataRange < 5 {
+                    belowGoalPadding = 5.0 // Small fluctuation: 5 lb padding
+                } else if dataRange < 10 {
+                    belowGoalPadding = 10.0 // Moderate fluctuation: 10 lb padding
+                } else {
+                    belowGoalPadding = 20.0 // Large fluctuation: 20 lb padding
+                }
+
+                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMax = max(highestValue + 2, rangeMin + 10) // Ensure at least 10lb range
+
+                return rangeMin...rangeMax
+            } else {
+                // No goal line: Center on data with adaptive padding
+                let padding = max(dataRange * 0.15, 3.0) // At least 3 lbs padding
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+
+                return rangeMin...rangeMax
+            }
+
+        case .threeMonths:
+            // For 3 Months view: Similar to Month view but with slightly more range
+            // Adaptive based on 90-day weight fluctuation with goal line support
+            let dataRange = maxWeight - minWeight
+
+            if showGoalLine {
+                // Goal line is shown: Start Y-axis below goal weight
+                let highestValue = max(maxWeight, weightGoal)
+
+                // Adaptive padding based on data spread
+                let belowGoalPadding: Double
+                if dataRange < 5 {
+                    belowGoalPadding = 8.0 // Small fluctuation: 8 lb padding
+                } else if dataRange < 10 {
+                    belowGoalPadding = 15.0 // Moderate fluctuation: 15 lb padding
+                } else {
+                    belowGoalPadding = 25.0 // Large fluctuation: 25 lb padding
+                }
+
+                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMax = max(highestValue + 3, rangeMin + 15) // Ensure at least 15lb range
+
+                return rangeMin...rangeMax
+            } else {
+                // No goal line: Center on data with adaptive padding
+                let padding = max(dataRange * 0.2, 5.0) // At least 5 lbs padding (20% for longer range)
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+
+                return rangeMin...rangeMax
+            }
+
+        case .year:
+            // For Year view: Adaptive based on 365-day weight fluctuation
+            // Shows broader trends with goal line support
+            let dataRange = maxWeight - minWeight
+
+            if showGoalLine {
+                // Goal line shown: Position Y-axis below goal for year-long journey view
+                let highestValue = max(maxWeight, weightGoal)
+
+                // Adaptive padding for year-long data
+                let belowGoalPadding: Double
+                if dataRange < 10 {
+                    belowGoalPadding = 15.0 // Small fluctuation over year: 15 lb padding
+                } else if dataRange < 20 {
+                    belowGoalPadding = 25.0 // Moderate fluctuation: 25 lb padding
+                } else {
+                    belowGoalPadding = 35.0 // Large fluctuation: 35 lb padding
+                }
+
+                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMax = max(highestValue + 5, rangeMin + 20) // Ensure at least 20lb range
+
+                return rangeMin...rangeMax
+            } else {
+                // No goal line: Center on data with generous padding for year view
+                let padding = max(dataRange * 0.25, 8.0) // At least 8 lbs padding (25% for year)
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+
+                return rangeMin...rangeMax
+            }
+
+        case .all:
+            // For All view: Maximally adaptive based on entire dataset
+            // Scales from months to years of data
+            let dataRange = maxWeight - minWeight
+
+            if showGoalLine {
+                // Goal line shown: Adaptive positioning for all-time view
+                let highestValue = max(maxWeight, weightGoal)
+
+                // Very adaptive padding for potentially multi-year data
+                let belowGoalPadding: Double
+                if dataRange < 15 {
+                    belowGoalPadding = 20.0 // Smaller all-time range: 20 lb padding
+                } else if dataRange < 30 {
+                    belowGoalPadding = 30.0 // Medium range: 30 lb padding
+                } else {
+                    belowGoalPadding = 40.0 // Large range: 40 lb padding
+                }
+
+                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMax = max(highestValue + 5, rangeMin + 25) // Ensure at least 25lb range
+
+                return rangeMin...rangeMax
+            } else {
+                // No goal line: Maximum adaptive padding for all-time trends
+                let padding = max(dataRange * 0.3, 10.0) // At least 10 lbs padding (30% for all-time)
+                let rangeMin = floor(minWeight - padding)
+                let rangeMax = ceil(maxWeight + padding)
+
+                return rangeMin...rangeMax
+            }
+        }
+    }
+}
+
+// MARK: - XAxisScaleModifier
+
+struct XAxisScaleModifier: ViewModifier {
+    let domain: ClosedRange<Date>?
+
+    func body(content: Content) -> some View {
+        if let domain = domain {
+            content.chartXScale(domain: domain)
+        } else {
+            content
+        }
+    }
+}

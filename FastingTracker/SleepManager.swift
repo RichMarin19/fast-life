@@ -39,9 +39,31 @@ class SleepManager: ObservableObject {
         let duration = entry.duration / 3600
         AppLogger.info("Adding sleep entry - duration: \(String(format: "%.1fh", duration)), source: \(entry.source)", category: AppLogger.sleep)
 
+        // ROADMAP REQUIREMENT: Validate inserts/updates and clamp ranges
+        // Following Apple input validation best practices
+        // Reference: https://developer.apple.com/documentation/foundation/dateformatter/creating_data_formatters
+
         // Validate that wake time is after bed time
         guard entry.wakeTime > entry.bedTime else {
             AppLogger.error("Invalid sleep entry: wake time must be after bed time", category: AppLogger.sleep)
+            return
+        }
+
+        // Clamp sleep duration to reasonable range (30 minutes to 16 hours)
+        let minDuration: TimeInterval = 1800 // 30 minutes
+        let maxDuration: TimeInterval = 57600 // 16 hours
+        let actualDuration = entry.duration
+
+        guard actualDuration >= minDuration && actualDuration <= maxDuration else {
+            let hours = actualDuration / 3600
+            AppLogger.error("Invalid sleep duration: \(String(format: "%.1f", hours))h (must be 0.5-16h)", category: AppLogger.sleep)
+            return
+        }
+
+        // ROADMAP REQUIREMENT: Add dedupe guards for entries in the same time window
+        // Following Apple duplicate detection pattern
+        if isDuplicate(entry: entry, timeWindow: 7200) { // 2 hour window
+            AppLogger.warning("Prevented duplicate sleep entry within 2 hours", category: AppLogger.sleep)
             return
         }
 
@@ -74,6 +96,61 @@ class SleepManager: ObservableObject {
         }
 
         AppLogger.info("Sleep entry added to local storage", category: AppLogger.sleep)
+    }
+
+    // MARK: - Validation Methods
+    // Following Apple input validation pattern for sleep data
+    // Reference: https://developer.apple.com/documentation/healthkit/hkcategorytype
+
+    /// Check if a potential sleep entry would be a duplicate within time window
+    /// Following roadmap requirement for dedupe guards
+    private func isDuplicate(entry: SleepEntry, timeWindow: TimeInterval) -> Bool {
+        return sleepEntries.contains { existingEntry in
+            // Check for overlapping sleep periods within the time window
+            let bedTimeOverlap = abs(entry.bedTime.timeIntervalSince(existingEntry.bedTime)) < timeWindow
+            let wakeTimeOverlap = abs(entry.wakeTime.timeIntervalSince(existingEntry.wakeTime)) < timeWindow
+            return bedTimeOverlap && wakeTimeOverlap
+        }
+    }
+
+    /// Validate if sleep entry can be added (public method for UI validation)
+    func canAddSleepEntry(bedTime: Date, wakeTime: Date) -> Bool {
+        // Check time validity
+        guard wakeTime > bedTime else { return false }
+
+        // Check duration validity
+        let duration = wakeTime.timeIntervalSince(bedTime)
+        let minDuration: TimeInterval = 1800 // 30 minutes
+        let maxDuration: TimeInterval = 57600 // 16 hours
+        guard duration >= minDuration && duration <= maxDuration else { return false }
+
+        // Check for duplicates
+        let tempEntry = SleepEntry(bedTime: bedTime, wakeTime: wakeTime, source: .manual)
+        return !isDuplicate(entry: tempEntry, timeWindow: 7200)
+    }
+
+    /// Get validation errors for sleep entry (for UI feedback)
+    func validateSleepEntry(bedTime: Date, wakeTime: Date) -> String? {
+        guard wakeTime > bedTime else {
+            return "Wake time must be after bed time"
+        }
+
+        let duration = wakeTime.timeIntervalSince(bedTime)
+
+        if duration < 1800 {
+            return "Sleep duration must be at least 30 minutes"
+        }
+
+        if duration > 57600 {
+            return "Sleep duration cannot exceed 16 hours"
+        }
+
+        let tempEntry = SleepEntry(bedTime: bedTime, wakeTime: wakeTime, source: .manual)
+        if isDuplicate(entry: tempEntry, timeWindow: 7200) {
+            return "A sleep entry already exists within 2 hours of this time"
+        }
+
+        return nil // No validation errors
     }
 
     // MARK: - Delete Sleep Entry

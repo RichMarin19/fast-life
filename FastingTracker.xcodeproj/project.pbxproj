@@ -40,6 +40,12 @@
 		52B2CFD32E96DB460061FCFF /* HealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD22E96DB460061FCFF /* HealthKitNudgeView.swift */; };
 		52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */; };
 		52B2CFD72E9746610061FCFF /* FastingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */; };
+		52B2CFDE2E986F7D0061FCFF /* WeightComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDD2E986F7D0061FCFF /* WeightComponents.swift */; };
+		52B2CFDF2E986F7D0061FCFF /* FLCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD92E986F7D0061FCFF /* FLCard.swift */; };
+		52B2CFE02E986F7D0061FCFF /* StateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */; };
+		52B2CFE12E986F7D0061FCFF /* CurrentWeightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD82E986F7D0061FCFF /* CurrentWeightCard.swift */; };
+		52B2CFE22E986F7D0061FCFF /* TrackerScreenShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDB2E986F7D0061FCFF /* TrackerScreenShell.swift */; };
+		52B2CFE32E986F7D0061FCFF /* WeightChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -47,6 +53,7 @@
 		A1000009000000000000001 /* FastingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010000000000000001 /* FastingManager.swift */; };
 		A1000011000000000000001 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012000000000000001 /* NotificationManager.swift */; };
 		A1000013000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000014000000000000001 /* Assets.xcassets */; };
+		A1000031000000000000001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000032000000000000001 /* AppSettings.swift */; };
 		FF00000100000000000000A1 /* FastingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A1 /* FastingStage.swift */; };
 		FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000400000000000000A1 /* FastingStageDetailView.swift */; };
 		FF00000500000000000000A1 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000600000000000000A1 /* AnalyticsView.swift */; };
@@ -87,6 +94,12 @@
 		52B2CFD22E96DB460061FCFF /* HealthKitNudgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitNudgeView.swift; sourceTree = "<group>"; };
 		52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingSettingsView.swift; sourceTree = "<group>"; };
 		52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitNudgeTestHelper.swift; sourceTree = "<group>"; };
+		52B2CFD82E986F7D0061FCFF /* CurrentWeightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentWeightCard.swift; sourceTree = "<group>"; };
+		52B2CFD92E986F7D0061FCFF /* FLCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FLCard.swift; sourceTree = "<group>"; };
+		52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateBadge.swift; sourceTree = "<group>"; };
+		52B2CFDB2E986F7D0061FCFF /* TrackerScreenShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerScreenShell.swift; sourceTree = "<group>"; };
+		52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartView.swift; sourceTree = "<group>"; };
+		52B2CFDD2E986F7D0061FCFF /* WeightComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightComponents.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -96,6 +109,7 @@
 		A1000014000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000015000000000000001 /* Fast lIFe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fast lIFe.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000016000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1000032000000000000001 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		FF00000200000000000000A1 /* FastingStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStage.swift; sourceTree = "<group>"; };
 		FF00000400000000000000A1 /* FastingStageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStageDetailView.swift; sourceTree = "<group>"; };
 		FF00000600000000000000A1 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
@@ -123,6 +137,13 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52B2CFD82E986F7D0061FCFF /* CurrentWeightCard.swift */,
+				52B2CFD92E986F7D0061FCFF /* FLCard.swift */,
+				52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */,
+				52B2CFDB2E986F7D0061FCFF /* TrackerScreenShell.swift */,
+				52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */,
+				52B2CFDD2E986F7D0061FCFF /* WeightComponents.swift */,
+				A1000032000000000000001 /* AppSettings.swift */,
 				52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */,
 				52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */,
 				52B2CFD22E96DB460061FCFF /* HealthKitNudgeView.swift */,
@@ -291,6 +312,13 @@
 				52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */,
 				52B2CFD72E9746610061FCFF /* FastingSettingsView.swift in Sources */,
 				FF00000500000000000000A1 /* AnalyticsView.swift in Sources */,
+				52B2CFDE2E986F7D0061FCFF /* WeightComponents.swift in Sources */,
+				52B2CFDF2E986F7D0061FCFF /* FLCard.swift in Sources */,
+				52B2CFE02E986F7D0061FCFF /* StateBadge.swift in Sources */,
+				52B2CFE12E986F7D0061FCFF /* CurrentWeightCard.swift in Sources */,
+				52B2CFE22E986F7D0061FCFF /* TrackerScreenShell.swift in Sources */,
+				52B2CFE32E986F7D0061FCFF /* WeightChartView.swift in Sources */,
+				A1000031000000000000001 /* AppSettings.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

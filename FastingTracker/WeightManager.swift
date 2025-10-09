@@ -6,6 +6,11 @@ class WeightManager: ObservableObject {
     @Published var weightEntries: [WeightEntry] = []
     @Published var syncWithHealthKit: Bool = true
 
+    // MARK: - Unit Preference Integration
+    // Following Apple single source of truth pattern for global settings
+    // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
+    private let appSettings = AppSettings.shared
+
     private let userDefaults = UserDefaults.standard
     private let weightEntriesKey = "weightEntries"
     private let syncHealthKitKey = "syncWithHealthKit"
@@ -70,6 +75,81 @@ class WeightManager: ObservableObject {
         }
     }
 
+    // MARK: - Unit Conversion Methods
+    // Following Apple adapter pattern to maintain backward compatibility
+    // Reference: https://docs.swift.org/swift-book/LanguageGuide/Protocols.html#ID521
+
+    /// Convert weight entry to user's preferred unit for display
+    /// Maintains backward compatibility while supporting unit preferences
+    func displayWeight(for entry: WeightEntry) -> Double {
+        return appSettings.weightUnit.fromPounds(entry.weight)
+    }
+
+    /// Convert user input from preferred unit to internal pounds
+    /// Ensures data consistency in storage format
+    func convertToInternalUnit(_ value: Double) -> Double {
+        return appSettings.weightUnit.toPounds(value)
+    }
+
+    /// Get current weight unit abbreviation for display
+    var currentUnitAbbreviation: String {
+        return appSettings.weightUnit.abbreviation
+    }
+
+    /// Get current weight unit display name
+    var currentUnitDisplayName: String {
+        return appSettings.weightUnit.displayName
+    }
+
+    /// Convert weight value from pounds to display unit
+    /// Helper method for UI components that need to display weights
+    func convertWeightToDisplayUnit(_ weightInPounds: Double) -> Double {
+        return appSettings.weightUnit.fromPounds(weightInPounds)
+    }
+
+    /// Add weight entry from user input in preferred unit
+    /// Following Apple data conversion pattern for user input
+    /// Reference: https://developer.apple.com/documentation/foundation/measurement
+    func addWeightEntryInPreferredUnit(weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, date: Date = Date()) {
+        let weightInPounds = appSettings.weightUnit.toPounds(weight)
+
+        // Following roadmap requirement: "ensure edits do not create duplicates"
+        // Check for duplicate manual entries within 30 minutes
+        let isDuplicate = weightEntries.contains(where: {
+            $0.source == .manual &&
+            abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
+            abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
+        })
+
+        guard !isDuplicate else {
+            AppLogger.warning("Prevented duplicate weight entry: \(weight) \(appSettings.weightUnit.abbreviation) within 30 minutes", category: AppLogger.weightTracking)
+            return
+        }
+
+        AppLogger.info("Adding weight: \(weight) \(appSettings.weightUnit.abbreviation) (\(weightInPounds) lbs internal)", category: AppLogger.weightTracking)
+
+        let entry = WeightEntry(
+            date: date,
+            weight: weightInPounds,
+            bmi: bmi,
+            bodyFat: bodyFat,
+            source: .manual
+        )
+        addWeightEntry(entry)
+    }
+
+    /// Check if a potential weight entry would be a duplicate
+    /// Following Apple validation pattern for user input
+    /// Reference: https://developer.apple.com/documentation/foundation/formatter/creating_a_custom_formatter
+    func wouldCreateDuplicate(weight: Double, date: Date = Date()) -> Bool {
+        let weightInPounds = appSettings.weightUnit.toPounds(weight)
+        return weightEntries.contains(where: {
+            $0.source == .manual &&
+            abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
+            abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
+        })
+    }
+
     // MARK: - Sync with HealthKit
 
     func syncFromHealthKit(startDate: Date? = nil, completion: ((Int, Error?) -> Void)? = nil) {
@@ -93,10 +173,12 @@ class WeightManager: ObservableObject {
             // Merge HealthKit entries with local entries
             for hkEntry in healthKitEntries {
                 // Check if we already have this exact entry (by date AND time, not just day)
+                // Following Apple HealthKit best practices for duplicate detection
+                // Reference: https://developer.apple.com/documentation/healthkit/about_the_healthkit_framework
                 let isDuplicate = self.weightEntries.contains(where: {
                     $0.source == .healthKit &&
                     abs($0.date.timeIntervalSince(hkEntry.date)) < 60 && // Within 1 minute
-                    abs($0.weight - hkEntry.weight) < 0.1 // Within 0.1 lbs
+                    abs($0.weight - hkEntry.weight) < 0.1 // Within 0.1 lbs (≈0.045 kg)
                 })
 
                 if !isDuplicate {
@@ -144,9 +226,10 @@ class WeightManager: ObservableObject {
                 // More comprehensive duplicate check for historical data
                 let isDuplicate = self.weightEntries.contains(where: {
                     // Check if entry already exists (by date, time, weight, and source)
+                    // Following Apple HealthKit historical sync best practices
                     $0.source == .healthKit &&
                     abs($0.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes (more flexible for historical)
-                    abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (account for rounding)
+                    abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (≈0.09 kg) account for rounding
                 })
 
                 if !isDuplicate {

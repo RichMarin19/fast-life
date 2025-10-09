@@ -242,6 +242,11 @@ struct AppSettingsView: View {
     @Binding var isOnboardingComplete: Bool
     @Binding var selectedTab: Int
 
+    // PHASE 1: Global app settings integration
+    // Following Apple's single source of truth pattern for global preferences
+    // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
+    @StateObject var appSettings = AppSettings.shared
+
     // REMOVED: @StateObject managers that were created on view init
     // Per Apple SwiftUI Best Practices: Don't create managers in views that don't own them
     // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
@@ -316,6 +321,50 @@ struct AppSettingsView: View {
                             .foregroundColor(.primary)
                     }
                 }
+            }
+
+            // Unit Preferences Section - PHASE 1 IMPLEMENTATION
+            // Following Apple Settings app design patterns and HIG
+            // Reference: https://developer.apple.com/design/human-interface-guidelines/patterns/settings/
+            Section(header: Text("Unit Preferences"), footer: Text("Choose your preferred units for weight and hydration tracking. Changes apply immediately and persist across app relaunches.")) {
+
+                // Hydration Unit Preference
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "drop.fill")
+                            .foregroundColor(.cyan)
+                        Text("Hydration Unit")
+                            .font(.body)
+                        Spacer()
+                    }
+
+                    Picker("Hydration Unit", selection: $appSettings.hydrationUnit) {
+                        ForEach(HydrationUnit.allCases) { unit in
+                            Text(unit.displayName).tag(unit)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.vertical, 4)
+
+                // Weight Unit Preference
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "scalemass")
+                            .foregroundColor(.blue)
+                        Text("Weight Unit")
+                            .font(.body)
+                        Spacer()
+                    }
+
+                    Picker("Weight Unit", selection: $appSettings.weightUnit) {
+                        ForEach(WeightUnit.allCases) { unit in
+                            Text(unit.displayName).tag(unit)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                .padding(.vertical, 4)
             }
 
             // App Info Section
@@ -1563,76 +1612,6 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 
-// MARK: - Sync Status Display Component
-// Following Apple Human Interface Guidelines for status indicators
-// Reference: https://developer.apple.com/design/human-interface-guidelines/components/status/indicators/
-
-struct SyncStatusView: View {
-    private let healthKitManager = HealthKitManager.shared
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            // Overall sync status
-            HStack {
-                Image(systemName: healthKitManager.hasSyncErrors ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                    .foregroundColor(healthKitManager.hasSyncErrors ? .orange : .green)
-                VStack(alignment: .leading) {
-                    Text("All Data")
-                        .font(.system(size: 16, weight: .medium))
-                    Text(healthKitManager.hasSyncErrors ? "Some sync issues" : formatSyncStatus(healthKitManager.lastAllDataSyncDate))
-                        .font(.system(size: 14))
-                        .foregroundColor(healthKitManager.hasSyncErrors ? .orange : .secondary)
-                }
-                Spacer()
-            }
-
-            Divider()
-                .padding(.vertical, 4)
-
-            // Individual data type sync status
-            SyncStatusRow(
-                icon: "figure.walk",
-                title: "Fasting Sessions",
-                lastSyncDate: healthKitManager.lastFastingSyncDate,
-                syncError: healthKitManager.lastFastingSyncError
-            )
-
-            SyncStatusRow(
-                icon: "scalemass",
-                title: "Weight Data",
-                lastSyncDate: healthKitManager.lastWeightSyncDate,
-                syncError: healthKitManager.lastWeightSyncError
-            )
-
-            SyncStatusRow(
-                icon: "drop.fill",
-                title: "Hydration Data",
-                lastSyncDate: healthKitManager.lastWaterSyncDate,
-                syncError: healthKitManager.lastWaterSyncError
-            )
-
-            SyncStatusRow(
-                icon: "bed.double.fill",
-                title: "Sleep Data",
-                lastSyncDate: healthKitManager.lastSleepSyncDate,
-                syncError: healthKitManager.lastSleepSyncError
-            )
-        }
-        .padding(.vertical, 4)
-    }
-
-    /// Formats sync timestamp following iOS Settings app patterns
-    /// Reference: Apple's relative date formatting in Settings > [Account] > iCloud
-    private func formatSyncStatus(_ date: Date?) -> String {
-        guard let date = date else {
-            return "Never synced"
-        }
-
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .full
-        return "Last synced \(formatter.localizedString(for: date, relativeTo: Date()))"
-    }
-}
 
 struct SyncStatusRow: View {
     let icon: String

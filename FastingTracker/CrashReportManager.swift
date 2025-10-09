@@ -10,6 +10,29 @@ public class CrashReportManager {
 
     private let logger = AppLogger.general
     private var isInitialized = false
+    private let fileManager = FileManager.default
+
+    // MARK: - Secure Storage Configuration
+    // Following Apple File System Programming Guide for secure data storage
+    // Reference: https://developer.apple.com/documentation/foundation/filemanager
+
+    private lazy var secureLogsDirectory: URL = {
+        // Use Application Support directory for app-specific data that should be backed up
+        // but isn't user-facing content (following Apple guidelines)
+        guard let applicationSupportDirectory = fileManager.urls(for: .applicationSupportDirectory,
+                                                                 in: .userDomainMask).first else {
+            fatalError("Unable to access Application Support directory")
+        }
+
+        let crashLogsDirectory = applicationSupportDirectory.appendingPathComponent("CrashLogs", isDirectory: true)
+
+        // Create directory if it doesn't exist
+        try? fileManager.createDirectory(at: crashLogsDirectory,
+                                       withIntermediateDirectories: true,
+                                       attributes: [.protectionKey: FileProtectionType.completeUnlessOpen])
+
+        return crashLogsDirectory
+    }()
 
     // MARK: - Categories from Beta Readiness Master Plan
     // Required categories: healthkit, hydration, weight, sleep, fasting, charts, notifications
@@ -115,6 +138,9 @@ public class CrashReportManager {
 
         AppLogger.error(fullMessage, category: AppLogger.general, error: error)
 
+        // PHASE 0: Persist crash logs securely to Application Support
+        persistCrashLogSecurely(error: error, category: category, context: context)
+
         #if DEBUG
         // In debug mode, just log the error
         print("🚨 CrashReport[\(category.rawValue)]: \(error.localizedDescription)")
@@ -127,6 +153,34 @@ public class CrashReportManager {
         // Crashlytics.crashlytics().setCustomKeys(context)
         // Crashlytics.crashlytics().log("Category: \(category.rawValue)")
         #endif
+    }
+
+    // MARK: - Secure Crash Log Persistence
+    // Following Apple security guidelines: NSFileProtectionComplete for sensitive data
+    // Reference: https://developer.apple.com/documentation/foundation/nsfileprotectioncomplete
+
+    private func persistCrashLogSecurely(error: Error, category: CrashCategory, context: [String: Any]) {
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        let logEntry = CrashLogEntry(
+            timestamp: timestamp,
+            category: category.rawValue,
+            error: error.localizedDescription,
+            context: context
+        )
+
+        do {
+            let logData = try JSONEncoder().encode(logEntry)
+            let filename = "\(timestamp.replacingOccurrences(of: ":", with: "-"))_\(category.rawValue).json"
+            let fileURL = secureLogsDirectory.appendingPathComponent(filename)
+
+            // Write with NSFileProtectionComplete for maximum security
+            try logData.write(to: fileURL, options: [.atomic])
+            try fileManager.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: fileURL.path)
+
+            AppLogger.info("Crash log persisted securely: \(filename)", category: AppLogger.general)
+        } catch {
+            AppLogger.error("Failed to persist crash log securely", category: AppLogger.general, error: error)
+        }
     }
 
     // MARK: - Custom Logging
@@ -224,6 +278,67 @@ extension CrashReportManager {
             )
             recordError(error, category: .general, context: context)
             #endif
+        }
+    }
+}
+
+// MARK: - Secure Crash Log Data Model
+// Following Apple Codable best practices for secure JSON serialization
+// Reference: https://developer.apple.com/documentation/foundation/archives_and_serialization/encoding_and_decoding_custom_types
+
+private struct CrashLogEntry: Codable {
+    let timestamp: String
+    let category: String
+    let error: String
+    let context: [String: AnyCodable]
+
+    init(timestamp: String, category: String, error: String, context: [String: Any]) {
+        self.timestamp = timestamp
+        self.category = category
+        self.error = error
+        // Convert Any values to AnyCodable for JSON serialization
+        self.context = context.mapValues { AnyCodable($0) }
+    }
+}
+
+// Helper for encoding Any values in JSON
+private struct AnyCodable: Codable {
+    private let value: Any
+
+    init(_ value: Any) {
+        self.value = value
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+
+        if let stringValue = value as? String {
+            try container.encode(stringValue)
+        } else if let intValue = value as? Int {
+            try container.encode(intValue)
+        } else if let doubleValue = value as? Double {
+            try container.encode(doubleValue)
+        } else if let boolValue = value as? Bool {
+            try container.encode(boolValue)
+        } else {
+            // Fallback: convert to string
+            try container.encode(String(describing: value))
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+
+        if let stringValue = try? container.decode(String.self) {
+            value = stringValue
+        } else if let intValue = try? container.decode(Int.self) {
+            value = intValue
+        } else if let doubleValue = try? container.decode(Double.self) {
+            value = doubleValue
+        } else if let boolValue = try? container.decode(Bool.self) {
+            value = boolValue
+        } else {
+            throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported type")
         }
     }
 }

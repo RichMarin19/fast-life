@@ -24,6 +24,13 @@ enum DrinkType: String, Codable, CaseIterable {
         case .tea: return 8.0     // 8 oz cup
         }
     }
+
+    /// Get standard serving in user's preferred unit
+    /// Following Apple localization pattern for unit preferences
+    /// Reference: https://developer.apple.com/documentation/foundation/locale
+    func standardServingInPreferredUnit(_ unit: HydrationUnit) -> Double {
+        return unit.fromOunces(standardServing)
+    }
 }
 
 // MARK: - Drink Entry Model
@@ -49,6 +56,11 @@ class HydrationManager: ObservableObject {
     @Published var dailyGoalOunces: Double = 64.0  // Default 8 glasses of water
     @Published var currentStreak: Int = 0
     @Published var longestStreak: Int = 0
+
+    // MARK: - Unit Preference Integration
+    // Following Apple single source of truth pattern for global settings
+    // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
+    private let appSettings = AppSettings.shared
 
     private let userDefaults = UserDefaults.standard
     private let drinkEntriesKey = "drinkEntries"
@@ -97,6 +109,19 @@ class HydrationManager: ObservableObject {
         addDrinkEntry(entry)
     }
 
+    /// Add drink entry from user input in preferred unit
+    /// Following Apple data conversion pattern for user input
+    /// Reference: https://developer.apple.com/documentation/foundation/measurement
+    func addDrinkInPreferredUnit(type: DrinkType, amount: Double? = nil) {
+        let userAmount = amount ?? appSettings.hydrationUnit.fromOunces(type.standardServing)
+        let amountInOunces = appSettings.hydrationUnit.toOunces(userAmount)
+
+        AppLogger.info("Adding drink: \(userAmount) \(appSettings.hydrationUnit.abbreviation) (\(amountInOunces) oz internal)", category: AppLogger.hydration)
+
+        let entry = DrinkEntry(type: type, amount: amountInOunces)
+        addDrinkEntry(entry)
+    }
+
     // MARK: - Delete Drink Entry
 
     func deleteDrinkEntry(_ entry: DrinkEntry) {
@@ -105,6 +130,40 @@ class HydrationManager: ObservableObject {
 
         // Recalculate streaks after deleting entry
         calculateStreakFromHistory()
+    }
+
+    // MARK: - Unit Conversion Methods
+    // Following Apple adapter pattern to maintain backward compatibility
+    // Reference: https://docs.swift.org/swift-book/LanguageGuide/Protocols.html#ID521
+
+    /// Get today's total in user's preferred unit
+    /// Maintains backward compatibility while supporting unit preferences
+    func todaysTotalInPreferredUnit() -> Double {
+        let totalOunces = todaysTotalOunces()
+        return appSettings.hydrationUnit.fromOunces(totalOunces)
+    }
+
+    /// Get daily goal in user's preferred unit
+    func dailyGoalInPreferredUnit() -> Double {
+        return appSettings.hydrationUnit.fromOunces(dailyGoalOunces)
+    }
+
+    /// Convert user input from preferred unit to internal ounces
+    /// Ensures data consistency in storage format
+    func convertToInternalUnit(_ value: Double) -> Double {
+        return appSettings.hydrationUnit.toOunces(value)
+    }
+
+    /// Get current unit abbreviation for display
+    var currentUnitAbbreviation: String {
+        return appSettings.hydrationUnit.abbreviation
+    }
+
+    /// Convert drink entry amount to user's preferred unit for display
+    /// Following Apple display formatting pattern
+    /// Reference: https://developer.apple.com/documentation/foundation/formatter
+    func displayAmount(for entry: DrinkEntry) -> Double {
+        return appSettings.hydrationUnit.fromOunces(entry.amount)
     }
 
     // MARK: - Daily Progress Calculations
@@ -151,6 +210,24 @@ class HydrationManager: ObservableObject {
     func updateDailyGoal(_ newGoal: Double) {
         dailyGoalOunces = max(8.0, newGoal)  // Minimum 8 oz
         userDefaults.set(dailyGoalOunces, forKey: dailyGoalKey)
+    }
+
+    /// Update daily goal from user input in preferred unit
+    /// Following Apple input validation pattern with unit conversion
+    /// Reference: https://developer.apple.com/documentation/foundation/numberformatter
+    func updateDailyGoalFromPreferredUnit(_ newGoal: Double) {
+        // Apply minimum constraint (8 oz = ~237 ml)
+        let minimumInOunces = 8.0
+        let minimumInPreferredUnit = appSettings.hydrationUnit.fromOunces(minimumInOunces)
+
+        // Validate minimum based on preferred unit
+        let validatedGoal = max(minimumInPreferredUnit, newGoal)
+        let validatedGoalInOunces = appSettings.hydrationUnit.toOunces(validatedGoal)
+
+        dailyGoalOunces = validatedGoalInOunces
+        userDefaults.set(dailyGoalOunces, forKey: dailyGoalKey)
+
+        AppLogger.info("Daily hydration goal updated: \(validatedGoal) \(appSettings.hydrationUnit.abbreviation) (\(validatedGoalInOunces) oz internal)", category: AppLogger.hydration)
     }
 
     // MARK: - Persistence

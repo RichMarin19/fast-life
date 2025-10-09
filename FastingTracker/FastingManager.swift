@@ -61,8 +61,45 @@ class FastingManager: ObservableObject {
         return min(elapsedTime / goalSeconds, 1.0)
     }
 
+    // MARK: - State Validation Methods
+    // Following Apple State Management best practices for UI validation
+    // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
+
+    /// Check if starting a fast is currently valid
+    /// Following roadmap requirement for state transition guards
+    var canStartFast: Bool {
+        return currentSession == nil
+    }
+
+    /// Check if stopping a fast is currently valid
+    /// Following roadmap requirement for state transition guards
+    var canStopFast: Bool {
+        return currentSession != nil
+    }
+
+    /// Get current fasting state for UI display
+    /// Following Apple State Pattern for clear state representation
+    enum FastingState {
+        case idle          // No active session, can start
+        case active        // Session active, can stop
+    }
+
+    var currentState: FastingState {
+        return currentSession == nil ? .idle : .active
+    }
+
     func startFast() {
         print("\n⏱️  === START FAST ===")
+
+        // ROADMAP REQUIREMENT: Guard overlapping sessions - reject invalid state transition (start→start)
+        // Following Apple State Management best practices
+        // Reference: https://developer.apple.com/documentation/swift/maintaining_state_in_your_apps
+        guard currentSession == nil else {
+            print("❌ INVALID STATE TRANSITION: Cannot start fast - session already active")
+            AppLogger.error("Prevented invalid fasting state transition: start→start", category: AppLogger.fasting)
+            return
+        }
+
         print("Goal: \(fastingGoalHours)h")
         print("Current Streak: \(currentStreak)")
 
@@ -95,8 +132,12 @@ class FastingManager: ObservableObject {
 
     func stopFast() {
         print("\n🛑 === STOP FAST ===")
+
+        // ROADMAP REQUIREMENT: Reject invalid state transitions (end without active)
+        // Following Apple State Management best practices
         guard var session = currentSession else {
-            print("❌ No active session to stop")
+            print("❌ INVALID STATE TRANSITION: Cannot stop fast - no active session")
+            AppLogger.error("Prevented invalid fasting state transition: end without active", category: AppLogger.fasting)
             return
         }
 
@@ -236,8 +277,16 @@ class FastingManager: ObservableObject {
         let threadName = Thread.current.isMainThread ? "Main" : "Background"
         print("Thread: \(threadName)")
 
+        // ROADMAP REQUIREMENT: Handle day-boundary and time zone transitions
+        // Following Apple Calendar best practices for timezone-aware date handling
+        // Reference: https://developer.apple.com/documentation/foundation/calendar
         let calendar = Calendar.current
         let sessionDay = calendar.startOfDay(for: session.startTime)
+
+        // Log timezone information for debugging day-boundary issues
+        let timeZone = calendar.timeZone
+        print("🌍 Timezone: \(timeZone.identifier)")
+        print("📅 Session day (start of day): \(sessionDay)")
 
         let beforeCount = fastingHistory.count
 

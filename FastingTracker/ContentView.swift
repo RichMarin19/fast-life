@@ -717,14 +717,20 @@ struct StopFastConfirmationView: View {
 
 // MARK: - Goal Settings View
 
+// Helper function to format goal time display
+private func formatGoalTime(hours: Int, minutes: Int) -> String {
+    if minutes == 0 {
+        return "\(hours)h"
+    } else {
+        return "\(hours)h \(minutes)m"
+    }
+}
+
 struct GoalSettingsView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @Environment(\.dismiss) var dismiss
-    @State private var selectedHours: Double
-
-    init() {
-        _selectedHours = State(initialValue: 16)
-    }
+    @State private var selectedHours: Int = 16
+    @State private var selectedMinutes: Int = 0
 
     var body: some View {
         NavigationView {
@@ -735,24 +741,41 @@ struct GoalSettingsView: View {
                     .padding(.top, 40)
 
                 VStack(spacing: 10) {
-                    Text("\(Int(selectedHours)) hours")
+                    Text(formatGoalTime(hours: selectedHours, minutes: selectedMinutes))
                         .font(.system(size: 48, weight: .bold, design: .rounded))
                         .foregroundColor(.blue)
 
-                    Slider(value: $selectedHours, in: 8...48, step: 1)
-                        .padding(.horizontal, 40)
-                        .accentColor(.blue)
+                    // Apple-standard time duration picker
+                    HStack(spacing: 20) {
+                        VStack {
+                            Text("Hours")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
 
-                    HStack {
-                        Text("8h")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Spacer()
-                        Text("48h")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                            Picker("Hours", selection: $selectedHours) {
+                                ForEach(8...48, id: \.self) { hour in
+                                    Text("\(hour)").tag(hour)
+                                }
+                            }
+                            .pickerStyle(.wheel)
+                            .frame(width: 80, height: 120)
+                        }
+
+                        VStack {
+                            Text("Minutes")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+
+                            Picker("Minutes", selection: $selectedMinutes) {
+                                ForEach([0, 15, 30, 45], id: \.self) { minute in
+                                    Text("\(minute)").tag(minute)
+                                }
+                            }
+                            .pickerStyle(.wheel)
+                            .frame(width: 80, height: 120)
+                        }
                     }
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, 20)
                 }
                 .padding(.vertical, 30)
 
@@ -763,11 +786,11 @@ struct GoalSettingsView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 12) {
-                            GoalPresetButton(hours: 12, selectedHours: $selectedHours)
-                            GoalPresetButton(hours: 16, selectedHours: $selectedHours)
-                            GoalPresetButton(hours: 18, selectedHours: $selectedHours)
-                            GoalPresetButton(hours: 20, selectedHours: $selectedHours)
-                            GoalPresetButton(hours: 24, selectedHours: $selectedHours)
+                            GoalPresetButton(hours: 12, selectedHours: $selectedHours, selectedMinutes: $selectedMinutes)
+                            GoalPresetButton(hours: 16, selectedHours: $selectedHours, selectedMinutes: $selectedMinutes)
+                            GoalPresetButton(hours: 18, selectedHours: $selectedHours, selectedMinutes: $selectedMinutes)
+                            GoalPresetButton(hours: 20, selectedHours: $selectedHours, selectedMinutes: $selectedMinutes)
+                            GoalPresetButton(hours: 24, selectedHours: $selectedHours, selectedMinutes: $selectedMinutes)
                         }
                         .padding(.horizontal)
                     }
@@ -776,8 +799,9 @@ struct GoalSettingsView: View {
                 Spacer()
 
                 Button(action: {
-                    // Round to ensure clean whole number hours
-                    fastingManager.setFastingGoal(hours: selectedHours.rounded())
+                    // Convert hours and minutes to total hours
+                    let totalHours = Double(selectedHours) + (Double(selectedMinutes) / 60.0)
+                    fastingManager.setFastingGoal(hours: totalHours)
                     dismiss()
                 }) {
                     Text("Save Goal")
@@ -801,28 +825,37 @@ struct GoalSettingsView: View {
                 }
             }
             .onAppear {
-                selectedHours = fastingManager.fastingGoalHours
+                // Load current goal from FastingManager, converting to hours and minutes
+                let totalHours = fastingManager.fastingGoalHours
+                selectedHours = Int(totalHours)
+                selectedMinutes = Int((totalHours - Double(selectedHours)) * 60.0)
             }
         }
     }
 }
 
 struct GoalPresetButton: View {
-    let hours: Double
-    @Binding var selectedHours: Double
+    let hours: Int
+    @Binding var selectedHours: Int
+    @Binding var selectedMinutes: Int
 
     var body: some View {
         Button(action: {
             selectedHours = hours
+            selectedMinutes = 0  // Reset minutes for popular goals
         }) {
-            Text("\(Int(hours))h")
+            Text("\(hours)h")
                 .font(.headline)
-                .foregroundColor(selectedHours == hours ? .white : .blue)
+                .foregroundColor(isSelected ? .white : .blue)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
-                .background(selectedHours == hours ? Color.blue : Color.blue.opacity(0.1))
+                .background(isSelected ? Color.blue : Color.blue.opacity(0.1))
                 .cornerRadius(10)
         }
+    }
+
+    private var isSelected: Bool {
+        selectedHours == hours && selectedMinutes == 0
     }
 }
 

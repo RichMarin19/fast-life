@@ -45,6 +45,15 @@ struct AppLogger {
     /// Force-unwrap safety fixes monitoring (CRITICAL for beta monitoring)
     static let safety = OSLog(subsystem: subsystem, category: "Safety")
 
+    // MARK: - Phase 1 Additional Categories
+    // Following roadmap requirements for comprehensive logging
+
+    /// Mood tracking operations and validation
+    static let mood = OSLog(subsystem: subsystem, category: "Mood")
+
+    /// Fasting state transitions and validation
+    static let fasting = OSLog(subsystem: subsystem, category: "Fasting")
+
     // MARK: - Safety Logging Methods
 
     /// Log safety warnings for force-unwrap fixes
