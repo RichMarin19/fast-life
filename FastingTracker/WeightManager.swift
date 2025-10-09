@@ -72,14 +72,23 @@ class WeightManager: ObservableObject {
 
     // MARK: - Sync with HealthKit
 
-    func syncFromHealthKit(startDate: Date? = nil) {
-        guard syncWithHealthKit else { return }
+    func syncFromHealthKit(startDate: Date? = nil, completion: ((Int, Error?) -> Void)? = nil) {
+        guard syncWithHealthKit else {
+            completion?(0, NSError(domain: "WeightManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]))
+            return
+        }
 
         // Default to fetching last 365 days if no start date provided
         let start = startDate ?? Calendar.current.date(byAdding: .day, value: -365, to: Date())!
 
         HealthKitManager.shared.fetchWeightData(startDate: start) { [weak self] healthKitEntries in
-            guard let self = self else { return }
+            guard let self = self else {
+                completion?(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
+                return
+            }
+
+            // Track newly added entries for accurate reporting
+            var newlyAddedCount = 0
 
             // Merge HealthKit entries with local entries
             for hkEntry in healthKitEntries {
@@ -93,12 +102,70 @@ class WeightManager: ObservableObject {
                 if !isDuplicate {
                     // Add new HealthKit entry (allows multiple per day)
                     self.weightEntries.append(hkEntry)
+                    newlyAddedCount += 1
                 }
             }
 
             // Sort by date (most recent first)
             self.weightEntries.sort { $0.date > $1.date }
             self.saveWeightEntries()
+
+            // Report actual sync results
+            AppLogger.info("HealthKit sync completed: \(newlyAddedCount) new weight entries added", category: AppLogger.weightTracking)
+
+            DispatchQueue.main.async {
+                completion?(newlyAddedCount, nil)
+            }
+        }
+    }
+
+    /// Sync all historical weight data from HealthKit
+    /// Following Apple HealthKit Programming Guide: Comprehensive data import for user choice
+    /// Used when user selects "Import All Historical Data" option
+    func syncFromHealthKitHistorical(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
+        guard syncWithHealthKit else {
+            completion(0, NSError(domain: "WeightManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]))
+            return
+        }
+
+        AppLogger.info("Starting historical weight sync from \(startDate)", category: AppLogger.weightTracking)
+
+        HealthKitManager.shared.fetchWeightDataHistorical(startDate: startDate) { [weak self] healthKitEntries in
+            guard let self = self else {
+                completion(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
+                return
+            }
+
+            // Track newly added entries for accurate reporting
+            var newlyAddedCount = 0
+
+            // Merge HealthKit entries with local entries using robust deduplication
+            for hkEntry in healthKitEntries {
+                // More comprehensive duplicate check for historical data
+                let isDuplicate = self.weightEntries.contains(where: {
+                    // Check if entry already exists (by date, time, weight, and source)
+                    $0.source == .healthKit &&
+                    abs($0.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes (more flexible for historical)
+                    abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (account for rounding)
+                })
+
+                if !isDuplicate {
+                    // Add new HealthKit entry from historical import
+                    self.weightEntries.append(hkEntry)
+                    newlyAddedCount += 1
+                }
+            }
+
+            // Sort by date (most recent first)
+            self.weightEntries.sort { $0.date > $1.date }
+            self.saveWeightEntries()
+
+            // Report actual sync results
+            AppLogger.info("Historical HealthKit sync completed: \(newlyAddedCount) new weight entries imported from \(healthKitEntries.count) total entries", category: AppLogger.weightTracking)
+
+            DispatchQueue.main.async {
+                completion(newlyAddedCount, nil)
+            }
         }
     }
 
@@ -120,7 +187,7 @@ class WeightManager: ObservableObject {
                 HealthKitManager.shared.requestAuthorization { success, error in
                     if success {
                         AppLogger.info("Comprehensive HealthKit authorization granted, syncing weight from HealthKit", category: AppLogger.weightTracking)
-                        self.syncFromHealthKit()
+                        self.syncFromHealthKit(completion: nil)
                         self.setupHealthKitObserver()
                     } else {
                         AppLogger.error("Comprehensive HealthKit authorization failed", category: AppLogger.weightTracking, error: error)
@@ -134,7 +201,7 @@ class WeightManager: ObservableObject {
                 }
             } else {
                 AppLogger.info("Already authorized, syncing from HealthKit", category: AppLogger.weightTracking)
-                syncFromHealthKit()
+                syncFromHealthKit(completion: nil)
                 setupHealthKitObserver()
             }
         } else {
@@ -171,7 +238,7 @@ class WeightManager: ObservableObject {
             // New weight data detected - sync from HealthKit
             AppLogger.info("New weight data detected in HealthKit, syncing", category: AppLogger.weightTracking)
             DispatchQueue.main.async {
-                self?.syncFromHealthKit()
+                self?.syncFromHealthKit(completion: nil)
             }
 
             // Must call completion handler

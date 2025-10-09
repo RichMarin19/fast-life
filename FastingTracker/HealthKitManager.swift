@@ -64,6 +64,17 @@ class HealthKitManager: ObservableObject {
         return status == .sharingAuthorized
     }
 
+    /// Returns the detailed HealthKit authorization status for weight data
+    /// Following Apple HealthKit Programming Guide for proper authorization state handling
+    func getWeightAuthorizationStatus() -> HKAuthorizationStatus {
+        guard HKHealthStore.isHealthDataAvailable(),
+              let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            return .notDetermined
+        }
+
+        return healthStore.authorizationStatus(for: weightType)
+    }
+
     func isWaterAuthorized() -> Bool {
         guard HKHealthStore.isHealthDataAvailable() else {
             return false
@@ -99,6 +110,17 @@ class HealthKitManager: ObservableObject {
         let workoutType = HKObjectType.workoutType()
         let status = healthStore.authorizationStatus(for: workoutType)
         return status == .sharingAuthorized
+    }
+
+    /// Returns the detailed HealthKit authorization status for fasting data (workouts)
+    /// Following Apple HealthKit Programming Guide for proper authorization state handling
+    func getFastingAuthorizationStatus() -> HKAuthorizationStatus {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return .notDetermined
+        }
+
+        let workoutType = HKObjectType.workoutType()
+        return healthStore.authorizationStatus(for: workoutType)
     }
 
     func checkAuthorizationStatus() {
@@ -521,17 +543,22 @@ class HealthKitManager: ObservableObject {
             limit: HKObjectQueryNoLimit
         ) { [weak self] query, addedObjects, deletedObjects, newAnchor, error in
 
-            guard error == nil else {
-                if let error = error {
-                    AppLogger.error("Error fetching weight data with anchored query", category: AppLogger.healthKit, error: error)
-                    // Save error state for UI display
-                    self?.saveSyncError(for: SyncErrorKeys.weight, error: error.localizedDescription)
-                    // Record for production crash analysis
-                    CrashReportManager.shared.recordHealthKitError(error, context: [
-                        "operation": "fetchWeightData_anchored",
-                        "startDate": startDate.description
-                    ])
-                }
+            // Apply industry-standard HKError handling
+            if let error = error {
+                let errorMessage = self?.handleHealthKitError(error, operation: "fetch weight data (anchored)") ?? "Unknown error"
+                AppLogger.error("Enhanced error handling for anchored weight fetch: \(errorMessage)", category: AppLogger.healthKit, error: error)
+
+                // Save error state for UI display with user-friendly message
+                self?.saveSyncError(for: SyncErrorKeys.weight, error: errorMessage)
+
+                // Record for production crash analysis with enhanced context
+                CrashReportManager.shared.recordHealthKitError(error, context: [
+                    "operation": "fetchWeightData_anchored",
+                    "startDate": startDate.description,
+                    "anchor": savedAnchor?.description ?? "nil",
+                    "userFriendlyError": errorMessage
+                ])
+
                 completion([])
                 return
             }
@@ -571,10 +598,19 @@ class HealthKitManager: ObservableObject {
 
         let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] query, results, error in
 
-            guard let samples = results as? [HKQuantitySample], error == nil else {
-                if let error = error {
-                    AppLogger.error("Error fetching weight data", category: AppLogger.healthKit, error: error)
-                }
+            // Apply industry-standard HKError handling
+            if let error = error {
+                let errorMessage = self?.handleHealthKitError(error, operation: "fetch weight data") ?? "Unknown error"
+                AppLogger.error("Enhanced error handling for weight fetch: \(errorMessage)", category: AppLogger.healthKit, error: error)
+
+                // Update sync status with specific error
+                self?.updateWeightSyncStatus(success: false, error: errorMessage)
+                completion([])
+                return
+            }
+
+            guard let samples = results as? [HKQuantitySample] else {
+                AppLogger.warning("No weight samples returned from HealthKit", category: AppLogger.healthKit)
                 completion([])
                 return
             }
@@ -686,6 +722,91 @@ class HealthKitManager: ObservableObject {
         }
     }
 
+    /// Fetch ALL historical weight data from HealthKit (no anchor - full import)
+    /// Following Apple HealthKit Programming Guide: Complete data import for user choice
+    /// Used when user selects "Import All Historical Data" sync preference
+    func fetchWeightDataHistorical(startDate: Date, endDate: Date = Date(), completion: @escaping ([WeightEntry]) -> Void) {
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            completion([])
+            return
+        }
+
+        AppLogger.info("Starting historical weight data fetch from \(startDate) to \(endDate)", category: AppLogger.healthKit)
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        // Use HKSampleQuery (not anchored) for complete historical import
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] query, results, error in
+
+            // Apply industry-standard HKError handling
+            if let error = error {
+                let errorMessage = self?.handleHealthKitError(error, operation: "fetch historical weight data") ?? "Unknown error"
+                AppLogger.error("Historical weight fetch error: \(errorMessage)", category: AppLogger.healthKit, error: error)
+
+                // Record for crash analysis with historical import context
+                CrashReportManager.shared.recordHealthKitError(error, context: [
+                    "operation": "fetchWeightDataHistorical",
+                    "startDate": startDate.description,
+                    "endDate": endDate.description,
+                    "userFriendlyError": errorMessage
+                ])
+
+                completion([])
+                return
+            }
+
+            guard let samples = results as? [HKQuantitySample] else {
+                AppLogger.warning("No historical weight samples returned from HealthKit", category: AppLogger.healthKit)
+                completion([])
+                return
+            }
+
+            AppLogger.info("Fetched \(samples.count) historical weight samples from HealthKit", category: AppLogger.healthKit)
+
+            // Process all samples (preserve multiple entries per day for historical accuracy)
+            self?.processHistoricalWeightSamples(samples, completion: completion)
+        }
+
+        healthStore.execute(query)
+    }
+
+    /// Process weight samples for historical import (preserves all entries)
+    /// Unlike regular sync, historical import preserves multiple entries per day for data completeness
+    private func processHistoricalWeightSamples(_ samples: [HKQuantitySample], completion: @escaping ([WeightEntry]) -> Void) {
+        // For historical import, preserve ALL entries (don't group by day)
+        // This gives users complete historical accuracy as requested
+
+        var weightEntries: [WeightEntry] = []
+        let dispatchGroup = DispatchGroup()
+
+        for sample in samples {
+            dispatchGroup.enter()
+
+            let weightInPounds = sample.quantity.doubleValue(for: HKUnit.pound())
+
+            // Fetch BMI and body fat for this specific timestamp if available
+            fetchBMIAndBodyFat(for: sample.startDate) { bmi, bodyFat in
+                let entry = WeightEntry(
+                    date: sample.startDate,
+                    weight: weightInPounds,
+                    bmi: bmi,
+                    bodyFat: bodyFat,
+                    source: .healthKit
+                )
+                weightEntries.append(entry)
+                dispatchGroup.leave()
+            }
+        }
+
+        dispatchGroup.notify(queue: .main) {
+            // Sort by date (most recent first) and return complete historical dataset
+            let sortedEntries = weightEntries.sorted { $0.date > $1.date }
+            AppLogger.info("Processed \(sortedEntries.count) historical weight entries", category: AppLogger.healthKit)
+            completion(sortedEntries)
+        }
+    }
+
     private func fetchBMIAndBodyFat(for date: Date, completion: @escaping (Double?, Double?) -> Void) {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
@@ -754,14 +875,22 @@ class HealthKitManager: ObservableObject {
             samplesToSave.append(bodyFatSample)
         }
 
-        healthStore.save(samplesToSave) { success, error in
+        healthStore.save(samplesToSave) { [weak self] success, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    AppLogger.error("Error saving weight data", category: AppLogger.healthKit, error: error)
+                    // Apply industry-standard HKError handling
+                    let errorMessage = self?.handleHealthKitError(error, operation: "save weight data") ?? "Unknown error"
+                    AppLogger.error("Enhanced error handling for weight save: \(errorMessage)", category: AppLogger.healthKit, error: error)
+
+                    // Update sync status with specific error
+                    self?.updateWeightSyncStatus(success: false, error: errorMessage)
+                    completion(false, error)
                 } else {
-                    AppLogger.info("Weight data saved", category: AppLogger.weightTracking)
+                    AppLogger.info("Weight data saved successfully to HealthKit", category: AppLogger.weightTracking)
+                    // Update sync status with success
+                    self?.updateWeightSyncStatus(success: true)
+                    completion(true, nil)
                 }
-                completion(success, error)
             }
         }
     }
@@ -1345,5 +1474,67 @@ class HealthKitManager: ObservableObject {
         }
 
         healthStore.execute(query)
+    }
+}
+
+// MARK: - HKError Handling Extension
+// Following Apple HealthKit Programming Guide: Handling Errors When Working with HealthKit
+// Reference: https://developer.apple.com/documentation/healthkit/handling_errors_when_working_with_healthkit
+
+extension HealthKitManager {
+
+    /// Handles HKError cases following Apple's best practices
+    /// Returns user-friendly error messages and logs technical details
+    private func handleHealthKitError(_ error: Error, operation: String) -> String {
+        // Cast to HKError to access specific error cases
+        if let hkError = error as? HKError {
+            // Use raw values to avoid compilation issues with iOS version differences
+            switch hkError.code.rawValue {
+            case 4: // HKError.errorAuthorizationDenied
+                AppLogger.error("HealthKit authorization denied for \(operation)", category: AppLogger.healthKit, error: hkError)
+                return "Permission denied. Please check Settings > Health > Data Access & Devices."
+
+            case 5: // HKError.errorDatabaseInaccessible
+                AppLogger.error("HealthKit database inaccessible for \(operation)", category: AppLogger.healthKit, error: hkError)
+                return "Health data is temporarily unavailable. Please unlock your device and try again."
+
+            case 3: // HKError.errorAuthorizationNotDetermined
+                AppLogger.error("HealthKit authorization not determined for \(operation)", category: AppLogger.healthKit, error: hkError)
+                return "Health permissions not set. Please enable access in Settings."
+
+            case 11: // HKError.errorNoData
+                AppLogger.warning("No health data available for \(operation)", category: AppLogger.healthKit)
+                return "No data available for this time period."
+
+            case 2: // HKError.errorInvalidArgument
+                AppLogger.error("Invalid argument in HealthKit \(operation)", category: AppLogger.healthKit, error: hkError)
+                return "Invalid data format. Please try again."
+
+            default:
+                AppLogger.error("HealthKit error (\(hkError.code.rawValue)) for \(operation): \(hkError.localizedDescription)", category: AppLogger.healthKit, error: hkError)
+                return "Health data sync encountered an error. Please try again."
+            }
+        } else {
+            // Non-HKError case (network, etc.)
+            AppLogger.error("Non-HealthKit error for \(operation)", category: AppLogger.healthKit, error: error)
+            return error.localizedDescription
+        }
+    }
+
+    /// Checks if an error is recoverable and suggests retry
+    private func isRecoverableError(_ error: Error) -> Bool {
+        if let hkError = error as? HKError {
+            switch hkError.code.rawValue {
+            case 5: // HKError.errorDatabaseInaccessible
+                return true // User can unlock device
+            case 11: // HKError.errorNoData
+                return true // Data might become available
+            case 4: // HKError.errorAuthorizationDenied
+                return false // Requires user settings change
+            default:
+                return true // Most errors are recoverable
+            }
+        }
+        return true // Assume recoverable for non-HKErrors
     }
 }
