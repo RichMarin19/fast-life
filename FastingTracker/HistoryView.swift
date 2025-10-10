@@ -1,16 +1,6 @@
 import SwiftUI
 import Charts
 
-// MARK: - Identifiable Date Wrapper
-
-struct IdentifiableDate: Identifiable {
-    let date: Date
-
-    var id: TimeInterval {
-        date.timeIntervalSince1970
-    }
-}
-
 struct HistoryView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @State private var selectedDate: Date?
