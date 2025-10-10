@@ -17,6 +17,7 @@ class HealthKitService {
         case hydration
         case sleep
         case fasting
+        case mindfulness
         case comprehensive // All data types for advanced sync
 
         /// Get read types for this data type
@@ -40,6 +41,10 @@ class HealthKitService {
                 return [
                     HKObjectType.workoutType() // Fasting sessions stored as workouts
                 ]
+            case .mindfulness:
+                return [
+                    HKObjectType.categoryType(forIdentifier: .mindfulSession)!
+                ]
             case .comprehensive:
                 // Combine all data types for advanced sync
                 var allTypes = Set<HKObjectType>()
@@ -47,6 +52,7 @@ class HealthKitService {
                 allTypes.formUnion(DataType.hydration.readTypes)
                 allTypes.formUnion(DataType.sleep.readTypes)
                 allTypes.formUnion(DataType.fasting.readTypes)
+                allTypes.formUnion(DataType.mindfulness.readTypes)
                 return allTypes
             }
         }
@@ -72,6 +78,10 @@ class HealthKitService {
                 return [
                     HKObjectType.workoutType() as HKSampleType // Fasting sessions stored as workouts
                 ]
+            case .mindfulness:
+                return [
+                    HKObjectType.categoryType(forIdentifier: .mindfulSession)! as HKSampleType
+                ]
             case .comprehensive:
                 // Combine all data types for advanced sync
                 var allTypes = Set<HKSampleType>()
@@ -79,6 +89,7 @@ class HealthKitService {
                 allTypes.formUnion(DataType.hydration.writeTypes)
                 allTypes.formUnion(DataType.sleep.writeTypes)
                 allTypes.formUnion(DataType.fasting.writeTypes)
+                allTypes.formUnion(DataType.mindfulness.writeTypes)
                 return allTypes
             }
         }
@@ -90,6 +101,7 @@ class HealthKitService {
             case .hydration: return "Hydration"
             case .sleep: return "Sleep"
             case .fasting: return "Fasting"
+            case .mindfulness: return "Mindfulness"
             case .comprehensive: return "Comprehensive"
             }
         }
@@ -172,6 +184,11 @@ class HealthKitService {
     /// Request fasting-specific authorization (workouts for fasting sessions)
     static func requestFastingAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         requestAuthorization(for: .fasting, completion: completion)
+    }
+
+    /// Request mindfulness-specific authorization (mindful sessions for mood tracking)
+    static func requestMindfulnessAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        requestAuthorization(for: .mindfulness, completion: completion)
     }
 
     /// Request comprehensive authorization for all data types

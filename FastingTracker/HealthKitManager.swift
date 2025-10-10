@@ -71,6 +71,19 @@ class HealthKitManager: ObservableObject {
         return status == .sharingAuthorized
     }
 
+    func isHydrationAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
+            return false
+        }
+
+        let status = healthStore.authorizationStatus(for: waterType)
+        return status == .sharingAuthorized
+    }
+
     /// Returns the detailed HealthKit authorization status for weight data
     /// Following Apple HealthKit Programming Guide for proper authorization state handling
     func getWeightAuthorizationStatus() -> HKAuthorizationStatus {
@@ -130,6 +143,21 @@ class HealthKitManager: ObservableObject {
         return healthStore.authorizationStatus(for: workoutType)
     }
 
+    /// Check if mindfulness data is authorized for read/write
+    /// Following Apple HealthKit Programming Guide for mindful session category
+    func isMindfulnessAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            return false
+        }
+
+        let status = healthStore.authorizationStatus(for: mindfulType)
+        return status == .sharingAuthorized
+    }
+
     func checkAuthorizationStatus() {
         guard HKHealthStore.isHealthDataAvailable() else {
             AppLogger.warning("HealthKit is not available on this device", category: AppLogger.healthKit)
@@ -173,6 +201,12 @@ class HealthKitManager: ObservableObject {
     /// Refactored to use shared HealthKitService - eliminates code duplication
     func requestFastingAuthorization(completion: @escaping (Bool, Error?) -> Void) {
         HealthKitService.requestFastingAuthorization(completion: completion)
+    }
+
+    /// Request authorization for mindfulness tracking (mindful sessions)
+    /// Refactored to use shared HealthKitService - eliminates code duplication
+    func requestMindfulnessAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        HealthKitService.requestMindfulnessAuthorization(completion: completion)
     }
 
     // MARK: - Legacy Authorization (For "Sync All" Features Only)
@@ -415,7 +449,9 @@ class HealthKitManager: ObservableObject {
 
     private func fetchWeightDataAnchored(startDate: Date, endDate: Date = Date(), resetAnchor: Bool = false, completion: @escaping ([WeightEntry]) -> Void) {
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
-            completion([])
+            DispatchQueue.main.async {
+                completion([])
+            }
             return
         }
 
@@ -453,7 +489,9 @@ class HealthKitManager: ObservableObject {
                     "userFriendlyError": errorMessage
                 ])
 
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
@@ -472,7 +510,9 @@ class HealthKitManager: ObservableObject {
 
             // Process added samples
             guard let samples = addedObjects as? [HKQuantitySample] else {
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
@@ -499,7 +539,9 @@ class HealthKitManager: ObservableObject {
     /// Consider migrating all calls to use anchored version for better performance
     func fetchWeightDataLegacy(startDate: Date, endDate: Date = Date(), completion: @escaping ([WeightEntry]) -> Void) {
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
-            completion([])
+            DispatchQueue.main.async {
+                completion([])
+            }
             return
         }
 
@@ -515,13 +557,17 @@ class HealthKitManager: ObservableObject {
 
                 // Update sync status with specific error
                 self?.updateWeightSyncStatus(success: false, error: errorMessage)
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
             guard let samples = results as? [HKQuantitySample] else {
                 AppLogger.warning("No weight samples returned from HealthKit", category: AppLogger.healthKit)
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
@@ -610,7 +656,11 @@ class HealthKitManager: ObservableObject {
         // Sort by date (most recent first) and return all entries
         weightEntries.sort { $0.date > $1.date }
         AppLogger.info("Processed \(weightEntries.count) weight entries from HealthKit", category: AppLogger.healthKit)
-        completion(weightEntries)
+
+        // Industry Standard: All completion handlers must be called on main thread for @Published property updates
+        DispatchQueue.main.async {
+            completion(weightEntries)
+        }
     }
     /// Process deleted weight samples from HealthKit
     /// Following Apple HealthKit Programming Guide for deletion handling
@@ -636,12 +686,38 @@ class HealthKitManager: ObservableObject {
         AppLogger.info("Notified WeightManager instances of \(deletedSamples.count) deleted weight entries", category: AppLogger.healthKit)
     }
 
+    /// Process deleted sleep samples from HealthKit
+    /// Following Apple HealthKit Programming Guide for deletion handling
+    private func processDeletedSleepSamples(_ deletedSamples: [HKCategorySample]) {
+        // Notify all active SleepManager instances about deletions
+        // Using NotificationCenter for loose coupling (Apple pattern)
+        let deletedObjects = deletedSamples.map { sample in
+            [
+                "uuid": sample.uuid.uuidString,
+                "bedTime": sample.startDate,
+                "wakeTime": sample.endDate
+            ]
+        }
+
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .healthKitSleepDeleted,
+                object: nil,
+                userInfo: ["deletedSamples": deletedObjects]
+            )
+        }
+
+        AppLogger.info("Notified SleepManager instances of \(deletedSamples.count) deleted sleep entries", category: AppLogger.healthKit)
+    }
+
     /// Fetch ALL historical weight data from HealthKit (no anchor - full import)
     /// Following Apple HealthKit Programming Guide: Complete data import for user choice
     /// Used when user selects "Import All Historical Data" sync preference
     func fetchWeightDataHistorical(startDate: Date, endDate: Date = Date(), completion: @escaping ([WeightEntry]) -> Void) {
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
-            completion([])
+            DispatchQueue.main.async {
+                completion([])
+            }
             return
         }
 
@@ -666,13 +742,17 @@ class HealthKitManager: ObservableObject {
                     "userFriendlyError": errorMessage
                 ])
 
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
             guard let samples = results as? [HKQuantitySample] else {
                 AppLogger.warning("No historical weight samples returned from HealthKit", category: AppLogger.healthKit)
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
@@ -957,7 +1037,9 @@ class HealthKitManager: ObservableObject {
     /// Following Apple HealthKit Best Practices to prevent duplicates and improve performance
     func fetchWaterData(startDate: Date, endDate: Date = Date(), completion: @escaping ([(date: Date, amount: Double)]) -> Void) {
         guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
-            completion([])
+            DispatchQueue.main.async {
+                completion([])
+            }
             return
         }
 
@@ -984,7 +1066,9 @@ class HealthKitManager: ObservableObject {
                         "startDate": startDate.description
                     ])
                 }
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
@@ -997,7 +1081,9 @@ class HealthKitManager: ObservableObject {
 
             // Process added samples
             guard let samples = addedObjects as? [HKQuantitySample] else {
-                completion([])
+                DispatchQueue.main.async {
+                    completion([])
+                }
                 return
             }
 
@@ -1066,6 +1152,63 @@ class HealthKitManager: ObservableObject {
         healthStore.disableBackgroundDelivery(for: weightType) { success, error in
             if let error = error {
                 AppLogger.error("Failed to disable background delivery", category: AppLogger.healthKit, error: error)
+            }
+        }
+    }
+
+    // MARK: - Hydration Observer Methods
+    func startObservingHydration(query: HKObserverQuery) {
+        healthStore.execute(query)
+        // Enable background delivery for hydration updates
+        guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else { return }
+        healthStore.enableBackgroundDelivery(for: waterType, frequency: .immediate) { success, error in
+            if let error = error {
+                AppLogger.error("Failed to enable hydration background delivery", category: AppLogger.healthKit, error: error)
+            } else if success {
+                AppLogger.info("Background delivery enabled for hydration data", category: AppLogger.healthKit)
+            }
+        }
+    }
+
+    func stopObservingHydration(query: HKObserverQuery) {
+        healthStore.stop(query)
+        // Disable background delivery when no longer observing
+        guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else { return }
+        healthStore.disableBackgroundDelivery(for: waterType) { success, error in
+            if let error = error {
+                AppLogger.error("Failed to disable hydration background delivery", category: AppLogger.healthKit, error: error)
+            }
+        }
+    }
+
+    /// Start observing hydration data changes with callback
+    /// Following Apple HealthKit observer pattern with callback-based interface
+    func startObservingHydration(callback: @escaping () -> Void) {
+        guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else {
+            AppLogger.error("Failed to create dietary water type for observer", category: AppLogger.healthKit)
+            return
+        }
+
+        let query = HKObserverQuery(sampleType: waterType, predicate: nil) { _, completionHandler, error in
+            if let error = error {
+                AppLogger.error("Hydration observer query error", category: AppLogger.healthKit, error: error)
+                completionHandler()
+                return
+            }
+
+            // Call the provided callback when hydration data changes
+            callback()
+            completionHandler()
+        }
+
+        healthStore.execute(query)
+
+        // Enable background delivery for hydration updates
+        healthStore.enableBackgroundDelivery(for: waterType, frequency: .immediate) { success, error in
+            if let error = error {
+                AppLogger.error("Failed to enable hydration background delivery", category: AppLogger.healthKit, error: error)
+            } else if success {
+                AppLogger.info("Background delivery enabled for hydration data", category: AppLogger.healthKit)
             }
         }
     }
@@ -1162,7 +1305,7 @@ class HealthKitManager: ObservableObject {
 
     /// Fetches sleep data using HKAnchoredObjectQuery for efficient incremental sync
     /// Following Apple HealthKit Best Practices to prevent duplicates and improve performance
-    func fetchSleepData(startDate: Date, completion: @escaping ([SleepEntry]) -> Void) {
+    func fetchSleepData(startDate: Date, resetAnchor: Bool = false, completion: @escaping ([SleepEntry]) -> Void) {
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
             AppLogger.error("Failed to create sleep analysis type", category: AppLogger.healthKit)
             // Record critical HealthKit setup failure
@@ -1172,12 +1315,19 @@ class HealthKitManager: ObservableObject {
             CrashReportManager.shared.recordHealthKitError(error, context: [
                 "operation": "createSleepAnalysisType"
             ])
-            completion([])
+            DispatchQueue.main.async {
+                completion([])
+            }
             return
         }
 
-        // Load previously saved anchor for incremental sync
-        let savedAnchor = loadAnchor(forKey: AnchorKeys.sleep)
+        // Load previously saved anchor for incremental sync, or reset if requested
+        // Industry Standard: Reset anchor for manual sync to detect missed deletions
+        let savedAnchor = resetAnchor ? nil : loadAnchor(forKey: AnchorKeys.sleep)
+
+        if resetAnchor {
+            AppLogger.info("Resetting HealthKit sleep anchor for fresh deletion detection", category: AppLogger.healthKit)
+        }
 
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: Date(), options: .strictStartDate)
 
@@ -1207,6 +1357,12 @@ class HealthKitManager: ObservableObject {
             self?.saveSyncTimestamp(for: SyncTimestampKeys.sleep)
             self?.saveSyncError(for: SyncErrorKeys.sleep, error: nil)
 
+            // Process deleted samples first (Apple best practice)
+            if let deletedSamples = deletedObjects as? [HKCategorySample], !deletedSamples.isEmpty {
+                AppLogger.info("Processing \(deletedSamples.count) deleted sleep samples from HealthKit", category: AppLogger.healthKit)
+                self?.processDeletedSleepSamples(deletedSamples)
+            }
+
             // Process added samples
             guard let samples = addedObjects as? [HKCategorySample] else {
                 DispatchQueue.main.async {
@@ -1217,22 +1373,134 @@ class HealthKitManager: ObservableObject {
 
             AppLogger.info("Fetched \(samples.count) sleep samples from HealthKit", category: AppLogger.healthKit)
 
-            // Convert HKCategorySamples to SleepEntry objects
-            let sleepEntries = samples.map { sample in
-                SleepEntry(
-                    bedTime: sample.startDate,
-                    wakeTime: sample.endDate,
-                    quality: nil,
-                    source: .healthKit
-                )
-            }
-
-            DispatchQueue.main.async {
-                completion(sleepEntries)
-            }
+            // INDUSTRY STANDARD FIX: Process ALL sleep stage samples (no filtering)
+            // Following Apple HealthKit Programming Guide and handoff.md breakthrough lessons
+            self?.processSleepSamples(samples, completion: completion)
         }
 
         healthStore.execute(query)
+    }
+
+    /// Process sleep samples with detailed stage analysis
+    /// Following Apple HealthKit Programming Guide for HKCategoryValueSleepAnalysis
+    /// Applies breakthrough lessons from weight tracking: preserve ALL data, no day-based filtering
+    private func processSleepSamples(_ samples: [HKCategorySample], completion: @escaping ([SleepEntry]) -> Void) {
+        AppLogger.info("Processing \(samples.count) sleep samples with detailed stage analysis", category: AppLogger.healthKit)
+
+        // INDUSTRY STANDARD FIX: Group sleep samples by actual sleep sessions (time-based)
+        // Following Weight breakthrough lesson: Preserve ALL sleep sessions, no calendar filtering
+        // Problem with old approach: Nap (2pm-3pm) + Night sleep (11pm-7am) both on May 10th
+        //                           → Same calendar key → One entry → Data loss
+        // Solution: Group by time proximity, not calendar day
+        var sleepSessions: [[HKCategorySample]] = []
+        let sortedSamples = samples.sorted { $0.startDate < $1.startDate }
+
+        // Industry standard: 4-hour gap indicates separate sleep sessions
+        let sessionGapThreshold: TimeInterval = 4 * 3600 // 4 hours
+
+        var currentSession: [HKCategorySample] = []
+        var lastEndTime: Date?
+
+        for sample in sortedSamples {
+            if let lastEnd = lastEndTime {
+                let timeSinceLastSleep = sample.startDate.timeIntervalSince(lastEnd)
+
+                // If gap > 4 hours, start new sleep session
+                if timeSinceLastSleep > sessionGapThreshold {
+                    if !currentSession.isEmpty {
+                        sleepSessions.append(currentSession)
+                    }
+                    currentSession = [sample]
+                } else {
+                    currentSession.append(sample)
+                }
+            } else {
+                currentSession = [sample]
+            }
+
+            lastEndTime = sample.endDate
+        }
+
+        // Add final session
+        if !currentSession.isEmpty {
+            sleepSessions.append(currentSession)
+        }
+
+        AppLogger.info("Grouped samples into \(sleepSessions.count) sleep sessions using time-based detection", category: AppLogger.healthKit)
+
+        var sleepEntries: [SleepEntry] = []
+
+        for (sessionIndex, sessionSamples) in sleepSessions.enumerated() {
+            // Sort samples by start time for timeline processing
+            let sortedSamples = sessionSamples.sorted { $0.startDate < $1.startDate }
+
+            // Find overall bed time and wake time for this session
+            guard let firstSample = sortedSamples.first,
+                  let lastSample = sortedSamples.last else {
+                AppLogger.error("Empty sleep session \(sessionIndex)", category: AppLogger.healthKit)
+                continue
+            }
+
+            let bedTime = firstSample.startDate
+            let wakeTime = lastSample.endDate
+
+            // Convert HealthKit samples to SleepStage objects
+            var stages: [SleepStage] = []
+
+            for sample in sortedSamples {
+                let stageType = mapHealthKitSleepValue(sample.value)
+                let stage = SleepStage(
+                    startTime: sample.startDate,
+                    endTime: sample.endDate,
+                    type: stageType
+                )
+                stages.append(stage)
+
+                AppLogger.info("Sleep stage: \(stageType.rawValue) from \(sample.startDate) to \(sample.endDate)", category: AppLogger.healthKit)
+            }
+
+            // Create enhanced SleepEntry with detailed stage data
+            let sleepEntry = SleepEntry(
+                bedTime: bedTime,
+                wakeTime: wakeTime,
+                quality: nil,
+                source: .healthKit,
+                stages: stages
+            )
+
+            sleepEntries.append(sleepEntry)
+            AppLogger.info("Created sleep session: \(bedTime) to \(wakeTime) with \(stages.count) stages", category: AppLogger.healthKit)
+        }
+
+        // Sort by date (most recent first) and return
+        sleepEntries.sort { $0.bedTime > $1.bedTime }
+        AppLogger.info("Processed \(sleepEntries.count) sleep entries with stage data", category: AppLogger.healthKit)
+
+        DispatchQueue.main.async {
+            completion(sleepEntries)
+        }
+    }
+
+    /// Map HealthKit sleep analysis values to our SleepStageType enum
+    /// Following Apple HealthKit Programming Guide for HKCategoryValueSleepAnalysis
+    private func mapHealthKitSleepValue(_ value: Int) -> SleepStageType {
+        switch value {
+        case 0: // HKCategoryValueSleepAnalysis.inBed.rawValue
+            return .inBed
+        case 1: // HKCategoryValueSleepAnalysis.asleep.rawValue (deprecated, treat as core)
+            return .core
+        case 2: // HKCategoryValueSleepAnalysis.awake.rawValue
+            return .awake
+        case 3: // HKCategoryValueSleepAnalysis.asleepCore.rawValue
+            return .core
+        case 4: // HKCategoryValueSleepAnalysis.asleepDeep.rawValue
+            return .deep
+        case 5: // HKCategoryValueSleepAnalysis.asleepREM.rawValue
+            return .rem
+        default:
+            AppLogger.error("Unknown sleep analysis value: \(value), defaulting to core", category: AppLogger.healthKit)
+            return .core
+        }
     }
 
     func startObservingSleep(query: HKObserverQuery) {
@@ -1497,6 +1765,212 @@ class HealthKitManager: ObservableObject {
         }
 
         healthStore.execute(query)
+    }
+
+    /// Alias method for FastingManager compatibility
+    /// Maps to existing fetchFastingData method following same Apple HealthKit patterns
+    func fetchFastingSessions(startDate: Date, completion: @escaping ([FastingSession]) -> Void) {
+        fetchFastingData(startDate: startDate, completion: completion)
+    }
+
+    /// Start observing fasting data changes with callback
+    /// Following Apple HealthKit observer pattern with callback-based interface
+    func startObservingFasting(callback: @escaping () -> Void) {
+        let workoutType = HKObjectType.workoutType()
+
+        let query = HKObserverQuery(sampleType: workoutType, predicate: nil) { _, completionHandler, error in
+            if let error = error {
+                AppLogger.error("Fasting observer query error", category: AppLogger.healthKit, error: error)
+                completionHandler()
+                return
+            }
+
+            // Call the provided callback when fasting data changes
+            callback()
+            completionHandler()
+        }
+
+        healthStore.execute(query)
+
+        // Enable background delivery for workout updates (fasting sessions)
+        healthStore.enableBackgroundDelivery(for: workoutType, frequency: .immediate) { success, error in
+            if let error = error {
+                AppLogger.error("Failed to enable fasting background delivery", category: AppLogger.healthKit, error: error)
+            } else if success {
+                AppLogger.info("Background delivery enabled for fasting data", category: AppLogger.healthKit)
+            }
+        }
+    }
+
+    /// Stop observing fasting data changes
+    /// Following Apple HealthKit observer pattern
+    func stopObservingFasting() {
+        let workoutType = HKObjectType.workoutType()
+
+        // Disable background delivery when no longer observing
+        healthStore.disableBackgroundDelivery(for: workoutType) { success, error in
+            if let error = error {
+                AppLogger.error("Failed to disable fasting background delivery", category: AppLogger.healthKit, error: error)
+            } else if success {
+                AppLogger.info("Background delivery disabled for fasting data", category: AppLogger.healthKit)
+            }
+        }
+    }
+
+    // MARK: - Mindfulness Tracking Methods
+
+    /// Save mood data as mindfulness session in HealthKit
+    /// Following Apple HealthKit Programming Guide for mindful session category
+    /// Reference: HKCategoryTypeIdentifier.mindfulSession for meditation/mindfulness tracking
+    func saveMoodAsMindfulness(moodLevel: Int, energyLevel: Int, notes: String?, date: Date, completion: @escaping (Bool, Error?) -> Void) {
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            DispatchQueue.main.async {
+                completion(false, NSError(domain: "HealthKitManager", code: 1001, userInfo: [
+                    NSLocalizedDescriptionKey: "Failed to create mindful session type"
+                ]))
+            }
+            return
+        }
+
+        // Create mindfulness session sample with mood metadata
+        // Duration represents mindfulness session length (using 1 minute default)
+        let startDate = date
+        let endDate = Calendar.current.date(byAdding: .minute, value: 1, to: startDate) ?? startDate
+
+        let mindfulSample = HKCategorySample(
+            type: mindfulType,
+            value: 0, // Standard value for mindful sessions (no specific category value needed)
+            start: startDate,
+            end: endDate,
+            metadata: [
+                "mood_level": moodLevel,
+                "energy_level": energyLevel,
+                "notes": notes ?? "",
+                "source": "FastLIFe"
+            ]
+        )
+
+        healthStore.save(mindfulSample) { success, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    AppLogger.error("Failed to save mindfulness session", category: AppLogger.healthKit, error: error)
+                } else {
+                    AppLogger.info("Successfully saved mindfulness session for mood tracking", category: AppLogger.healthKit)
+                }
+                completion(success, error)
+            }
+        }
+    }
+
+    /// Fetch mood data from HealthKit mindfulness sessions
+    /// Following Apple HealthKit Programming Guide for category sample queries
+    func fetchMoodFromMindfulness(startDate: Date, completion: @escaping ([MoodEntry]) -> Void) {
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            DispatchQueue.main.async {
+                completion([])
+            }
+            return
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: Date(), options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        let query = HKSampleQuery(
+            sampleType: mindfulType,
+            predicate: predicate,
+            limit: HKObjectQueryNoLimit,
+            sortDescriptors: [sortDescriptor]
+        ) { query, results, error in
+            guard error == nil else {
+                AppLogger.error("Error fetching mindfulness sessions", category: AppLogger.healthKit, error: error)
+                DispatchQueue.main.async {
+                    completion([])
+                }
+                return
+            }
+
+            guard let samples = results as? [HKCategorySample] else {
+                AppLogger.warning("No mindfulness samples returned from HealthKit", category: AppLogger.healthKit)
+                DispatchQueue.main.async {
+                    completion([])
+                }
+                return
+            }
+
+            // Convert mindfulness sessions to mood entries
+            let moodEntries = samples.compactMap { sample -> MoodEntry? in
+                guard let metadata = sample.metadata,
+                      let moodLevel = metadata["mood_level"] as? Int,
+                      let energyLevel = metadata["energy_level"] as? Int else {
+                    return nil
+                }
+
+                let notes = metadata["notes"] as? String
+                return MoodEntry(
+                    date: sample.startDate,
+                    moodLevel: moodLevel,
+                    energyLevel: energyLevel,
+                    notes: notes,
+                    source: .healthKit
+                )
+            }
+
+            DispatchQueue.main.async {
+                AppLogger.info("Fetched \(moodEntries.count) mood entries from mindfulness sessions", category: AppLogger.healthKit)
+                completion(moodEntries)
+            }
+        }
+
+        healthStore.execute(query)
+    }
+
+    /// Start observing mindfulness data changes with callback
+    /// Following Apple HealthKit observer pattern with callback-based interface
+    func startObservingMindfulness(callback: @escaping () -> Void) {
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            AppLogger.error("Failed to create mindful session type for observer", category: AppLogger.healthKit)
+            return
+        }
+
+        let query = HKObserverQuery(sampleType: mindfulType, predicate: nil) { query, completionHandler, error in
+            if let error = error {
+                AppLogger.error("Mindfulness observer query error", category: AppLogger.healthKit, error: error)
+                completionHandler()
+                return
+            }
+
+            // Call the provided callback when mindfulness data changes
+            callback()
+            completionHandler()
+        }
+
+        healthStore.execute(query)
+
+        // Enable background delivery for mindfulness updates
+        healthStore.enableBackgroundDelivery(for: mindfulType, frequency: .immediate) { success, error in
+            if let error = error {
+                AppLogger.error("Failed to enable background delivery for mindfulness", category: AppLogger.healthKit, error: error)
+            } else if success {
+                AppLogger.info("Background delivery enabled for mindfulness data", category: AppLogger.healthKit)
+            }
+        }
+    }
+
+    /// Stop observing mindfulness data changes
+    /// Following Apple HealthKit observer pattern for cleanup
+    func stopObservingMindfulness() {
+        guard let mindfulType = HKObjectType.categoryType(forIdentifier: .mindfulSession) else {
+            return
+        }
+
+        // Disable background delivery when no longer observing
+        healthStore.disableBackgroundDelivery(for: mindfulType) { success, error in
+            if let error = error {
+                AppLogger.error("Failed to disable background delivery for mindfulness", category: AppLogger.healthKit, error: error)
+            } else {
+                AppLogger.info("Background delivery disabled for mindfulness data", category: AppLogger.healthKit)
+            }
+        }
     }
 
     // MARK: - Service Layer Integration

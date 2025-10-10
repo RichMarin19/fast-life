@@ -1,19 +1,27 @@
 import Foundation
 import SwiftUI
 
+// MARK: - Data Source Enum for Mood Tracking
+enum MoodDataSource: String, Codable, CaseIterable {
+    case manual = "Manual"
+    case healthKit = "HealthKit"
+}
+
 struct MoodEntry: Codable, Identifiable {
     let id: UUID
     let date: Date
     let moodLevel: Int      // 1-10 scale
     let energyLevel: Int    // 1-10 scale
     let notes: String?
+    let source: MoodDataSource
 
-    init(id: UUID = UUID(), date: Date = Date(), moodLevel: Int, energyLevel: Int, notes: String? = nil) {
+    init(id: UUID = UUID(), date: Date = Date(), moodLevel: Int, energyLevel: Int, notes: String? = nil, source: MoodDataSource = .manual) {
         self.id = id
         self.date = date
         self.moodLevel = max(1, min(10, moodLevel))  // Clamp to 1-10
         self.energyLevel = max(1, min(10, energyLevel))
         self.notes = notes
+        self.source = source
     }
 
     // MARK: - Description Helpers

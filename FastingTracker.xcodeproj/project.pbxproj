@@ -52,6 +52,7 @@
 		52B2CFEC2E9886BB0061FCFF /* SleepComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */; };
 		52B2CFED2E9886BB0061FCFF /* MoodComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */; };
 		52B2CFEF2E988CB90061FCFF /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */; };
+		52B2CFF52E98CCDC0061FCFF /* SleepVisualizationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -112,6 +113,7 @@
 		52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodComponents.swift; sourceTree = "<group>"; };
 		52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepComponents.swift; sourceTree = "<group>"; };
 		52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
+		52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepVisualizationComponents.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -149,6 +151,7 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */,
 				52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */,
 				52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */,
 				52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */,
@@ -314,6 +317,7 @@
 				5243F24B2E9029970051A731 /* MoodManager.swift in Sources */,
 				5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */,
 				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,
+				52B2CFF52E98CCDC0061FCFF /* SleepVisualizationComponents.swift in Sources */,
 				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
 				52B2CFEF2E988CB90061FCFF /* HealthKitService.swift in Sources */,
 				52B2CFBF2E94B3290061FCFF /* DataExportManager.swift in Sources */,

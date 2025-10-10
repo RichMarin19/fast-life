@@ -57,13 +57,16 @@ class WeightManager: ObservableObject {
     // MARK: - Add/Update Weight Entry
 
     func addWeightEntry(_ entry: WeightEntry) {
-        // Simply add the entry - allow multiple entries per day
-        weightEntries.append(entry)
+        // Industry Standard: All @Published property updates must be on main thread
+        DispatchQueue.main.async {
+            // Simply add the entry - allow multiple entries per day
+            self.weightEntries.append(entry)
 
-        // Sort by date (most recent first)
-        weightEntries.sort { $0.date > $1.date }
+            // Sort by date (most recent first)
+            self.weightEntries.sort { $0.date > $1.date }
 
-        saveWeightEntries()
+            self.saveWeightEntries()
+        }
 
         // Sync to HealthKit if enabled and this is a manual entry
         if syncWithHealthKit && entry.source == .manual {
@@ -90,8 +93,11 @@ class WeightManager: ObservableObject {
     // MARK: - Delete Weight Entry
 
     func deleteWeightEntry(_ entry: WeightEntry) {
-        weightEntries.removeAll { $0.id == entry.id }
-        saveWeightEntries()
+        // Industry Standard: All @Published property updates must be on main thread
+        DispatchQueue.main.async {
+            self.weightEntries.removeAll { $0.id == entry.id }
+            self.saveWeightEntries()
+        }
 
         // BIDIRECTIONAL DELETION: Delete from HealthKit for ANY entry when sync is enabled
         // Following Apple HealthKit best practices: Use UUID-based deletion for precision
@@ -236,8 +242,10 @@ class WeightManager: ObservableObject {
                 return
             }
 
-            // Track newly added entries for accurate reporting
-            var newlyAddedCount = 0
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            DispatchQueue.main.async {
+                // Track newly added entries for accurate reporting
+                var newlyAddedCount = 0
 
             // Merge HealthKit entries with local entries
             for hkEntry in healthKitEntries {
@@ -262,10 +270,8 @@ class WeightManager: ObservableObject {
             self.weightEntries.sort { $0.date > $1.date }
             self.saveWeightEntries()
 
-            // Report actual sync results
-            AppLogger.info("HealthKit sync completed: \(newlyAddedCount) new weight entries added", category: AppLogger.weightTracking)
-
-            DispatchQueue.main.async {
+                // Report actual sync results
+                AppLogger.info("HealthKit sync completed: \(newlyAddedCount) new weight entries added", category: AppLogger.weightTracking)
                 completion?(newlyAddedCount, nil)
             }
         }
@@ -288,35 +294,36 @@ class WeightManager: ObservableObject {
                 return
             }
 
-            // Track newly added entries for accurate reporting
-            var newlyAddedCount = 0
-
-            // Merge HealthKit entries with local entries using robust deduplication
-            for hkEntry in healthKitEntries {
-                // More comprehensive duplicate check for historical data
-                // FIXED: Check across ALL sources to prevent Manual vs HealthKit duplicates
-                let isDuplicate = self.weightEntries.contains(where: {
-                    // Check if entry already exists across ANY source (Manual OR HealthKit)
-                    // Following Apple HealthKit historical sync best practices
-                    abs($0.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes (more flexible for historical)
-                    abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (≈0.09 kg) account for rounding
-                })
-
-                if !isDuplicate {
-                    // Add new HealthKit entry from historical import
-                    self.weightEntries.append(hkEntry)
-                    newlyAddedCount += 1
-                }
-            }
-
-            // Sort by date (most recent first)
-            self.weightEntries.sort { $0.date > $1.date }
-            self.saveWeightEntries()
-
-            // Report actual sync results
-            AppLogger.info("Historical HealthKit sync completed: \(newlyAddedCount) new weight entries imported from \(healthKitEntries.count) total entries", category: AppLogger.weightTracking)
-
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
+                // Track newly added entries for accurate reporting
+                var newlyAddedCount = 0
+
+                // Merge HealthKit entries with local entries using robust deduplication
+                for hkEntry in healthKitEntries {
+                    // More comprehensive duplicate check for historical data
+                    // FIXED: Check across ALL sources to prevent Manual vs HealthKit duplicates
+                    let isDuplicate = self.weightEntries.contains(where: {
+                        // Check if entry already exists across ANY source (Manual OR HealthKit)
+                        // Following Apple HealthKit historical sync best practices
+                        abs($0.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes (more flexible for historical)
+                        abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (≈0.09 kg) account for rounding
+                    })
+
+                    if !isDuplicate {
+                        // Add new HealthKit entry from historical import
+                        self.weightEntries.append(hkEntry)
+                        newlyAddedCount += 1
+                    }
+                }
+
+                // Sort by date (most recent first)
+                self.weightEntries.sort { $0.date > $1.date }
+                self.saveWeightEntries()
+
+                // Report actual sync results
+                AppLogger.info("Historical HealthKit sync completed: \(newlyAddedCount) new weight entries imported from \(healthKitEntries.count) total entries", category: AppLogger.weightTracking)
+
                 completion(newlyAddedCount, nil)
             }
         }
@@ -339,81 +346,82 @@ class WeightManager: ObservableObject {
                 return
             }
 
-            // Industry Standard: Complete sync with deletion detection
-            // Step 1: Remove HealthKit entries that are no longer in Apple Health
-            let originalCount = self.weightEntries.count
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MMM d 'at' h:mm a"
-
-            AppLogger.info("DELETION CHECK: Starting with \(originalCount) Fast LIFe entries, \(healthKitEntries.count) HealthKit entries", category: AppLogger.weightTracking)
-
-            self.weightEntries.removeAll { fastLifeEntry in
-                // Only remove HealthKit-sourced entries (preserve manual entries)
-                guard fastLifeEntry.source != .manual else {
-                    AppLogger.info("PRESERVING manual entry: \(fastLifeEntry.weight)lbs on \(formatter.string(from: fastLifeEntry.date))", category: AppLogger.weightTracking)
-                    return false
-                }
-
-                // Check if this Fast LIFe entry still exists in current HealthKit data
-                let stillExistsInHealthKit = healthKitEntries.contains { healthKitEntry in
-                    let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
-                    let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
-                    return timeDiff < 60 && weightDiff < 0.1
-                }
-
-                let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
-
-                if !stillExistsInHealthKit {
-                    AppLogger.info("DELETING entry: \(fastLifeEntry.weight)lbs on \(fastLifeDateString) (source: \(fastLifeEntry.source.rawValue)) - not found in current HealthKit data", category: AppLogger.weightTracking)
-                } else {
-                    AppLogger.info("KEEPING entry: \(fastLifeEntry.weight)lbs on \(fastLifeDateString) (source: \(fastLifeEntry.source.rawValue)) - still exists in HealthKit", category: AppLogger.weightTracking)
-                }
-
-                return !stillExistsInHealthKit
-            }
-            let deletedCount = originalCount - self.weightEntries.count
-            AppLogger.info("DELETION COMPLETE: Removed \(deletedCount) entries, \(self.weightEntries.count) entries remaining", category: AppLogger.weightTracking)
-
-            // Step 2: Add new HealthKit entries not already in Fast LIFe
-            var addedCount = 0
-            AppLogger.info("Starting comparison: HealthKit has \(healthKitEntries.count) entries, Fast LIFe has \(self.weightEntries.count) entries", category: AppLogger.weightTracking)
-
-            for healthKitEntry in healthKitEntries {
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            DispatchQueue.main.async {
+                // Industry Standard: Complete sync with deletion detection
+                // Step 1: Remove HealthKit entries that are no longer in Apple Health
+                let originalCount = self.weightEntries.count
                 let formatter = DateFormatter()
                 formatter.dateFormat = "MMM d 'at' h:mm a"
-                let healthKitDateString = formatter.string(from: healthKitEntry.date)
 
-                let alreadyExists = self.weightEntries.contains { fastLifeEntry in
-                    let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
-                    let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
-                    let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
+                AppLogger.info("DELETION CHECK: Starting with \(originalCount) Fast LIFe entries, \(healthKitEntries.count) HealthKit entries", category: AppLogger.weightTracking)
 
-                    let matches = timeDiff < 60 && weightDiff < 0.1
-
-                    if matches {
-                        AppLogger.info("MATCH FOUND: HealthKit(\(healthKitEntry.weight)lbs \(healthKitDateString)) matches Fast LIFe(\(fastLifeEntry.weight)lbs \(fastLifeDateString)) - timeDiff:\(timeDiff)s weightDiff:\(weightDiff)lbs", category: AppLogger.weightTracking)
+                self.weightEntries.removeAll { fastLifeEntry in
+                    // Only remove HealthKit-sourced entries (preserve manual entries)
+                    guard fastLifeEntry.source != .manual else {
+                        AppLogger.info("PRESERVING manual entry: \(fastLifeEntry.weight)lbs on \(formatter.string(from: fastLifeEntry.date))", category: AppLogger.weightTracking)
+                        return false
                     }
 
-                    return matches
+                    // Check if this Fast LIFe entry still exists in current HealthKit data
+                    let stillExistsInHealthKit = healthKitEntries.contains { healthKitEntry in
+                        let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
+                        let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
+                        return timeDiff < 60 && weightDiff < 0.1
+                    }
+
+                    let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
+
+                    if !stillExistsInHealthKit {
+                        AppLogger.info("DELETING entry: \(fastLifeEntry.weight)lbs on \(fastLifeDateString) (source: \(fastLifeEntry.source.rawValue)) - not found in current HealthKit data", category: AppLogger.weightTracking)
+                    } else {
+                        AppLogger.info("KEEPING entry: \(fastLifeEntry.weight)lbs on \(fastLifeDateString) (source: \(fastLifeEntry.source.rawValue)) - still exists in HealthKit", category: AppLogger.weightTracking)
+                    }
+
+                    return !stillExistsInHealthKit
+                }
+                let deletedCount = originalCount - self.weightEntries.count
+                AppLogger.info("DELETION COMPLETE: Removed \(deletedCount) entries, \(self.weightEntries.count) entries remaining", category: AppLogger.weightTracking)
+
+                // Step 2: Add new HealthKit entries not already in Fast LIFe
+                var addedCount = 0
+                AppLogger.info("Starting comparison: HealthKit has \(healthKitEntries.count) entries, Fast LIFe has \(self.weightEntries.count) entries", category: AppLogger.weightTracking)
+
+                for healthKitEntry in healthKitEntries {
+                    let formatter = DateFormatter()
+                    formatter.dateFormat = "MMM d 'at' h:mm a"
+                    let healthKitDateString = formatter.string(from: healthKitEntry.date)
+
+                    let alreadyExists = self.weightEntries.contains { fastLifeEntry in
+                        let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
+                        let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
+                        let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
+
+                        let matches = timeDiff < 60 && weightDiff < 0.1
+
+                        if matches {
+                            AppLogger.info("MATCH FOUND: HealthKit(\(healthKitEntry.weight)lbs \(healthKitDateString)) matches Fast LIFe(\(fastLifeEntry.weight)lbs \(fastLifeDateString)) - timeDiff:\(timeDiff)s weightDiff:\(weightDiff)lbs", category: AppLogger.weightTracking)
+                        }
+
+                        return matches
+                    }
+
+                    if !alreadyExists {
+                        AppLogger.info("MISSING ENTRY DETECTED: Adding HealthKit entry \(healthKitEntry.weight)lbs on \(healthKitDateString) (source: \(healthKitEntry.source.rawValue))", category: AppLogger.weightTracking)
+                        self.weightEntries.append(healthKitEntry)
+                        addedCount += 1
+                    } else {
+                        AppLogger.info("Entry already exists: \(healthKitEntry.weight)lbs on \(healthKitDateString)", category: AppLogger.weightTracking)
+                    }
                 }
 
-                if !alreadyExists {
-                    AppLogger.info("MISSING ENTRY DETECTED: Adding HealthKit entry \(healthKitEntry.weight)lbs on \(healthKitDateString) (source: \(healthKitEntry.source.rawValue))", category: AppLogger.weightTracking)
-                    self.weightEntries.append(healthKitEntry)
-                    addedCount += 1
-                } else {
-                    AppLogger.info("Entry already exists: \(healthKitEntry.weight)lbs on \(healthKitDateString)", category: AppLogger.weightTracking)
-                }
-            }
+                // Sort by date (most recent first) and save
+                self.weightEntries.sort { $0.date > $1.date }
+                self.saveWeightEntries()
 
-            // Sort by date (most recent first) and save
-            self.weightEntries.sort { $0.date > $1.date }
-            self.saveWeightEntries()
+                // Report comprehensive sync results
+                AppLogger.info("Manual HealthKit sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(healthKitEntries.count) total HealthKit entries", category: AppLogger.weightTracking)
 
-            // Report comprehensive sync results
-            AppLogger.info("Manual HealthKit sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(healthKitEntries.count) total HealthKit entries", category: AppLogger.weightTracking)
-
-            DispatchQueue.main.async {
                 completion(addedCount, nil)
             }
         }
@@ -471,8 +479,12 @@ class WeightManager: ObservableObject {
     // MARK: - HealthKit Observer
 
     private func setupHealthKitObserver() {
-        // Only setup observer if sync is enabled and authorized
-        guard syncWithHealthKit && HealthKitManager.shared.isAuthorized else { return }
+        // Only setup observer if sync is enabled and specifically authorized for weight data
+        // Following Apple HealthKit best practices: observers need specific data type authorization
+        guard syncWithHealthKit && HealthKitManager.shared.isWeightAuthorized() else {
+            AppLogger.info("Weight observer not set up - sync disabled or not authorized for weight data", category: AppLogger.weightTracking)
+            return
+        }
 
         // Remove existing observer if any
         if let existingQuery = observerQuery {
@@ -510,6 +522,7 @@ class WeightManager: ObservableObject {
 
         observerQuery = query
         HealthKitManager.shared.startObserving(query: query)
+        AppLogger.info("Weight HealthKit observer started successfully - automatic sync enabled", category: AppLogger.weightTracking)
     }
 
     // MARK: - Statistics
