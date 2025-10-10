@@ -12,6 +12,7 @@ struct HydrationTrackingView: View {
     @State private var showingDrinkPicker = false
     @State private var selectedDrinkType: DrinkType = .water
     @State private var showHealthKitNudge = false
+    @State private var showHydrationSyncDialog = false
 
     var body: some View {
         ScrollView {
@@ -227,17 +228,8 @@ struct HydrationTrackingView: View {
                     // DIRECT AUTHORIZATION: Unified experience - same pattern as WeightTrackingView
                     // Request hydration permissions immediately when user wants to sync
                     print("📱 HydrationTrackingView: Requesting hydration authorization directly")
-                    HealthKitManager.shared.requestHydrationAuthorization { success, error in
-                        DispatchQueue.main.async {
-                            if success {
-                                print("✅ HydrationTrackingView: Hydration authorization granted - enabling sync")
-                                // Sync existing data to HealthKit
-                                hydrationManager.syncToHealthKit()
-                            } else {
-                                print("❌ HydrationTrackingView: Hydration authorization denied")
-                            }
-                        }
-                    }
+                    // Following Weight tracker successful pattern - show user choice dialog
+                    showHydrationSyncDialog = true
                 }) {
                     Label("Sync with Apple Health", systemImage: "heart.fill")
                         .font(.caption)
@@ -260,6 +252,39 @@ struct HydrationTrackingView: View {
                 drinkType: selectedDrinkType,
                 hydrationManager: hydrationManager
             )
+        }
+        .alert("Import Hydration Data", isPresented: $showHydrationSyncDialog) {
+            // Following Weight tracker successful pattern - user choice for import scope
+            // Industry standards (MyFitnessPal/Lose It): Always let user choose import type
+            Button("Import All Historical Data") {
+                // Request authorization and import complete hydration history
+                HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                    DispatchQueue.main.async {
+                        if success {
+                            print("✅ HydrationTrackingView: Hydration authorization granted - syncing all data")
+                            hydrationManager.syncFromHealthKit()
+                        } else {
+                            print("❌ HydrationTrackingView: Hydration authorization denied")
+                        }
+                    }
+                }
+            }
+            Button("Future Data Only") {
+                // Request authorization and sync only future entries
+                HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                    DispatchQueue.main.async {
+                        if success {
+                            print("✅ HydrationTrackingView: Hydration authorization granted - future only sync")
+                            hydrationManager.syncToHealthKit()
+                        } else {
+                            print("❌ HydrationTrackingView: Hydration authorization denied")
+                        }
+                    }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Choose how to sync your hydration data with Apple Health. You can import all your historical hydration entries or start fresh with only future entries.")
         }
     }
 }

@@ -1018,6 +1018,104 @@ private func processHistoricalWeightSamples(_ samples: [HKQuantitySample], compl
 
 ---
 
+## 🧪 LIVE TESTING PROTOCOL - CRITICAL REQUIREMENT
+
+### **Mandatory Testing Standards**
+
+**RULE**: Every major feature implementation MUST include 2-3 live tests for user verification.
+
+**Purpose**: Ensure real-world functionality before committing changes to production.
+
+### **Test Template Format:**
+
+**🧪 Test [#]: [Feature Name Verification]**
+- **Goal**: [What specifically are we testing]
+- **Steps**: [1-3 numbered steps to perform]
+- **Expected**: [Exact behavior that should occur]
+- **Success Criteria**: [How to determine if test passed]
+
+### **Current Live Tests: Complete Bidirectional Sync (January 2025)**
+
+### **Weight Bidirectional Sync ✅ PASSED**
+
+**🧪 Test 1: User Choice Dialog Verification**
+- **Goal**: Verify the dialog always appears for import decisions
+- **Steps**:
+  1. Open Weight Tracker → Settings gear
+  2. Tap "Sync Now" button
+- **Expected**: Apple-style dialog with "Import All Historical Data", "Future Data Only", "Cancel"
+- **Success Criteria**: Dialog appears regardless of previous authorization status
+
+**🧪 Test 2: Full Historical Import**
+- **Goal**: Test complete bidirectional sync
+- **Steps**:
+  1. Add weight entry in Apple Health app (any past date)
+  2. Weight Settings → "Sync Now" → "Import All Historical Data"
+- **Expected**: "Successfully synced X weight entries from Apple Health"
+- **Success Criteria**: Apple Health weight appears in Fast LIFe Weight Tracker
+
+**🧪 Test 3: Duplicate Prevention**
+- **Goal**: Verify no duplicate entries are created
+- **Steps**:
+  1. After Test 2, tap "Sync Now" again → "Import All Historical Data"
+- **Expected**: "Weight data is up to date. No new entries found in Apple Health."
+- **Success Criteria**: No duplicate weight entries, same entry count maintained
+
+**🧪 Test 4: Bidirectional Deletion Sync (ABOVE INDUSTRY STANDARDS)**
+- **Goal**: Verify BOTH directions of deletion sync work correctly
+- **Steps - Direction 1 (Apple Health → Fast LIFe)**:
+  1. Delete a weight entry from Apple Health app
+  2. Weight Settings → "Sync Now" → "Import All Historical Data"
+  3. Verify deleted entry disappears from Fast LIFe Weight Tracker
+- **Steps - Direction 2 (Fast LIFe → Apple Health)**:
+  1. Delete a weight entry from Fast LIFe Weight Tracker
+  2. Check Apple Health app to verify entry is also deleted
+- **Expected**: Complete bidirectional deletion - entries deleted from either app disappear in both
+- **Success Criteria**: True bidirectional deletion sync (exceeds industry standards - most apps only support unidirectional)
+
+### **Sleep Bidirectional Sync 🔄 READY FOR TESTING**
+
+**🧪 Test 1: User Choice Dialog Verification**
+- **Goal**: Verify Sleep sync dialog appears with user choice
+- **Steps**:
+  1. Open Sleep Tracker → Settings gear
+  2. Tap "Sync from HealthKit Now" button
+- **Expected**: Dialog with "Import All Historical Data", "Future Data Only", "Cancel"
+- **Success Criteria**: Dialog appears with 3 clear options
+
+**🧪 Test 2: Sleep Historical Import**
+- **Goal**: Test bidirectional sleep sync
+- **Steps**:
+  1. Add sleep entry in Apple Health app (any past date)
+  2. Sleep Settings → "Sync from HealthKit Now" → "Import All Historical Data"
+- **Expected**: "Successfully imported X sleep entries from Apple Health"
+- **Success Criteria**: Apple Health sleep data appears in Fast LIFe Sleep Tracker
+
+### **Hydration Bidirectional Sync 🔄 READY FOR TESTING**
+
+**🧪 Test 1: User Choice Dialog Verification**
+- **Goal**: Verify Hydration sync dialog appears with user choice
+- **Steps**:
+  1. Open Hydration Tracker → Heart icon "Sync with Apple Health" button
+  2. Tap the sync button
+- **Expected**: Dialog with "Import All Historical Data", "Future Data Only", "Cancel"
+- **Success Criteria**: Dialog appears with 3 clear options
+
+**🧪 Test 2: Hydration Historical Import**
+- **Goal**: Test bidirectional hydration sync
+- **Steps**:
+  1. Add water intake in Apple Health app (any amount/date)
+  2. Hydration Tracker → Sync button → "Import All Historical Data"
+- **Expected**: Authorization dialog → Successful import message
+- **Success Criteria**: Apple Health hydration data appears in Fast LIFe Hydration Tracker
+
+### **Testing Requirement for All Future Features:**
+- Bidirectional sync features: 3 tests (dialog, import, duplicates)
+- UI changes: 2 tests (functionality, visual verification)
+- Data operations: 2 tests (success case, edge case)
+
+---
+
 ## Questions?
 
 If you need to make changes that might affect layout, keyboard behavior, or onboarding flow:

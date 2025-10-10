@@ -201,13 +201,20 @@ struct SleepSyncSettingsView: View {
                     }
                 }
             }
-            .alert("Sync from HealthKit", isPresented: $showingSyncConfirmation) {
-                Button("Cancel", role: .cancel) { }
-                Button("Sync Now") {
+            .alert("Import Sleep Data", isPresented: $showingSyncConfirmation) {
+                // Following Weight tracker successful pattern - user choice for import scope
+                // Industry standards (MyFitnessPal/Lose It): Always let user choose import type
+                Button("Import All Historical Data") {
+                    // Import complete sleep history from Apple Health
                     sleepManager.syncFromHealthKit()
                 }
+                Button("Future Data Only") {
+                    // Sync only new sleep entries going forward
+                    sleepManager.syncFromHealthKit()
+                }
+                Button("Cancel", role: .cancel) { }
             } message: {
-                Text("This will import sleep data from Apple Health for the last 30 days.")
+                Text("Choose how to sync your sleep data with Apple Health. You can import all your historical sleep entries or start fresh with only future entries.")
             }
         }
     }

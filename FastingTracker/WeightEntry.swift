@@ -7,14 +7,16 @@ struct WeightEntry: Codable, Identifiable {
     let bmi: Double?
     let bodyFat: Double?  // percentage
     let source: WeightSource
+    let healthKitUUID: UUID?  // For precise HealthKit sample deletion (Apple best practice)
 
-    init(id: UUID = UUID(), date: Date, weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, source: WeightSource = .manual) {
+    init(id: UUID = UUID(), date: Date, weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, source: WeightSource = .manual, healthKitUUID: UUID? = nil) {
         self.id = id
         self.date = date
         self.weight = weight
         self.bmi = bmi
         self.bodyFat = bodyFat
         self.source = source
+        self.healthKitUUID = healthKitUUID
     }
 }
 

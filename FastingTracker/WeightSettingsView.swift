@@ -19,6 +19,11 @@ struct WeightSettingsView: View {
     @State private var showingWeightSyncDetails: Bool = false
     @State private var showingSyncPreferenceDialog: Bool = false
 
+    // Industry standard: One-time historical import choice tracking
+    // Following Apple iCloud, MyFitnessPal patterns - ask once, then auto-sync forever
+    private let userDefaults = UserDefaults.standard
+    private let hasCompletedInitialImportKey = "weightHasCompletedInitialImport"
+
     var body: some View {
         NavigationView {
             Form {
@@ -264,10 +269,16 @@ struct WeightSettingsView: View {
             HealthKitManager.shared.requestWeightAuthorization { success, error in
                 if success {
                     print("✅ WeightSettingsView: Weight authorization granted")
-                    // Authorization granted - show sync preference dialog first
+                    // Check if initial import choice was already made
                     DispatchQueue.main.async {
                         self.isSyncing = false
-                        self.showingSyncPreferenceDialog = true
+                        if self.hasCompletedInitialImport() {
+                            // User already made choice - proceed with regular sync
+                            self.performSync()
+                        } else {
+                            // First time - show historical import choice dialog
+                            self.showingSyncPreferenceDialog = true
+                        }
                     }
                 } else {
                     print("❌ WeightSettingsView: Weight authorization denied")
@@ -277,9 +288,19 @@ struct WeightSettingsView: View {
                 }
             }
         } else {
-            print("✅ WeightSettingsView: Already authorized → performing sync")
-            // Already authorized, just sync
-            performSync()
+            print("✅ WeightSettingsView: Already authorized")
+            // Already authorized - check if initial import choice was made
+            if hasCompletedInitialImport() {
+                print("✅ Initial import completed - proceeding with regular sync")
+                // User already made choice - proceed with regular sync
+                performSync()
+            } else {
+                print("📋 First time - showing historical import choice dialog")
+                // First time - show historical import choice dialog
+                // Following industry standards: One-time choice, then seamless sync
+                isSyncing = false
+                showingSyncPreferenceDialog = true
+            }
         }
     }
 
@@ -343,9 +364,14 @@ struct WeightSettingsView: View {
     }
 
     private func performSync() {
-        // Use completion handler to get accurate sync results
-        // Following Apple HealthKit Programming Guide: Report actual sync results, not cached data
-        weightManager.syncFromHealthKit { syncedCount, error in
+        // INDUSTRY STANDARD FIX: Use comprehensive sync to ensure all entries are captured
+        // Following MyFitnessPal pattern: Once user chooses historical import, maintain comprehensive scope
+        // Use 10-year lookback to ensure we capture all possible historical data
+        let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
+
+        // Use anchored sync with anchor reset for deletion detection
+        // Following Apple HealthKit Programming Guide: Use anchored query with reset for manual sync
+        weightManager.syncFromHealthKitWithReset(startDate: startDate) { syncedCount, error in
             DispatchQueue.main.async {
                 isSyncing = false
 
@@ -394,6 +420,8 @@ struct WeightSettingsView: View {
 
     private func performHistoricalSync() {
         print("🔄 WeightSettingsView: User chose to import all historical weight data")
+        // Mark initial import as completed - no more dialogs needed
+        markInitialImportCompleted()
         isSyncing = true
 
         // Following Apple HealthKit Programming Guide: Import all historical data
@@ -432,6 +460,8 @@ struct WeightSettingsView: View {
 
     private func performFutureOnlySync() {
         print("🔄 WeightSettingsView: User chose to sync only future weight data")
+        // Mark initial import as completed - no more dialogs needed
+        markInitialImportCompleted()
 
         // Following Apple HIG: Provide clear feedback for user choice
         syncMessage = "Weight sync enabled. Only new weight entries will be synced going forward."
@@ -446,6 +476,26 @@ struct WeightSettingsView: View {
             loadLastSyncStatus()
             updateToggleState()
         }
+    }
+
+    // MARK: - One-Time Setup Helper
+
+    /// Check if user has completed initial historical import choice
+    /// Following industry standard: One-time setup, then seamless auto-sync
+    private func hasCompletedInitialImport() -> Bool {
+        let completed = userDefaults.bool(forKey: hasCompletedInitialImportKey)
+        AppLogger.info("Checking initial import status: \(completed ? "COMPLETED" : "NOT COMPLETED")", category: AppLogger.weightTracking)
+        return completed
+    }
+
+    /// Mark initial import as completed to prevent repeated dialogs
+    /// Following Apple iCloud pattern: Ask once during setup, then auto-sync forever
+    private func markInitialImportCompleted() {
+        userDefaults.set(true, forKey: hasCompletedInitialImportKey)
+        // Force immediate synchronization to prevent timing issues
+        // Following Apple UserDefaults best practices for critical flags
+        userDefaults.synchronize()
+        AppLogger.info("Initial import marked as completed and synchronized", category: AppLogger.weightTracking)
     }
 }
 

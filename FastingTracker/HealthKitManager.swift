@@ -1,6 +1,13 @@
 import Foundation
 import HealthKit
 
+// MARK: - Notification Names for HealthKit Deletions
+extension Notification.Name {
+    static let healthKitWeightDeleted = Notification.Name("healthKitWeightDeleted")
+    static let healthKitSleepDeleted = Notification.Name("healthKitSleepDeleted")
+    static let healthKitHydrationDeleted = Notification.Name("healthKitHydrationDeleted")
+}
+
 class HealthKitManager: ObservableObject {
     static let shared = HealthKitManager()
 
@@ -145,156 +152,27 @@ class HealthKitManager: ObservableObject {
     // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
 
     /// Request authorization for weight tracking only (bodyMass, BMI, body fat)
+    /// Refactored to use shared HealthKitService - eliminates code duplication
     func requestWeightAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        AppLogger.info("Requesting authorization for Weight", category: AppLogger.healthKit)
-        guard HKHealthStore.isHealthDataAvailable() else {
-            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
-            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
-            return
-        }
-
-        // Weight-related types only
-        let readTypes: Set<HKObjectType> = [
-            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
-            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
-            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
-        ]
-
-        let writeTypes: Set<HKSampleType> = [
-            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
-            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
-            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
-        ]
-
-        AppLogger.info("Requesting authorization for weight tracking", category: AppLogger.healthKit)
-        AppLogger.info("DEBUG: readTypes count: \(readTypes.count), writeTypes count: \(writeTypes.count)", category: AppLogger.healthKit)
-        AppLogger.info("DEBUG: readTypes: \(readTypes)", category: AppLogger.healthKit)
-        AppLogger.info("DEBUG: writeTypes: \(writeTypes)", category: AppLogger.healthKit)
-
-        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
-            DispatchQueue.main.async {
-                AppLogger.info("DEBUG: Authorization callback - success: \(success), error: \(String(describing: error))", category: AppLogger.healthKit)
-                if success {
-                    AppLogger.info("Weight authorization granted", category: AppLogger.healthKit)
-                    self?.checkAuthorizationStatus()
-                } else {
-                    AppLogger.info("Weight authorization denied", category: AppLogger.healthKit)
-                    if let error = error {
-                        AppLogger.error("Weight authorization error", category: AppLogger.healthKit, error: error)
-                    } else {
-                        AppLogger.warning("Weight authorization denied with no error - this means Apple dialog never appeared", category: AppLogger.healthKit)
-                    }
-                }
-                completion(success, error)
-            }
-        }
+        HealthKitService.requestWeightAuthorization(completion: completion)
     }
 
     /// Request authorization for hydration tracking only (dietary water)
+    /// Refactored to use shared HealthKitService - eliminates code duplication
     func requestHydrationAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        AppLogger.info("Requesting authorization for Hydration", category: AppLogger.healthKit)
-        guard HKHealthStore.isHealthDataAvailable() else {
-            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
-            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
-            return
-        }
-
-        // Hydration types only
-        let readTypes: Set<HKObjectType> = [
-            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
-        ]
-
-        let writeTypes: Set<HKSampleType> = [
-            HKObjectType.quantityType(forIdentifier: .dietaryWater)!
-        ]
-
-        AppLogger.info("Requesting authorization for hydration tracking", category: AppLogger.healthKit)
-        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
-            DispatchQueue.main.async {
-                if success {
-                    AppLogger.info("Hydration authorization granted", category: AppLogger.healthKit)
-                    self?.checkAuthorizationStatus()
-                } else {
-                    AppLogger.info("Hydration authorization denied", category: AppLogger.healthKit)
-                    if let error = error {
-                        AppLogger.error("Hydration authorization error", category: AppLogger.healthKit, error: error)
-                    }
-                }
-                completion(success, error)
-            }
-        }
+        HealthKitService.requestHydrationAuthorization(completion: completion)
     }
 
     /// Request authorization for sleep tracking only (sleep analysis)
+    /// Refactored to use shared HealthKitService - eliminates code duplication
     func requestSleepAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        AppLogger.info("Requesting authorization for Sleep", category: AppLogger.healthKit)
-        guard HKHealthStore.isHealthDataAvailable() else {
-            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
-            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
-            return
-        }
-
-        // Sleep types only
-        let readTypes: Set<HKObjectType> = [
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
-        ]
-
-        let writeTypes: Set<HKSampleType> = [
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
-        ]
-
-        AppLogger.info("Requesting authorization for sleep tracking", category: AppLogger.healthKit)
-        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
-            DispatchQueue.main.async {
-                if success {
-                    AppLogger.info("Sleep authorization granted", category: AppLogger.healthKit)
-                    self?.checkAuthorizationStatus()
-                } else {
-                    AppLogger.info("Sleep authorization denied", category: AppLogger.healthKit)
-                    if let error = error {
-                        AppLogger.error("Sleep authorization error", category: AppLogger.healthKit, error: error)
-                    }
-                }
-                completion(success, error)
-            }
-        }
+        HealthKitService.requestSleepAuthorization(completion: completion)
     }
 
     /// Request authorization for fasting tracking (stored as workouts in HealthKit)
+    /// Refactored to use shared HealthKitService - eliminates code duplication
     func requestFastingAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        AppLogger.info("Requesting authorization for Fasting", category: AppLogger.healthKit)
-        guard HKHealthStore.isHealthDataAvailable() else {
-            AppLogger.warning("HealthKit not available on this device", category: AppLogger.healthKit)
-            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
-            return
-        }
-
-        // Fasting sessions are stored as workouts
-        // Apple Health doesn't have a dedicated fasting category, so we use workouts
-        // This is the industry-standard approach used by major fasting apps
-        let readTypes: Set<HKObjectType> = [
-            HKObjectType.workoutType()
-        ]
-
-        let writeTypes: Set<HKSampleType> = [
-            HKObjectType.workoutType()
-        ]
-
-        AppLogger.info("Requesting authorization for fasting tracking (as workouts)", category: AppLogger.healthKit)
-        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
-            DispatchQueue.main.async {
-                if success {
-                    AppLogger.info("Fasting authorization granted", category: AppLogger.healthKit)
-                    self?.checkAuthorizationStatus()
-                } else {
-                    AppLogger.info("Fasting authorization denied", category: AppLogger.healthKit)
-                    if let error = error {
-                        AppLogger.error("Fasting authorization error", category: AppLogger.healthKit, error: error)
-                    }
-                }
-                completion(success, error)
-            }
-        }
+        HealthKitService.requestFastingAuthorization(completion: completion)
     }
 
     // MARK: - Legacy Authorization (For "Sync All" Features Only)
@@ -302,33 +180,10 @@ class HealthKitManager: ObservableObject {
     // USAGE: Only use for "Sync All" features where requesting all permissions simultaneously is intentional
     // For individual features, use domain-specific methods: requestWeightAuthorization(), requestHydrationAuthorization(), requestSleepAuthorization()
     // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
+    /// Comprehensive authorization for all data types (legacy method for "Sync All" features)
+    /// Refactored to use shared HealthKitService - eliminates code duplication
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        guard HKHealthStore.isHealthDataAvailable() else {
-            completion(false, NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit is not available on this device"]))
-            return
-        }
-
-        // Types to read from HealthKit
-        let readTypes: Set<HKObjectType> = [
-            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
-            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
-            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
-            HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
-            HKObjectType.workoutType() // Required for fasting sessions
-        ]
-
-        // Types to write to HealthKit
-        let writeTypes: Set<HKSampleType> = [
-            HKObjectType.quantityType(forIdentifier: .bodyMass)!,
-            HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
-            HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
-            HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
-            HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
-            HKObjectType.workoutType() // Required for fasting sessions
-        ]
-
-        healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { [weak self] success, error in
+        HealthKitService.requestComprehensiveAuthorization { [weak self] success, error in
             DispatchQueue.main.async {
                 self?.isAuthorized = success
                 completion(success, error)
@@ -515,23 +370,62 @@ class HealthKitManager: ObservableObject {
         }
     }
 
+    // MARK: - Source Detection Helper
+
+    /// Detect the actual data source from HealthKit sample
+    /// Following Apple HealthKit Programming Guide for source attribution
+    /// Reference: https://developer.apple.com/documentation/healthkit/hksource
+    private func detectWeightSource(from sample: HKQuantitySample) -> WeightSource {
+        let bundleIdentifier = sample.sourceRevision.source.bundleIdentifier
+        let sourceName = sample.sourceRevision.source.name
+
+        AppLogger.info("Detecting source for sample: bundleId=\(bundleIdentifier), name=\(sourceName)", category: AppLogger.healthKit)
+
+        // Industry standard source detection patterns
+        // Reference: MyFitnessPal, Lose It source attribution
+        switch bundleIdentifier {
+        case let id where id.contains("renpho"):
+            return .renpho
+        case "com.apple.Health":
+            // Direct entry in Apple Health app
+            return .healthKit
+        case let id where id.contains("scale") || id.contains("weight"):
+            // Generic smart scale apps
+            return .other
+        default:
+            // Unknown source - check name as fallback
+            if sourceName.lowercased().contains("renpho") {
+                return .renpho
+            } else if sourceName.lowercased().contains("scale") {
+                return .other
+            } else {
+                return .healthKit
+            }
+        }
+    }
+
     // MARK: - Read Weight Data
 
     /// Fetches weight data using HKAnchoredObjectQuery for efficient incremental sync
     /// Following Apple HealthKit Best Practices to prevent duplicates and improve performance
     /// Reference: https://developer.apple.com/documentation/healthkit/hkanchoredobjectquery
-    func fetchWeightData(startDate: Date, endDate: Date = Date(), completion: @escaping ([WeightEntry]) -> Void) {
-        fetchWeightDataAnchored(startDate: startDate, endDate: endDate, completion: completion)
+    func fetchWeightData(startDate: Date, endDate: Date = Date(), resetAnchor: Bool = false, completion: @escaping ([WeightEntry]) -> Void) {
+        fetchWeightDataAnchored(startDate: startDate, endDate: endDate, resetAnchor: resetAnchor, completion: completion)
     }
 
-    private func fetchWeightDataAnchored(startDate: Date, endDate: Date = Date(), completion: @escaping ([WeightEntry]) -> Void) {
+    private func fetchWeightDataAnchored(startDate: Date, endDate: Date = Date(), resetAnchor: Bool = false, completion: @escaping ([WeightEntry]) -> Void) {
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
             completion([])
             return
         }
 
-        // Load previously saved anchor for incremental sync
-        let savedAnchor = loadAnchor(forKey: AnchorKeys.weight)
+        // Load previously saved anchor for incremental sync, or reset if requested
+        // Industry Standard: Reset anchor for manual sync to detect missed deletions
+        let savedAnchor = resetAnchor ? nil : loadAnchor(forKey: AnchorKeys.weight)
+
+        if resetAnchor {
+            AppLogger.info("Resetting HealthKit anchor for fresh deletion detection", category: AppLogger.healthKit)
+        }
 
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
 
@@ -570,6 +464,12 @@ class HealthKitManager: ObservableObject {
             self?.saveSyncTimestamp(for: SyncTimestampKeys.weight)
             self?.saveSyncError(for: SyncErrorKeys.weight, error: nil)
 
+            // Process deleted samples first (Apple best practice)
+            if let deletedSamples = deletedObjects as? [HKQuantitySample], !deletedSamples.isEmpty {
+                AppLogger.info("Processing \(deletedSamples.count) deleted weight samples from HealthKit", category: AppLogger.healthKit)
+                self?.processDeletedWeightSamples(deletedSamples)
+            }
+
             // Process added samples
             guard let samples = addedObjects as? [HKQuantitySample] else {
                 completion([])
@@ -577,6 +477,16 @@ class HealthKitManager: ObservableObject {
             }
 
             AppLogger.info("Fetched \(samples.count) weight samples from HealthKit", category: AppLogger.healthKit)
+
+            // DEBUG: Log first few samples to see what we're getting
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MMM d 'at' h:mm a"
+            for (index, sample) in samples.prefix(10).enumerated() {
+                let weight = sample.quantity.doubleValue(for: HKUnit.pound())
+                let dateString = formatter.string(from: sample.startDate)
+                let source = self?.detectWeightSource(from: sample) ?? .other
+                AppLogger.info("HealthKit sample \(index): \(weight)lbs on \(dateString) (source: \(source.rawValue))", category: AppLogger.healthKit)
+            }
 
             // Process samples same as before (group by date, get most recent per day)
             self?.processWeightSamples(samples, completion: completion)
@@ -640,12 +550,15 @@ class HealthKitManager: ObservableObject {
 
                 // Fetch BMI and body fat for this date if available
                 self?.fetchBMIAndBodyFat(for: date) { bmi, bodyFat in
+                    // INDUSTRY STANDARD: Detect actual data source (Renpho, Apple Health, etc.)
+                    let actualSource = self?.detectWeightSource(from: sample) ?? .healthKit
                     let entry = WeightEntry(
                         date: sample.startDate,
                         weight: weightInPounds,
                         bmi: bmi,
                         bodyFat: bodyFat,
-                        source: .healthKit
+                        source: actualSource,
+                        healthKitUUID: sample.uuid  // Store UUID for precise deletion (Apple best practice)
                     )
                     weightEntries.append(entry)
 
@@ -671,55 +584,56 @@ class HealthKitManager: ObservableObject {
 
     /// Processes weight samples by grouping by date and fetching associated BMI/body fat data
     private func processWeightSamples(_ samples: [HKQuantitySample], completion: @escaping ([WeightEntry]) -> Void) {
-        // Group by date (one entry per day, taking the most recent)
-        var entriesByDay: [Date: HKQuantitySample] = [:]
-        let calendar = Calendar.current
+        // INDUSTRY STANDARD FIX: Preserve ALL weight entries (multiple per day allowed)
+        // Following MyFitnessPal, Lose It pattern: Users want complete weight tracking history
+        // Remove the "one entry per day" filtering that was causing data loss
 
-        for sample in samples {
-            let day = calendar.startOfDay(for: sample.startDate)
+        AppLogger.info("Processing \(samples.count) weight samples from HealthKit (preserving all entries)", category: AppLogger.healthKit)
 
-            // Keep the most recent sample for each day
-            if let existing = entriesByDay[day] {
-                if sample.startDate > existing.startDate {
-                    entriesByDay[day] = sample
-                }
-            } else {
-                entriesByDay[day] = sample
-            }
-        }
-
-        // Convert to WeightEntry objects
+        // Convert all samples to WeightEntry objects (no filtering)
         var weightEntries: [WeightEntry] = []
 
-        for (date, sample) in entriesByDay {
+        for sample in samples {
             let weightInPounds = sample.quantity.doubleValue(for: HKUnit.pound())
 
-            // Fetch BMI and body fat for this date if available
-            fetchBMIAndBodyFat(for: date) { bmi, bodyFat in
-                let entry = WeightEntry(
-                    date: sample.startDate,
-                    weight: weightInPounds,
-                    bmi: bmi,
-                    bodyFat: bodyFat,
-                    source: .healthKit
-                )
-                weightEntries.append(entry)
-
-                // Call completion when all entries are processed
-                if weightEntries.count == entriesByDay.count {
-                    DispatchQueue.main.async {
-                        completion(weightEntries.sorted { $0.date > $1.date })
-                    }
-                }
-            }
+            // INDUSTRY STANDARD: Detect actual data source (Renpho, Apple Health, etc.)
+            let actualSource = self.detectWeightSource(from: sample)
+            let entry = WeightEntry(
+                date: sample.startDate,
+                weight: weightInPounds,
+                source: actualSource,
+                healthKitUUID: sample.uuid
+            )
+            weightEntries.append(entry)
         }
 
-        // Handle case where there are no samples
-        if entriesByDay.isEmpty {
-            DispatchQueue.main.async {
-                completion([])
-            }
+        // Sort by date (most recent first) and return all entries
+        weightEntries.sort { $0.date > $1.date }
+        AppLogger.info("Processed \(weightEntries.count) weight entries from HealthKit", category: AppLogger.healthKit)
+        completion(weightEntries)
+    }
+    /// Process deleted weight samples from HealthKit
+    /// Following Apple HealthKit Programming Guide for deletion handling
+    private func processDeletedWeightSamples(_ deletedSamples: [HKQuantitySample]) {
+        // Notify all active WeightManager instances about deletions
+        // Using NotificationCenter for loose coupling (Apple pattern)
+        let deletedObjects = deletedSamples.map { sample in
+            [
+                "uuid": sample.uuid.uuidString,
+                "date": sample.startDate,
+                "weight": sample.quantity.doubleValue(for: HKUnit.pound())
+            ]
         }
+
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(
+                name: .healthKitWeightDeleted,
+                object: nil,
+                userInfo: ["deletedSamples": deletedObjects]
+            )
+        }
+
+        AppLogger.info("Notified WeightManager instances of \(deletedSamples.count) deleted weight entries", category: AppLogger.healthKit)
     }
 
     /// Fetch ALL historical weight data from HealthKit (no anchor - full import)
@@ -787,12 +701,15 @@ class HealthKitManager: ObservableObject {
 
             // Fetch BMI and body fat for this specific timestamp if available
             fetchBMIAndBodyFat(for: sample.startDate) { bmi, bodyFat in
+                // INDUSTRY STANDARD: Detect actual data source (Renpho, Apple Health, etc.)
+                let actualSource = self.detectWeightSource(from: sample)
                 let entry = WeightEntry(
                     date: sample.startDate,
                     weight: weightInPounds,
                     bmi: bmi,
                     bodyFat: bodyFat,
-                    source: .healthKit
+                    source: actualSource,
+                    healthKitUUID: sample.uuid  // Store UUID for precise deletion (Apple best practice)
                 )
                 weightEntries.append(entry)
                 dispatchGroup.leave()
@@ -897,7 +814,113 @@ class HealthKitManager: ObservableObject {
 
     // MARK: - Delete Weight Data
 
+    /// Delete specific HealthKit sample by UUID (Apple best practice for precise deletion)
+    /// Following Apple HealthKit Programming Guide: Always target specific samples by UUID
+    /// Reference: https://developer.apple.com/documentation/healthkit/hksample/1614179-uuid
+    func deleteWeightByUUID(_ uuid: UUID, completion: @escaping (Bool, Error?) -> Void) {
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            completion(false, NSError(domain: "HealthKit", code: 3, userInfo: [NSLocalizedDescriptionKey: "Unable to access weight type"]))
+            return
+        }
+
+        // Use UUID predicate for precise deletion (Apple official pattern)
+        let predicate = HKQuery.predicateForObjects(with: [uuid])
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: 1, sortDescriptors: nil) { [weak self] query, results, error in
+            guard let samples = results, error == nil, !samples.isEmpty else {
+                DispatchQueue.main.async {
+                    // Sample not found or already deleted - consider this success
+                    AppLogger.info("HealthKit sample with UUID \(uuid) not found - may already be deleted", category: AppLogger.healthKit)
+                    completion(true, nil)
+                }
+                return
+            }
+
+            // Delete the specific sample by UUID
+            self?.healthStore.delete(samples) { success, error in
+                DispatchQueue.main.async {
+                    if success {
+                        AppLogger.info("Successfully deleted HealthKit sample: \(uuid)", category: AppLogger.healthKit)
+                    } else {
+                        AppLogger.error("Failed to delete HealthKit sample: \(uuid)", category: AppLogger.healthKit, error: error)
+                    }
+                    completion(success, error)
+                }
+            }
+        }
+        healthStore.execute(query)
+    }
+
+    /// Find HealthKit sample UUID by date and weight for precise deletion
+    /// Following Apple HealthKit Programming Guide: Query-then-delete pattern
+    /// Used when entry doesn't have stored UUID (backward compatibility)
+    func findWeightSampleUUID(date: Date, weight: Double, completion: @escaping (UUID?) -> Void) {
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            completion(nil)
+            return
+        }
+
+        // Create wider date range (±30 minutes) to account for sync timing differences
+        // Industry standard: Be more flexible with time matching for cross-app deletion
+        let startDate = Calendar.current.date(byAdding: .minute, value: -30, to: date) ?? date
+        let endDate = Calendar.current.date(byAdding: .minute, value: 30, to: date) ?? date
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { query, results, error in
+            guard let samples = results as? [HKQuantitySample], error == nil else {
+                DispatchQueue.main.async {
+                    completion(nil)
+                }
+                return
+            }
+
+            // Find closest matching sample by weight and time
+            // Industry standard: More flexible matching for cross-app deletion
+            let targetWeightInKg = weight * 0.453592 // Convert pounds to kg for HealthKit comparison
+            let targetWeightInPounds = weight // Keep pounds for comparison too
+            var closestSample: HKQuantitySample?
+            var closestWeightDiff = Double.infinity
+            var closestTimeDiff = Double.infinity
+
+            AppLogger.info("Searching for sample: target=\(weight)lbs (\(targetWeightInKg)kg), date=\(date), found \(samples.count) samples", category: AppLogger.healthKit)
+
+            for sample in samples {
+                let sampleWeightKg = sample.quantity.doubleValue(for: HKUnit.gramUnit(with: .kilo))
+                let sampleWeightLbs = sample.quantity.doubleValue(for: HKUnit.pound())
+                let weightDiffLbs = abs(sampleWeightLbs - targetWeightInPounds)
+                let timeDiff = abs(sample.startDate.timeIntervalSince(date))
+
+                AppLogger.info("Comparing: sample=\(sampleWeightLbs)lbs (\(sampleWeightKg)kg), weightDiff=\(weightDiffLbs)lbs, timeDiff=\(timeDiff)s", category: AppLogger.healthKit)
+
+                // More flexible weight matching: 0.2 lbs tolerance (industry standard for cross-app sync)
+                if weightDiffLbs < 0.2 { // Within 0.2 lbs tolerance (more flexible)
+                    if weightDiffLbs < closestWeightDiff || (weightDiffLbs == closestWeightDiff && timeDiff < closestTimeDiff) {
+                        closestSample = sample
+                        closestWeightDiff = weightDiffLbs
+                        closestTimeDiff = timeDiff
+                        AppLogger.info("New best match: weightDiff=\(weightDiffLbs)lbs, timeDiff=\(timeDiff)s", category: AppLogger.healthKit)
+                    }
+                }
+            }
+
+            DispatchQueue.main.async {
+                if let foundSample = closestSample {
+                    AppLogger.info("✅ Found matching HealthKit sample: UUID=\(foundSample.uuid), weight diff=\(closestWeightDiff)lbs, time diff=\(closestTimeDiff)s", category: AppLogger.healthKit)
+                    completion(foundSample.uuid)
+                } else {
+                    AppLogger.warning("❌ No matching HealthKit sample found for date=\(date), weight=\(weight)lbs (searched \(samples.count) samples)", category: AppLogger.healthKit)
+                    completion(nil)
+                }
+            }
+        }
+
+        healthStore.execute(query)
+    }
+
+    /// Legacy method - DEPRECATED: Use deleteWeightByUUID for precise deletion
+    /// Kept for backward compatibility but should be replaced with UUID-based deletion
+    @available(*, deprecated, message: "Use deleteWeightByUUID for precise deletion following Apple best practices")
     func deleteWeight(for date: Date, completion: @escaping (Bool, Error?) -> Void) {
+        // For legacy compatibility, attempt to delete all samples on this date
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
@@ -1474,6 +1497,14 @@ class HealthKitManager: ObservableObject {
         }
 
         healthStore.execute(query)
+    }
+
+    // MARK: - Service Layer Integration
+
+    /// Expose health store for HealthKitService integration (internal use only)
+    /// Following Apple Swift guidelines for controlled access to private properties
+    func getHealthStore() -> HKHealthStore {
+        return healthStore
     }
 }
 
