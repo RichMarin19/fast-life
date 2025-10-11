@@ -22,6 +22,8 @@
 		5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06E2E8D5F6500254E70 /* AddWeightView.swift */; };
 		5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */; };
 		5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0702E8D5F6500254E70 /* HealthKitManager.swift */; };
+		HK001001000000000000001 /* HealthKitAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HK001002000000000000001 /* HealthKitAuthManager.swift */; };
+		HK001003000000000000001 /* HealthKitWeightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = HK001004000000000000001 /* HealthKitWeightService.swift */; };
 		5289E07D2E8D700000254E70 /* HydrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E07E2E8D700000254E70 /* HydrationManager.swift */; };
 		5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0802E8D700100254E70 /* HydrationTrackingView.swift */; };
 		5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0822E8D700200254E70 /* HydrationHistoryView.swift */; };
@@ -77,7 +79,9 @@
 		5289E06C2E8D0DAD00254E70 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/InsightsView.swift; sourceTree = "<group>"; };
 		5289E06E2E8D5F6500254E70 /* AddWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWeightView.swift; sourceTree = "<group>"; };
 		5289E06F2E8D5F6500254E70 /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedView.swift; sourceTree = "<group>"; };
-		5289E0702E8D5F6500254E70 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		5289E0702E8D5F6500254E70 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitManager.swift; sourceTree = "<group>"; };
+		HK001002000000000000001 /* HealthKitAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitAuthManager.swift; sourceTree = "<group>"; };
+		HK001004000000000000001 /* HealthKitWeightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitWeightService.swift; sourceTree = "<group>"; };
 		5289E0712E8D5F6500254E70 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
 		5289E0722E8D5F6500254E70 /* WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
 		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSettingsView.swift; sourceTree = "<group>"; };
@@ -194,6 +198,8 @@
 				5289E06E2E8D5F6500254E70 /* AddWeightView.swift */,
 				5289E06F2E8D5F6500254E70 /* AdvancedView.swift */,
 				5289E0702E8D5F6500254E70 /* HealthKitManager.swift */,
+				HK001002000000000000001 /* HealthKitAuthManager.swift */,
+				HK001004000000000000001 /* HealthKitWeightService.swift */,
 				5289E0822E8D700200254E70 /* HydrationHistoryView.swift */,
 				5289E07E2E8D700000254E70 /* HydrationManager.swift */,
 				5289E0802E8D700100254E70 /* HydrationTrackingView.swift */,
@@ -322,6 +328,8 @@
 				52B2CFEF2E988CB90061FCFF /* HealthKitService.swift in Sources */,
 				52B2CFBF2E94B3290061FCFF /* DataExportManager.swift in Sources */,
 				5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */,
+				HK001001000000000000001 /* HealthKitAuthManager.swift in Sources */,
+				HK001003000000000000001 /* HealthKitWeightService.swift in Sources */,
 				5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */,
 				5289E07D2E8D700000254E70 /* HydrationManager.swift in Sources */,
 				5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */,
