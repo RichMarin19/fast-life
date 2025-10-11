@@ -38,6 +38,23 @@ class HealthKitManager: ObservableObject {
         try await authManager.requestWeightAuthorization()
     }
 
+    /// API compatibility: requestWeightAuthorization with completion handler
+    /// Following Apple's Swift Concurrency migration guide for async-to-completion bridge
+    func requestWeightAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        Task {
+            do {
+                try await authManager.requestWeightAuthorization()
+                DispatchQueue.main.async {
+                    completion(true, nil)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(false, error)
+                }
+            }
+        }
+    }
+
     func isWeightAuthorized() -> Bool {
         authManager.isWeightAuthorized()
     }
