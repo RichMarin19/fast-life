@@ -208,12 +208,18 @@ class HealthKitManager: ObservableObject {
         }
     }
 
-    /// API compatibility: deleteWeightByUUID with Error parameter in completion
+    /// API compatibility: deleteWeightByUUID with Error parameter in completion (String version)
     /// Following Apple's HealthKit programming guide for error handling
     func deleteWeightByUUID(_ uuid: String, completion: @escaping (Bool, Error?) -> Void) {
         weightService.deleteWeightFromHealthKit(uuid: uuid) { success in
             completion(success, success ? nil : NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Weight deletion failed"]))
         }
+    }
+
+    /// API compatibility: deleteWeightByUUID with UUID parameter
+    /// Following Apple's Foundation documentation for UUID to String conversion
+    func deleteWeightByUUID(_ uuid: UUID, completion: @escaping (Bool, Error?) -> Void) {
+        deleteWeightByUUID(uuid.uuidString, completion: completion)
     }
 
     /// API compatibility: findWeightSampleUUID with correct parameter order (date:weight:)
