@@ -189,6 +189,19 @@ class HealthKitManager: ObservableObject {
         // Simplified - would delegate to sleep observer service
     }
 
+    /// API compatibility: startObserving with query parameter
+    /// Following Apple's HealthKit observer query lifecycle management
+    func startObserving(query: HKObserverQuery) {
+        healthStore.execute(query)
+    }
+
+    /// API compatibility: startObservingSleep with query parameter
+    /// Following Apple's HealthKit observer query lifecycle management
+    func startObservingSleep(query: HKObserverQuery) {
+        healthStore.execute(query)
+    }
+
+    /// Simplified observer methods (parameterless versions)
     func startObservingSleep() {
         // Simplified - would delegate to sleep observer service
     }
