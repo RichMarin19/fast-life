@@ -1,6 +1,7 @@
 import SwiftUI
 
 // MARK: - Weight Components
+
 // Additional weight tracker components extracted for better modularity
 
 struct WeightStatsView: View {
@@ -15,25 +16,33 @@ struct WeightStatsView: View {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 WeightChangeStatCard(
                     title: "7-Day Change",
-                    weightChange: weightManager.weightChange(since: Calendar.current.date(byAdding: .day, value: -7, to: Date())!)
+                    weightChange: self.weightManager.weightChange(since: Calendar.current.date(
+                        byAdding: .day,
+                        value: -7,
+                        to: Date()
+                    )!)
                 )
 
                 WeightChangeStatCard(
                     title: "30-Day Change",
-                    weightChange: weightManager.weightChange(since: Calendar.current.date(byAdding: .day, value: -30, to: Date())!)
+                    weightChange: self.weightManager.weightChange(since: Calendar.current.date(
+                        byAdding: .day,
+                        value: -30,
+                        to: Date()
+                    )!)
                 )
 
                 StatCard(
                     title: "Average Weight",
-                    value: weightManager.averageWeight
-                        .map { String(format: "%.1f \("lbs")", ($0)) } ?? "N/A",
+                    value: self.weightManager.averageWeight
+                        .map { String(format: "%.1f \("lbs")", $0) } ?? "N/A",
                     icon: "chart.bar",
                     color: .orange
                 )
 
                 StatCard(
                     title: "Total Entries",
-                    value: "\(weightManager.weightEntries.count)",
+                    value: "\(self.weightManager.weightEntries.count)",
                     icon: "number",
                     color: .green
                 )
@@ -56,15 +65,15 @@ struct StatCard: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: icon)
+            Image(systemName: self.icon)
                 .font(.title2)
-                .foregroundColor(color)
+                .foregroundColor(self.color)
 
-            Text(value)
+            Text(self.value)
                 .font(.title3)
                 .fontWeight(.bold)
 
-            Text(title)
+            Text(self.title)
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -90,7 +99,7 @@ struct WeightChangeStatCard: View {
 
                 // Weight change value with arrow
                 HStack(spacing: 4) {
-                    Text(String(format: "%.1f \("lbs")", (abs(change))))
+                    Text(String(format: "%.1f \("lbs")", abs(change)))
                         .font(.title3)
                         .fontWeight(.bold)
                     Image(systemName: change >= 0 ? "arrow.up" : "arrow.down")
@@ -109,7 +118,7 @@ struct WeightChangeStatCard: View {
                     .foregroundColor(.gray)
             }
 
-            Text(title)
+            Text(self.title)
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
@@ -130,11 +139,11 @@ struct WeightHistoryListView: View {
                 .font(.headline)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            ForEach(Array(weightManager.weightEntries.prefix(10))) { entry in
-                WeightHistoryRow(entry: entry, weightManager: weightManager)
+            ForEach(Array(self.weightManager.weightEntries.prefix(10))) { entry in
+                WeightHistoryRow(entry: entry, weightManager: self.weightManager)
                     .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                         Button(role: .destructive) {
-                            weightManager.deleteWeightEntry(entry)
+                            self.weightManager.deleteWeightEntry(entry)
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
@@ -158,17 +167,17 @@ struct WeightHistoryRow: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
-                    Text(entry.date, style: .date)
+                    Text(self.entry.date, style: .date)
                         .font(.headline)
                     Text("•")
                         .foregroundColor(.secondary)
-                    Text(entry.date, style: .time)
+                    Text(self.entry.date, style: .time)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
 
                 HStack(spacing: 8) {
-                    Text(entry.source.rawValue)
+                    Text(self.entry.source.rawValue)
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -188,21 +197,21 @@ struct WeightHistoryRow: View {
 
             Spacer()
 
-            Text("\(weightManager.displayWeight(for: entry), specifier: "%.1f") \("lbs")")
+            Text("\(self.weightManager.displayWeight(for: self.entry), specifier: "%.1f") \("lbs")")
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundColor(Color("FLPrimary"))
         }
         .contentShape(Rectangle())
         .contextMenu {
-            Button(role: .destructive, action: { showingDeleteAlert = true }) {
+            Button(role: .destructive, action: { self.showingDeleteAlert = true }) {
                 Label("Delete", systemImage: "trash")
             }
         }
-        .alert("Delete Weight Entry", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) { }
+        .alert("Delete Weight Entry", isPresented: self.$showingDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                weightManager.deleteWeightEntry(entry)
+                self.weightManager.deleteWeightEntry(self.entry)
             }
         } message: {
             Text("Are you sure you want to delete this weight entry?")
@@ -250,7 +259,7 @@ struct FirstTimeWeightSetupView: View {
                             .foregroundColor(.primary)
 
                         HStack {
-                            TextField("Enter weight", text: $currentWeightString)
+                            TextField("Enter weight", text: self.$currentWeightString)
                                 .keyboardType(.decimalPad)
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                                 .multilineTextAlignment(.center)
@@ -272,7 +281,7 @@ struct FirstTimeWeightSetupView: View {
                             .foregroundColor(.primary)
 
                         HStack {
-                            TextField("Enter goal", text: $goalWeightString)
+                            TextField("Enter goal", text: self.$goalWeightString)
                                 .keyboardType(.decimalPad)
                                 .font(.system(size: 32, weight: .bold, design: .rounded))
                                 .multilineTextAlignment(.center)
@@ -288,14 +297,14 @@ struct FirstTimeWeightSetupView: View {
                     .padding(.horizontal)
 
                     // Error message
-                    if showError {
+                    if self.showError {
                         Text("Please enter valid weights")
                             .font(.caption)
                             .foregroundColor(.red)
                     }
 
                     // Get Started Button
-                    Button(action: saveAndContinue) {
+                    Button(action: self.saveAndContinue) {
                         Text("Get Started")
                             .font(.headline)
                             .foregroundColor(.white)
@@ -321,7 +330,7 @@ struct FirstTimeWeightSetupView: View {
               let goalWeight = Double(goalWeightString),
               currentWeight > 0,
               goalWeight > 0 else {
-            showError = true
+            self.showError = true
             return
         }
 
@@ -334,18 +343,19 @@ struct FirstTimeWeightSetupView: View {
             bodyFat: nil,
             source: .manual
         )
-        weightManager.addWeightEntry(entry)
+        self.weightManager.addWeightEntry(entry)
 
         // Save goal weight
-        weightGoal = goalWeight
+        self.weightGoal = goalWeight
 
         // Enable goal line by default
-        showGoalLine = true
+        self.showGoalLine = true
 
         // Dismiss the sheet
-        dismiss()
+        self.dismiss()
     }
 }
+
 struct WeightTrendsView: View {
     @ObservedObject var weightManager: WeightManager
     @Environment(\.dismiss) private var dismiss
@@ -353,9 +363,9 @@ struct WeightTrendsView: View {
     /// Calculate weight change over a specific number of days
     /// Returns (amount: Double, isLoss: Bool) or nil if insufficient data
     private func calculateTrend(days: Int?) -> (amount: Double, isLoss: Bool)? {
-        guard weightManager.weightEntries.count >= 2 else { return nil }
+        guard self.weightManager.weightEntries.count >= 2 else { return nil }
 
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        let sortedEntries = self.weightManager.weightEntries.sorted { $0.date < $1.date }
 
         if let days = days {
             // Calculate trend for specific period
@@ -405,14 +415,14 @@ struct WeightTrendsView: View {
                     VStack(spacing: 16) {
                         // Row 1: 7 days and 30 days
                         HStack(spacing: 16) {
-                            TrendCard( title: "7 DAYS", trend: calculateTrend(days: 7))
-                            TrendCard( title: "30 DAYS", trend: calculateTrend(days: 30))
+                            TrendCard(title: "7 DAYS", trend: self.calculateTrend(days: 7))
+                            TrendCard(title: "30 DAYS", trend: self.calculateTrend(days: 30))
                         }
 
                         // Row 2: 90 days and All Time
                         HStack(spacing: 16) {
-                            TrendCard( title: "90 DAYS", trend: calculateTrend(days: 90))
-                            TrendCard( title: "ALL TIME", trend: calculateTrend(days: nil))
+                            TrendCard(title: "90 DAYS", trend: self.calculateTrend(days: 90))
+                            TrendCard(title: "ALL TIME", trend: self.calculateTrend(days: nil))
                         }
                     }
                     .padding(.horizontal)
@@ -425,13 +435,14 @@ struct WeightTrendsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
         }
     }
 }
+
 struct TrendCard: View {
     let title: String
     let trend: (amount: Double, isLoss: Bool)?
@@ -440,7 +451,7 @@ struct TrendCard: View {
         VStack(spacing: 8) {
             if let trend = trend {
                 // Top: Celebration emoji (EXCITING!)
-                Text(trendEmoji(for: trend))
+                Text(self.trendEmoji(for: trend))
                     .font(.system(size: 40))
                     .padding(.top, 8)
 
@@ -466,7 +477,7 @@ struct TrendCard: View {
                     )
 
                 // Period label (clear but subtle)
-                Text(title)
+                Text(self.title)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white.opacity(0.8))
                     .padding(.bottom, 4)
@@ -490,7 +501,7 @@ struct TrendCard: View {
                             .fill(Color.white.opacity(0.2))
                     )
 
-                Text(title)
+                Text(self.title)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.bottom, 4)
@@ -501,9 +512,9 @@ struct TrendCard: View {
         .padding(.horizontal, 12)
         .background(
             RoundedRectangle(cornerRadius: 20)
-                .fill(cardGradient)
+                .fill(self.cardGradient)
         )
-        .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
+        .shadow(color: self.shadowColor, radius: 8, x: 0, y: 4)
     }
 
     /// Vibrant gradient background - EXCITING!
@@ -520,7 +531,7 @@ struct TrendCard: View {
 
         if trend.isLoss {
             // Loss: Use time-period specific gradients for visual distinction
-            switch title {
+            switch self.title {
             case "7 DAYS":
                 // Recent: Blue gradient
                 return LinearGradient(
@@ -574,7 +585,7 @@ struct TrendCard: View {
         }
 
         if trend.isLoss {
-            switch title {
+            switch self.title {
             case "7 DAYS":
                 return Color("FLPrimary").opacity(0.3)
             case "30 DAYS":
@@ -596,32 +607,31 @@ struct TrendCard: View {
         if trend.isLoss {
             // Celebration emojis for weight loss!
             switch trend.amount {
-            case 0..<1:
-                return "👍"  // Small progress
-            case 1..<2:
-                return "💪"  // Good progress
-            case 2..<3:
-                return "⭐️"  // Great progress
-            case 3..<5:
-                return "🔥"  // Excellent progress
-            case 5..<10:
-                return "🏆"  // Amazing progress
+            case 0 ..< 1:
+                return "👍" // Small progress
+            case 1 ..< 2:
+                return "💪" // Good progress
+            case 2 ..< 3:
+                return "⭐️" // Great progress
+            case 3 ..< 5:
+                return "🔥" // Excellent progress
+            case 5 ..< 10:
+                return "🏆" // Amazing progress
             default:
-                return "🚀"  // Incredible progress!
+                return "🚀" // Incredible progress!
             }
         } else {
             // Gentle supportive emojis for weight gain
             switch trend.amount {
-            case 0..<1:
-                return "💧"  // Just water weight
-            case 1..<2:
-                return "🤝"  // Small fluctuation
-            case 2..<5:
-                return "💙"  // Keep going
+            case 0 ..< 1:
+                return "💧" // Just water weight
+            case 1 ..< 2:
+                return "🤝" // Small fluctuation
+            case 2 ..< 5:
+                return "💙" // Keep going
             default:
-                return "🫂"  // Still on the journey
+                return "🫂" // Still on the journey
             }
         }
     }
 }
-

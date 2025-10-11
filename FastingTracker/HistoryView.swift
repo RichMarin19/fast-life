@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct HistoryView: View {
     @EnvironmentObject var fastingManager: FastingManager
@@ -7,8 +7,8 @@ struct HistoryView: View {
 
     private var selectedIdentifiableDate: Binding<IdentifiableDate?> {
         Binding(
-            get: { selectedDate.map { IdentifiableDate(date: $0) } },
-            set: { selectedDate = $0?.date }
+            get: { self.selectedDate.map { IdentifiableDate(date: $0) } },
+            set: { self.selectedDate = $0?.date }
         )
     }
 
@@ -16,7 +16,7 @@ struct HistoryView: View {
         NavigationView {
             ScrollView {
                 VStack(spacing: 20) {
-                    if fastingManager.fastingHistory.isEmpty {
+                    if self.fastingManager.fastingHistory.isEmpty {
                         Spacer()
                         VStack(spacing: 20) {
                             Image(systemName: "clock.badge.questionmark")
@@ -33,18 +33,18 @@ struct HistoryView: View {
                         Spacer()
                     } else {
                         // Streak Calendar Visualization (First)
-                        StreakCalendarView(selectedDate: $selectedDate)
-                            .environmentObject(fastingManager)
+                        StreakCalendarView(selectedDate: self.$selectedDate)
+                            .environmentObject(self.fastingManager)
                             .padding()
 
                         // Fasting Graph (Second)
                         FastingGraphView()
-                            .environmentObject(fastingManager)
+                            .environmentObject(self.fastingManager)
                             .padding()
 
                         // Total Stats Card (Third)
                         TotalStatsView()
-                            .environmentObject(fastingManager)
+                            .environmentObject(self.fastingManager)
                             .padding()
 
                         // History List
@@ -55,13 +55,13 @@ struct HistoryView: View {
                                 .padding(.horizontal)
                                 .padding(.bottom, 10)
 
-                            ForEach(fastingManager.fastingHistory.filter { $0.isComplete }) { session in
+                            ForEach(self.fastingManager.fastingHistory.filter(\.isComplete)) { session in
                                 HistoryRowView(session: session)
                                     .padding(.horizontal)
                                     .padding(.vertical, 8)
                                     .contentShape(RoundedRectangle(cornerRadius: 8))
                                     .onTapGesture {
-                                        selectedDate = session.startTime
+                                        self.selectedDate = session.startTime
                                     }
                                 Divider()
                                     .padding(.horizontal)
@@ -71,9 +71,9 @@ struct HistoryView: View {
                 }
             }
             .navigationTitle("History")
-            .sheet(item: selectedIdentifiableDate) { identifiableDate in
-                AddEditFastView(date: identifiableDate.date, fastingManager: fastingManager)
-                    .environmentObject(fastingManager)
+            .sheet(item: self.selectedIdentifiableDate) { identifiableDate in
+                AddEditFastView(date: identifiableDate.date, fastingManager: self.fastingManager)
+                    .environmentObject(self.fastingManager)
             }
         }
     }
@@ -114,12 +114,12 @@ struct HistoryRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(formattedDateValue)
+                Text(self.formattedDateValue)
                     .font(.headline)
 
                 Spacer()
 
-                if session.metGoal {
+                if self.session.metGoal {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(Color("FLSuccess"))
@@ -137,7 +137,7 @@ struct HistoryRowView: View {
             HStack(spacing: 4) {
                 Image(systemName: "clock")
                     .foregroundColor(.secondary)
-                Text("Fast: \(formattedDurationValue)")
+                Text("Fast: \(self.formattedDurationValue)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
@@ -163,12 +163,12 @@ struct TotalStatsView: View {
     @EnvironmentObject var fastingManager: FastingManager
 
     var body: some View {
-        let completedSessions = fastingManager.fastingHistory.filter { $0.isComplete }
+        let completedSessions = self.fastingManager.fastingHistory.filter(\.isComplete)
         // Count all days with ≥14 hours OR goal met
         let totalDays = completedSessions.filter { $0.duration >= 14 * 3600 || $0.metGoal }.count
-        let totalDaysToGoal = completedSessions.filter { $0.metGoal }.count
+        let totalDaysToGoal = completedSessions.filter(\.metGoal).count
         let totalHours = completedSessions.reduce(0.0) { $0 + $1.duration / 3600 }
-        let longestStreak = fastingManager.longestStreak
+        let longestStreak = self.fastingManager.longestStreak
 
         VStack(spacing: 16) {
             // First row
@@ -258,7 +258,7 @@ struct TotalStatsView: View {
                     Image(systemName: "chart.bar.fill")
                         .font(.title2)
                         .foregroundColor(Color.purple)
-                    Text(averageHoursText)
+                    Text(self.averageHoursText)
                         .font(.system(size: 36, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
                     Text("Average Hours Per Fast")
@@ -278,7 +278,7 @@ struct TotalStatsView: View {
 
     // Calculate average hours per fast session
     private var averageHoursText: String {
-        let completedSessions = fastingManager.fastingHistory.filter { $0.isComplete }
+        let completedSessions = self.fastingManager.fastingHistory.filter(\.isComplete)
         let totalDays = completedSessions.filter { $0.duration >= 14 * 3600 || $0.metGoal }.count
         let totalHours = completedSessions.reduce(0.0) { $0 + $1.duration / 3600 }
 
@@ -304,34 +304,34 @@ struct FastingGraphView: View {
     @State private var selectedRange: GraphTimeRange = .week
     @State private var showingCustomPicker = false
     @State private var showGoalLine = true
-    @State private var customStartDate = Date(timeIntervalSinceNow: -30*24*60*60)
+    @State private var customStartDate = Date(timeIntervalSinceNow: -30 * 24 * 60 * 60)
     @State private var customEndDate = Date()
     @State private var selectedDataPoint: ChartDataPoint? = nil
 
     // Navigation state for each time range
-    @State private var selectedWeekOffset: Int = 0  // 0 = current week, -1 = last week, etc.
+    @State private var selectedWeekOffset: Int = 0 // 0 = current week, -1 = last week, etc.
     @State private var selectedMonthOffset: Int = 0 // 0 = current month, -1 = last month, etc. (max -11)
-    @State private var selectedYearOffset: Int = 0  // 0 = current year, -1 = last year, etc. (max -4)
+    @State private var selectedYearOffset: Int = 0 // 0 = current year, -1 = last year, etc. (max -4)
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            headerView
-            rangePickerView
-            if selectedRange == .custom {
-                customDateButton
+            self.headerView
+            self.rangePickerView
+            if self.selectedRange == .custom {
+                self.customDateButton
             }
-            chartContentView
+            self.chartContentView
             if let selected = selectedDataPoint, selected.hours > 0 {
-                selectedDataView(for: selected)
+                self.selectedDataView(for: selected)
             }
-            legendView
+            self.legendView
         }
         .padding()
         .background(Color.white)
         .cornerRadius(8)
         .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
-        .sheet(isPresented: $showingCustomPicker) {
-            CustomDateRangePickerView(startDate: $customStartDate, endDate: $customEndDate)
+        .sheet(isPresented: self.$showingCustomPicker) {
+            CustomDateRangePickerView(startDate: self.$customStartDate, endDate: self.$customEndDate)
         }
     }
 
@@ -344,37 +344,37 @@ struct FastingGraphView: View {
 
                 // Subtitle with navigation arrows
                 HStack(spacing: 8) {
-                    if selectedRange != .custom {
+                    if self.selectedRange != .custom {
                         // Previous button
-                        Button(action: navigatePrevious) {
+                        Button(action: self.navigatePrevious) {
                             Image(systemName: "chevron.left")
                                 .font(.subheadline)
-                                .foregroundColor(canNavigatePrevious() ? Color("FLPrimary") : .gray.opacity(0.3))
+                                .foregroundColor(self.canNavigatePrevious() ? Color("FLPrimary") : .gray.opacity(0.3))
                         }
-                        .disabled(!canNavigatePrevious())
+                        .disabled(!self.canNavigatePrevious())
                     }
 
-                    Text(getRangeSubtitle())
+                    Text(self.getRangeSubtitle())
                         .font(.subheadline)
                         .foregroundColor(.secondary)
 
-                    if selectedRange != .custom {
+                    if self.selectedRange != .custom {
                         // Next button
-                        Button(action: navigateNext) {
+                        Button(action: self.navigateNext) {
                             Image(systemName: "chevron.right")
                                 .font(.subheadline)
-                                .foregroundColor(canNavigateNext() ? Color("FLPrimary") : .gray.opacity(0.3))
+                                .foregroundColor(self.canNavigateNext() ? Color("FLPrimary") : .gray.opacity(0.3))
                         }
-                        .disabled(!canNavigateNext())
+                        .disabled(!self.canNavigateNext())
                     }
                 }
             }
 
             Spacer()
 
-            Button(action: { showGoalLine.toggle() }) {
+            Button(action: { self.showGoalLine.toggle() }) {
                 HStack(spacing: 4) {
-                    Image(systemName: showGoalLine ? "checkmark.circle.fill" : "circle")
+                    Image(systemName: self.showGoalLine ? "checkmark.circle.fill" : "circle")
                         .foregroundColor(Color("FLSecondary"))
                         .font(.system(size: 16))
                     Text("Goal")
@@ -386,32 +386,32 @@ struct FastingGraphView: View {
     }
 
     private var rangePickerView: some View {
-        Picker("Range", selection: $selectedRange) {
+        Picker("Range", selection: self.$selectedRange) {
             ForEach(GraphTimeRange.allCases, id: \.self) { range in
                 Text(range.rawValue).tag(range)
             }
         }
         .pickerStyle(.segmented)
-        .onChange(of: selectedRange) { _, newValue in
+        .onChange(of: self.selectedRange) { _, newValue in
             if newValue == .custom {
-                showingCustomPicker = true
+                self.showingCustomPicker = true
             }
             // Reset offsets when switching view types
-            selectedWeekOffset = 0
-            selectedMonthOffset = 0
-            selectedYearOffset = 0
+            self.selectedWeekOffset = 0
+            self.selectedMonthOffset = 0
+            self.selectedYearOffset = 0
 
             // Intelligently initialize Month view to show most recent data
             if newValue == .month {
-                initializeMonthView()
+                self.initializeMonthView()
             }
         }
     }
 
     private var customDateButton: some View {
-        Button(action: { showingCustomPicker = true }) {
+        Button(action: { self.showingCustomPicker = true }) {
             HStack {
-                Text("\(formattedDate(customStartDate)) - \(formattedDate(customEndDate))")
+                Text("\(self.formattedDate(self.customStartDate)) - \(self.formattedDate(self.customEndDate))")
                     .font(.caption)
                     .foregroundColor(.secondary)
                 Spacer()
@@ -424,7 +424,7 @@ struct FastingGraphView: View {
 
     @ViewBuilder
     private var chartContentView: some View {
-        let chartData = getChartData()
+        let chartData = self.getChartData()
         // Check if all data points are zero (no real data for this period)
         let hasRealData = chartData.contains { $0.hours > 0 }
 
@@ -455,122 +455,122 @@ struct FastingGraphView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 220)
         } else {
-                Chart {
-                    // Goal line
-                    if showGoalLine {
-                        RuleMark(y: .value("Goal", fastingManager.fastingGoalHours))
-                            .foregroundStyle(Color("FLSecondary").opacity(0.5))
-                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
-                            .annotation(position: .top, alignment: .trailing) {
-                                Text("Goal: \(Int(fastingManager.fastingGoalHours))h")
-                                    .font(.caption2)
-                                    .foregroundColor(Color("FLSecondary"))
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.white.opacity(0.9))
-                                    .cornerRadius(8)
-                            }
-                    }
-
-                    // Selection indicator line
-                    if let selected = selectedDataPoint {
-                        RuleMark(x: .value("Selected", selected.date))
-                            .foregroundStyle(Color("FLPrimary").opacity(0.3))
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .zIndex(-1)
-                    }
-
-                    // Line with gradient
-                    ForEach(chartData) { dataPoint in
-                        LineMark(
-                            x: .value("Date", dataPoint.date),
-                            y: .value("Hours", dataPoint.hours)
-                        )
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color("FLSuccess"), Color("FLSuccess")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .interpolationMethod(.catmullRom)
-                        .lineStyle(StrokeStyle(lineWidth: 3))
-                    }
-
-                    // Data points
-                    ForEach(chartData) { dataPoint in
-                        PointMark(
-                            x: .value("Date", dataPoint.date),
-                            y: .value("Hours", dataPoint.hours)
-                        )
-                        .foregroundStyle(dataPoint.metGoal ? Color("FLSuccess") : Color.orange)
-                        .symbolSize(dataPoint.date == selectedDataPoint?.date ? 120 : 80)
-                    }
-                }
-                .chartYScale(domain: 0...24)
-                .chartXScale(domain: getXAxisDomain())
-                .chartXAxis {
-                    AxisMarks(values: getXAxisValues()) { value in
-                        AxisGridLine()
-                        AxisTick()
-                        if selectedRange == .year {
-                            AxisValueLabel(format: .dateTime.month(.abbreviated))
-                        } else if selectedRange == .month {
-                            AxisValueLabel {
-                                if let date = value.as(Date.self) {
-                                    let day = Calendar.current.component(.day, from: date)
-                                    Text("\(day)")
-                                        .font(.caption2)
-                                }
-                            }
-                        } else {
-                            AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+            Chart {
+                // Goal line
+                if self.showGoalLine {
+                    RuleMark(y: .value("Goal", self.fastingManager.fastingGoalHours))
+                        .foregroundStyle(Color("FLSecondary").opacity(0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                        .annotation(position: .top, alignment: .trailing) {
+                            Text("Goal: \(Int(self.fastingManager.fastingGoalHours))h")
+                                .font(.caption2)
+                                .foregroundColor(Color("FLSecondary"))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.white.opacity(0.9))
+                                .cornerRadius(8)
                         }
-                    }
                 }
-                .chartYAxis {
-                    AxisMarks(position: .leading, values: [0, 4, 8, 12, 16, 20, 24]) { value in
-                        AxisGridLine()
+
+                // Selection indicator line
+                if let selected = selectedDataPoint {
+                    RuleMark(x: .value("Selected", selected.date))
+                        .foregroundStyle(Color("FLPrimary").opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .zIndex(-1)
+                }
+
+                // Line with gradient
+                ForEach(chartData) { dataPoint in
+                    LineMark(
+                        x: .value("Date", dataPoint.date),
+                        y: .value("Hours", dataPoint.hours)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color("FLSuccess"), Color("FLSuccess")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .lineStyle(StrokeStyle(lineWidth: 3))
+                }
+
+                // Data points
+                ForEach(chartData) { dataPoint in
+                    PointMark(
+                        x: .value("Date", dataPoint.date),
+                        y: .value("Hours", dataPoint.hours)
+                    )
+                    .foregroundStyle(dataPoint.metGoal ? Color("FLSuccess") : Color.orange)
+                    .symbolSize(dataPoint.date == self.selectedDataPoint?.date ? 120 : 80)
+                }
+            }
+            .chartYScale(domain: 0 ... 24)
+            .chartXScale(domain: self.getXAxisDomain())
+            .chartXAxis {
+                AxisMarks(values: self.getXAxisValues()) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    if self.selectedRange == .year {
+                        AxisValueLabel(format: .dateTime.month(.abbreviated))
+                    } else if self.selectedRange == .month {
                         AxisValueLabel {
-                            if let hours = value.as(Double.self) {
-                                Text("\(Int(hours))h")
+                            if let date = value.as(Date.self) {
+                                let day = Calendar.current.component(.day, from: date)
+                                Text("\(day)")
                                     .font(.caption2)
                             }
                         }
+                    } else {
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).day())
                     }
                 }
-                .chartOverlay { proxy in
-                    GeometryReader { geometry in
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.clear)
-                            .contentShape(RoundedRectangle(cornerRadius: 8))
-                            .gesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { value in
-                                        guard let plotFrame = proxy.plotFrame else { return }
-                                        let x = value.location.x - geometry[plotFrame].origin.x
-                                        if let date: Date = proxy.value(atX: x) {
-                                            if let dataPoint = chartData.first(where: {
-                                                Calendar.current.isDate($0.date, inSameDayAs: date)
-                                            }) {
-                                                selectedDataPoint = dataPoint
-                                            }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: [0, 4, 8, 12, 16, 20, 24]) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let hours = value.as(Double.self) {
+                            Text("\(Int(hours))h")
+                                .font(.caption2)
+                        }
+                    }
+                }
+            }
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.clear)
+                        .contentShape(RoundedRectangle(cornerRadius: 8))
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    guard let plotFrame = proxy.plotFrame else { return }
+                                    let x = value.location.x - geometry[plotFrame].origin.x
+                                    if let date: Date = proxy.value(atX: x) {
+                                        if let dataPoint = chartData.first(where: {
+                                            Calendar.current.isDate($0.date, inSameDayAs: date)
+                                        }) {
+                                            self.selectedDataPoint = dataPoint
                                         }
                                     }
-                                    .onEnded { _ in
-                                        // Keep selection visible after tap
-                                    }
-                            )
-                    }
+                                }
+                                .onEnded { _ in
+                                    // Keep selection visible after tap
+                                }
+                        )
                 }
-                .frame(height: 220)
+            }
+            .frame(height: 220)
         }
     }
 
     private func selectedDataView(for selected: ChartDataPoint) -> some View {
         VStack(spacing: 8) {
             HStack {
-                Text(formattedDetailDate(selected.date))
+                Text(self.formattedDetailDate(selected.date))
                     .font(.subheadline)
                     .fontWeight(.semibold)
                 Spacer()
@@ -627,7 +627,7 @@ struct FastingGraphView: View {
                     .foregroundColor(.secondary)
             }
 
-            if showGoalLine {
+            if self.showGoalLine {
                 HStack(spacing: 6) {
                     RoundedRectangle(cornerRadius: 8)
                         .fill(Color("FLSecondary").opacity(0.5))
@@ -643,16 +643,16 @@ struct FastingGraphView: View {
     // MARK: - Navigation Functions
 
     private func navigatePrevious() {
-        switch selectedRange {
+        switch self.selectedRange {
         case .week:
-            selectedWeekOffset -= 1
+            self.selectedWeekOffset -= 1
         case .month:
-            if selectedMonthOffset > -11 {
-                selectedMonthOffset -= 1
+            if self.selectedMonthOffset > -11 {
+                self.selectedMonthOffset -= 1
             }
         case .year:
-            if selectedYearOffset > -4 {
-                selectedYearOffset -= 1
+            if self.selectedYearOffset > -4 {
+                self.selectedYearOffset -= 1
             }
         case .custom:
             break
@@ -660,18 +660,18 @@ struct FastingGraphView: View {
     }
 
     private func navigateNext() {
-        switch selectedRange {
+        switch self.selectedRange {
         case .week:
-            if selectedWeekOffset < 0 {
-                selectedWeekOffset += 1
+            if self.selectedWeekOffset < 0 {
+                self.selectedWeekOffset += 1
             }
         case .month:
-            if selectedMonthOffset < 0 {
-                selectedMonthOffset += 1
+            if self.selectedMonthOffset < 0 {
+                self.selectedMonthOffset += 1
             }
         case .year:
-            if selectedYearOffset < 0 {
-                selectedYearOffset += 1
+            if self.selectedYearOffset < 0 {
+                self.selectedYearOffset += 1
             }
         case .custom:
             break
@@ -679,23 +679,23 @@ struct FastingGraphView: View {
     }
 
     private func canNavigatePrevious() -> Bool {
-        switch selectedRange {
+        switch self.selectedRange {
         case .week:
             return true // No limit on going back for weeks
         case .month:
-            return selectedMonthOffset > -11 // Max 12 months back
+            return self.selectedMonthOffset > -11 // Max 12 months back
         case .year:
-            return selectedYearOffset > -4 // Max 5 years back
+            return self.selectedYearOffset > -4 // Max 5 years back
         case .custom:
             return false
         }
     }
 
     private func canNavigateNext() -> Bool {
-        switch selectedRange {
+        switch self.selectedRange {
         case .week, .month, .year:
             // Can only go forward if not at current period
-            return selectedWeekOffset < 0 || selectedMonthOffset < 0 || selectedYearOffset < 0
+            return self.selectedWeekOffset < 0 || self.selectedMonthOffset < 0 || self.selectedYearOffset < 0
         case .custom:
             return false
         }
@@ -703,7 +703,7 @@ struct FastingGraphView: View {
 
     private func initializeMonthView() {
         // Only initialize once - don't reset if user has already navigated
-        guard selectedMonthOffset == 0 else { return }
+        guard self.selectedMonthOffset == 0 else { return }
 
         let calendar = Calendar.current
         let now = Date()
@@ -714,20 +714,24 @@ struct FastingGraphView: View {
         let currentMonthEnd = calendar.startOfDay(for: now)
 
         // Check if there's any data in the current month
-        let hasDataInCurrentMonth = fastingManager.fastingHistory.contains { session in
+        let hasDataInCurrentMonth = self.fastingManager.fastingHistory.contains { session in
             session.isComplete && session.startTime >= currentMonthStart && session.startTime <= currentMonthEnd
         }
 
         // If no data in current month, find the most recent month with data
-        if !hasDataInCurrentMonth, let mostRecentSession = fastingManager.fastingHistory.first(where: { $0.isComplete }) {
+        if !hasDataInCurrentMonth,
+           let mostRecentSession = fastingManager.fastingHistory.first(where: { $0.isComplete }) {
             // Calculate how many months back the most recent session is
-            let sessionMonth = calendar.startOfDay(for: calendar.dateInterval(of: .month, for: mostRecentSession.startTime)?.start ?? mostRecentSession.startTime)
+            let sessionMonth = calendar.startOfDay(for: calendar.dateInterval(
+                of: .month,
+                for: mostRecentSession.startTime
+            )?.start ?? mostRecentSession.startTime)
             let currentMonth = calendar.startOfDay(for: currentMonthInterval.start)
 
             let monthDiff = calendar.dateComponents([.month], from: sessionMonth, to: currentMonth).month ?? 0
 
             // Set the offset to show that month (limit to -11 for max 12 months back)
-            selectedMonthOffset = max(-monthDiff, -11)
+            self.selectedMonthOffset = max(-monthDiff, -11)
         }
     }
 
@@ -747,10 +751,10 @@ struct FastingGraphView: View {
         let formatter = DateFormatter()
         let calendar = Calendar.current
 
-        switch selectedRange {
+        switch self.selectedRange {
         case .week:
             // "Week of Sep 28"
-            let targetDate = calendar.date(byAdding: .weekOfYear, value: selectedWeekOffset, to: Date()) ?? Date()
+            let targetDate = calendar.date(byAdding: .weekOfYear, value: self.selectedWeekOffset, to: Date()) ?? Date()
             guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: targetDate) else {
                 return "Week"
             }
@@ -759,32 +763,32 @@ struct FastingGraphView: View {
 
         case .month:
             // "October" or "September" etc.
-            let targetDate = calendar.date(byAdding: .month, value: selectedMonthOffset, to: Date()) ?? Date()
+            let targetDate = calendar.date(byAdding: .month, value: self.selectedMonthOffset, to: Date()) ?? Date()
             formatter.dateFormat = "MMMM yyyy"
             return formatter.string(from: targetDate)
 
         case .year:
             // "2025" or "2024" etc.
-            let targetDate = calendar.date(byAdding: .year, value: selectedYearOffset, to: Date()) ?? Date()
+            let targetDate = calendar.date(byAdding: .year, value: self.selectedYearOffset, to: Date()) ?? Date()
             formatter.dateFormat = "yyyy"
             return formatter.string(from: targetDate)
 
         case .custom:
             // "Sep 1 - Sep 30"
             formatter.dateFormat = "MMM d"
-            let start = formatter.string(from: customStartDate)
-            let end = formatter.string(from: customEndDate)
+            let start = formatter.string(from: self.customStartDate)
+            let end = formatter.string(from: self.customEndDate)
             return "\(start) - \(end)"
         }
     }
 
     private func getChartData() -> [ChartDataPoint] {
         let calendar = Calendar.current
-        let sessions = getFilteredSessions()
+        let sessions = self.getFilteredSessions()
         let now = calendar.startOfDay(for: Date())
 
         // Get date range based on selected view
-        let dateRange = getDateRange()
+        let dateRange = self.getDateRange()
 
         // Create a dictionary of sessions by date
         var sessionsByDate: [Date: FastingSession] = [:]
@@ -795,7 +799,7 @@ struct FastingGraphView: View {
 
         // For year view, only show data points where we have actual data
         // Don't generate 365 zero-value points
-        if selectedRange == .year {
+        if self.selectedRange == .year {
             return sessions.map { session in
                 ChartDataPoint(
                     date: session.startTime,
@@ -811,7 +815,7 @@ struct FastingGraphView: View {
         var iterationCount = 0
         let maxIterations = 100 // Safety limit to prevent infinite loops
 
-        while currentDate <= dateRange.end && iterationCount < maxIterations {
+        while currentDate <= dateRange.end, iterationCount < maxIterations {
             let day = calendar.startOfDay(for: currentDate)
 
             if let session = sessionsByDate[day] {
@@ -845,39 +849,39 @@ struct FastingGraphView: View {
         let calendar = Calendar.current
         let now = Date()
 
-        switch selectedRange {
+        switch self.selectedRange {
         case .month:
             // Show full month range on X-axis using selected month offset
-            let targetDate = calendar.date(byAdding: .month, value: selectedMonthOffset, to: now) ?? now
+            let targetDate = calendar.date(byAdding: .month, value: self.selectedMonthOffset, to: now) ?? now
             guard let monthInterval = calendar.dateInterval(of: .month, for: targetDate) else {
-                return now...now
+                return now ... now
             }
             let monthStart = calendar.startOfDay(for: monthInterval.start)
             let monthEnd = calendar.date(byAdding: .day, value: -1, to: monthInterval.end) ?? targetDate
-            return monthStart...monthEnd
+            return monthStart ... monthEnd
 
         case .year:
             // Show full year range on X-axis using selected year offset
-            let targetDate = calendar.date(byAdding: .year, value: selectedYearOffset, to: now) ?? now
+            let targetDate = calendar.date(byAdding: .year, value: self.selectedYearOffset, to: now) ?? now
             guard let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: targetDate)),
                   let endOfYear = calendar.date(byAdding: DateComponents(year: 1, day: -1), to: startOfYear) else {
-                return now...now
+                return now ... now
             }
-            return startOfYear...endOfYear
+            return startOfYear ... endOfYear
 
         default:
             // For week and custom, use data range
-            let dateRange = getDateRange()
-            return dateRange.start...dateRange.end
+            let dateRange = self.getDateRange()
+            return dateRange.start ... dateRange.end
         }
     }
 
     private func getXAxisValues() -> AxisMarkValues {
         let calendar = Calendar.current
-        let dateRange = getDateRange()
+        let dateRange = self.getDateRange()
         let daysDifference = calendar.dateComponents([.day], from: dateRange.start, to: dateRange.end).day ?? 1
 
-        switch selectedRange {
+        switch self.selectedRange {
         case .week:
             // Show every day
             return .stride(by: .day, count: 1)
@@ -902,10 +906,10 @@ struct FastingGraphView: View {
         let calendar = Calendar.current
         let now = Date()
 
-        switch selectedRange {
+        switch self.selectedRange {
         case .week:
             // Get the selected week (Sunday to Saturday)
-            let targetDate = calendar.date(byAdding: .weekOfYear, value: selectedWeekOffset, to: now) ?? now
+            let targetDate = calendar.date(byAdding: .weekOfYear, value: self.selectedWeekOffset, to: now) ?? now
             guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: targetDate) else {
                 let weekAgo = calendar.date(byAdding: .day, value: -6, to: targetDate) ?? targetDate
                 return (calendar.startOfDay(for: weekAgo), calendar.startOfDay(for: targetDate))
@@ -916,7 +920,7 @@ struct FastingGraphView: View {
 
         case .month:
             // Get the selected month
-            let targetDate = calendar.date(byAdding: .month, value: selectedMonthOffset, to: now) ?? now
+            let targetDate = calendar.date(byAdding: .month, value: self.selectedMonthOffset, to: now) ?? now
             guard let monthInterval = calendar.dateInterval(of: .month, for: targetDate) else {
                 let monthAgo = calendar.date(byAdding: .month, value: -1, to: targetDate) ?? targetDate
                 return (calendar.startOfDay(for: monthAgo), calendar.startOfDay(for: targetDate))
@@ -924,7 +928,7 @@ struct FastingGraphView: View {
             let monthStart = calendar.startOfDay(for: monthInterval.start)
             // For past months, show entire month. For current month, only show up to today
             let monthEnd: Date
-            if selectedMonthOffset == 0 {
+            if self.selectedMonthOffset == 0 {
                 // Current month - show up to today
                 monthEnd = calendar.startOfDay(for: now)
             } else {
@@ -935,13 +939,13 @@ struct FastingGraphView: View {
 
         case .year:
             // Get the selected year
-            let targetDate = calendar.date(byAdding: .year, value: selectedYearOffset, to: now) ?? now
+            let targetDate = calendar.date(byAdding: .year, value: self.selectedYearOffset, to: now) ?? now
             guard let startOfYear = calendar.date(from: calendar.dateComponents([.year], from: targetDate)) else {
                 return (targetDate, targetDate)
             }
             // For past years, show entire year. For current year, show up to today or end of year
             let endOfYear: Date
-            if selectedYearOffset == 0 {
+            if self.selectedYearOffset == 0 {
                 // Current year - show up to today
                 endOfYear = calendar.startOfDay(for: now)
             } else {
@@ -954,16 +958,16 @@ struct FastingGraphView: View {
             return (calendar.startOfDay(for: startOfYear), endOfYear)
 
         case .custom:
-            return (calendar.startOfDay(for: customStartDate), calendar.startOfDay(for: customEndDate))
+            return (calendar.startOfDay(for: self.customStartDate), calendar.startOfDay(for: self.customEndDate))
         }
     }
 
     private func getFilteredSessions() -> [FastingSession] {
         // Get the date range for the selected period (respects navigation offsets)
-        let dateRange = getDateRange()
+        let dateRange = self.getDateRange()
 
         // Filter sessions within the date range
-        return fastingManager.fastingHistory.filter {
+        return self.fastingManager.fastingHistory.filter {
             let sessionDay = Calendar.current.startOfDay(for: $0.startTime)
             return sessionDay >= dateRange.start && sessionDay <= dateRange.end
         }
@@ -971,7 +975,7 @@ struct FastingGraphView: View {
 }
 
 struct ChartDataPoint: Identifiable, Equatable {
-    var id: Date { date }  // Use date as unique ID instead of UUID
+    var id: Date { self.date } // Use date as unique ID instead of UUID
     let date: Date
     let hours: Double
     let metGoal: Bool
@@ -991,12 +995,12 @@ struct CustomDateRangePickerView: View {
         NavigationView {
             Form {
                 Section(header: Text("Start Date")) {
-                    DatePicker("", selection: $startDate, displayedComponents: .date)
+                    DatePicker("", selection: self.$startDate, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                 }
 
                 Section(header: Text("End Date")) {
-                    DatePicker("", selection: $endDate, displayedComponents: .date)
+                    DatePicker("", selection: self.$endDate, displayedComponents: .date)
                         .datePickerStyle(.graphical)
                 }
             }
@@ -1005,7 +1009,7 @@ struct CustomDateRangePickerView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
@@ -1018,7 +1022,7 @@ struct CustomDateRangePickerView: View {
 struct StreakCalendarView: View {
     @EnvironmentObject var fastingManager: FastingManager
     @Binding var selectedDate: Date?
-    @State private var displayedMonth: Date = Date()
+    @State private var displayedMonth: Date = .init()
 
     var body: some View {
         VStack(spacing: 16) {
@@ -1028,18 +1032,18 @@ struct StreakCalendarView: View {
                     .foregroundColor(.orange)
                     .font(.title2)
 
-                Button(action: previousMonth) {
+                Button(action: self.previousMonth) {
                     Image(systemName: "chevron.left")
                         .foregroundColor(.primary)
                         .font(.title3)
                 }
 
-                Text(currentMonthYear)
+                Text(self.currentMonthYear)
                     .font(.title2)
                     .fontWeight(.bold)
                     .frame(minWidth: 180)
 
-                Button(action: nextMonth) {
+                Button(action: self.nextMonth) {
                     Image(systemName: "chevron.right")
                         .foregroundColor(.primary)
                         .font(.title3)
@@ -1047,7 +1051,7 @@ struct StreakCalendarView: View {
 
                 Spacer()
 
-                Text("\(fastingManager.currentStreak) day\(fastingManager.currentStreak == 1 ? "" : "s")")
+                Text("\(self.fastingManager.currentStreak) day\(self.fastingManager.currentStreak == 1 ? "" : "s")")
                     .font(.headline)
                     .foregroundColor(.orange)
             }
@@ -1066,7 +1070,7 @@ struct StreakCalendarView: View {
                 }
 
                 // Calendar days grid
-                calendarGridView
+                self.calendarGridView
             }
 
             // Legend
@@ -1106,17 +1110,17 @@ struct StreakCalendarView: View {
 
     @ViewBuilder
     private var calendarGridView: some View {
-        let monthDays = getMonthDays()
+        let monthDays = self.getMonthDays()
         let daysByWeek = monthDays.chunked(into: 7)
 
-        ForEach(0..<daysByWeek.count, id: \.self) { weekIndex in
+        ForEach(0 ..< daysByWeek.count, id: \.self) { weekIndex in
             HStack(spacing: 8) {
-                ForEach(0..<7, id: \.self) { dayIndex in
+                ForEach(0 ..< 7, id: \.self) { dayIndex in
                     if weekIndex * 7 + dayIndex < monthDays.count {
                         let dateItem = daysByWeek[weekIndex][dayIndex]
                         if let date = dateItem {
-                            CalendarDayView(date: date, selectedDate: $selectedDate)
-                                .environmentObject(fastingManager)
+                            CalendarDayView(date: date, selectedDate: self.$selectedDate)
+                                .environmentObject(self.fastingManager)
                         } else {
                             Color.clear
                                 .frame(maxWidth: .infinity)
@@ -1135,20 +1139,20 @@ struct StreakCalendarView: View {
     private var currentMonthYear: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: displayedMonth)
+        return formatter.string(from: self.displayedMonth)
     }
 
     private func previousMonth() {
         let calendar = Calendar.current
         if let newMonth = calendar.date(byAdding: .month, value: -1, to: displayedMonth) {
-            displayedMonth = newMonth
+            self.displayedMonth = newMonth
         }
     }
 
     private func nextMonth() {
         let calendar = Calendar.current
         if let newMonth = calendar.date(byAdding: .month, value: 1, to: displayedMonth) {
-            displayedMonth = newMonth
+            self.displayedMonth = newMonth
         }
     }
 
@@ -1157,7 +1161,10 @@ struct StreakCalendarView: View {
 
         // Get the first day of the displayed month
         guard let monthInterval = calendar.dateInterval(of: .month, for: displayedMonth),
-              let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthInterval.start)) else {
+              let firstDayOfMonth = calendar.date(from: calendar.dateComponents(
+                  [.year, .month],
+                  from: monthInterval.start
+              )) else {
             return []
         }
 
@@ -1173,7 +1180,7 @@ struct StreakCalendarView: View {
         // Create array with leading nils, then dates
         var days: [Date?] = Array(repeating: nil, count: leadingEmptyDays)
 
-        for day in 0..<daysInMonth {
+        for day in 0 ..< daysInMonth {
             if let date = calendar.date(byAdding: .day, value: day, to: firstDayOfMonth) {
                 days.append(date)
             }
@@ -1196,17 +1203,17 @@ struct CalendarDayView: View {
 
     var body: some View {
         let calendar = Calendar.current
-        let dayNumber = calendar.component(.day, from: date)
+        let dayNumber = calendar.component(.day, from: self.date)
 
         ZStack {
             // Background
             RoundedRectangle(cornerRadius: 8)
-                .fill(dayStatus == .goalMet ? Color.orange.opacity(0.1) :
-                      dayStatus == .incomplete ? Color.red.opacity(0.1) :
-                      Color.gray.opacity(0.1))
+                .fill(self.dayStatus == .goalMet ? Color.orange.opacity(0.1) :
+                    self.dayStatus == .incomplete ? Color.red.opacity(0.1) :
+                    Color.gray.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isToday() ? Color("FLPrimary") : Color.clear, lineWidth: 2)
+                        .stroke(self.isToday() ? Color("FLPrimary") : Color.clear, lineWidth: 2)
                 )
 
             VStack(spacing: 4) {
@@ -1217,11 +1224,11 @@ struct CalendarDayView: View {
 
                 // Status icon
                 Group {
-                    if dayStatus == .goalMet {
+                    if self.dayStatus == .goalMet {
                         Image(systemName: "flame.fill")
                             .foregroundColor(.orange)
                             .font(.system(size: 16))
-                    } else if dayStatus == .incomplete {
+                    } else if self.dayStatus == .incomplete {
                         Image(systemName: "xmark")
                             .foregroundColor(.red)
                             .font(.system(size: 12))
@@ -1233,20 +1240,20 @@ struct CalendarDayView: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
-            selectedDate = date
+            self.selectedDate = self.date
         }
     }
 
     private func isToday() -> Bool {
-        Calendar.current.isDateInToday(date)
+        Calendar.current.isDateInToday(self.date)
     }
 
     private var dayStatus: DayStatus {
         let calendar = Calendar.current
-        let targetDay = calendar.startOfDay(for: date)
+        let targetDay = calendar.startOfDay(for: self.date)
 
         // Find fasts that started on this day
-        for session in fastingManager.fastingHistory {
+        for session in self.fastingManager.fastingHistory {
             let sessionDay = calendar.startOfDay(for: session.startTime)
             if sessionDay == targetDay {
                 return session.metGoal ? .goalMet : .incomplete
@@ -1311,10 +1318,10 @@ struct AddEditFastView: View {
                 VStack(spacing: 32) {
                     // Header
                     VStack(spacing: 8) {
-                        Text(existingSession == nil ? "Add Fast" : "Edit Fast")
+                        Text(self.existingSession == nil ? "Add Fast" : "Edit Fast")
                             .font(.title2)
                             .fontWeight(.bold)
-                        Text(formattedDate)
+                        Text(self.formattedDate)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                     }
@@ -1325,7 +1332,7 @@ struct AddEditFastView: View {
                         Text("Start Time")
                             .font(.headline)
                             .foregroundColor(.secondary)
-                        DatePicker("", selection: $startTime, displayedComponents: [.hourAndMinute])
+                        DatePicker("", selection: self.$startTime, displayedComponents: [.hourAndMinute])
                             .datePickerStyle(.wheel)
                             .labelsHidden()
                     }
@@ -1341,9 +1348,9 @@ struct AddEditFastView: View {
                             .font(.headline)
                             .foregroundColor(.secondary)
 
-                        Text("\(hours)h \(minutes)m")
+                        Text("\(self.hours)h \(self.minutes)m")
                             .font(.system(size: 56, weight: .bold, design: .rounded))
-                            .foregroundColor(durationColor)
+                            .foregroundColor(self.durationColor)
                     }
 
                     // Duration Pickers
@@ -1353,8 +1360,8 @@ struct AddEditFastView: View {
                             Text("Hours")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            Picker("Hours", selection: $hours) {
-                                ForEach(0..<49) { hour in
+                            Picker("Hours", selection: self.$hours) {
+                                ForEach(0 ..< 49) { hour in
                                     Text("\(hour)").tag(hour)
                                 }
                             }
@@ -1367,8 +1374,8 @@ struct AddEditFastView: View {
                             Text("Minutes")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
-                            Picker("Minutes", selection: $minutes) {
-                                ForEach(0..<60) { minute in
+                            Picker("Minutes", selection: self.$minutes) {
+                                ForEach(0 ..< 60) { minute in
                                     Text("\(minute)").tag(minute)
                                 }
                             }
@@ -1388,7 +1395,7 @@ struct AddEditFastView: View {
                                 .font(.headline)
                                 .foregroundColor(.secondary)
 
-                            Text("\(Int(goalHours)) hours")
+                            Text("\(Int(self.goalHours)) hours")
                                 .font(.system(size: 36, weight: .bold, design: .rounded))
                                 .foregroundColor(Color("FLSecondary"))
                         }
@@ -1397,20 +1404,27 @@ struct AddEditFastView: View {
                             HStack(spacing: 6) {
                                 ForEach([8.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 36.0, 48.0], id: \.self) { goal in
                                     Button(action: {
-                                        isCustomGoal = false
-                                        goalHours = goal
-                                        customGoalText = ""  // Clear custom text when selecting preset
+                                        self.isCustomGoal = false
+                                        self.goalHours = goal
+                                        self.customGoalText = "" // Clear custom text when selecting preset
                                     }) {
                                         Text("\(Int(goal))h")
                                             .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(goalHours == goal && !isCustomGoal ? .white : Color("FLSecondary"))
+                                            .foregroundColor(self.goalHours == goal && !self
+                                                .isCustomGoal ? .white : Color("FLSecondary"))
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 10)
-                                            .background(goalHours == goal && !isCustomGoal ? Color("FLSecondary") : Color(UIColor.secondarySystemGroupedBackground))
+                                            .background(self.goalHours == goal && !self
+                                                .isCustomGoal ? Color("FLSecondary") :
+                                                Color(UIColor.secondarySystemGroupedBackground))
                                             .cornerRadius(8)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(goalHours == goal && !isCustomGoal ? Color.clear : Color("FLSecondary").opacity(0.3), lineWidth: 1)
+                                                    .stroke(
+                                                        self.goalHours == goal && !self.isCustomGoal ? Color
+                                                            .clear : Color("FLSecondary").opacity(0.3),
+                                                        lineWidth: 1
+                                                    )
                                             )
                                     }
                                 }
@@ -1418,47 +1432,52 @@ struct AddEditFastView: View {
 
                             Button(action: {
                                 // Always start with empty text field for custom input
-                                customGoalText = ""
-                                goalHours = 0  // Reset display to 0 when entering custom mode
-                                isCustomGoal = true
+                                self.customGoalText = ""
+                                self.goalHours = 0 // Reset display to 0 when entering custom mode
+                                self.isCustomGoal = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    isCustomGoalFocused = true
+                                    self.isCustomGoalFocused = true
                                 }
                             }) {
                                 Text("Custom")
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(isCustomGoal ? .white : Color("FLSecondary"))
+                                    .foregroundColor(self.isCustomGoal ? .white : Color("FLSecondary"))
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
-                                    .background(isCustomGoal ? Color("FLSecondary") : Color(UIColor.secondarySystemGroupedBackground))
+                                    .background(self
+                                        .isCustomGoal ? Color("FLSecondary") :
+                                        Color(UIColor.secondarySystemGroupedBackground))
                                     .cornerRadius(8)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(isCustomGoal ? Color.clear : Color("FLSecondary").opacity(0.3), lineWidth: 1)
+                                            .stroke(
+                                                self.isCustomGoal ? Color.clear : Color("FLSecondary").opacity(0.3),
+                                                lineWidth: 1
+                                            )
                                     )
                             }
 
-                            if isCustomGoal {
+                            if self.isCustomGoal {
                                 HStack(spacing: 8) {
-                                    TextField("Enter goal", text: $customGoalText)
+                                    TextField("Enter goal", text: self.$customGoalText)
                                         .keyboardType(.numberPad)
                                         .multilineTextAlignment(.center)
                                         .font(.system(size: 20, weight: .semibold))
-                                        .focused($isCustomGoalFocused)
+                                        .focused(self.$isCustomGoalFocused)
                                         .padding(.vertical, 12)
                                         .padding(.horizontal, 16)
                                         .background(Color(UIColor.secondarySystemGroupedBackground))
                                         .cornerRadius(8)
-                                        .onChange(of: customGoalText) { _, newValue in
+                                        .onChange(of: self.customGoalText) { _, newValue in
                                             if let value = Double(newValue), value > 0 {
-                                                goalHours = value
+                                                self.goalHours = value
                                             }
                                         }
                                         .toolbar {
                                             ToolbarItemGroup(placement: .keyboard) {
                                                 Spacer()
                                                 Button("Done") {
-                                                    isCustomGoalFocused = false
+                                                    self.isCustomGoalFocused = false
                                                 }
                                                 .foregroundColor(Color("FLSecondary"))
                                                 .fontWeight(.semibold)
@@ -1475,7 +1494,7 @@ struct AddEditFastView: View {
                     .padding(.vertical)
 
                     // Save Button
-                    Button(action: saveFast) {
+                    Button(action: self.saveFast) {
                         Text("Save Fast")
                             .font(.headline)
                             .foregroundColor(.white)
@@ -1491,12 +1510,12 @@ struct AddEditFastView: View {
                             .cornerRadius(8)
                     }
                     .padding(.horizontal)
-                    .disabled(hours == 0 && minutes == 0)
-                    .opacity((hours == 0 && minutes == 0) ? 0.5 : 1.0)
+                    .disabled(self.hours == 0 && self.minutes == 0)
+                    .opacity((self.hours == 0 && self.minutes == 0) ? 0.5 : 1.0)
 
                     // Delete Button (only show if editing existing fast)
-                    if existingSession != nil {
-                        Button(action: { showingDeleteAlert = true }) {
+                    if self.existingSession != nil {
+                        Button(action: { self.showingDeleteAlert = true }) {
                             Text("Delete Fast")
                                 .font(.headline)
                                 .foregroundColor(.white)
@@ -1516,24 +1535,24 @@ struct AddEditFastView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
         }
         .onAppear {
-            goalHours = fastingManager.fastingGoalHours
+            self.goalHours = self.fastingManager.fastingGoalHours
             // Check if current goal is a preset value or custom
             let presetGoals = [8.0, 12.0, 14.0, 16.0, 18.0, 20.0, 24.0, 36.0, 48.0]
-            if !presetGoals.contains(goalHours) {
-                isCustomGoal = true
-                customGoalText = String(Int(goalHours))
+            if !presetGoals.contains(self.goalHours) {
+                self.isCustomGoal = true
+                self.customGoalText = String(Int(self.goalHours))
             }
         }
-        .alert("Delete Fast", isPresented: $showingDeleteAlert) {
-            Button("Cancel", role: .cancel) { }
+        .alert("Delete Fast", isPresented: self.$showingDeleteAlert) {
+            Button("Cancel", role: .cancel) {}
             Button("Delete", role: .destructive) {
-                deleteFast()
+                self.deleteFast()
             }
         } message: {
             Text("Are you sure you want to delete this fast? This action cannot be undone.")
@@ -1543,15 +1562,15 @@ struct AddEditFastView: View {
     private var formattedDate: String {
         let formatter = DateFormatter()
         formatter.dateStyle = .long
-        return formatter.string(from: date)
+        return formatter.string(from: self.date)
     }
 
     private var totalDurationHours: Double {
-        Double(hours) + Double(minutes) / 60.0
+        Double(self.hours) + Double(self.minutes) / 60.0
     }
 
     private var durationColor: Color {
-        if totalDurationHours >= goalHours {
+        if self.totalDurationHours >= self.goalHours {
             return Color("FLSuccess")
         } else {
             return Color.orange
@@ -1559,18 +1578,18 @@ struct AddEditFastView: View {
     }
 
     private func saveFast() {
-        guard hours > 0 || minutes > 0 else { return }
+        guard self.hours > 0 || self.minutes > 0 else { return }
 
         // Calculate end time based on start time and duration
-        let totalSeconds = TimeInterval(hours * 3600 + minutes * 60)
-        let endTime = startTime.addingTimeInterval(totalSeconds)
+        let totalSeconds = TimeInterval(hours * 3600 + self.minutes * 60)
+        let endTime = self.startTime.addingTimeInterval(totalSeconds)
 
-        fastingManager.addManualFast(startTime: startTime, endTime: endTime, goalHours: goalHours)
-        dismiss()
+        self.fastingManager.addManualFast(startTime: self.startTime, endTime: endTime, goalHours: self.goalHours)
+        self.dismiss()
     }
 
     private func deleteFast() {
-        fastingManager.deleteFast(for: date)
-        dismiss()
+        self.fastingManager.deleteFast(for: self.date)
+        self.dismiss()
     }
 }

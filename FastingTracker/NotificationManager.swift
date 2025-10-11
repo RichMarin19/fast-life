@@ -11,14 +11,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     private let stageIdentifierPrefix = "stage_"
     private let goalReminderIdentifierPrefix = "goalreminder_"
 
-    private override init() {
+    override private init() {
         super.init()
-        notificationCenter.delegate = self
-        setupNotificationCategories()
+        self.notificationCenter.delegate = self
+        self.setupNotificationCategories()
     }
 
     func requestAuthorization(completion: ((Bool) -> Void)? = nil) {
-        notificationCenter.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
+        self.notificationCenter.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
                 print("Notification authorization error: \(error)")
             }
@@ -29,7 +29,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func getAuthorizationStatus(completion: @escaping (UNAuthorizationStatus) -> Void) {
-        notificationCenter.getNotificationSettings { settings in
+        self.notificationCenter.getNotificationSettings { settings in
             DispatchQueue.main.async {
                 completion(settings.authorizationStatus)
             }
@@ -37,6 +37,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     // MARK: - Notification Categories Setup
+
     // Reference: https://developer.apple.com/documentation/usernotifications/declaring_your_actionable_notification_types
 
     private func setupNotificationCategories() {
@@ -55,13 +56,19 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             options: []
         )
 
-        notificationCenter.setNotificationCategories([stageCategory])
+        self.notificationCenter.setNotificationCategories([stageCategory])
     }
 
     // MARK: - Reschedule Notifications
+
     // Called when user edits start time or changes notification settings during active fast
 
-    func rescheduleNotifications(for session: FastingSession, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
+    func rescheduleNotifications(
+        for session: FastingSession,
+        goalHours: Double,
+        currentStreak: Int = 0,
+        longestStreak: Int = 0
+    ) {
         print("\n🔄 RESCHEDULING NOTIFICATIONS")
         print("  Reason: User edited start time")
         let formatter = DateFormatter()
@@ -71,11 +78,11 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         print("  Goal: \(goalHours)h")
 
         // Cancel all existing notifications
-        cancelAllNotifications()
+        self.cancelAllNotifications()
         print("  • Cancelled all previous notifications")
 
         // Reschedule based on current settings
-        scheduleAllNotifications(
+        self.scheduleAllNotifications(
             for: session,
             goalHours: goalHours,
             currentStreak: currentStreak,
@@ -84,9 +91,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     // MARK: - Notification Delegate Methods
+
     // Reference: https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse,
+        withCompletionHandler completionHandler: @escaping () -> Void
+    ) {
         let notification = response.notification
         let identifier = notification.request.identifier
 
@@ -104,7 +116,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         // Handle tapping the notification itself (deep link to stage detail view)
         else if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
             // Check if this is a stage transition notification
-            if identifier.hasPrefix(stageIdentifierPrefix) {
+            if identifier.hasPrefix(self.stageIdentifierPrefix) {
                 // Extract stage hour from userInfo
                 if let stageHour = notification.request.content.userInfo["stageHour"] as? Int {
                     // Post notification to open stage detail view
@@ -122,33 +134,71 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     // Allow notifications to show while app is in foreground
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
         completionHandler([.banner, .sound, .badge])
     }
 
-    func scheduleGoalNotification(for session: FastingSession, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
-        cancelGoalNotification() // Clear any existing notifications
+    func scheduleGoalNotification(
+        for session: FastingSession,
+        goalHours: Double,
+        currentStreak: Int = 0,
+        longestStreak: Int = 0
+    ) {
+        self.cancelGoalNotification() // Clear any existing notifications
 
         let startTime = session.startTime
 
         // Schedule 12-hour milestone
-        scheduleMilestone(at: 12, startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
+        self.scheduleMilestone(
+            at: 12,
+            startTime: startTime,
+            goalHours: goalHours,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak
+        )
 
         // Schedule 16-hour milestone
-        scheduleMilestone(at: 16, startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
+        self.scheduleMilestone(
+            at: 16,
+            startTime: startTime,
+            goalHours: goalHours,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak
+        )
 
         // Schedule hourly milestones after 16 hours until goal
         if goalHours > 16 {
-            for hour in 17...Int(goalHours) {
-                scheduleMilestone(at: Double(hour), startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
+            for hour in 17 ... Int(goalHours) {
+                self.scheduleMilestone(
+                    at: Double(hour),
+                    startTime: startTime,
+                    goalHours: goalHours,
+                    currentStreak: currentStreak,
+                    longestStreak: longestStreak
+                )
             }
         }
 
         // Final goal completion notification
-        scheduleGoalCompletion(startTime: startTime, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
+        self.scheduleGoalCompletion(
+            startTime: startTime,
+            goalHours: goalHours,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak
+        )
     }
 
-    private func scheduleMilestone(at hours: Double, startTime: Date, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
+    private func scheduleMilestone(
+        at hours: Double,
+        startTime: Date,
+        goalHours: Double,
+        currentStreak: Int = 0,
+        longestStreak: Int = 0
+    ) {
         let identifier = "\(milestoneIdentifierPrefix)\(Int(hours))"
         let triggerDate = startTime.addingTimeInterval(hours * 3600)
         let timeInterval = triggerDate.timeIntervalSinceNow
@@ -159,7 +209,12 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let hoursRemaining = Int(goalHours - hours)
 
         // Get motivational message with streak context
-        let message = getMotivationalMessage(forHour: Int(hours), hoursRemaining: hoursRemaining, currentStreak: currentStreak, longestStreak: longestStreak)
+        let message = self.getMotivationalMessage(
+            forHour: Int(hours),
+            hoursRemaining: hoursRemaining,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak
+        )
         content.title = message.title
         content.body = message.body
         content.sound = .default
@@ -167,14 +222,19 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-        notificationCenter.add(request) { error in
+        self.notificationCenter.add(request) { error in
             if let error = error {
                 print("Error scheduling milestone notification: \(error)")
             }
         }
     }
 
-    private func scheduleGoalCompletion(startTime: Date, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
+    private func scheduleGoalCompletion(
+        startTime: Date,
+        goalHours: Double,
+        currentStreak: Int = 0,
+        longestStreak: Int = 0
+    ) {
         let identifier = "\(milestoneIdentifierPrefix)complete"
         let triggerDate = startTime.addingTimeInterval(goalHours * 3600)
         let timeInterval = triggerDate.timeIntervalSinceNow
@@ -189,9 +249,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         // Check if they're about to tie or break their PR
         let nextStreak = currentStreak + 1
-        if nextStreak == longestStreak && longestStreak > 0 {
+        if nextStreak == longestStreak, longestStreak > 0 {
             bodyMessage += "\n\n🔥 You're about to TIE your longest streak of \(longestStreak) days! Keep it going!"
-        } else if nextStreak > longestStreak && longestStreak > 0 {
+        } else if nextStreak > longestStreak, longestStreak > 0 {
             bodyMessage += "\n\n🏆 NEW PERSONAL RECORD! You're about to break your longest streak of \(longestStreak) days!"
         }
 
@@ -201,7 +261,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-        notificationCenter.add(request) { error in
+        self.notificationCenter.add(request) { error in
             if let error = error {
                 print("Error scheduling goal completion: \(error)")
             }
@@ -210,15 +270,20 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     func cancelGoalNotification() {
         // Cancel all milestone notifications
-        notificationCenter.getPendingNotificationRequests { requests in
+        self.notificationCenter.getPendingNotificationRequests { requests in
             let identifiers = requests
-                .map { $0.identifier }
+                .map(\.identifier)
                 .filter { $0.hasPrefix(self.milestoneIdentifierPrefix) }
             self.notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiers)
         }
     }
 
-    private func getMotivationalMessage(forHour hour: Int, hoursRemaining: Int, currentStreak: Int = 0, longestStreak: Int = 0) -> (title: String, body: String) {
+    private func getMotivationalMessage(
+        forHour hour: Int,
+        hoursRemaining: Int,
+        currentStreak: Int = 0,
+        longestStreak: Int = 0
+    ) -> (title: String, body: String) {
         // Check if they're approaching a PR
         let nextStreak = currentStreak + 1
         let isApproachingPR = nextStreak >= longestStreak && longestStreak > 0
@@ -236,7 +301,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 "Champion mindset! You're crushing your PR!",
                 "This is your moment to shine! ⭐",
                 "Record-breaking performance! Keep it up!",
-                "You're rewriting your own limits! 💫"
+                "You're rewriting your own limits! 💫",
             ]
         } else {
             motivationalQuotes = [
@@ -249,7 +314,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 "Stay strong, you've got this!",
                 "Your dedication is inspiring!",
                 "Mind over matter - you're crushing it!",
-                "One step closer to a healthier you!"
+                "One step closer to a healthier you!",
             ]
         }
 
@@ -266,7 +331,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             21: "You're in an advanced fasting state. Mental clarity and focus are typically exceptional.",
             22: "Deep cellular cleansing is occurring. Your body is optimizing its internal systems.",
             23: "Stem cell regeneration is enhanced at this stage. Your body is renewing from within.",
-            24: "You've reached a full day! Powerful metabolic changes are happening throughout your body."
+            24: "You've reached a full day! Powerful metabolic changes are happening throughout your body.",
         ]
 
         // Select random motivational quote
@@ -303,9 +368,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // MARK: - New Notification System Based on User Settings
 
     /// Schedule all enabled notifications based on user settings and fasting session
-    func scheduleAllNotifications(for session: FastingSession, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
+    func scheduleAllNotifications(
+        for session: FastingSession,
+        goalHours: Double,
+        currentStreak: Int = 0,
+        longestStreak: Int = 0
+    ) {
         // Cancel any existing notifications first
-        cancelAllNotifications()
+        self.cancelAllNotifications()
 
         // Check if notifications are enabled at all
         // Default to true if user hasn't set preference yet (first-time users)
@@ -317,7 +387,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
 
         // Check and reset daily tracking if it's a new day
-        checkAndResetDailyTracking()
+        self.checkAndResetDailyTracking()
 
         // Get notification mode to adjust frequency
         let mode = UserDefaults.standard.string(forKey: "notificationMode") ?? "balanced"
@@ -325,28 +395,33 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         // Schedule each enabled notification type (default to true for first-time users)
         let hydrationEnabled = UserDefaults.standard.object(forKey: "notif_hydration") as? Bool ?? true
         if hydrationEnabled {
-            scheduleHydrationReminders(for: session, mode: mode, goalHours: goalHours)
+            self.scheduleHydrationReminders(for: session, mode: mode, goalHours: goalHours)
         }
 
         let didYouKnowEnabled = UserDefaults.standard.object(forKey: "notif_didyouknow") as? Bool ?? true
         if didYouKnowEnabled {
-            scheduleDidYouKnowFacts(for: session, mode: mode)
+            self.scheduleDidYouKnowFacts(for: session, mode: mode)
         }
 
         let milestonesEnabled = UserDefaults.standard.object(forKey: "notif_milestones") as? Bool ?? true
         if milestonesEnabled {
-            scheduleMilestoneNotifications(for: session, goalHours: goalHours, currentStreak: currentStreak, longestStreak: longestStreak)
+            self.scheduleMilestoneNotifications(
+                for: session,
+                goalHours: goalHours,
+                currentStreak: currentStreak,
+                longestStreak: longestStreak
+            )
         }
 
         let stagesEnabled = UserDefaults.standard.object(forKey: "notif_stages") as? Bool ?? true
         if stagesEnabled {
-            scheduleStageTransitions(for: session, mode: mode, goalHours: goalHours)
+            self.scheduleStageTransitions(for: session, mode: mode, goalHours: goalHours)
             print("Stage transitions scheduled for goal: \(goalHours)h")
         }
 
         let goalReminderEnabled = UserDefaults.standard.object(forKey: "notif_goalreminder") as? Bool ?? true
         if goalReminderEnabled {
-            scheduleGoalReminders(for: session, goalHours: goalHours)
+            self.scheduleGoalReminders(for: session, goalHours: goalHours)
         }
 
         print("✅ All notifications scheduled successfully")
@@ -387,8 +462,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         var currentHour = intervalHours
         var reminderCount = 0
 
-        while currentHour <= goalHours && reminderCount < maxReminders {
-            scheduleHydrationReminder(at: currentHour, startTime: startTime, reminderNumber: reminderCount + 1)
+        while currentHour <= goalHours, reminderCount < maxReminders {
+            self.scheduleHydrationReminder(at: currentHour, startTime: startTime, reminderNumber: reminderCount + 1)
             currentHour += intervalHours
             reminderCount += 1
         }
@@ -400,17 +475,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let timeInterval = triggerDate.timeIntervalSinceNow
 
         guard timeInterval > 0 else { return }
-        guard !isQuietHours(date: triggerDate) else { return }
+        guard !self.isQuietHours(date: triggerDate) else { return }
 
         let content = UNMutableNotificationContent()
         content.title = "💧 Stay Hydrated"
-        content.body = getHydrationMessage()
+        content.body = self.getHydrationMessage()
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-        notificationCenter.add(request) { error in
+        self.notificationCenter.add(request) { error in
             if let error = error {
                 print("Error scheduling hydration reminder: \(error)")
             }
@@ -423,7 +498,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             "Hydration check! Water, electrolytes, or herbal tea keep you feeling your best during your fast.",
             "Don't forget to hydrate! Your body needs water to maximize the benefits of fasting.",
             "Water break! Proper hydration supports fat burning and mental clarity.",
-            "Stay hydrated! Water helps flush toxins and keeps your metabolism running smoothly."
+            "Stay hydrated! Water helps flush toxins and keeps your metabolism running smoothly.",
         ]
         return messages.randomElement() ?? messages[0]
     }
@@ -444,13 +519,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 notificationDate = Calendar.current.date(byAdding: .hour, value: 1, to: wakeTime) ?? notificationDate
             }
         case "midmorning":
-            notificationDate = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: notificationDate) ?? notificationDate
+            notificationDate = Calendar.current
+                .date(bySettingHour: 10, minute: 0, second: 0, of: notificationDate) ?? notificationDate
         case "afternoon":
-            notificationDate = Calendar.current.date(bySettingHour: 14, minute: 0, second: 0, of: notificationDate) ?? notificationDate
+            notificationDate = Calendar.current
+                .date(bySettingHour: 14, minute: 0, second: 0, of: notificationDate) ?? notificationDate
         case "evening":
-            notificationDate = Calendar.current.date(bySettingHour: 19, minute: 0, second: 0, of: notificationDate) ?? notificationDate
+            notificationDate = Calendar.current
+                .date(bySettingHour: 19, minute: 0, second: 0, of: notificationDate) ?? notificationDate
         default:
-            notificationDate = Calendar.current.date(bySettingHour: 10, minute: 0, second: 0, of: notificationDate) ?? notificationDate
+            notificationDate = Calendar.current
+                .date(bySettingHour: 10, minute: 0, second: 0, of: notificationDate) ?? notificationDate
         }
 
         // Only schedule if it's in the future
@@ -460,13 +539,13 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let identifier = "\(didYouKnowIdentifierPrefix)today"
         let content = UNMutableNotificationContent()
         content.title = "💡 Did You Know?"
-        content.body = getDidYouKnowFact()
+        content.body = self.getDidYouKnowFact()
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-        notificationCenter.add(request) { error in
+        self.notificationCenter.add(request) { error in
             if let error = error {
                 print("Error scheduling did you know fact: \(error)")
             }
@@ -482,16 +561,23 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             "Studies show intermittent fasting can improve brain function and may protect against neurodegenerative diseases.",
             "During a fast, insulin levels drop significantly, making it easier for your body to access stored fat.",
             "Fasting activates genes that help your body resist stress, disease, and aging.",
-            "Your body starts producing ketones after about 12 hours of fasting, providing clean energy for your brain."
+            "Your body starts producing ketones after about 12 hours of fasting, providing clean energy for your brain.",
         ]
         return facts.randomElement() ?? facts[0]
     }
 
     // MARK: - Milestone Notifications (Enhanced)
 
-    private func scheduleMilestoneNotifications(for session: FastingSession, goalHours: Double, currentStreak: Int, longestStreak: Int) {
+    private func scheduleMilestoneNotifications(
+        for session: FastingSession,
+        goalHours: Double,
+        currentStreak: Int,
+        longestStreak: Int
+    ) {
         print("\n🎯 === MILESTONE NOTIFICATION SCHEDULING ===")
-        print("Goal: \(goalHours)h | Trigger offset: \(UserDefaults.standard.string(forKey: "trigger_milestones") ?? "whenreached")")
+        print(
+            "Goal: \(goalHours)h | Trigger offset: \(UserDefaults.standard.string(forKey: "trigger_milestones") ?? "whenreached")"
+        )
 
         let triggerSetting = UserDefaults.standard.string(forKey: "trigger_milestones") ?? "whenreached"
         let startTime = session.startTime
@@ -531,7 +617,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
 
         // Add hourly milestones after 24h for extended fasts
-        let hourlyMilestones = goalHours > 24 ? (25...Int(goalHours)).map { Double($0) } : []
+        let hourlyMilestones = goalHours > 24 ? (25 ... Int(goalHours)).map { Double($0) } : []
         let allMilestones = reachableMilestones + hourlyMilestones
 
         // Limit to max per day, prioritizing the goal completion and key milestones
@@ -547,7 +633,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let otherMilestones = allMilestones.filter { $0 != goalHours && $0 <= goalHours }
 
         // Take evenly distributed milestones
-        if remainingSlots > 0 && !otherMilestones.isEmpty {
+        if remainingSlots > 0, !otherMilestones.isEmpty {
             let step = max(1, otherMilestones.count / remainingSlots)
             var count = 0
             for (index, milestone) in otherMilestones.enumerated() {
@@ -574,7 +660,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 continue
             }
 
-            if isQuietHours(date: notificationTime) {
+            if self.isQuietHours(date: notificationTime) {
                 print("🔕 Skipped \(Int(milestone))h milestone (quiet hours)")
                 skippedQuiet += 1
                 continue
@@ -583,7 +669,12 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let identifier = "\(milestoneIdentifierPrefix)\(Int(milestone))"
             let content = UNMutableNotificationContent()
 
-            let message = getMotivationalMessage(forHour: Int(milestone), hoursRemaining: Int(goalHours - milestone), currentStreak: currentStreak, longestStreak: longestStreak)
+            let message = self.getMotivationalMessage(
+                forHour: Int(milestone),
+                hoursRemaining: Int(goalHours - milestone),
+                currentStreak: currentStreak,
+                longestStreak: longestStreak
+            )
             content.title = message.title
             content.body = message.body
             content.sound = .default
@@ -591,7 +682,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-            notificationCenter.add(request) { error in
+            self.notificationCenter.add(request) { error in
                 if let error = error {
                     print("❌ Error scheduling \(Int(milestone))h milestone: \(error)")
                 } else {
@@ -641,20 +732,64 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         // Define complete fasting stage timeline
         // Reference: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3946160/ (Intermittent fasting metabolic effects)
         let allStages: [(hours: Double, name: String, description: String)] = [
-            (4, "🌅 Post-Absorptive", "Your body has finished digesting food. Blood sugar stabilizing and insulin dropping. The real fasting begins now!"),
-            (6, "⚙️ Glycogen Burning", "Your body is tapping into stored glycogen. Fat burning is ramping up as your metabolism shifts gears."),
-            (8, "🔄 Metabolic Switch", "The metabolic switch is flipping! Your body is transitioning from burning glucose to burning fat for fuel."),
-            (10, "🎯 Fat Adaptation", "You're now burning fat efficiently. Growth hormone levels are rising to preserve muscle while burning fat."),
-            (12, "🔥 Fat Burning Peak", "Glycogen stores depleted! Your body is in full fat-burning mode. Insulin at its lowest point of the day."),
-            (14, "🧹 Autophagy Begins", "Cellular cleanup has started! Your cells are identifying and removing damaged components for renewal."),
-            (16, "🧬 Deep Autophagy", "Peak autophagy activated! Your body is recycling old proteins and clearing out cellular debris at maximum efficiency."),
-            (18, "⚡️ Ketosis Rising", "Ketone production is elevated! Your brain is running on clean ketone energy. Mental clarity often peaks here."),
-            (20, "💪 Full Ketosis", "Deep ketosis achieved! Maximum cellular repair, immune system boost, and inflammation reduction happening now."),
-            (24, "🏆 Extended Benefits", "You've hit 24 hours! Stem cell regeneration enhanced. Your body is in peak renewal and anti-aging mode.")
+            (
+                4,
+                "🌅 Post-Absorptive",
+                "Your body has finished digesting food. Blood sugar stabilizing and insulin dropping. The real fasting begins now!"
+            ),
+            (
+                6,
+                "⚙️ Glycogen Burning",
+                "Your body is tapping into stored glycogen. Fat burning is ramping up as your metabolism shifts gears."
+            ),
+            (
+                8,
+                "🔄 Metabolic Switch",
+                "The metabolic switch is flipping! Your body is transitioning from burning glucose to burning fat for fuel."
+            ),
+            (
+                10,
+                "🎯 Fat Adaptation",
+                "You're now burning fat efficiently. Growth hormone levels are rising to preserve muscle while burning fat."
+            ),
+            (
+                12,
+                "🔥 Fat Burning Peak",
+                "Glycogen stores depleted! Your body is in full fat-burning mode. Insulin at its lowest point of the day."
+            ),
+            (
+                14,
+                "🧹 Autophagy Begins",
+                "Cellular cleanup has started! Your cells are identifying and removing damaged components for renewal."
+            ),
+            (
+                16,
+                "🧬 Deep Autophagy",
+                "Peak autophagy activated! Your body is recycling old proteins and clearing out cellular debris at maximum efficiency."
+            ),
+            (
+                18,
+                "⚡️ Ketosis Rising",
+                "Ketone production is elevated! Your brain is running on clean ketone energy. Mental clarity often peaks here."
+            ),
+            (
+                20,
+                "💪 Full Ketosis",
+                "Deep ketosis achieved! Maximum cellular repair, immune system boost, and inflammation reduction happening now."
+            ),
+            (
+                24,
+                "🏆 Extended Benefits",
+                "You've hit 24 hours! Stem cell regeneration enhanced. Your body is in peak renewal and anti-aging mode."
+            ),
         ]
 
         // Use smart selection algorithm to rotate stages daily
-        let selectedStages = selectStagesToSchedule(allStages: allStages, maxPerDay: maxStages, goalHours: goalHours)
+        let selectedStages = self.selectStagesToSchedule(
+            allStages: allStages,
+            maxPerDay: maxStages,
+            goalHours: goalHours
+        )
 
         print("📊 Stage Notifications Setup:")
         print("  • Max per day: \(maxStages)")
@@ -669,14 +804,18 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let timeInterval = notificationTime.timeIntervalSinceNow
 
             if timeInterval <= 0 {
-                print("  ⏭️  Skipped \(Int(stage.hours))h stage - already passed (was \(Int(-timeInterval/60)) min ago)")
+                print(
+                    "  ⏭️  Skipped \(Int(stage.hours))h stage - already passed (was \(Int(-timeInterval / 60)) min ago)"
+                )
                 continue
             }
 
-            if isQuietHours(date: notificationTime) {
+            if self.isQuietHours(date: notificationTime) {
                 let formatter = DateFormatter()
                 formatter.timeStyle = .short
-                print("  🌙 Skipped \(Int(stage.hours))h stage - quiet hours (\(formatter.string(from: notificationTime)))")
+                print(
+                    "  🌙 Skipped \(Int(stage.hours))h stage - quiet hours (\(formatter.string(from: notificationTime)))"
+                )
                 continue
             }
 
@@ -702,7 +841,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-            notificationCenter.add(request) { error in
+            self.notificationCenter.add(request) { error in
                 if let error = error {
                     print("  ❌ Error scheduling \(Int(stage.hours))h stage: \(error)")
                 } else {
@@ -764,7 +903,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: timeInterval, repeats: false)
         let request = UNNotificationRequest(identifier: identifier, content: content, trigger: trigger)
 
-        notificationCenter.add(request) { error in
+        self.notificationCenter.add(request) { error in
             if let error = error {
                 print("Error scheduling goal reminder: \(error)")
             }
@@ -772,6 +911,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     // MARK: - Rotation Tracking System
+
     // Tracks which notifications were sent today to ensure variety tomorrow
 
     private func checkAndResetDailyTracking() {
@@ -796,7 +936,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     private func getSentStageIndicesToday() -> [Int] {
-        return UserDefaults.standard.array(forKey: "sentStageIndicesToday") as? [Int] ?? []
+        UserDefaults.standard.array(forKey: "sentStageIndicesToday") as? [Int] ?? []
     }
 
     private func saveSentStageIndices(_ indices: [Int]) {
@@ -805,7 +945,11 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
     /// Smart stage selection algorithm
     /// Rotates through stages based on user's typical fast duration and max per day setting
-    private func selectStagesToSchedule(allStages: [(hours: Double, name: String, description: String)], maxPerDay: Int, goalHours: Double) -> [(hours: Double, name: String, description: String)] {
+    private func selectStagesToSchedule(
+        allStages: [(hours: Double, name: String, description: String)],
+        maxPerDay: Int,
+        goalHours: Double
+    ) -> [(hours: Double, name: String, description: String)] {
         // Filter stages user will actually reach based on their goal
         let reachableStages = allStages.filter { $0.hours <= goalHours }
 
@@ -821,10 +965,10 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
 
         // Get previously sent indices to avoid immediate repeats
-        let previouslySent = getSentStageIndicesToday()
+        let previouslySent = self.getSentStageIndicesToday()
 
         // Create selection pool - prioritize stages not sent recently
-        var availableIndices = Array(0..<enabledStages.count)
+        var availableIndices = Array(0 ..< enabledStages.count)
 
         // Remove previously sent from the pool if we have enough alternatives
         if availableIndices.count - previouslySent.count >= maxPerDay {
@@ -865,7 +1009,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         }
 
         // Save selected indices for tomorrow's rotation
-        saveSentStageIndices(selectedIndices)
+        self.saveSentStageIndices(selectedIndices)
 
         // Return selected stages
         return selectedIndices.sorted().map { enabledStages[$0] }
@@ -943,15 +1087,16 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func cancelAllNotifications() {
-        notificationCenter.removeAllPendingNotificationRequests()
+        self.notificationCenter.removeAllPendingNotificationRequests()
     }
 
     // MARK: - Debug Helper
+
     // Prints all pending notifications to console for troubleshooting
 
     func debugPrintPendingNotifications() {
         // First check authorization status
-        notificationCenter.getNotificationSettings { settings in
+        self.notificationCenter.getNotificationSettings { settings in
             print("\n🔔 NOTIFICATION PERMISSIONS DEBUG:")
             print("  Authorization Status: \(settings.authorizationStatus.rawValue)")
             switch settings.authorizationStatus {
@@ -973,7 +1118,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             print("  Sound Enabled: \(settings.soundSetting == .enabled)")
         }
 
-        notificationCenter.getPendingNotificationRequests { requests in
+        self.notificationCenter.getPendingNotificationRequests { requests in
             print("\n🔔 PENDING NOTIFICATIONS DEBUG:")
             print("  Total pending: \(requests.count)")
 
@@ -986,7 +1131,8 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let milestoneNotifications = requests.filter { $0.identifier.hasPrefix(self.milestoneIdentifierPrefix) }
             let hydrationNotifications = requests.filter { $0.identifier.hasPrefix(self.hydrationIdentifierPrefix) }
             let didYouKnowNotifications = requests.filter { $0.identifier.hasPrefix(self.didYouKnowIdentifierPrefix) }
-            let goalReminderNotifications = requests.filter { $0.identifier.hasPrefix(self.goalReminderIdentifierPrefix) }
+            let goalReminderNotifications = requests
+                .filter { $0.identifier.hasPrefix(self.goalReminderIdentifierPrefix) }
 
             print("\n  📊 Breakdown:")
             print("    Stage Transitions: \(stageNotifications.count)")
@@ -1012,7 +1158,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             for (identifier, fireDate) in sortedRequests {
                 let timeUntil = fireDate.timeIntervalSinceNow
                 let hoursUntil = timeUntil / 3600
-                print("    • \(identifier) → \(formatter.string(from: fireDate)) (in \(String(format: "%.1f", hoursUntil))h)")
+                print(
+                    "    • \(identifier) → \(formatter.string(from: fireDate)) (in \(String(format: "%.1f", hoursUntil))h)"
+                )
             }
 
             print("\n")

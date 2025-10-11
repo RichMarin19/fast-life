@@ -8,7 +8,7 @@ struct InsightsView: View {
             ScrollView {
                 VStack(spacing: 24) {
                     // Section Picker
-                    Picker("Section", selection: $selectedSection) {
+                    Picker("Section", selection: self.$selectedSection) {
                         ForEach(InsightSection.allCases, id: \.self) { section in
                             Text(section.rawValue).tag(section)
                         }
@@ -18,7 +18,7 @@ struct InsightsView: View {
                     .padding(.top, 8)
 
                     // Content based on selection
-                    switch selectedSection {
+                    switch self.selectedSection {
                     case .essentials:
                         EssentialsSection()
                     case .timeline:
@@ -116,10 +116,12 @@ struct EssentialsSection: View {
                         .fontWeight(.bold)
                 }
 
-                Text("Focus on choosing a fasting schedule you can stick with, stay hydrated, eat whole foods, and give your body time to adapt. That's the 20% that gives 80% of the benefits.")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
+                Text(
+                    "Focus on choosing a fasting schedule you can stick with, stay hydrated, eat whole foods, and give your body time to adapt. That's the 20% that gives 80% of the benefits."
+                )
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
             }
             .padding()
             .background(Color.yellow.opacity(0.1))
@@ -137,16 +139,16 @@ struct EssentialCard: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            Image(systemName: icon)
+            Image(systemName: self.icon)
                 .font(.title2)
-                .foregroundColor(color)
+                .foregroundColor(self.color)
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(title)
+                Text(self.title)
                     .font(.headline)
                     .fontWeight(.semibold)
-                Text(description)
+                Text(self.description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -198,38 +200,38 @@ struct TimelineStageCard: View {
         VStack(alignment: .leading, spacing: 12) {
             Button(action: {
                 withAnimation(.spring(response: 0.3)) {
-                    isExpanded.toggle()
+                    self.isExpanded.toggle()
                 }
             }) {
                 HStack(spacing: 12) {
-                    Text(stage.icon)
+                    Text(self.stage.icon)
                         .font(.system(size: 36))
 
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(stage.title)
+                        Text(self.stage.title)
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.primary)
-                        Text(stage.hourRange + " hours")
+                        Text(self.stage.hourRange + " hours")
                             .font(.caption)
                             .foregroundColor(.secondary)
                     }
 
                     Spacer()
 
-                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
+                    Image(systemName: self.isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
                         .foregroundColor(Color("FLSecondary"))
                         .font(.title3)
                 }
             }
 
-            if isExpanded {
+            if self.isExpanded {
                 VStack(alignment: .leading, spacing: 12) {
                     Divider()
 
                     // Description points
                     VStack(alignment: .leading, spacing: 6) {
-                        ForEach(stage.description, id: \.self) { point in
+                        ForEach(self.stage.description, id: \.self) { point in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                     .fontWeight(.bold)
@@ -251,7 +253,7 @@ struct TimelineStageCard: View {
                             Text("Did You Know?")
                                 .font(.caption)
                                 .fontWeight(.bold)
-                            Text(stage.didYouKnow)
+                            Text(self.stage.didYouKnow)
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -356,11 +358,11 @@ struct FAQItem: View {
         VStack(alignment: .leading, spacing: 12) {
             Button(action: {
                 withAnimation(.spring(response: 0.3)) {
-                    isExpanded.toggle()
+                    self.isExpanded.toggle()
                 }
             }) {
                 HStack {
-                    Text(question)
+                    Text(self.question)
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
@@ -368,14 +370,14 @@ struct FAQItem: View {
 
                     Spacer()
 
-                    Image(systemName: isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
+                    Image(systemName: self.isExpanded ? "chevron.up.circle.fill" : "chevron.down.circle")
                         .foregroundColor(Color("FLSecondary"))
                         .font(.title3)
                 }
             }
 
-            if isExpanded {
-                Text(answer)
+            if self.isExpanded {
+                Text(self.answer)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -473,7 +475,7 @@ struct MythCard: View {
                         .fontWeight(.bold)
                         .foregroundColor(.red)
 
-                    Text(myth)
+                    Text(self.myth)
                         .font(.headline)
                         .fontWeight(.semibold)
                         .foregroundColor(.primary)
@@ -493,7 +495,7 @@ struct MythCard: View {
                         .fontWeight(.bold)
                         .foregroundColor(Color("FLSuccess"))
 
-                    Text(truth)
+                    Text(self.truth)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -589,12 +591,12 @@ struct GlossaryItem: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(term)
+            Text(self.term)
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(Color.purple)
 
-            Text(definition)
+            Text(self.definition)
                 .font(.subheadline)
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

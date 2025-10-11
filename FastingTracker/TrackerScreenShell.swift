@@ -46,30 +46,30 @@ struct TrackerScreenShell<Content: View>: View {
             VStack(spacing: 12) {
                 // Professional Title Header (when data exists)
                 // Following Fast LIFe branding pattern
-                if hasData {
+                if self.hasData {
                     TrackerTitleView(
-                        title: title,
-                        titleColor1: titleColor1,
-                        titleColor2: titleColor2,
-                        titleColor3: titleColor3
+                        title: self.title,
+                        titleColor1: self.titleColor1,
+                        titleColor2: self.titleColor2,
+                        titleColor3: self.titleColor3
                     )
                 }
 
                 // HealthKit Nudge Banner (contextual)
-                if showingNudge, let nudge = nudgeContent {
+                if self.showingNudge, let nudge = nudgeContent {
                     nudge
                         .padding(.horizontal)
                         .padding(.bottom, 8)
                 }
 
                 // Main Tracker Content
-                content
+                self.content
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button(action: settingsAction) {
+                Button(action: self.settingsAction) {
                     Image(systemName: "gearshape.fill")
                         .foregroundColor(Color("FLWarning"))
                         .font(.system(size: 20))
@@ -88,18 +88,18 @@ private struct TrackerTitleView: View {
     let titleColor3: Color
 
     var body: some View {
-        let parts = splitTitle(title)
+        let parts = self.splitTitle(self.title)
 
         HStack(spacing: 0) {
             Text(parts.0)
                 .font(.system(size: 48, weight: .bold, design: .rounded))
-                .foregroundColor(titleColor1)
+                .foregroundColor(self.titleColor1)
             Text(parts.1)
                 .font(.system(size: 48, weight: .bold, design: .rounded))
-                .foregroundColor(titleColor2)
+                .foregroundColor(self.titleColor2)
             Text(parts.2)
                 .font(.system(size: 48, weight: .bold, design: .rounded))
-                .foregroundColor(titleColor3)
+                .foregroundColor(self.titleColor3)
         }
     }
 
@@ -116,13 +116,12 @@ private struct TrackerTitleView: View {
         let firstPartEnd = max(1, count - 3)
         let secondPartEnd = min(firstPartEnd + 2, count)
 
-        let part1 = String(chars[0..<firstPartEnd])
-        let part2 = secondPartEnd > firstPartEnd ? String(chars[firstPartEnd..<secondPartEnd]) : ""
-        let part3 = secondPartEnd < count ? String(chars[secondPartEnd..<count]) : ""
+        let part1 = String(chars[0 ..< firstPartEnd])
+        let part2 = secondPartEnd > firstPartEnd ? String(chars[firstPartEnd ..< secondPartEnd]) : ""
+        let part3 = secondPartEnd < count ? String(chars[secondPartEnd ..< count]) : ""
 
         return (part1, part2, part3)
     }
 }
 
 // MARK: - Convenience Extensions
-

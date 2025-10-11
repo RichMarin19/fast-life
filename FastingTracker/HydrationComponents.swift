@@ -1,6 +1,7 @@
 import SwiftUI
 
 // MARK: - Hydration Stats View
+
 // Extracted from HydrationHistoryView.swift for better code organization
 // Following Apple MVVM patterns and SwiftUI component architecture
 
@@ -17,21 +18,21 @@ struct HydrationStatsView: View {
             HStack(spacing: 16) {
                 HydrationStatCard(
                     title: "Avg Daily",
-                    value: "\(Int(averageDaily())) oz",
+                    value: "\(Int(self.averageDaily())) oz",
                     icon: "chart.bar.fill",
                     color: .cyan
                 )
 
                 HydrationStatCard(
                     title: "Total",
-                    value: "\(Int(totalOunces())) oz",
+                    value: "\(Int(self.totalOunces())) oz",
                     icon: "drop.fill",
                     color: .blue
                 )
 
                 HydrationStatCard(
                     title: "Goal Met",
-                    value: "\(goalMetDays())",
+                    value: "\(self.goalMetDays())",
                     icon: "checkmark.circle.fill",
                     color: .green
                 )
@@ -45,8 +46,8 @@ struct HydrationStatsView: View {
 
     private func averageDaily() -> Double {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
-        let entries = hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
+        let cutoffDate = calendar.date(byAdding: .day, value: -self.timeRange.days, to: Date()) ?? Date()
+        let entries = self.hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
 
         if entries.isEmpty { return 0.0 }
 
@@ -58,16 +59,16 @@ struct HydrationStatsView: View {
 
     private func totalOunces() -> Double {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
-        return hydrationManager.drinkEntries
+        let cutoffDate = calendar.date(byAdding: .day, value: -self.timeRange.days, to: Date()) ?? Date()
+        return self.hydrationManager.drinkEntries
             .filter { $0.date >= cutoffDate }
             .reduce(0.0) { $0 + $1.amount }
     }
 
     private func goalMetDays() -> Int {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
-        let entries = hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
+        let cutoffDate = calendar.date(byAdding: .day, value: -self.timeRange.days, to: Date()) ?? Date()
+        let entries = self.hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
 
         // Group by day and count days that met goal
         var dailyTotals: [Date: Double] = [:]
@@ -76,7 +77,7 @@ struct HydrationStatsView: View {
             dailyTotals[dayStart, default: 0.0] += entry.amount
         }
 
-        return dailyTotals.values.filter { $0 >= hydrationManager.dailyGoalOunces }.count
+        return dailyTotals.values.filter { $0 >= self.hydrationManager.dailyGoalOunces }.count
     }
 }
 
@@ -90,21 +91,21 @@ struct HydrationStatCard: View {
 
     var body: some View {
         VStack(spacing: 8) {
-            Image(systemName: icon)
+            Image(systemName: self.icon)
                 .font(.title2)
-                .foregroundColor(color)
+                .foregroundColor(self.color)
 
-            Text(value)
+            Text(self.value)
                 .font(.headline)
                 .fontWeight(.bold)
 
-            Text(title)
+            Text(self.title)
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(color.opacity(0.1))
+        .background(self.color.opacity(0.1))
         .cornerRadius(12)
     }
 }
@@ -123,7 +124,7 @@ struct DrinkTypeBreakdownView: View {
             ForEach(DrinkType.allCases, id: \.self) { type in
                 HStack {
                     Image(systemName: type.icon)
-                        .foregroundColor(colorForType(type))
+                        .foregroundColor(self.colorForType(type))
                         .frame(width: 24)
 
                     Text(type.rawValue)
@@ -131,11 +132,11 @@ struct DrinkTypeBreakdownView: View {
 
                     Spacer()
 
-                    Text("\(Int(totalForType(type))) oz")
+                    Text("\(Int(self.totalForType(type))) oz")
                         .font(.subheadline)
                         .fontWeight(.semibold)
 
-                    Text("(\(percentageForType(type))%)")
+                    Text("(\(self.percentageForType(type))%)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -158,16 +159,16 @@ struct DrinkTypeBreakdownView: View {
 
     private func totalForType(_ type: DrinkType) -> Double {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+        let cutoffDate = calendar.date(byAdding: .day, value: -self.timeRange.days, to: Date()) ?? Date()
 
-        return hydrationManager.drinkEntries
+        return self.hydrationManager.drinkEntries
             .filter { $0.date >= cutoffDate && $0.type == type }
             .reduce(0.0) { $0 + $1.amount }
     }
 
     private func percentageForType(_ type: DrinkType) -> Int {
-        let total = totalForType(type)
-        let allTotal = DrinkType.allCases.reduce(0.0) { $0 + totalForType($1) }
+        let total = self.totalForType(type)
+        let allTotal = DrinkType.allCases.reduce(0.0) { $0 + self.totalForType($1) }
 
         guard allTotal > 0 else { return 0 }
         return Int((total / allTotal) * 100)
@@ -185,7 +186,7 @@ struct DailyHydrationRowView: View {
     var body: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text(formatDate(date))
+                Text(self.formatDate(self.date))
                     .font(.subheadline)
                     .fontWeight(.medium)
 
@@ -205,11 +206,11 @@ struct DailyHydrationRowView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text("\(Int(totalOunces)) oz")
+                Text("\(Int(self.totalOunces)) oz")
                     .font(.headline)
                     .fontWeight(.bold)
 
-                if totalOunces >= goalOunces {
+                if self.totalOunces >= self.goalOunces {
                     HStack(spacing: 4) {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.caption)
@@ -219,7 +220,7 @@ struct DailyHydrationRowView: View {
                             .foregroundColor(.green)
                     }
                 } else {
-                    Text("\(Int(goalOunces - totalOunces)) oz short")
+                    Text("\(Int(self.goalOunces - self.totalOunces)) oz short")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -250,16 +251,16 @@ struct DrinkBadge: View {
 
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: type.icon)
+            Image(systemName: self.type.icon)
                 .font(.caption2)
-            Text("\(Int(amount))")
+            Text("\(Int(self.amount))")
                 .font(.caption2)
                 .fontWeight(.medium)
         }
         .foregroundColor(.white)
         .padding(.horizontal, 6)
         .padding(.vertical, 3)
-        .background(colorForType(type))
+        .background(self.colorForType(self.type))
         .cornerRadius(6)
     }
 
@@ -273,6 +274,7 @@ struct DrinkBadge: View {
 }
 
 // MARK: - Add/Edit Hydration View
+
 // Large form view for adding daily hydration data with goal setting
 
 struct AddEditHydrationView: View {
@@ -293,7 +295,7 @@ struct AddEditHydrationView: View {
             Form {
                 Section(header: Text("Date")) {
                     HStack {
-                        Text(formatDate(date))
+                        Text(self.formatDate(self.date))
                             .font(.body)
                         Spacer()
                     }
@@ -303,7 +305,7 @@ struct AddEditHydrationView: View {
                     HStack {
                         Image(systemName: "drop.fill")
                             .foregroundColor(.cyan)
-                        TextField("Amount (oz)", text: $waterAmount)
+                        TextField("Amount (oz)", text: self.$waterAmount)
                             .keyboardType(.decimalPad)
                         Text("oz")
                             .foregroundColor(.secondary)
@@ -314,7 +316,7 @@ struct AddEditHydrationView: View {
                     HStack {
                         Image(systemName: "cup.and.saucer.fill")
                             .foregroundColor(.brown)
-                        TextField("Amount (oz)", text: $coffeeAmount)
+                        TextField("Amount (oz)", text: self.$coffeeAmount)
                             .keyboardType(.decimalPad)
                         Text("oz")
                             .foregroundColor(.secondary)
@@ -325,7 +327,7 @@ struct AddEditHydrationView: View {
                     HStack {
                         Image(systemName: "mug.fill")
                             .foregroundColor(.green)
-                        TextField("Amount (oz)", text: $teaAmount)
+                        TextField("Amount (oz)", text: self.$teaAmount)
                             .keyboardType(.decimalPad)
                         Text("oz")
                             .foregroundColor(.secondary)
@@ -334,7 +336,7 @@ struct AddEditHydrationView: View {
 
                 Section(header: Text("Goal")) {
                     VStack(spacing: 16) {
-                        Text("\(Int(dailyGoalOunces)) oz")
+                        Text("\(Int(self.dailyGoalOunces)) oz")
                             .font(.system(size: 36, weight: .bold, design: .rounded))
                             .foregroundColor(.cyan)
                             .frame(maxWidth: .infinity)
@@ -343,20 +345,26 @@ struct AddEditHydrationView: View {
                             HStack(spacing: 6) {
                                 ForEach([60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0], id: \.self) { goal in
                                     Button(action: {
-                                        isCustomGoal = false
-                                        dailyGoalOunces = goal
-                                        customGoalText = ""  // Clear custom text when selecting preset
+                                        self.isCustomGoal = false
+                                        self.dailyGoalOunces = goal
+                                        self.customGoalText = "" // Clear custom text when selecting preset
                                     }) {
                                         Text("\(Int(goal))oz")
                                             .font(.system(size: 13, weight: .semibold))
-                                            .foregroundColor(dailyGoalOunces == goal && !isCustomGoal ? .white : .cyan)
+                                            .foregroundColor(self.dailyGoalOunces == goal && !self
+                                                .isCustomGoal ? .white : .cyan)
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 10)
-                                            .background(dailyGoalOunces == goal && !isCustomGoal ? Color.cyan : Color(UIColor.secondarySystemGroupedBackground))
+                                            .background(self.dailyGoalOunces == goal && !self.isCustomGoal ? Color
+                                                .cyan : Color(UIColor.secondarySystemGroupedBackground))
                                             .cornerRadius(8)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 8)
-                                                    .stroke(dailyGoalOunces == goal && !isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
+                                                    .stroke(
+                                                        self.dailyGoalOunces == goal && !self.isCustomGoal ? Color
+                                                            .clear : Color.cyan.opacity(0.3),
+                                                        lineWidth: 1
+                                                    )
                                             )
                                     }
                                 }
@@ -364,47 +372,51 @@ struct AddEditHydrationView: View {
 
                             Button(action: {
                                 // Always start with empty text field for custom input
-                                customGoalText = ""
-                                dailyGoalOunces = 0  // Reset display to 0 when entering custom mode
-                                isCustomGoal = true
+                                self.customGoalText = ""
+                                self.dailyGoalOunces = 0 // Reset display to 0 when entering custom mode
+                                self.isCustomGoal = true
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                                    isCustomGoalFocused = true
+                                    self.isCustomGoalFocused = true
                                 }
                             }) {
                                 Text("Custom")
                                     .font(.system(size: 15, weight: .semibold))
-                                    .foregroundColor(isCustomGoal ? .white : .cyan)
+                                    .foregroundColor(self.isCustomGoal ? .white : .cyan)
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
-                                    .background(isCustomGoal ? Color.cyan : Color(UIColor.secondarySystemGroupedBackground))
+                                    .background(self.isCustomGoal ? Color
+                                        .cyan : Color(UIColor.secondarySystemGroupedBackground))
                                     .cornerRadius(8)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
-                                            .stroke(isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
+                                            .stroke(
+                                                self.isCustomGoal ? Color.clear : Color.cyan.opacity(0.3),
+                                                lineWidth: 1
+                                            )
                                     )
                             }
 
-                            if isCustomGoal {
+                            if self.isCustomGoal {
                                 HStack(spacing: 8) {
-                                    TextField("Enter goal", text: $customGoalText)
+                                    TextField("Enter goal", text: self.$customGoalText)
                                         .keyboardType(.numberPad)
                                         .multilineTextAlignment(.center)
                                         .font(.system(size: 20, weight: .semibold))
-                                        .focused($isCustomGoalFocused)
+                                        .focused(self.$isCustomGoalFocused)
                                         .padding(.vertical, 12)
                                         .padding(.horizontal, 16)
                                         .background(Color(UIColor.secondarySystemGroupedBackground))
                                         .cornerRadius(8)
-                                        .onChange(of: customGoalText) { _, newValue in
+                                        .onChange(of: self.customGoalText) { _, newValue in
                                             if let value = Double(newValue), value > 0 {
-                                                dailyGoalOunces = value
+                                                self.dailyGoalOunces = value
                                             }
                                         }
                                         .toolbar {
                                             ToolbarItemGroup(placement: .keyboard) {
                                                 Spacer()
                                                 Button("Done") {
-                                                    isCustomGoalFocused = false
+                                                    self.isCustomGoalFocused = false
                                                 }
                                                 .foregroundColor(.cyan)
                                                 .fontWeight(.semibold)
@@ -431,26 +443,26 @@ struct AddEditHydrationView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        saveHydration()
-                        dismiss()
+                        self.saveHydration()
+                        self.dismiss()
                     }
-                    .disabled(!hasValidInput())
+                    .disabled(!self.hasValidInput())
                 }
             }
             .onAppear {
-                dailyGoalOunces = hydrationManager.dailyGoalOunces
+                self.dailyGoalOunces = self.hydrationManager.dailyGoalOunces
                 // Check if current goal is a preset value or custom
                 let presetGoals = [60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0]
-                if !presetGoals.contains(dailyGoalOunces) {
-                    isCustomGoal = true
-                    customGoalText = String(Int(dailyGoalOunces))
+                if !presetGoals.contains(self.dailyGoalOunces) {
+                    self.isCustomGoal = true
+                    self.customGoalText = String(Int(self.dailyGoalOunces))
                 }
-                loadExistingData()
+                self.loadExistingData()
             }
         }
     }
@@ -470,10 +482,10 @@ struct AddEditHydrationView: View {
 
     private func loadExistingData() {
         let calendar = Calendar.current
-        let dayStart = calendar.startOfDay(for: date)
+        let dayStart = calendar.startOfDay(for: self.date)
 
         // Get existing drinks for this day
-        let dayDrinks = hydrationManager.drinkEntries.filter { entry in
+        let dayDrinks = self.hydrationManager.drinkEntries.filter { entry in
             calendar.isDate(entry.date, inSameDayAs: dayStart)
         }
 
@@ -491,20 +503,20 @@ struct AddEditHydrationView: View {
         }
 
         // Populate fields if data exists
-        if waterTotal > 0 { waterAmount = String(Int(waterTotal)) }
-        if coffeeTotal > 0 { coffeeAmount = String(Int(coffeeTotal)) }
-        if teaTotal > 0 { teaAmount = String(Int(teaTotal)) }
+        if waterTotal > 0 { self.waterAmount = String(Int(waterTotal)) }
+        if coffeeTotal > 0 { self.coffeeAmount = String(Int(coffeeTotal)) }
+        if teaTotal > 0 { self.teaAmount = String(Int(teaTotal)) }
     }
 
     private func saveHydration() {
         // Update the global daily goal
-        hydrationManager.dailyGoalOunces = dailyGoalOunces
+        self.hydrationManager.dailyGoalOunces = self.dailyGoalOunces
 
         let calendar = Calendar.current
-        let dayStart = calendar.startOfDay(for: date)
+        let dayStart = calendar.startOfDay(for: self.date)
 
         // Remove existing entries for this day
-        hydrationManager.drinkEntries.removeAll { entry in
+        self.hydrationManager.drinkEntries.removeAll { entry in
             calendar.isDate(entry.date, inSameDayAs: dayStart)
         }
 
@@ -513,17 +525,17 @@ struct AddEditHydrationView: View {
 
         if let water = Double(waterAmount), water > 0 {
             let entry = DrinkEntry(type: .water, amount: water, date: entryTime)
-            hydrationManager.addDrinkEntry(entry)
+            self.hydrationManager.addDrinkEntry(entry)
         }
 
         if let coffee = Double(coffeeAmount), coffee > 0 {
             let entry = DrinkEntry(type: .coffee, amount: coffee, date: entryTime)
-            hydrationManager.addDrinkEntry(entry)
+            self.hydrationManager.addDrinkEntry(entry)
         }
 
         if let tea = Double(teaAmount), tea > 0 {
             let entry = DrinkEntry(type: .tea, amount: tea, date: entryTime)
-            hydrationManager.addDrinkEntry(entry)
+            self.hydrationManager.addDrinkEntry(entry)
         }
     }
 }

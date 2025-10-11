@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import HealthKit
 
 // MARK: - Drink Type Enum
@@ -20,9 +20,9 @@ enum DrinkType: String, Codable, CaseIterable {
     // Standard serving sizes in ounces
     var standardServing: Double {
         switch self {
-        case .water: return 8.0  // 8 oz glass
-        case .coffee: return 8.0  // 8 oz cup
-        case .tea: return 8.0     // 8 oz cup
+        case .water: return 8.0 // 8 oz glass
+        case .coffee: return 8.0 // 8 oz cup
+        case .tea: return 8.0 // 8 oz cup
         }
     }
 
@@ -30,11 +30,12 @@ enum DrinkType: String, Codable, CaseIterable {
     /// Following Apple localization pattern for unit preferences
     /// Reference: https://developer.apple.com/documentation/foundation/locale
     func standardServingInPreferredUnit(_ unit: HydrationUnit) -> Double {
-        return unit.fromOunces(standardServing)
+        unit.fromOunces(self.standardServing)
     }
 }
 
 // MARK: - Data Source Enum
+
 enum DataSource: String, Codable, CaseIterable {
     case manual = "Manual"
     case healthKit = "HealthKit"
@@ -45,7 +46,7 @@ enum DataSource: String, Codable, CaseIterable {
 struct DrinkEntry: Identifiable, Codable, Equatable {
     let id: UUID
     let type: DrinkType
-    let amount: Double  // in ounces
+    let amount: Double // in ounces
     let date: Date
     let source: DataSource
 
@@ -62,11 +63,12 @@ struct DrinkEntry: Identifiable, Codable, Equatable {
 
 class HydrationManager: ObservableObject {
     @Published var drinkEntries: [DrinkEntry] = []
-    @Published var dailyGoalOunces: Double = 64.0  // Default 8 glasses of water
+    @Published var dailyGoalOunces: Double = 64.0 // Default 8 glasses of water
     @Published var currentStreak: Int = 0
     @Published var longestStreak: Int = 0
 
     // MARK: - Unit Preference Integration
+
     // Following Apple single source of truth pattern for global settings
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
     private let appSettings = AppSettings.shared
@@ -78,23 +80,24 @@ class HydrationManager: ObservableObject {
     private let longestStreakKey = "hydrationLongestStreak"
 
     // MARK: - HealthKit Sync Properties
+
     @Published var syncWithHealthKit: Bool = false
     private let syncPreferenceKey = "hydrationSyncWithHealthKit"
     private let hasCompletedInitialImportKey = "hydrationHasCompletedInitialImport"
 
     init() {
-        loadDrinkEntries()
-        loadDailyGoal()
-        loadStreak()
-        loadLongestStreak()
-        loadSyncPreference()
+        self.loadDrinkEntries()
+        self.loadDailyGoal()
+        self.loadStreak()
+        self.loadLongestStreak()
+        self.loadSyncPreference()
 
         // Calculate streaks from history to ensure accuracy
-        calculateStreakFromHistory()
+        self.calculateStreakFromHistory()
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isHydrationAuthorized() {
-            startObservingHealthKit()
+        if self.syncWithHealthKit, HealthKitManager.shared.isHydrationAuthorized() {
+            self.startObservingHealthKit()
         }
     }
 
@@ -115,9 +118,9 @@ class HydrationManager: ObservableObject {
         }
 
         // Sync to HealthKit if enabled and manual entry (prevent observer loops)
-        if syncWithHealthKit && entry.source == .manual {
+        if self.syncWithHealthKit, entry.source == .manual {
             // Observer suppression prevents infinite sync loops
-            isSuppressingObserver = true
+            self.isSuppressingObserver = true
 
             let healthKitManager = HealthKitManager.shared
             if healthKitManager.isHydrationAuthorized() {
@@ -125,13 +128,23 @@ class HydrationManager: ObservableObject {
                     // Re-enable observer after HealthKit write completes
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         self?.isSuppressingObserver = false
-                        AppLogger.info("Observer suppression lifted after manual hydration entry", category: AppLogger.hydration)
+                        AppLogger.info(
+                            "Observer suppression lifted after manual hydration entry",
+                            category: AppLogger.hydration
+                        )
                     }
 
                     if let error = error {
-                        AppLogger.error("Failed to sync drink to HealthKit", category: AppLogger.hydration, error: error)
+                        AppLogger.error(
+                            "Failed to sync drink to HealthKit",
+                            category: AppLogger.hydration,
+                            error: error
+                        )
                     } else if success {
-                        AppLogger.info("Synced drink to HealthKit - amount: \(entry.amount)oz", category: AppLogger.hydration)
+                        AppLogger.info(
+                            "Synced drink to HealthKit - amount: \(entry.amount)oz",
+                            category: AppLogger.hydration
+                        )
                     }
                 }
             } else {
@@ -146,20 +159,23 @@ class HydrationManager: ObservableObject {
     func addDrink(type: DrinkType, amount: Double? = nil) {
         let drinkAmount = amount ?? type.standardServing
         let entry = DrinkEntry(type: type, amount: drinkAmount)
-        addDrinkEntry(entry)
+        self.addDrinkEntry(entry)
     }
 
     /// Add drink entry from user input in preferred unit
     /// Following Apple data conversion pattern for user input
     /// Reference: https://developer.apple.com/documentation/foundation/measurement
     func addDrinkInPreferredUnit(type: DrinkType, amount: Double? = nil) {
-        let userAmount = amount ?? appSettings.hydrationUnit.fromOunces(type.standardServing)
-        let amountInOunces = appSettings.hydrationUnit.toOunces(userAmount)
+        let userAmount = amount ?? self.appSettings.hydrationUnit.fromOunces(type.standardServing)
+        let amountInOunces = self.appSettings.hydrationUnit.toOunces(userAmount)
 
-        AppLogger.info("Adding drink: \(userAmount) \(appSettings.hydrationUnit.abbreviation) (\(amountInOunces) oz internal)", category: AppLogger.hydration)
+        AppLogger.info(
+            "Adding drink: \(userAmount) \(self.appSettings.hydrationUnit.abbreviation) (\(amountInOunces) oz internal)",
+            category: AppLogger.hydration
+        )
 
         let entry = DrinkEntry(type: type, amount: amountInOunces)
-        addDrinkEntry(entry)
+        self.addDrinkEntry(entry)
     }
 
     // MARK: - Delete Drink Entry
@@ -176,37 +192,38 @@ class HydrationManager: ObservableObject {
     }
 
     // MARK: - Unit Conversion Methods
+
     // Following Apple adapter pattern to maintain backward compatibility
     // Reference: https://docs.swift.org/swift-book/LanguageGuide/Protocols.html#ID521
 
     /// Get today's total in user's preferred unit
     /// Maintains backward compatibility while supporting unit preferences
     func todaysTotalInPreferredUnit() -> Double {
-        let totalOunces = todaysTotalOunces()
-        return appSettings.hydrationUnit.fromOunces(totalOunces)
+        let totalOunces = self.todaysTotalOunces()
+        return self.appSettings.hydrationUnit.fromOunces(totalOunces)
     }
 
     /// Get daily goal in user's preferred unit
     func dailyGoalInPreferredUnit() -> Double {
-        return appSettings.hydrationUnit.fromOunces(dailyGoalOunces)
+        self.appSettings.hydrationUnit.fromOunces(self.dailyGoalOunces)
     }
 
     /// Convert user input from preferred unit to internal ounces
     /// Ensures data consistency in storage format
     func convertToInternalUnit(_ value: Double) -> Double {
-        return appSettings.hydrationUnit.toOunces(value)
+        self.appSettings.hydrationUnit.toOunces(value)
     }
 
     /// Get current unit abbreviation for display
     var currentUnitAbbreviation: String {
-        return appSettings.hydrationUnit.abbreviation
+        self.appSettings.hydrationUnit.abbreviation
     }
 
     /// Convert drink entry amount to user's preferred unit for display
     /// Following Apple display formatting pattern
     /// Reference: https://developer.apple.com/documentation/foundation/formatter
     func displayAmount(for entry: DrinkEntry) -> Double {
-        return appSettings.hydrationUnit.fromOunces(entry.amount)
+        self.appSettings.hydrationUnit.fromOunces(entry.amount)
     }
 
     // MARK: - Daily Progress Calculations
@@ -215,44 +232,44 @@ class HydrationManager: ObservableObject {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        return drinkEntries.filter { entry in
+        return self.drinkEntries.filter { entry in
             calendar.isDate(entry.date, inSameDayAs: today)
         }
     }
 
     func todaysTotalOunces() -> Double {
-        return todaysDrinks().reduce(0) { $0 + $1.amount }
+        self.todaysDrinks().reduce(0) { $0 + $1.amount }
     }
 
     func todaysProgress() -> Double {
-        let total = todaysTotalOunces()
-        return min(total / dailyGoalOunces, 1.0)  // Cap at 100%
+        let total = self.todaysTotalOunces()
+        return min(total / self.dailyGoalOunces, 1.0) // Cap at 100%
     }
 
     func todaysProgressPercentage() -> Int {
-        return Int(todaysProgress() * 100)
+        Int(self.todaysProgress() * 100)
     }
 
     // MARK: - Drink Type Breakdown
 
     func todaysDrinksByType() -> [DrinkType: Double] {
         var breakdown: [DrinkType: Double] = [:]
-        for drink in todaysDrinks() {
+        for drink in self.todaysDrinks() {
             breakdown[drink.type, default: 0.0] += drink.amount
         }
         return breakdown
     }
 
     func todaysProgressByType(_ type: DrinkType) -> Double {
-        let typeAmount = todaysDrinksByType()[type] ?? 0.0
-        return min(typeAmount / dailyGoalOunces, 1.0)
+        let typeAmount = self.todaysDrinksByType()[type] ?? 0.0
+        return min(typeAmount / self.dailyGoalOunces, 1.0)
     }
 
     // MARK: - Goal Management
 
     func updateDailyGoal(_ newGoal: Double) {
-        dailyGoalOunces = max(8.0, newGoal)  // Minimum 8 oz
-        userDefaults.set(dailyGoalOunces, forKey: dailyGoalKey)
+        self.dailyGoalOunces = max(8.0, newGoal) // Minimum 8 oz
+        self.userDefaults.set(self.dailyGoalOunces, forKey: self.dailyGoalKey)
     }
 
     /// Update daily goal from user input in preferred unit
@@ -261,37 +278,40 @@ class HydrationManager: ObservableObject {
     func updateDailyGoalFromPreferredUnit(_ newGoal: Double) {
         // Apply minimum constraint (8 oz = ~237 ml)
         let minimumInOunces = 8.0
-        let minimumInPreferredUnit = appSettings.hydrationUnit.fromOunces(minimumInOunces)
+        let minimumInPreferredUnit = self.appSettings.hydrationUnit.fromOunces(minimumInOunces)
 
         // Validate minimum based on preferred unit
         let validatedGoal = max(minimumInPreferredUnit, newGoal)
-        let validatedGoalInOunces = appSettings.hydrationUnit.toOunces(validatedGoal)
+        let validatedGoalInOunces = self.appSettings.hydrationUnit.toOunces(validatedGoal)
 
-        dailyGoalOunces = validatedGoalInOunces
-        userDefaults.set(dailyGoalOunces, forKey: dailyGoalKey)
+        self.dailyGoalOunces = validatedGoalInOunces
+        self.userDefaults.set(self.dailyGoalOunces, forKey: self.dailyGoalKey)
 
-        AppLogger.info("Daily hydration goal updated: \(validatedGoal) \(appSettings.hydrationUnit.abbreviation) (\(validatedGoalInOunces) oz internal)", category: AppLogger.hydration)
+        AppLogger.info(
+            "Daily hydration goal updated: \(validatedGoal) \(self.appSettings.hydrationUnit.abbreviation) (\(validatedGoalInOunces) oz internal)",
+            category: AppLogger.hydration
+        )
     }
 
     // MARK: - Persistence
 
     private func saveDrinkEntries() {
         if let encoded = try? JSONEncoder().encode(drinkEntries) {
-            userDefaults.set(encoded, forKey: drinkEntriesKey)
+            self.userDefaults.set(encoded, forKey: self.drinkEntriesKey)
         }
     }
 
     private func loadDrinkEntries() {
         if let data = userDefaults.data(forKey: drinkEntriesKey),
            let decoded = try? JSONDecoder().decode([DrinkEntry].self, from: data) {
-            drinkEntries = decoded
+            self.drinkEntries = decoded
         }
     }
 
     private func loadDailyGoal() {
-        let savedGoal = userDefaults.double(forKey: dailyGoalKey)
+        let savedGoal = self.userDefaults.double(forKey: self.dailyGoalKey)
         if savedGoal > 0 {
-            dailyGoalOunces = savedGoal
+            self.dailyGoalOunces = savedGoal
         }
     }
 
@@ -304,26 +324,26 @@ class HydrationManager: ObservableObject {
         // Get all days that met the goal (group by day)
         var goalMetDays: Set<Date> = []
 
-        for entry in drinkEntries {
+        for entry in self.drinkEntries {
             let dayStart = calendar.startOfDay(for: entry.date)
 
             // Get total for this day
-            let dayTotal = drinkEntries
+            let dayTotal = self.drinkEntries
                 .filter { calendar.isDate($0.date, inSameDayAs: dayStart) }
                 .reduce(0.0) { $0 + $1.amount }
 
-            if dayTotal >= dailyGoalOunces {
+            if dayTotal >= self.dailyGoalOunces {
                 goalMetDays.insert(dayStart)
             }
         }
 
-        let sortedDays = goalMetDays.sorted(by: >)  // Most recent first
+        let sortedDays = goalMetDays.sorted(by: >) // Most recent first
 
         guard !sortedDays.isEmpty else {
-            currentStreak = 0
-            longestStreak = 0
-            saveStreak()
-            saveLongestStreak()
+            self.currentStreak = 0
+            self.longestStreak = 0
+            self.saveStreak()
+            self.saveLongestStreak()
             return
         }
 
@@ -333,14 +353,14 @@ class HydrationManager: ObservableObject {
 
         if daysBetween > 1 {
             // Streak is broken
-            currentStreak = 0
-            saveStreak()
+            self.currentStreak = 0
+            self.saveStreak()
         } else {
             // Calculate current streak
             var streak = 1
             var currentDay = mostRecentDay
 
-            for i in 1..<sortedDays.count {
+            for i in 1 ..< sortedDays.count {
                 let previousDay = sortedDays[i]
                 let dayDiff = calendar.dateComponents([.day], from: previousDay, to: currentDay).day ?? 0
 
@@ -352,8 +372,8 @@ class HydrationManager: ObservableObject {
                 }
             }
 
-            currentStreak = streak
-            saveStreak()
+            self.currentStreak = streak
+            self.saveStreak()
         }
 
         // Calculate longest streak
@@ -361,7 +381,7 @@ class HydrationManager: ObservableObject {
         var tempStreak = 0
         var lastDay: Date?
 
-        let sortedAscending = sortedDays.sorted(by: <)  // Oldest first
+        let sortedAscending = sortedDays.sorted(by: <) // Oldest first
 
         for day in sortedAscending {
             if let last = lastDay {
@@ -383,24 +403,24 @@ class HydrationManager: ObservableObject {
             lastDay = day
         }
 
-        longestStreak = maxStreak
-        saveLongestStreak()
+        self.longestStreak = maxStreak
+        self.saveLongestStreak()
     }
 
     private func saveStreak() {
-        userDefaults.set(currentStreak, forKey: streakKey)
+        self.userDefaults.set(self.currentStreak, forKey: self.streakKey)
     }
 
     private func loadStreak() {
-        currentStreak = userDefaults.integer(forKey: streakKey)
+        self.currentStreak = self.userDefaults.integer(forKey: self.streakKey)
     }
 
     private func saveLongestStreak() {
-        userDefaults.set(longestStreak, forKey: longestStreakKey)
+        self.userDefaults.set(self.longestStreak, forKey: self.longestStreakKey)
     }
 
     private func loadLongestStreak() {
-        longestStreak = userDefaults.integer(forKey: longestStreakKey)
+        self.longestStreak = self.userDefaults.integer(forKey: self.longestStreakKey)
     }
 
     // MARK: - HealthKit Sync
@@ -409,17 +429,23 @@ class HydrationManager: ObservableObject {
         let healthKitManager = HealthKitManager.shared
 
         guard healthKitManager.isWaterAuthorized() else {
-            AppLogger.warning("HealthKit not authorized for water, cannot sync hydration", category: AppLogger.hydration)
+            AppLogger.warning(
+                "HealthKit not authorized for water, cannot sync hydration",
+                category: AppLogger.hydration
+            )
             return
         }
 
         // Get list of already exported entries to prevent duplicates
-        let exportedEntries = getExportedEntryIds()
+        let exportedEntries = self.getExportedEntryIds()
 
         // Filter to only new entries that haven't been exported yet
-        let newEntries = drinkEntries.filter { !exportedEntries.contains($0.id.uuidString) }
+        let newEntries = self.drinkEntries.filter { !exportedEntries.contains($0.id.uuidString) }
 
-        AppLogger.info("Starting hydration export to HealthKit - \(newEntries.count) new entries", category: AppLogger.hydration)
+        AppLogger.info(
+            "Starting hydration export to HealthKit - \(newEntries.count) new entries",
+            category: AppLogger.hydration
+        )
 
         guard !newEntries.isEmpty else {
             AppLogger.info("No new hydration entries to export - all up to date", category: AppLogger.hydration)
@@ -445,7 +471,10 @@ class HydrationManager: ObservableObject {
         }
 
         dispatchGroup.notify(queue: .main) {
-            AppLogger.info("Completed hydration export to HealthKit - \(syncedCount) entries synced", category: AppLogger.hydration)
+            AppLogger.info(
+                "Completed hydration export to HealthKit - \(syncedCount) entries synced",
+                category: AppLogger.hydration
+            )
         }
     }
 
@@ -454,17 +483,18 @@ class HydrationManager: ObservableObject {
     private let exportedEntriesKey = "exportedHydrationEntries"
 
     private func getExportedEntryIds() -> Set<String> {
-        let exported = userDefaults.array(forKey: exportedEntriesKey) as? [String] ?? []
+        let exported = self.userDefaults.array(forKey: self.exportedEntriesKey) as? [String] ?? []
         return Set(exported)
     }
 
     private func markEntryAsExported(_ entryId: String) {
-        var exported = getExportedEntryIds()
+        var exported = self.getExportedEntryIds()
         exported.insert(entryId)
-        userDefaults.set(Array(exported), forKey: exportedEntriesKey)
+        self.userDefaults.set(Array(exported), forKey: self.exportedEntriesKey)
     }
 
     // MARK: - Universal HealthKit Sync Architecture (Industry Standard)
+
     // Following Universal Sync Architecture patterns from handoff.md
 
     /// Observer suppression flag to prevent infinite sync loops during manual operations
@@ -477,7 +507,7 @@ class HydrationManager: ObservableObject {
 
     /// Automatic observer-triggered sync (Universal Method #1)
     func syncFromHealthKit(startDate: Date? = nil, completion: ((Int, Error?) -> Void)? = nil) {
-        guard syncWithHealthKit else {
+        guard self.syncWithHealthKit else {
             DispatchQueue.main.async {
                 completion?(0, nil)
             }
@@ -487,14 +517,24 @@ class HydrationManager: ObservableObject {
         guard HealthKitManager.shared.isHydrationAuthorized() else {
             AppLogger.warning("HealthKit not authorized for hydration sync", category: AppLogger.hydration)
             DispatchQueue.main.async {
-                completion?(0, NSError(domain: "HydrationManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit not authorized"]))
+                completion?(
+                    0,
+                    NSError(
+                        domain: "HydrationManager",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "HealthKit not authorized"]
+                    )
+                )
             }
             return
         }
 
         // Prevent sync during observer suppression (manual operations)
-        guard !isSuppressingObserver else {
-            AppLogger.info("Skipping HealthKit sync - observer suppressed during manual operation", category: AppLogger.hydration)
+        guard !self.isSuppressingObserver else {
+            AppLogger.info(
+                "Skipping HealthKit sync - observer suppressed during manual operation",
+                category: AppLogger.hydration
+            )
             DispatchQueue.main.async {
                 completion?(0, nil)
             }
@@ -508,11 +548,19 @@ class HydrationManager: ObservableObject {
 
         HealthKitManager.shared.fetchWaterData(startDate: fromDate) { [weak self] waterData in
             guard let self = self else {
-                completion?(0, NSError(domain: "HydrationManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "HydrationManager deallocated"]))
+                completion?(
+                    0,
+                    NSError(
+                        domain: "HydrationManager",
+                        code: 2,
+                        userInfo: [NSLocalizedDescriptionKey: "HydrationManager deallocated"]
+                    )
+                )
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best
+            // practice)
             DispatchQueue.main.async {
                 // Track newly added entries for accurate reporting
                 var newlyAddedCount = 0
@@ -522,8 +570,8 @@ class HydrationManager: ObservableObject {
                     // More comprehensive duplicate check following WeightManager pattern
                     let isDuplicate = self.drinkEntries.contains { entry in
                         abs(entry.date.timeIntervalSince(date)) < 300 && // Within 5 minutes
-                        abs(entry.amount - amount) < 0.01 && // Within 0.01 oz/ml
-                        entry.type == .water // Only check against water entries
+                            abs(entry.amount - amount) < 0.01 && // Within 0.01 oz/ml
+                            entry.type == .water // Only check against water entries
                     }
 
                     if !isDuplicate {
@@ -539,7 +587,10 @@ class HydrationManager: ObservableObject {
                 self.calculateStreakFromHistory()
 
                 // Report sync results
-                AppLogger.info("HealthKit sync completed: \(newlyAddedCount) new hydration entries added", category: AppLogger.hydration)
+                AppLogger.info(
+                    "HealthKit sync completed: \(newlyAddedCount) new hydration entries added",
+                    category: AppLogger.hydration
+                )
                 completion?(newlyAddedCount, nil)
             }
         }
@@ -547,9 +598,16 @@ class HydrationManager: ObservableObject {
 
     /// Complete historical data import (Universal Method #2)
     func syncFromHealthKitHistorical(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
-        guard syncWithHealthKit else {
+        guard self.syncWithHealthKit else {
             DispatchQueue.main.async {
-                completion(0, NSError(domain: "HydrationManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]))
+                completion(
+                    0,
+                    NSError(
+                        domain: "HydrationManager",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]
+                    )
+                )
             }
             return
         }
@@ -559,12 +617,20 @@ class HydrationManager: ObservableObject {
         HealthKitManager.shared.fetchWaterData(startDate: startDate) { [weak self] waterData in
             guard let self = self else {
                 DispatchQueue.main.async {
-                    completion(0, NSError(domain: "HydrationManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "HydrationManager instance deallocated"]))
+                    completion(
+                        0,
+                        NSError(
+                            domain: "HydrationManager",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "HydrationManager instance deallocated"]
+                        )
+                    )
                 }
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best
+            // practice)
             DispatchQueue.main.async {
                 // Track newly added entries for accurate reporting
                 var newlyAddedCount = 0
@@ -574,8 +640,8 @@ class HydrationManager: ObservableObject {
                     // Historical import uses more flexible duplicate check
                     let isDuplicate = self.drinkEntries.contains { entry in
                         abs(entry.date.timeIntervalSince(date)) < 300 && // Within 5 minutes (flexible for historical)
-                        abs(entry.amount - amount) < 0.02 && // Within 0.02 oz/ml (account for conversion rounding)
-                        entry.type == .water
+                            abs(entry.amount - amount) < 0.02 && // Within 0.02 oz/ml (account for conversion rounding)
+                            entry.type == .water
                     }
 
                     if !isDuplicate {
@@ -591,7 +657,10 @@ class HydrationManager: ObservableObject {
                 self.calculateStreakFromHistory()
 
                 // Report actual sync results
-                AppLogger.info("Historical HealthKit sync completed: \(newlyAddedCount) new hydration entries imported from \(waterData.count) total entries", category: AppLogger.hydration)
+                AppLogger.info(
+                    "Historical HealthKit sync completed: \(newlyAddedCount) new hydration entries imported from \(waterData.count) total entries",
+                    category: AppLogger.hydration
+                )
                 completion(newlyAddedCount, nil)
             }
         }
@@ -599,24 +668,42 @@ class HydrationManager: ObservableObject {
 
     /// Manual sync with deletion detection (Universal Method #3)
     func syncFromHealthKitWithReset(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
-        guard syncWithHealthKit else {
+        guard self.syncWithHealthKit else {
             DispatchQueue.main.async {
-                completion(0, NSError(domain: "HydrationManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]))
+                completion(
+                    0,
+                    NSError(
+                        domain: "HydrationManager",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]
+                    )
+                )
             }
             return
         }
 
-        AppLogger.info("Starting manual hydration sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.hydration)
+        AppLogger.info(
+            "Starting manual hydration sync with anchor reset for deletion detection from \(startDate)",
+            category: AppLogger.hydration
+        )
 
         HealthKitManager.shared.fetchWaterData(startDate: startDate) { [weak self] waterData in
             guard let self = self else {
                 DispatchQueue.main.async {
-                    completion(0, NSError(domain: "HydrationManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "HydrationManager instance deallocated"]))
+                    completion(
+                        0,
+                        NSError(
+                            domain: "HydrationManager",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "HydrationManager instance deallocated"]
+                        )
+                    )
                 }
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best
+            // practice)
             DispatchQueue.main.async {
                 // Industry Standard: Complete sync with deletion detection
                 // Step 1: Remove HealthKit entries that are no longer in Apple Health
@@ -624,12 +711,12 @@ class HydrationManager: ObservableObject {
 
                 self.drinkEntries.removeAll { fastLifeEntry in
                     // Only remove HealthKit-sourced water entries (preserve manual entries)
-                    guard fastLifeEntry.source == .healthKit && fastLifeEntry.type == .water else {
+                    guard fastLifeEntry.source == .healthKit, fastLifeEntry.type == .water else {
                         return false
                     }
 
                     // Check if this Fast LIFe entry still exists in current HealthKit data
-                    let stillExistsInHealthKit = waterData.contains { (healthKitDate, healthKitAmount) in
+                    let stillExistsInHealthKit = waterData.contains { healthKitDate, healthKitAmount in
                         let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitDate))
                         let amountDiff = abs(fastLifeEntry.amount - healthKitAmount)
                         return timeDiff < 300 && amountDiff < 0.02 // Within 5 minutes and 0.02 oz/ml
@@ -649,7 +736,12 @@ class HydrationManager: ObservableObject {
                     }
 
                     if !alreadyExists {
-                        let entry = DrinkEntry(type: .water, amount: healthKitAmount, date: healthKitDate, source: .healthKit)
+                        let entry = DrinkEntry(
+                            type: .water,
+                            amount: healthKitAmount,
+                            date: healthKitDate,
+                            source: .healthKit
+                        )
                         self.drinkEntries.append(entry)
                         addedCount += 1
                     }
@@ -661,7 +753,10 @@ class HydrationManager: ObservableObject {
                 self.calculateStreakFromHistory()
 
                 // Report comprehensive sync results
-                AppLogger.info("Manual HealthKit sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(waterData.count) total HealthKit entries", category: AppLogger.hydration)
+                AppLogger.info(
+                    "Manual HealthKit sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(waterData.count) total HealthKit entries",
+                    category: AppLogger.hydration
+                )
                 completion(addedCount, nil)
             }
         }
@@ -671,8 +766,11 @@ class HydrationManager: ObservableObject {
 
     /// Start observing HealthKit for automatic sync (Universal Pattern)
     func startObservingHealthKit() {
-        guard syncWithHealthKit && HealthKitManager.shared.isHydrationAuthorized() else {
-            AppLogger.info("Hydration HealthKit observer not started - sync disabled or not authorized", category: AppLogger.hydration)
+        guard self.syncWithHealthKit, HealthKitManager.shared.isHydrationAuthorized() else {
+            AppLogger.info(
+                "Hydration HealthKit observer not started - sync disabled or not authorized",
+                category: AppLogger.hydration
+            )
             return
         }
 
@@ -685,15 +783,25 @@ class HydrationManager: ObservableObject {
                 // Trigger automatic sync when HealthKit data changes
                 self.syncFromHealthKit { count, error in
                     if let error = error {
-                        AppLogger.error("Observer-triggered hydration sync failed", category: AppLogger.hydration, error: error)
+                        AppLogger.error(
+                            "Observer-triggered hydration sync failed",
+                            category: AppLogger.hydration,
+                            error: error
+                        )
                     } else if count > 0 {
-                        AppLogger.info("Observer-triggered hydration sync: \(count) new entries added", category: AppLogger.hydration)
+                        AppLogger.info(
+                            "Observer-triggered hydration sync: \(count) new entries added",
+                            category: AppLogger.hydration
+                        )
                     }
                 }
             }
         }
 
-        AppLogger.info("Hydration HealthKit observer started successfully - automatic sync enabled", category: AppLogger.hydration)
+        AppLogger.info(
+            "Hydration HealthKit observer started successfully - automatic sync enabled",
+            category: AppLogger.hydration
+        )
     }
 
     /// Stop observing HealthKit (Universal Pattern)
@@ -702,7 +810,7 @@ class HydrationManager: ObservableObject {
         if let query = observerQuery as? HKObserverQuery {
             HealthKitManager.shared.stopObservingHydration(query: query)
         }
-        observerQuery = nil
+        self.observerQuery = nil
         AppLogger.info("Hydration HealthKit observer stopped", category: AppLogger.hydration)
     }
 
@@ -710,8 +818,8 @@ class HydrationManager: ObservableObject {
 
     func setSyncPreference(_ enabled: Bool) {
         AppLogger.info("Setting hydration sync preference to \(enabled)", category: AppLogger.hydration)
-        syncWithHealthKit = enabled
-        userDefaults.set(enabled, forKey: syncPreferenceKey)
+        self.syncWithHealthKit = enabled
+        self.userDefaults.set(enabled, forKey: self.syncPreferenceKey)
 
         if enabled {
             // Request authorization and start observing if not already authorized
@@ -719,34 +827,41 @@ class HydrationManager: ObservableObject {
                 HealthKitManager.shared.requestHydrationAuthorization { [weak self] success, error in
                     DispatchQueue.main.async {
                         if success {
-                            AppLogger.info("Hydration authorization granted, syncing from HealthKit", category: AppLogger.hydration)
+                            AppLogger.info(
+                                "Hydration authorization granted, syncing from HealthKit",
+                                category: AppLogger.hydration
+                            )
                             self?.syncFromHealthKit { _, _ in }
                             self?.startObservingHealthKit()
                         } else {
-                            AppLogger.error("Hydration authorization failed", category: AppLogger.hydration, error: error)
+                            AppLogger.error(
+                                "Hydration authorization failed",
+                                category: AppLogger.hydration,
+                                error: error
+                            )
                         }
                     }
                 }
             } else {
                 AppLogger.info("Already authorized, syncing from HealthKit", category: AppLogger.hydration)
-                syncFromHealthKit { _, _ in }
-                startObservingHealthKit()
+                self.syncFromHealthKit { _, _ in }
+                self.startObservingHealthKit()
             }
         } else {
             AppLogger.info("Hydration sync disabled, stopping HealthKit observer", category: AppLogger.hydration)
-            stopObservingHealthKit()
+            self.stopObservingHealthKit()
         }
     }
 
     private func loadSyncPreference() {
-        syncWithHealthKit = userDefaults.bool(forKey: syncPreferenceKey)
+        self.syncWithHealthKit = self.userDefaults.bool(forKey: self.syncPreferenceKey)
     }
 
     func hasCompletedInitialImport() -> Bool {
-        return userDefaults.bool(forKey: hasCompletedInitialImportKey)
+        self.userDefaults.bool(forKey: self.hasCompletedInitialImportKey)
     }
 
     func markInitialImportComplete() {
-        userDefaults.set(true, forKey: hasCompletedInitialImportKey)
+        self.userDefaults.set(true, forKey: self.hasCompletedInitialImportKey)
     }
 }

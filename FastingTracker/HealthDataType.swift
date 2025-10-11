@@ -4,10 +4,10 @@ import SwiftUI
 /// Following Apple HealthKit categorization and iOS Health app patterns
 /// Reference: https://developer.apple.com/documentation/healthkit/hkobjecttype
 enum HealthDataType: String, CaseIterable {
-    case weight = "weight"
-    case hydration = "hydration"
-    case sleep = "sleep"
-    case fasting = "fasting"
+    case weight
+    case hydration
+    case sleep
+    case fasting
 
     var displayName: String {
         switch self {

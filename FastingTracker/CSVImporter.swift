@@ -1,6 +1,7 @@
 import Foundation
 
 // MARK: - CSV Importer
+
 // Handles importing data from CSV files exported by DataExportManager
 // Reference: RFC 4180 CSV Format Specification
 // Reference: Apple Health's duplicate detection approach
@@ -50,7 +51,9 @@ class CSVImporter {
             moodCount: sections.moodRows.count
         )
 
-        print("📊 Preview: \(preview.fastingCount) fasts, \(preview.weightCount) weights, \(preview.hydrationCount) drinks, \(preview.sleepCount) sleeps, \(preview.moodCount) moods")
+        print(
+            "📊 Preview: \(preview.fastingCount) fasts, \(preview.weightCount) weights, \(preview.hydrationCount) drinks, \(preview.sleepCount) sleeps, \(preview.moodCount) moods"
+        )
         print("====================================\n")
 
         return .success(preview)
@@ -87,11 +90,11 @@ class CSVImporter {
         // Import each section
         print("\n📊 Importing sections...")
 
-        result.fastingImported = importFastingSessions(sections.fastingRows, skipped: &result.fastingSkipped)
-        result.weightImported = importWeightEntries(sections.weightRows, skipped: &result.weightSkipped)
-        result.hydrationImported = importDrinkEntries(sections.hydrationRows, skipped: &result.hydrationSkipped)
-        result.sleepImported = importSleepEntries(sections.sleepRows, skipped: &result.sleepSkipped)
-        result.moodImported = importMoodEntries(sections.moodRows, skipped: &result.moodSkipped)
+        result.fastingImported = self.importFastingSessions(sections.fastingRows, skipped: &result.fastingSkipped)
+        result.weightImported = self.importWeightEntries(sections.weightRows, skipped: &result.weightSkipped)
+        result.hydrationImported = self.importDrinkEntries(sections.hydrationRows, skipped: &result.hydrationSkipped)
+        result.sleepImported = self.importSleepEntries(sections.sleepRows, skipped: &result.sleepSkipped)
+        result.moodImported = self.importMoodEntries(sections.moodRows, skipped: &result.moodSkipped)
 
         print("\n✅ Import complete!")
         print("📈 Imported: \(result.totalImported) entries")
@@ -114,20 +117,20 @@ class CSVImporter {
             if line.hasPrefix("===") {
                 // Save previous section
                 if let section = currentSection, !sectionLines.isEmpty {
-                    saveSectionLines(section: section, lines: sectionLines, to: &sections)
+                    self.saveSectionLines(section: section, lines: sectionLines, to: &sections)
                 }
 
                 // Start new section
                 currentSection = line
                 sectionLines = []
-            } else if !line.isEmpty && currentSection != nil {
+            } else if !line.isEmpty, currentSection != nil {
                 sectionLines.append(line)
             }
         }
 
         // Save last section
         if let section = currentSection, !sectionLines.isEmpty {
-            saveSectionLines(section: section, lines: sectionLines, to: &sections)
+            self.saveSectionLines(section: section, lines: sectionLines, to: &sections)
         }
 
         return sections
@@ -155,11 +158,11 @@ class CSVImporter {
         guard !rows.isEmpty else { return 0 }
 
         // Load existing history
-        let existing = loadExistingFastingSessions()
+        let existing = self.loadExistingFastingSessions()
         var imported = 0
 
         for row in rows {
-            let fields = parseCSVRow(row)
+            let fields = self.parseCSVRow(row)
             guard fields.count >= 5 else { continue }
 
             // Parse fields: Start Time, End Time, Duration, Goal, Met Goal, Eating Window
@@ -170,7 +173,7 @@ class CSVImporter {
             }
 
             // Check for duplicates (within 60 seconds of start time)
-            if isDuplicate(startTime: startTime, in: existing) {
+            if self.isDuplicate(startTime: startTime, in: existing) {
                 skipped += 1
                 continue
             }
@@ -192,7 +195,7 @@ class CSVImporter {
             )
 
             // Add to history
-            addFastingSession(session)
+            self.addFastingSession(session)
             imported += 1
         }
 
@@ -205,11 +208,11 @@ class CSVImporter {
 
         guard !rows.isEmpty else { return 0 }
 
-        let existing = loadExistingWeightEntries()
+        let existing = self.loadExistingWeightEntries()
         var imported = 0
 
         for row in rows {
-            let fields = parseCSVRow(row)
+            let fields = self.parseCSVRow(row)
             guard fields.count >= 2 else { continue }
 
             guard let date = parseDate(fields[0]),
@@ -218,7 +221,7 @@ class CSVImporter {
             }
 
             // Check duplicates
-            if isDuplicate(date: date, in: existing) {
+            if self.isDuplicate(date: date, in: existing) {
                 skipped += 1
                 continue
             }
@@ -234,7 +237,7 @@ class CSVImporter {
                 source: .manual
             )
 
-            addWeightEntry(entry)
+            self.addWeightEntry(entry)
             imported += 1
         }
 
@@ -247,11 +250,11 @@ class CSVImporter {
 
         guard !rows.isEmpty else { return 0 }
 
-        let existing = loadExistingDrinkEntries()
+        let existing = self.loadExistingDrinkEntries()
         var imported = 0
 
         for row in rows {
-            let fields = parseCSVRow(row)
+            let fields = self.parseCSVRow(row)
             guard fields.count >= 4 else { continue }
 
             // Parse date + time
@@ -262,7 +265,7 @@ class CSVImporter {
             }
 
             // Check duplicates
-            if isDuplicate(date: date, in: existing) {
+            if self.isDuplicate(date: date, in: existing) {
                 skipped += 1
                 continue
             }
@@ -276,7 +279,7 @@ class CSVImporter {
                 date: date
             )
 
-            addDrinkEntry(entry)
+            self.addDrinkEntry(entry)
             imported += 1
         }
 
@@ -289,11 +292,11 @@ class CSVImporter {
 
         guard !rows.isEmpty else { return 0 }
 
-        let existing = loadExistingSleepEntries()
+        let existing = self.loadExistingSleepEntries()
         var imported = 0
 
         for row in rows {
-            let fields = parseCSVRow(row)
+            let fields = self.parseCSVRow(row)
             guard fields.count >= 2 else { continue }
 
             guard let bedTime = parseDate(fields[0]),
@@ -302,7 +305,7 @@ class CSVImporter {
             }
 
             // Check duplicates
-            if isDuplicate(bedTime: bedTime, in: existing) {
+            if self.isDuplicate(bedTime: bedTime, in: existing) {
                 skipped += 1
                 continue
             }
@@ -316,7 +319,7 @@ class CSVImporter {
                 source: .manual
             )
 
-            addSleepEntry(entry)
+            self.addSleepEntry(entry)
             imported += 1
         }
 
@@ -329,11 +332,11 @@ class CSVImporter {
 
         guard !rows.isEmpty else { return 0 }
 
-        let existing = loadExistingMoodEntries()
+        let existing = self.loadExistingMoodEntries()
         var imported = 0
 
         for row in rows {
-            let fields = parseCSVRow(row)
+            let fields = self.parseCSVRow(row)
             guard fields.count >= 3 else { continue }
 
             guard let date = parseDate(fields[0]),
@@ -343,7 +346,7 @@ class CSVImporter {
             }
 
             // Check duplicates
-            if isDuplicate(date: date, in: existing) {
+            if self.isDuplicate(date: date, in: existing) {
                 skipped += 1
                 continue
             }
@@ -357,7 +360,7 @@ class CSVImporter {
                 notes: notes
             )
 
-            addMoodEntry(entry)
+            self.addMoodEntry(entry)
             imported += 1
         }
 
@@ -366,38 +369,39 @@ class CSVImporter {
     }
 
     // MARK: - Duplicate Detection
+
     // Reference: Apple Health duplicate detection (60-second window)
 
     private func isDuplicate(startTime: Date, in sessions: [FastingSession]) -> Bool {
-        return sessions.contains { session in
+        sessions.contains { session in
             let timeDiff = abs(session.startTime.timeIntervalSince(startTime))
             return timeDiff < 60 // Within 60 seconds = duplicate
         }
     }
 
     private func isDuplicate(date: Date, in entries: [WeightEntry]) -> Bool {
-        return entries.contains { entry in
+        entries.contains { entry in
             let timeDiff = abs(entry.date.timeIntervalSince(date))
             return timeDiff < 60
         }
     }
 
     private func isDuplicate(date: Date, in entries: [DrinkEntry]) -> Bool {
-        return entries.contains { entry in
+        entries.contains { entry in
             let timeDiff = abs(entry.date.timeIntervalSince(date))
             return timeDiff < 60
         }
     }
 
     private func isDuplicate(bedTime: Date, in entries: [SleepEntry]) -> Bool {
-        return entries.contains { entry in
+        entries.contains { entry in
             let timeDiff = abs(entry.bedTime.timeIntervalSince(bedTime))
             return timeDiff < 60
         }
     }
 
     private func isDuplicate(date: Date, in entries: [MoodEntry]) -> Bool {
-        return entries.contains { entry in
+        entries.contains { entry in
             let timeDiff = abs(entry.date.timeIntervalSince(date))
             return timeDiff < 60
         }
@@ -415,7 +419,7 @@ class CSVImporter {
         for char in row {
             if char == "\"" {
                 insideQuotes.toggle()
-            } else if char == "," && !insideQuotes {
+            } else if char == ",", !insideQuotes {
                 fields.append(currentField.trimmingCharacters(in: .whitespaces))
                 currentField = ""
             } else {
@@ -479,7 +483,7 @@ class CSVImporter {
     // MARK: - Data Saving Functions
 
     private func addFastingSession(_ session: FastingSession) {
-        var history = loadExistingFastingSessions()
+        var history = self.loadExistingFastingSessions()
         history.append(session)
         history.sort { $0.startTime > $1.startTime }
 
@@ -489,7 +493,7 @@ class CSVImporter {
     }
 
     private func addWeightEntry(_ entry: WeightEntry) {
-        var entries = loadExistingWeightEntries()
+        var entries = self.loadExistingWeightEntries()
         entries.append(entry)
         entries.sort { $0.date > $1.date }
 
@@ -499,7 +503,7 @@ class CSVImporter {
     }
 
     private func addDrinkEntry(_ entry: DrinkEntry) {
-        var entries = loadExistingDrinkEntries()
+        var entries = self.loadExistingDrinkEntries()
         entries.append(entry)
         entries.sort { $0.date > $1.date }
 
@@ -509,7 +513,7 @@ class CSVImporter {
     }
 
     private func addSleepEntry(_ entry: SleepEntry) {
-        var entries = loadExistingSleepEntries()
+        var entries = self.loadExistingSleepEntries()
         entries.append(entry)
         entries.sort { $0.bedTime > $1.bedTime }
 
@@ -519,7 +523,7 @@ class CSVImporter {
     }
 
     private func addMoodEntry(_ entry: MoodEntry) {
-        var entries = loadExistingMoodEntries()
+        var entries = self.loadExistingMoodEntries()
         entries.append(entry)
         entries.sort { $0.date > $1.date }
 
@@ -547,7 +551,7 @@ struct ImportPreview {
     let moodCount: Int
 
     var totalCount: Int {
-        fastingCount + weightCount + hydrationCount + sleepCount + moodCount
+        self.fastingCount + self.weightCount + self.hydrationCount + self.sleepCount + self.moodCount
     }
 }
 
@@ -564,11 +568,11 @@ struct ImportResult {
     var moodSkipped = 0
 
     var totalImported: Int {
-        fastingImported + weightImported + hydrationImported + sleepImported + moodImported
+        self.fastingImported + self.weightImported + self.hydrationImported + self.sleepImported + self.moodImported
     }
 
     var totalSkipped: Int {
-        fastingSkipped + weightSkipped + hydrationSkipped + sleepSkipped + moodSkipped
+        self.fastingSkipped + self.weightSkipped + self.hydrationSkipped + self.sleepSkipped + self.moodSkipped
     }
 }
 

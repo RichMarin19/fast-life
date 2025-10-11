@@ -3,8 +3,7 @@ import os.log
 
 /// Centralized logging system following Apple Unified Logging guidelines
 /// Reference: https://developer.apple.com/documentation/os/logging
-struct AppLogger {
-
+enum AppLogger {
     // MARK: - Subsystem Configuration
 
     /// App bundle identifier for consistent log subsystem naming
@@ -46,6 +45,7 @@ struct AppLogger {
     static let safety = OSLog(subsystem: subsystem, category: "Safety")
 
     // MARK: - Phase 1 Additional Categories
+
     // Following roadmap requirements for comprehensive logging
 
     /// Mood tracking operations and validation
@@ -66,7 +66,7 @@ struct AppLogger {
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
         let logMessage = "⚠️ SAFETY: \(message) [\(fileName):\(line) in \(function)]"
-        os_log("%{public}@", log: safety, type: .fault, logMessage)
+        os_log("%{public}@", log: self.safety, type: .fault, logMessage)
     }
 
     /// Log successful safety handling
@@ -78,7 +78,7 @@ struct AppLogger {
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
         let logMessage = "✅ SAFETY: \(message) [\(fileName):\(line) in \(function)]"
-        os_log("%{public}@", log: safety, type: .info, logMessage)
+        os_log("%{public}@", log: self.safety, type: .info, logMessage)
     }
 
     // MARK: - Performance Logging
@@ -92,7 +92,7 @@ struct AppLogger {
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
         let logMessage = "⏱️ PERF: \(operation) completed in \(String(format: "%.3f", duration))s [\(fileName) in \(function)]"
-        os_log("%{public}@", log: general, type: .info, logMessage)
+        os_log("%{public}@", log: self.general, type: .info, logMessage)
     }
 
     // MARK: - Convenience Logging Methods
@@ -111,7 +111,7 @@ struct AppLogger {
         category: OSLog = general
     ) {
         #if DEBUG
-        os_log("🔍 DEBUG: %{public}@", log: category, type: .debug, message)
+            os_log("🔍 DEBUG: %{public}@", log: category, type: .debug, message)
         #endif
     }
 
@@ -145,9 +145,9 @@ struct AppLogger {
         line: Int = #line
     ) {
         #if DEBUG
-        let fileName = URL(fileURLWithPath: file).lastPathComponent
-        let logMessage = "🖨️ PRINT: \(message) [\(fileName):\(line) in \(function)]"
-        os_log("%{public}@", log: general, type: .debug, logMessage)
+            let fileName = URL(fileURLWithPath: file).lastPathComponent
+            let logMessage = "🖨️ PRINT: \(message) [\(fileName):\(line) in \(function)]"
+            os_log("%{public}@", log: self.general, type: .debug, logMessage)
         #endif
     }
 }
@@ -155,7 +155,6 @@ struct AppLogger {
 // MARK: - Production Logging Best Practices
 
 extension AppLogger {
-
     /// Guidelines for production logging:
     /// 1. Use appropriate log levels (info, debug, error, fault)
     /// 2. Include context (file, function, line) for debugging
@@ -164,5 +163,4 @@ extension AppLogger {
     /// 5. Performance-conscious - OSLog is optimized for production
     ///
     /// Reference: https://developer.apple.com/videos/play/wwdc2020/10168/
-
 }

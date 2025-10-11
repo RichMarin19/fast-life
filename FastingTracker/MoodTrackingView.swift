@@ -1,7 +1,8 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 // MARK: - Mood Tracking View
+
 // Refactored from 488 → ~88 lines (82% reduction)
 // Following Apple MVVM patterns and Phase 3a/3b component extraction lessons
 
@@ -17,7 +18,7 @@ struct MoodTrackingView: View {
                     .frame(height: 20)
 
                 // Mood & Energy Circles
-                MoodEnergyCirclesView(moodManager: moodManager)
+                MoodEnergyCirclesView(moodManager: self.moodManager)
 
                 // 7-Day Averages
                 if let avgMood = moodManager.averageMoodLevel,
@@ -45,11 +46,11 @@ struct MoodTrackingView: View {
                 }
 
                 // Graphs Section
-                MoodEnergyGraphsView(moodManager: moodManager, selectedTimeRange: $selectedTimeRange)
+                MoodEnergyGraphsView(moodManager: self.moodManager, selectedTimeRange: self.$selectedTimeRange)
                     .padding(.horizontal, 20)
 
                 // Recent Entries
-                if !moodManager.moodEntries.isEmpty {
+                if !self.moodManager.moodEntries.isEmpty {
                     VStack(spacing: 12) {
                         Text("Recent Entries")
                             .font(.headline)
@@ -57,9 +58,9 @@ struct MoodTrackingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 40)
 
-                        ForEach(Array(moodManager.moodEntries.prefix(5))) { entry in
+                        ForEach(Array(self.moodManager.moodEntries.prefix(5))) { entry in
                             MoodEntryRow(entry: entry, onDelete: {
-                                moodManager.deleteMoodEntry(entry)
+                                self.moodManager.deleteMoodEntry(entry)
                             })
                             .padding(.horizontal, 40)
                         }
@@ -76,15 +77,15 @@ struct MoodTrackingView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    showingAddEntry = true
+                    self.showingAddEntry = true
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .foregroundColor(.orange)
                 }
             }
         }
-        .sheet(isPresented: $showingAddEntry) {
-            AddMoodEntryView(moodManager: moodManager)
+        .sheet(isPresented: self.$showingAddEntry) {
+            AddMoodEntryView(moodManager: self.moodManager)
         }
     }
 }

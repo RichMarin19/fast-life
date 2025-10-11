@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 import HealthKit
 
 class SleepManager: ObservableObject {
@@ -8,6 +8,7 @@ class SleepManager: ObservableObject {
     @Published var syncMessage: String? = nil
 
     // MARK: - AppSettings Integration
+
     // Following Apple single source of truth pattern for global settings
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
     private let appSettings = AppSettings.shared
@@ -22,8 +23,8 @@ class SleepManager: ObservableObject {
     private var isSuppressingObserver: Bool = false
 
     init() {
-        loadSleepEntries()
-        loadSyncPreference()
+        self.loadSleepEntries()
+        self.loadSyncPreference()
 
         // REMOVED auto-sync on init per Apple HealthKit Best Practices
         // Sync only when user explicitly enables it via setSyncPreference()
@@ -31,14 +32,14 @@ class SleepManager: ObservableObject {
         // Reference: https://developer.apple.com/documentation/healthkit/setting_up_healthkit
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isSleepAuthorized() {
-            setupHealthKitObserver()
+        if self.syncWithHealthKit, HealthKitManager.shared.isSleepAuthorized() {
+            self.setupHealthKitObserver()
         }
 
         // Setup deletion notification observer (Apple standard pattern)
         NotificationCenter.default.addObserver(
             self,
-            selector: #selector(handleHealthKitSleepDeletions(_:)),
+            selector: #selector(self.handleHealthKitSleepDeletions(_:)),
             name: .healthKitSleepDeleted,
             object: nil
         )
@@ -58,7 +59,10 @@ class SleepManager: ObservableObject {
 
     func addSleepEntry(_ entry: SleepEntry) {
         let duration = entry.duration / 3600
-        AppLogger.info("Adding sleep entry - duration: \(String(format: "%.1fh", duration)), source: \(entry.source)", category: AppLogger.sleep)
+        AppLogger.info(
+            "Adding sleep entry - duration: \(String(format: "%.1fh", duration)), source: \(entry.source)",
+            category: AppLogger.sleep
+        )
 
         // ROADMAP REQUIREMENT: Validate inserts/updates and clamp ranges
         // Following Apple input validation best practices
@@ -75,15 +79,18 @@ class SleepManager: ObservableObject {
         let maxDuration: TimeInterval = 57600 // 16 hours
         let actualDuration = entry.duration
 
-        guard actualDuration >= minDuration && actualDuration <= maxDuration else {
+        guard actualDuration >= minDuration, actualDuration <= maxDuration else {
             let hours = actualDuration / 3600
-            AppLogger.error("Invalid sleep duration: \(String(format: "%.1f", hours))h (must be 0.5-16h)", category: AppLogger.sleep)
+            AppLogger.error(
+                "Invalid sleep duration: \(String(format: "%.1f", hours))h (must be 0.5-16h)",
+                category: AppLogger.sleep
+            )
             return
         }
 
         // ROADMAP REQUIREMENT: Add dedupe guards for entries in the same time window
         // Following Apple duplicate detection pattern
-        if isDuplicate(entry: entry, timeWindow: 7200) { // 2 hour window
+        if self.isDuplicate(entry: entry, timeWindow: 7200) { // 2 hour window
             AppLogger.warning("Prevented duplicate sleep entry within 2 hours", category: AppLogger.sleep)
             return
         }
@@ -99,10 +106,10 @@ class SleepManager: ObservableObject {
         }
 
         // Sync to HealthKit if enabled and this is a manual entry
-        if syncWithHealthKit && entry.source == .manual {
+        if self.syncWithHealthKit, entry.source == .manual {
             // INDUSTRY STANDARD: Temporarily suppress observer to prevent duplicate sync back
             // Following MyFitnessPal pattern: Manual → HealthKit should not trigger HealthKit → Manual
-            isSuppressingObserver = true
+            self.isSuppressingObserver = true
 
             AppLogger.info("Syncing manual sleep entry to HealthKit", category: AppLogger.sleep)
             HealthKitManager.shared.saveSleep(
@@ -124,7 +131,11 @@ class SleepManager: ObservableObject {
                                 self?.syncMessage = nil
                             }
                         } else {
-                            AppLogger.error("Failed to sync sleep to HealthKit", category: AppLogger.sleep, error: error)
+                            AppLogger.error(
+                                "Failed to sync sleep to HealthKit",
+                                category: AppLogger.sleep,
+                                error: error
+                            )
                             self?.syncMessage = "❌ Failed to sync to Apple Health"
                             // Clear message after 5 seconds for errors
                             DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) {
@@ -134,7 +145,7 @@ class SleepManager: ObservableObject {
                     }
                 }
             )
-        } else if !syncWithHealthKit {
+        } else if !self.syncWithHealthKit {
             AppLogger.info("Skipped HealthKit sync (disabled)", category: AppLogger.sleep)
         } else {
             AppLogger.info("Skipped HealthKit sync (already from HealthKit)", category: AppLogger.sleep)
@@ -144,13 +155,14 @@ class SleepManager: ObservableObject {
     }
 
     // MARK: - Validation Methods
+
     // Following Apple input validation pattern for sleep data
     // Reference: https://developer.apple.com/documentation/healthkit/hkcategorytype
 
     /// Check if a potential sleep entry would be a duplicate within time window
     /// Following roadmap requirement for dedupe guards
     private func isDuplicate(entry: SleepEntry, timeWindow: TimeInterval) -> Bool {
-        return sleepEntries.contains { existingEntry in
+        self.sleepEntries.contains { existingEntry in
             // Check for overlapping sleep periods within the time window
             let bedTimeOverlap = abs(entry.bedTime.timeIntervalSince(existingEntry.bedTime)) < timeWindow
             let wakeTimeOverlap = abs(entry.wakeTime.timeIntervalSince(existingEntry.wakeTime)) < timeWindow
@@ -167,11 +179,11 @@ class SleepManager: ObservableObject {
         let duration = wakeTime.timeIntervalSince(bedTime)
         let minDuration: TimeInterval = 1800 // 30 minutes
         let maxDuration: TimeInterval = 57600 // 16 hours
-        guard duration >= minDuration && duration <= maxDuration else { return false }
+        guard duration >= minDuration, duration <= maxDuration else { return false }
 
         // Check for duplicates
         let tempEntry = SleepEntry(bedTime: bedTime, wakeTime: wakeTime, source: .manual)
-        return !isDuplicate(entry: tempEntry, timeWindow: 7200)
+        return !self.isDuplicate(entry: tempEntry, timeWindow: 7200)
     }
 
     /// Get validation errors for sleep entry (for UI feedback)
@@ -191,7 +203,7 @@ class SleepManager: ObservableObject {
         }
 
         let tempEntry = SleepEntry(bedTime: bedTime, wakeTime: wakeTime, source: .manual)
-        if isDuplicate(entry: tempEntry, timeWindow: 7200) {
+        if self.isDuplicate(entry: tempEntry, timeWindow: 7200) {
             return "A sleep entry already exists within 2 hours of this time"
         }
 
@@ -219,10 +231,10 @@ class SleepManager: ObservableObject {
         //
         // Fixed: Delete from HealthKit for BOTH manual and HealthKit-sourced entries
         //        since both can exist in HealthKit database
-        if syncWithHealthKit {
+        if self.syncWithHealthKit {
             // INDUSTRY STANDARD: Suppress observer during HealthKit deletion to prevent sync loop
             // Following MyFitnessPal pattern: Local deletion should not trigger observer re-sync
-            isSuppressingObserver = true
+            self.isSuppressingObserver = true
 
             AppLogger.info("Attempting HealthKit deletion with observer suppression", category: AppLogger.sleep)
             HealthKitManager.shared.deleteSleep(
@@ -254,7 +266,7 @@ class SleepManager: ObservableObject {
     // MARK: - Sync with HealthKit
 
     func syncFromHealthKit(startDate: Date? = nil) {
-        guard syncWithHealthKit else { return }
+        guard self.syncWithHealthKit else { return }
 
         // Default to comprehensive sync (2 years) for data consistency with manual sync
         // Industry Standard: Use same wide date range as manual sync to ensure identical results
@@ -280,7 +292,7 @@ class SleepManager: ObservableObject {
                 // Reference: https://developer.apple.com/documentation/healthkit/hkobject/1614183-startdate
                 let isDuplicate = self.sleepEntries.contains(where: {
                     abs($0.bedTime.timeIntervalSince(hkEntry.bedTime)) < 60 && // Within 1 minute
-                    abs($0.wakeTime.timeIntervalSince(hkEntry.wakeTime)) < 60   // Within 1 minute
+                        abs($0.wakeTime.timeIntervalSince(hkEntry.wakeTime)) < 60 // Within 1 minute
                 })
 
                 if !isDuplicate {
@@ -306,96 +318,127 @@ class SleepManager: ObservableObject {
     /// Following Apple HealthKit Programming Guide: Reset anchor for fresh deletion detection
     /// Used for manual "Sync Now" operations to ensure deletions are detected
     func syncFromHealthKitWithReset(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
-        guard syncWithHealthKit else {
+        guard self.syncWithHealthKit else {
             DispatchQueue.main.async {
-                completion(0, NSError(domain: "SleepManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit sleep sync is disabled"]))
+                completion(
+                    0,
+                    NSError(
+                        domain: "SleepManager",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "HealthKit sleep sync is disabled"]
+                    )
+                )
             }
             return
         }
 
-        AppLogger.info("Starting manual sleep sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.sleep)
+        AppLogger.info(
+            "Starting manual sleep sync with anchor reset for deletion detection from \(startDate)",
+            category: AppLogger.sleep
+        )
 
-        HealthKitManager.shared.fetchSleepData(startDate: startDate, resetAnchor: true) { [weak self] healthKitEntries in
-            guard let self = self else {
-                DispatchQueue.main.async {
-                    completion(0, NSError(domain: "SleepManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "SleepManager instance deallocated"]))
-                }
-                return
-            }
-
-            // Industry Standard: Complete sync with deletion detection
-            // Prepare sync operations on background thread (read-only operations)
-
-            // Identify entries to remove (ALL entries no longer in Apple Health)
-            // Following Weight Tracker breakthrough: Detect ALL deleted entries regardless of source
-            // Reasoning: Manual entries are synced TO HealthKit, so they should also be detected when missing
-            let entriesToRemove = self.sleepEntries.filter { fastLifeEntry in
-
-                // Check if this Fast LIFe entry still exists in current HealthKit data
-                let stillExistsInHealthKit = healthKitEntries.contains { healthKitEntry in
-                    abs(fastLifeEntry.bedTime.timeIntervalSince(healthKitEntry.bedTime)) < 60 && // Within 1 minute
-                    abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60   // Within 1 minute
-                }
-
-                if !stillExistsInHealthKit {
-                    AppLogger.info("Will remove deleted sleep entry: \(fastLifeEntry.bedTime) to \(fastLifeEntry.wakeTime)", category: AppLogger.sleep)
-                }
-
-                return !stillExistsInHealthKit
-            }
-
-            // Identify entries to add (new HealthKit entries not already in Fast LIFe)
-            let entriesToAdd = healthKitEntries.filter { healthKitEntry in
-                let alreadyExists = self.sleepEntries.contains { fastLifeEntry in
-                    abs(fastLifeEntry.bedTime.timeIntervalSince(healthKitEntry.bedTime)) < 60 && // Within 1 minute
-                    abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60   // Within 1 minute
-                }
-
-                if !alreadyExists {
-                    AppLogger.info("Will add new sleep entry: \(healthKitEntry.bedTime) to \(healthKitEntry.wakeTime) with \(healthKitEntry.stages.count) stages", category: AppLogger.sleep)
-                }
-
-                return !alreadyExists
-            }
-
-            let deletedCount = entriesToRemove.count
-            let addedCount = entriesToAdd.count
-
-            // Report comprehensive sync results
-            AppLogger.info("Manual HealthKit sleep sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(healthKitEntries.count) total HealthKit entries", category: AppLogger.sleep)
-
-            // THREADING FIX: Update @Published properties and call completion on main thread
-            DispatchQueue.main.async {
-                // Step 1: Remove entries that are no longer in HealthKit
-                for entryToRemove in entriesToRemove {
-                    if let index = self.sleepEntries.firstIndex(where: { $0.id == entryToRemove.id }) {
-                        self.sleepEntries.remove(at: index)
+        HealthKitManager.shared
+            .fetchSleepData(startDate: startDate, resetAnchor: true) { [weak self] healthKitEntries in
+                guard let self = self else {
+                    DispatchQueue.main.async {
+                        completion(
+                            0,
+                            NSError(
+                                domain: "SleepManager",
+                                code: 2,
+                                userInfo: [NSLocalizedDescriptionKey: "SleepManager instance deallocated"]
+                            )
+                        )
                     }
+                    return
                 }
 
-                // Step 2: Add new HealthKit entries
-                self.sleepEntries.append(contentsOf: entriesToAdd)
+                // Industry Standard: Complete sync with deletion detection
+                // Prepare sync operations on background thread (read-only operations)
 
-                // Sort by wake time (most recent first) and save
-                self.sleepEntries.sort { $0.wakeTime > $1.wakeTime }
-                self.saveSleepEntries()
-                completion(addedCount, nil)
+                // Identify entries to remove (ALL entries no longer in Apple Health)
+                // Following Weight Tracker breakthrough: Detect ALL deleted entries regardless of source
+                // Reasoning: Manual entries are synced TO HealthKit, so they should also be detected when missing
+                let entriesToRemove = self.sleepEntries.filter { fastLifeEntry in
+                    // Check if this Fast LIFe entry still exists in current HealthKit data
+                    let stillExistsInHealthKit = healthKitEntries.contains { healthKitEntry in
+                        abs(fastLifeEntry.bedTime.timeIntervalSince(healthKitEntry.bedTime)) < 60 && // Within 1 minute
+                            abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60 // Within 1
+                        // minute
+                    }
+
+                    if !stillExistsInHealthKit {
+                        AppLogger.info(
+                            "Will remove deleted sleep entry: \(fastLifeEntry.bedTime) to \(fastLifeEntry.wakeTime)",
+                            category: AppLogger.sleep
+                        )
+                    }
+
+                    return !stillExistsInHealthKit
+                }
+
+                // Identify entries to add (new HealthKit entries not already in Fast LIFe)
+                let entriesToAdd = healthKitEntries.filter { healthKitEntry in
+                    let alreadyExists = self.sleepEntries.contains { fastLifeEntry in
+                        abs(fastLifeEntry.bedTime.timeIntervalSince(healthKitEntry.bedTime)) < 60 && // Within 1 minute
+                            abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60 // Within 1
+                        // minute
+                    }
+
+                    if !alreadyExists {
+                        AppLogger.info(
+                            "Will add new sleep entry: \(healthKitEntry.bedTime) to \(healthKitEntry.wakeTime) with \(healthKitEntry.stages.count) stages",
+                            category: AppLogger.sleep
+                        )
+                    }
+
+                    return !alreadyExists
+                }
+
+                let deletedCount = entriesToRemove.count
+                let addedCount = entriesToAdd.count
+
+                // Report comprehensive sync results
+                AppLogger.info(
+                    "Manual HealthKit sleep sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(healthKitEntries.count) total HealthKit entries",
+                    category: AppLogger.sleep
+                )
+
+                // THREADING FIX: Update @Published properties and call completion on main thread
+                DispatchQueue.main.async {
+                    // Step 1: Remove entries that are no longer in HealthKit
+                    for entryToRemove in entriesToRemove {
+                        if let index = self.sleepEntries.firstIndex(where: { $0.id == entryToRemove.id }) {
+                            self.sleepEntries.remove(at: index)
+                        }
+                    }
+
+                    // Step 2: Add new HealthKit entries
+                    self.sleepEntries.append(contentsOf: entriesToAdd)
+
+                    // Sort by wake time (most recent first) and save
+                    self.sleepEntries.sort { $0.wakeTime > $1.wakeTime }
+                    self.saveSleepEntries()
+                    completion(addedCount, nil)
+                }
             }
-        }
     }
 
     func setSyncPreference(_ enabled: Bool) {
         AppLogger.info("Setting sleep sync preference to \(enabled)", category: AppLogger.sleep)
 
-        syncWithHealthKit = enabled
-        userDefaults.set(enabled, forKey: syncHealthKitKey)
+        self.syncWithHealthKit = enabled
+        self.userDefaults.set(enabled, forKey: self.syncHealthKitKey)
 
         if enabled {
             // BLOCKER 5 FIX: Request SLEEP authorization only (not all permissions)
             // Per Apple best practices: Request permissions only when needed, per domain
             // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
             let isAuthorized = HealthKitManager.shared.isSleepAuthorized()
-            AppLogger.info("Sleep authorization status: \(isAuthorized ? "granted" : "denied")", category: AppLogger.sleep)
+            AppLogger.info(
+                "Sleep authorization status: \(isAuthorized ? "granted" : "denied")",
+                category: AppLogger.sleep
+            )
 
             if !isAuthorized {
                 AppLogger.info("Requesting sleep authorization", category: AppLogger.sleep)
@@ -410,15 +453,15 @@ class SleepManager: ObservableObject {
                 }
             } else {
                 AppLogger.info("Already authorized, syncing from HealthKit", category: AppLogger.sleep)
-                syncFromHealthKit()
-                setupHealthKitObserver()
+                self.syncFromHealthKit()
+                self.setupHealthKitObserver()
             }
         } else {
             AppLogger.info("Sleep sync disabled, stopping HealthKit observer", category: AppLogger.sleep)
             // Stop observing when sync is disabled
             if let query = observerQuery {
                 HealthKitManager.shared.stopObservingSleep(query: query)
-                observerQuery = nil
+                self.observerQuery = nil
             }
         }
     }
@@ -427,7 +470,7 @@ class SleepManager: ObservableObject {
 
     private func setupHealthKitObserver() {
         // Only setup observer if sync is enabled and authorized (check sleep-specific authorization)
-        guard syncWithHealthKit && HealthKitManager.shared.isSleepAuthorized() else { return }
+        guard self.syncWithHealthKit, HealthKitManager.shared.isSleepAuthorized() else { return }
 
         // Remove existing observer if any
         if let existingQuery = observerQuery {
@@ -437,7 +480,10 @@ class SleepManager: ObservableObject {
         // Create observer query for sleep data
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
 
-        let query = HKObserverQuery(sampleType: sleepType, predicate: nil) { [weak self] query, completionHandler, error in
+        let query = HKObserverQuery(
+            sampleType: sleepType,
+            predicate: nil
+        ) { [weak self] query, completionHandler, error in
             if let error = error {
                 AppLogger.error("Sleep observer query error", category: AppLogger.sleep, error: error)
                 completionHandler()
@@ -446,14 +492,20 @@ class SleepManager: ObservableObject {
 
             // INDUSTRY STANDARD: Check if observer is suppressed (manual operation in progress)
             guard let self = self, !self.isSuppressingObserver else {
-                AppLogger.info("HealthKit sleep observer suppressed during manual operation - skipping sync", category: AppLogger.sleep)
+                AppLogger.info(
+                    "HealthKit sleep observer suppressed during manual operation - skipping sync",
+                    category: AppLogger.sleep
+                )
                 completionHandler()
                 return
             }
 
             // New sleep data detected - sync with comprehensive date range for consistency
             // Industry Standard: Use same wide date range as manual sync to ensure identical results
-            AppLogger.info("New sleep data detected in HealthKit, syncing with deletion support", category: AppLogger.sleep)
+            AppLogger.info(
+                "New sleep data detected in HealthKit, syncing with deletion support",
+                category: AppLogger.sleep
+            )
             DispatchQueue.main.async {
                 let startDate = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
                 self.syncFromHealthKit(startDate: startDate)
@@ -463,7 +515,7 @@ class SleepManager: ObservableObject {
             completionHandler()
         }
 
-        observerQuery = query
+        self.observerQuery = query
         HealthKitManager.shared.startObservingSleep(query: query)
     }
 
@@ -471,12 +523,12 @@ class SleepManager: ObservableObject {
 
     /// Latest sleep entry
     var latestSleep: SleepEntry? {
-        sleepEntries.first
+        self.sleepEntries.first
     }
 
     /// Average sleep duration in hours over last 7 days
     var averageSleepHours: Double? {
-        guard !sleepEntries.isEmpty else { return nil }
+        guard !self.sleepEntries.isEmpty else { return nil }
 
         let calendar = Calendar.current
         guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date()) else {
@@ -484,7 +536,7 @@ class SleepManager: ObservableObject {
             return nil
         }
 
-        let recentEntries = sleepEntries.filter { $0.wakeTime >= sevenDaysAgo }
+        let recentEntries = self.sleepEntries.filter { $0.wakeTime >= sevenDaysAgo }
         guard !recentEntries.isEmpty else { return nil }
 
         let totalHours = recentEntries.reduce(0.0) { $0 + ($1.duration / 3600) }
@@ -501,10 +553,10 @@ class SleepManager: ObservableObject {
             return nil
         }
 
-        let recentEntries = sleepEntries.filter { $0.wakeTime >= sevenDaysAgo && $0.wakeTime <= today }
-        let olderEntries = sleepEntries.filter { $0.wakeTime >= fourteenDaysAgo && $0.wakeTime < sevenDaysAgo }
+        let recentEntries = self.sleepEntries.filter { $0.wakeTime >= sevenDaysAgo && $0.wakeTime <= today }
+        let olderEntries = self.sleepEntries.filter { $0.wakeTime >= fourteenDaysAgo && $0.wakeTime < sevenDaysAgo }
 
-        guard !recentEntries.isEmpty && !olderEntries.isEmpty else { return nil }
+        guard !recentEntries.isEmpty, !olderEntries.isEmpty else { return nil }
 
         let recentAvg = recentEntries.reduce(0.0) { $0 + ($1.duration / 3600) } / Double(recentEntries.count)
         let olderAvg = olderEntries.reduce(0.0) { $0 + ($1.duration / 3600) } / Double(olderEntries.count)
@@ -514,7 +566,7 @@ class SleepManager: ObservableObject {
 
     /// Get sleep entries for a specific date range
     func sleepEntries(from startDate: Date, to endDate: Date) -> [SleepEntry] {
-        sleepEntries.filter { $0.wakeTime >= startDate && $0.wakeTime <= endDate }
+        self.sleepEntries.filter { $0.wakeTime >= startDate && $0.wakeTime <= endDate }
     }
 
     /// Last night's sleep (most recent entry within last 24 hours)
@@ -525,14 +577,14 @@ class SleepManager: ObservableObject {
             return nil
         }
 
-        return sleepEntries.first(where: { $0.wakeTime >= yesterday })
+        return self.sleepEntries.first(where: { $0.wakeTime >= yesterday })
     }
 
     // MARK: - Persistence
 
     private func saveSleepEntries() {
         if let encoded = try? JSONEncoder().encode(sleepEntries) {
-            userDefaults.set(encoded, forKey: sleepEntriesKey)
+            self.userDefaults.set(encoded, forKey: self.sleepEntriesKey)
         }
     }
 
@@ -541,26 +593,29 @@ class SleepManager: ObservableObject {
               let entries = try? JSONDecoder().decode([SleepEntry].self, from: data) else {
             return
         }
-        sleepEntries = entries.sorted { $0.wakeTime > $1.wakeTime }
+        self.sleepEntries = entries.sorted { $0.wakeTime > $1.wakeTime }
     }
 
     private func loadSyncPreference() {
         // Default to true if not set
-        if userDefaults.object(forKey: syncHealthKitKey) != nil {
-            syncWithHealthKit = userDefaults.bool(forKey: syncHealthKitKey)
+        if self.userDefaults.object(forKey: self.syncHealthKitKey) != nil {
+            self.syncWithHealthKit = self.userDefaults.bool(forKey: self.syncHealthKitKey)
         }
     }
 
     // MARK: - Deletion Notification Handler
 
     @objc private func handleHealthKitSleepDeletions(_ notification: Notification) {
-        guard syncWithHealthKit,
+        guard self.syncWithHealthKit,
               let userInfo = notification.userInfo,
               let deletedSamples = userInfo["deletedSamples"] as? [[String: Any]] else {
             return
         }
 
-        AppLogger.info("Processing \(deletedSamples.count) deleted sleep entries from HealthKit", category: AppLogger.sleep)
+        AppLogger.info(
+            "Processing \(deletedSamples.count) deleted sleep entries from HealthKit",
+            category: AppLogger.sleep
+        )
 
         var deletedCount = 0
         for deletedSample in deletedSamples {
@@ -572,16 +627,19 @@ class SleepManager: ObservableObject {
             // Find and remove matching sleep entry (time-based matching with 1-minute tolerance)
             if let index = sleepEntries.firstIndex(where: { entry in
                 abs(entry.bedTime.timeIntervalSince(bedTimeValue)) < 60 &&
-                abs(entry.wakeTime.timeIntervalSince(wakeTimeValue)) < 60
+                    abs(entry.wakeTime.timeIntervalSince(wakeTimeValue)) < 60
             }) {
-                let removedEntry = sleepEntries.remove(at: index)
+                let removedEntry = self.sleepEntries.remove(at: index)
                 deletedCount += 1
-                AppLogger.info("Removed sleep entry from HealthKit deletion: \(removedEntry.bedTime) to \(removedEntry.wakeTime)", category: AppLogger.sleep)
+                AppLogger.info(
+                    "Removed sleep entry from HealthKit deletion: \(removedEntry.bedTime) to \(removedEntry.wakeTime)",
+                    category: AppLogger.sleep
+                )
             }
         }
 
         if deletedCount > 0 {
-            saveSleepEntries()
+            self.saveSleepEntries()
             AppLogger.info("Processed \(deletedCount) sleep deletions from HealthKit", category: AppLogger.sleep)
         }
     }

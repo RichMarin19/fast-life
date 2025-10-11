@@ -15,11 +15,15 @@ struct AddWeightView: View {
         NavigationView {
             Form {
                 Section(header: Text("Weight Information")) {
-                    DatePicker("Date & Time", selection: $selectedDate, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker(
+                        "Date & Time",
+                        selection: self.$selectedDate,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
 
                     HStack {
                         Text("Weight")
-                        TextField("Enter weight", text: $weight)
+                        TextField("Enter weight", text: self.$weight)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                         Text("lbs")
@@ -30,14 +34,14 @@ struct AddWeightView: View {
                 Section(header: Text("Optional Metrics")) {
                     HStack {
                         Text("BMI")
-                        TextField("Enter BMI", text: $bmi)
+                        TextField("Enter BMI", text: self.$bmi)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                     }
 
                     HStack {
                         Text("Body Fat")
-                        TextField("Enter body fat %", text: $bodyFat)
+                        TextField("Enter body fat %", text: self.$bodyFat)
                             .keyboardType(.decimalPad)
                             .multilineTextAlignment(.trailing)
                         Text("%")
@@ -46,7 +50,7 @@ struct AddWeightView: View {
                 }
 
                 Section {
-                    Button(action: saveWeight) {
+                    Button(action: self.saveWeight) {
                         HStack {
                             Spacer()
                             Text("Save Weight Entry")
@@ -54,7 +58,7 @@ struct AddWeightView: View {
                             Spacer()
                         }
                     }
-                    .disabled(weight.isEmpty)
+                    .disabled(self.weight.isEmpty)
                 }
             }
             .navigationTitle("Add Weight")
@@ -62,14 +66,14 @@ struct AddWeightView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
-            .alert("Error", isPresented: $showingError) {
-                Button("OK", role: .cancel) { }
+            .alert("Error", isPresented: self.$showingError) {
+                Button("OK", role: .cancel) {}
             } message: {
-                Text(errorMessage)
+                Text(self.errorMessage)
             }
         }
     }
@@ -77,19 +81,19 @@ struct AddWeightView: View {
     private func saveWeight() {
         // Validate weight
         guard let weightValue = Double(weight.trimmingCharacters(in: .whitespaces)),
-              weightValue > 0 && weightValue < 1000 else {
-            errorMessage = "Please enter a valid weight between 0 and 1000 lbs"
-            showingError = true
+              weightValue > 0, weightValue < 1000 else {
+            self.errorMessage = "Please enter a valid weight between 0 and 1000 lbs"
+            self.showingError = true
             return
         }
 
         // Validate BMI if provided
         var bmiValue: Double? = nil
-        if !bmi.isEmpty {
+        if !self.bmi.isEmpty {
             guard let parsedBMI = Double(bmi.trimmingCharacters(in: .whitespaces)),
-                  parsedBMI > 0 && parsedBMI < 100 else {
-                errorMessage = "Please enter a valid BMI between 0 and 100"
-                showingError = true
+                  parsedBMI > 0, parsedBMI < 100 else {
+                self.errorMessage = "Please enter a valid BMI between 0 and 100"
+                self.showingError = true
                 return
             }
             bmiValue = parsedBMI
@@ -97,11 +101,11 @@ struct AddWeightView: View {
 
         // Validate body fat if provided
         var bodyFatValue: Double? = nil
-        if !bodyFat.isEmpty {
+        if !self.bodyFat.isEmpty {
             guard let parsedBodyFat = Double(bodyFat.trimmingCharacters(in: .whitespaces)),
-                  parsedBodyFat > 0 && parsedBodyFat < 100 else {
-                errorMessage = "Please enter a valid body fat percentage between 0 and 100"
-                showingError = true
+                  parsedBodyFat > 0, parsedBodyFat < 100 else {
+                self.errorMessage = "Please enter a valid body fat percentage between 0 and 100"
+                self.showingError = true
                 return
             }
             bodyFatValue = parsedBodyFat
@@ -116,8 +120,8 @@ struct AddWeightView: View {
             source: .manual
         )
 
-        weightManager.addWeightEntry(entry)
-        dismiss()
+        self.weightManager.addWeightEntry(entry)
+        self.dismiss()
     }
 }
 

@@ -1,13 +1,14 @@
 import SwiftUI
 
 // MARK: - Hydration Calendar View
+
 // Extracted from HydrationHistoryView.swift for better code organization
 // Following Apple MVVM patterns and SwiftUI component architecture
 
 struct HydrationCalendarView: View {
     @ObservedObject var hydrationManager: HydrationManager
     @Binding var selectedDate: Date?
-    @State private var displayedMonth: Date = Date()
+    @State private var displayedMonth: Date = .init()
 
     var body: some View {
         VStack(spacing: 16) {
@@ -17,18 +18,18 @@ struct HydrationCalendarView: View {
                     .foregroundColor(.cyan)
                     .font(.title2)
 
-                Button(action: previousMonth) {
+                Button(action: self.previousMonth) {
                     Image(systemName: "chevron.left")
                         .foregroundColor(.primary)
                         .font(.title3)
                 }
 
-                Text(currentMonthYear)
+                Text(self.currentMonthYear)
                     .font(.title2)
                     .fontWeight(.bold)
                     .frame(minWidth: 180)
 
-                Button(action: nextMonth) {
+                Button(action: self.nextMonth) {
                     Image(systemName: "chevron.right")
                         .foregroundColor(.primary)
                         .font(.title3)
@@ -36,7 +37,7 @@ struct HydrationCalendarView: View {
 
                 Spacer()
 
-                Text("\(hydrationManager.currentStreak) day\(hydrationManager.currentStreak == 1 ? "" : "s")")
+                Text("\(self.hydrationManager.currentStreak) day\(self.hydrationManager.currentStreak == 1 ? "" : "s")")
                     .font(.headline)
                     .foregroundColor(.cyan)
             }
@@ -55,7 +56,7 @@ struct HydrationCalendarView: View {
                 }
 
                 // Calendar days grid
-                calendarGridView
+                self.calendarGridView
             }
 
             // Legend
@@ -96,19 +97,19 @@ struct HydrationCalendarView: View {
 
     @ViewBuilder
     private var calendarGridView: some View {
-        let monthDays = getMonthDays()
+        let monthDays = self.getMonthDays()
         let daysByWeek = monthDays.chunked(into: 7)
 
-        ForEach(0..<daysByWeek.count, id: \.self) { weekIndex in
+        ForEach(0 ..< daysByWeek.count, id: \.self) { weekIndex in
             HStack(spacing: 8) {
-                ForEach(0..<7, id: \.self) { dayIndex in
+                ForEach(0 ..< 7, id: \.self) { dayIndex in
                     if weekIndex * 7 + dayIndex < monthDays.count {
                         let dateItem = daysByWeek[weekIndex][dayIndex]
                         if let date = dateItem {
                             HydrationDayView(
                                 date: date,
-                                selectedDate: $selectedDate,
-                                hydrationManager: hydrationManager
+                                selectedDate: self.$selectedDate,
+                                hydrationManager: self.hydrationManager
                             )
                         } else {
                             Color.clear
@@ -128,20 +129,20 @@ struct HydrationCalendarView: View {
     private var currentMonthYear: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
-        return formatter.string(from: displayedMonth)
+        return formatter.string(from: self.displayedMonth)
     }
 
     private func previousMonth() {
         let calendar = Calendar.current
         if let newMonth = calendar.date(byAdding: .month, value: -1, to: displayedMonth) {
-            displayedMonth = newMonth
+            self.displayedMonth = newMonth
         }
     }
 
     private func nextMonth() {
         let calendar = Calendar.current
         if let newMonth = calendar.date(byAdding: .month, value: 1, to: displayedMonth) {
-            displayedMonth = newMonth
+            self.displayedMonth = newMonth
         }
     }
 
@@ -150,7 +151,10 @@ struct HydrationCalendarView: View {
 
         // Get the first day of the displayed month
         guard let monthInterval = calendar.dateInterval(of: .month, for: displayedMonth),
-              let firstDayOfMonth = calendar.date(from: calendar.dateComponents([.year, .month], from: monthInterval.start)) else {
+              let firstDayOfMonth = calendar.date(from: calendar.dateComponents(
+                  [.year, .month],
+                  from: monthInterval.start
+              )) else {
             return []
         }
 
@@ -166,7 +170,7 @@ struct HydrationCalendarView: View {
         // Create array with leading nils, then dates
         var days: [Date?] = Array(repeating: nil, count: leadingEmptyDays)
 
-        for day in 0..<daysInMonth {
+        for day in 0 ..< daysInMonth {
             if let date = calendar.date(byAdding: .day, value: day, to: firstDayOfMonth) {
                 days.append(date)
             }
@@ -191,18 +195,18 @@ struct HydrationDayView: View {
 
     var body: some View {
         let calendar = Calendar.current
-        let dayNumber = calendar.component(.day, from: date)
-        let dayStatus = getDayStatus()
+        let dayNumber = calendar.component(.day, from: self.date)
+        let dayStatus = self.getDayStatus()
 
         ZStack {
             // Background
             RoundedRectangle(cornerRadius: 8)
                 .fill(dayStatus == .goalMet ? Color.orange.opacity(0.1) :
-                      dayStatus == .partial ? Color.red.opacity(0.1) :
-                      Color.gray.opacity(0.1))
+                    dayStatus == .partial ? Color.red.opacity(0.1) :
+                    Color.gray.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isToday() ? Color.blue : Color.clear, lineWidth: 2)
+                        .stroke(self.isToday() ? Color.blue : Color.clear, lineWidth: 2)
                 )
 
             VStack(spacing: 4) {
@@ -229,25 +233,25 @@ struct HydrationDayView: View {
         .frame(maxWidth: .infinity)
         .aspectRatio(1, contentMode: .fit)
         .onTapGesture {
-            selectedDate = date
+            self.selectedDate = self.date
         }
     }
 
     private func isToday() -> Bool {
-        Calendar.current.isDateInToday(date)
+        Calendar.current.isDateInToday(self.date)
     }
 
     private func getDayStatus() -> DayStatus {
         let calendar = Calendar.current
-        let dayStart = calendar.startOfDay(for: date)
+        let dayStart = calendar.startOfDay(for: self.date)
 
         // Today always shows as no data (day not complete yet)
-        if calendar.isDateInToday(date) {
+        if calendar.isDateInToday(self.date) {
             return .noData
         }
 
         // Get drinks for this day
-        let dayDrinks = hydrationManager.drinkEntries.filter { entry in
+        let dayDrinks = self.hydrationManager.drinkEntries.filter { entry in
             calendar.isDate(entry.date, inSameDayAs: dayStart)
         }
 
@@ -257,7 +261,7 @@ struct HydrationDayView: View {
 
         let totalOunces = dayDrinks.reduce(0.0) { $0 + $1.amount }
 
-        if totalOunces >= hydrationManager.dailyGoalOunces {
+        if totalOunces >= self.hydrationManager.dailyGoalOunces {
             return .goalMet
         } else {
             return .partial
@@ -272,11 +276,12 @@ struct HydrationDayView: View {
 }
 
 // MARK: - Array Extension for Calendar Chunking
+
 // Supporting utility for calendar grid layout
 
 extension Array {
     func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
+        stride(from: 0, to: count, by: size).map {
             Array(self[$0 ..< Swift.min($0 + size, count)])
         }
     }

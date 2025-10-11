@@ -3,11 +3,10 @@ import SwiftUI
 /// Fast LIFe Design System following Apple's semantic color approach
 /// References Asset Catalog colors for automatic dark/light mode support
 /// Reference: https://developer.apple.com/documentation/xcode/specifying-your-apps-color-scheme
-struct FLTheme {
-
+enum FLTheme {
     // MARK: - Colors (Semantic Asset Catalog References)
 
-    struct Colors {
+    enum Colors {
         /// Primary brand color - references Asset Catalog with dark/light variants
         static let primary = Color("FLPrimary")
 
@@ -29,33 +28,33 @@ struct FLTheme {
 
     // MARK: - Gradients (Fasting Progress System)
 
-    struct Gradients {
+    enum Gradients {
         /// Fasting progress gradient - blue to green progression
         static let fastingProgress = LinearGradient(
             colors: [
-                Color(red: 0.2, green: 0.6, blue: 0.9),   // 0%: Blue (start)
-                Color(red: 0.2, green: 0.7, blue: 0.8),   // 25%: Teal
-                Color(red: 0.2, green: 0.8, blue: 0.7),   // 50%: Cyan
-                Color(red: 0.3, green: 0.8, blue: 0.5),   // 75%: Green-teal
-                Color(red: 0.4, green: 0.9, blue: 0.4),   // 90%: Vibrant green
-                Color(red: 0.3, green: 0.85, blue: 0.3)   // 100%: Celebration green
+                Color(red: 0.2, green: 0.6, blue: 0.9), // 0%: Blue (start)
+                Color(red: 0.2, green: 0.7, blue: 0.8), // 25%: Teal
+                Color(red: 0.2, green: 0.8, blue: 0.7), // 50%: Cyan
+                Color(red: 0.3, green: 0.8, blue: 0.5), // 75%: Green-teal
+                Color(red: 0.4, green: 0.9, blue: 0.4), // 90%: Vibrant green
+                Color(red: 0.3, green: 0.85, blue: 0.3), // 100%: Celebration green
             ],
             startPoint: .leading,
             endPoint: .trailing
         )
 
         /// Individual fasting progress colors for discrete use
-        static let fastingStage0 = Color(red: 0.2, green: 0.6, blue: 0.9)    // Blue (start)
-        static let fastingStage25 = Color(red: 0.2, green: 0.7, blue: 0.8)   // Teal
-        static let fastingStage50 = Color(red: 0.2, green: 0.8, blue: 0.7)   // Cyan
-        static let fastingStage75 = Color(red: 0.3, green: 0.8, blue: 0.5)   // Green-teal
-        static let fastingStage90 = Color(red: 0.4, green: 0.9, blue: 0.4)   // Vibrant green
+        static let fastingStage0 = Color(red: 0.2, green: 0.6, blue: 0.9) // Blue (start)
+        static let fastingStage25 = Color(red: 0.2, green: 0.7, blue: 0.8) // Teal
+        static let fastingStage50 = Color(red: 0.2, green: 0.8, blue: 0.7) // Cyan
+        static let fastingStage75 = Color(red: 0.3, green: 0.8, blue: 0.5) // Green-teal
+        static let fastingStage90 = Color(red: 0.4, green: 0.9, blue: 0.4) // Vibrant green
         static let fastingStage100 = Color(red: 0.3, green: 0.85, blue: 0.3) // Celebration green
     }
 
     // MARK: - Typography (Following Apple's Dynamic Type)
 
-    struct Typography {
+    enum Typography {
         static let largeTitle = Font.largeTitle.bold()
         static let title = Font.title.bold()
         static let title2 = Font.title2.semibold()
@@ -71,7 +70,7 @@ struct FLTheme {
 
     // MARK: - Spacing (Following Apple's 8pt Grid System)
 
-    struct Spacing {
+    enum Spacing {
         static let xxs: CGFloat = 2
         static let xs: CGFloat = 4
         static let sm: CGFloat = 8

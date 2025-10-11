@@ -1,7 +1,8 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 // MARK: - Sleep Time Range
+
 // Following WeightTrackingView pattern for consistent time range selection
 enum SleepTimeRange: String, CaseIterable {
     case day = "Day"
@@ -24,6 +25,7 @@ enum SleepTimeRange: String, CaseIterable {
 }
 
 // MARK: - Sleep Tracking View
+
 // Refactored from 437 → ~88 lines (80% reduction)
 // Following Apple MVVM patterns and Phase 3a/3b/3c component extraction lessons
 
@@ -39,7 +41,7 @@ struct SleepTrackingView: View {
     private let recommendedSleep: Double = 7.0
 
     private var healthKitNudgeView: AnyView? {
-        if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .sleep) {
+        if self.showHealthKitNudge, self.nudgeManager.shouldShowNudge(for: .sleep) {
             return AnyView(
                 HealthKitNudgeView(
                     dataType: .sleep,
@@ -49,19 +51,19 @@ struct SleepTrackingView: View {
                             DispatchQueue.main.async {
                                 if success {
                                     print("✅ SleepTrackingView: Sleep authorization granted from nudge")
-                                    sleepManager.setSyncPreference(true)
-                                    showHealthKitNudge = false
+                                    self.sleepManager.setSyncPreference(true)
+                                    self.showHealthKitNudge = false
                                 } else {
                                     print("❌ SleepTrackingView: Sleep authorization denied from nudge")
-                                    nudgeManager.dismissNudge(for: .sleep)
-                                    showHealthKitNudge = false
+                                    self.nudgeManager.dismissNudge(for: .sleep)
+                                    self.showHealthKitNudge = false
                                 }
                             }
                         }
                     },
                     onDismiss: {
-                        nudgeManager.dismissNudge(for: .sleep)
-                        showHealthKitNudge = false
+                        self.nudgeManager.dismissNudge(for: .sleep)
+                        self.showHealthKitNudge = false
                     }
                 )
             )
@@ -71,10 +73,10 @@ struct SleepTrackingView: View {
 
     var body: some View {
         TrackerScreenShell(
-            title: ("Sleep Tr", "ac", "ker"),  // Matching Weight Tracker gradient pattern
-            hasData: !sleepManager.sleepEntries.isEmpty,
-            nudge: healthKitNudgeView,
-            settingsAction: { showingSyncSettings = true }  // Matching gear icon functionality
+            title: ("Sleep Tr", "ac", "ker"), // Matching Weight Tracker gradient pattern
+            hasData: !self.sleepManager.sleepEntries.isEmpty,
+            nudge: self.healthKitNudgeView,
+            settingsAction: { self.showingSyncSettings = true } // Matching gear icon functionality
         ) {
             // Sleep Progress Ring
             ZStack {
@@ -86,12 +88,12 @@ struct SleepTrackingView: View {
                 // Sleep progress ring
                 if let lastNight = sleepManager.lastNightSleep {
                     let sleepHours = lastNight.duration / 3600
-                    let progress = min(sleepHours / recommendedSleep, 1.0)
+                    let progress = min(sleepHours / self.recommendedSleep, 1.0)
 
                     Circle()
                         .trim(from: 0, to: progress)
                         .stroke(
-                            sleepHours >= recommendedSleep ? Color.green : Color.purple,
+                            sleepHours >= self.recommendedSleep ? Color.green : Color.purple,
                             style: StrokeStyle(lineWidth: 20, lineCap: .round)
                         )
                         .frame(width: 250, height: 250)
@@ -125,7 +127,7 @@ struct SleepTrackingView: View {
                         Text("Goal")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text("\(Int(recommendedSleep)) hrs")
+                        Text("\(Int(self.recommendedSleep)) hrs")
                             .font(.system(size: 24, weight: .semibold, design: .rounded))
                             .foregroundColor(.purple)
                     }
@@ -166,7 +168,7 @@ struct SleepTrackingView: View {
 
             // Add Sleep Button (positioned above charts for better UX flow)
             Button(action: {
-                showingAddSleep = true
+                self.showingAddSleep = true
             }) {
                 Text("Log Sleep")
                     .font(.headline)
@@ -183,113 +185,116 @@ struct SleepTrackingView: View {
             // Following Apple 2025 industry standard: display charts with basic data, not just detailed stages
             if let lastNight = sleepManager.lastNightSleep {
                 VStack(spacing: 20) {
-                        // Show stage breakdown chart only when detailed stage data exists
-                        if !lastNight.stages.isEmpty {
-                            // Sleep Stage Breakdown Chart (Pie chart with quality score)
-                            SleepStageBreakdownChart(sleepEntry: lastNight)
-                                .padding(.horizontal, 40)
-                        }
+                    // Show stage breakdown chart only when detailed stage data exists
+                    if !lastNight.stages.isEmpty {
+                        // Sleep Stage Breakdown Chart (Pie chart with quality score)
+                        SleepStageBreakdownChart(sleepEntry: lastNight)
+                            .padding(.horizontal, 40)
+                    }
 
-                        // Sleep Duration Chart (Apple Health style with brainwave colors) - works with basic duration data
-                        if sleepManager.sleepEntries.count >= 2 {
-                            VStack(spacing: 0) {
-                                // Time Range Selector (matching Weight Tracker exactly)
-                                HStack {
-                                    Text("Sleep Duration")
-                                        .font(.headline)
-                                        .foregroundColor(.primary)
+                    // Sleep Duration Chart (Apple Health style with brainwave colors) - works with basic duration data
+                    if self.sleepManager.sleepEntries.count >= 2 {
+                        VStack(spacing: 0) {
+                            // Time Range Selector (matching Weight Tracker exactly)
+                            HStack {
+                                Text("Sleep Duration")
+                                    .font(.headline)
+                                    .foregroundColor(.primary)
 
-                                    Spacer()
+                                Spacer()
 
-                                    Menu {
-                                        ForEach(SleepTimeRange.allCases, id: \.self) { range in
-                                            Button(range.rawValue) {
-                                                selectedTimeRange = range
-                                            }
+                                Menu {
+                                    ForEach(SleepTimeRange.allCases, id: \.self) { range in
+                                        Button(range.rawValue) {
+                                            self.selectedTimeRange = range
                                         }
-                                    } label: {
-                                        HStack(spacing: 4) {
-                                            Text(selectedTimeRange.rawValue)
-                                                .font(.subheadline)
-                                                .foregroundColor(.purple)
-                                            Image(systemName: "chevron.down")
-                                                .font(.caption)
-                                                .foregroundColor(.purple)
-                                        }
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
-                                        .background(Color.purple.opacity(0.1))
-                                        .cornerRadius(8)
                                     }
+                                } label: {
+                                    HStack(spacing: 4) {
+                                        Text(self.selectedTimeRange.rawValue)
+                                            .font(.subheadline)
+                                            .foregroundColor(.purple)
+                                        Image(systemName: "chevron.down")
+                                            .font(.caption)
+                                            .foregroundColor(.purple)
+                                    }
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(Color.purple.opacity(0.1))
+                                    .cornerRadius(8)
                                 }
-                                .padding(.horizontal, 40)
-                                .padding(.bottom, 12)
-
-                                SleepBarChart(sleepEntries: sleepManager.sleepEntries, timeRange: selectedTimeRange)
-                                    .padding(.horizontal, 40)
                             }
-                        }
-
-                        // Sleep Consistency Analysis (Bedtime/wake time optimization) - works with basic timing data
-                        if sleepManager.sleepEntries.count >= 3 {
-                            SleepConsistencyChart(sleepEntries: Array(sleepManager.sleepEntries.prefix(7)))
-                                .padding(.horizontal, 40)
-                        }
-                    }
-                    .padding(.bottom, 30)
-                }
-
-                // Sleep Stage Timeline (Apple Health style)
-                // Show detailed stage breakdown for last night's sleep if available
-                if let lastNight = sleepManager.lastNightSleep, !lastNight.stages.isEmpty {
-                    VStack(spacing: 0) {
-                        Text("Sleep Stages")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 40)
-                            .padding(.bottom, 16)
+                            .padding(.bottom, 12)
 
-                        SleepStageTimelineView(sleepEntry: lastNight)
-                            .padding(.horizontal, 40)
-                    }
-                    .padding(.bottom, 20)
-                }
-
-                Spacer()
-                    .frame(height: 10)
-
-                // Recent Sleep History
-                if !sleepManager.sleepEntries.isEmpty {
-                    VStack(spacing: 12) {
-                        Text("Recent Sleep")
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal, 40)
-
-                        ForEach(Array(sleepManager.sleepEntries.prefix(5))) { entry in
-                            SleepHistoryRow(sleep: entry, onDelete: {
-                                sleepManager.deleteSleepEntry(entry)
-                            })
+                            SleepBarChart(
+                                sleepEntries: self.sleepManager.sleepEntries,
+                                timeRange: self.selectedTimeRange
+                            )
                             .padding(.horizontal, 40)
                         }
                     }
-                    .padding(.bottom, 20)
+
+                    // Sleep Consistency Analysis (Bedtime/wake time optimization) - works with basic timing data
+                    if self.sleepManager.sleepEntries.count >= 3 {
+                        SleepConsistencyChart(sleepEntries: Array(self.sleepManager.sleepEntries.prefix(7)))
+                            .padding(.horizontal, 40)
+                    }
                 }
+                .padding(.bottom, 30)
+            }
+
+            // Sleep Stage Timeline (Apple Health style)
+            // Show detailed stage breakdown for last night's sleep if available
+            if let lastNight = sleepManager.lastNightSleep, !lastNight.stages.isEmpty {
+                VStack(spacing: 0) {
+                    Text("Sleep Stages")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 40)
+                        .padding(.bottom, 16)
+
+                    SleepStageTimelineView(sleepEntry: lastNight)
+                        .padding(.horizontal, 40)
+                }
+                .padding(.bottom, 20)
+            }
+
+            Spacer()
+                .frame(height: 10)
+
+            // Recent Sleep History
+            if !self.sleepManager.sleepEntries.isEmpty {
+                VStack(spacing: 12) {
+                    Text("Recent Sleep")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 40)
+
+                    ForEach(Array(self.sleepManager.sleepEntries.prefix(5))) { entry in
+                        SleepHistoryRow(sleep: entry, onDelete: {
+                            self.sleepManager.deleteSleepEntry(entry)
+                        })
+                        .padding(.horizontal, 40)
+                    }
+                }
+                .padding(.bottom, 20)
+            }
 
             Spacer()
                 .frame(height: 20)
         }
-        .sheet(isPresented: $showingAddSleep) {
-            AddSleepView(sleepManager: sleepManager)
+        .sheet(isPresented: self.$showingAddSleep) {
+            AddSleepView(sleepManager: self.sleepManager)
         }
-        .sheet(isPresented: $showingSyncSettings) {
-            SleepSyncSettingsView(sleepManager: sleepManager)
+        .sheet(isPresented: self.$showingSyncSettings) {
+            SleepSyncSettingsView(sleepManager: self.sleepManager)
         }
         .onAppear {
-            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .sleep)
-            if showHealthKitNudge {
+            self.showHealthKitNudge = self.nudgeManager.shouldShowNudge(for: .sleep)
+            if self.showHealthKitNudge {
                 print("📱 SleepTrackingView: Showing HealthKit nudge for first-time user")
             }
         }

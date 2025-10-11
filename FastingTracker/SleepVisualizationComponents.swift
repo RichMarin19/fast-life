@@ -1,7 +1,8 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 // MARK: - Sleep Bar Chart (Apple Health Style)
+
 // Stacked bar chart showing sleep duration with brainwave-based colors
 // Following neuroscience standards for sleep stage visualization
 
@@ -11,10 +12,10 @@ struct SleepBarChart: View {
 
     // Brainwave-based color scheme (scientifically accurate)
     private let stageColors: [SleepStageType: Color] = [
-        .deep: Color.purple,      // Delta waves (0.5-4 Hz) - deep purple
-        .rem: Color.cyan,         // Beta/Gamma waves - bright cyan (active brain)
-        .core: Color.blue,        // Alpha waves (8-12 Hz) - blue (relaxed)
-        .awake: Color.orange      // Beta waves (13-30 Hz) - orange (alert)
+        .deep: Color.purple, // Delta waves (0.5-4 Hz) - deep purple
+        .rem: Color.cyan, // Beta/Gamma waves - bright cyan (active brain)
+        .core: Color.blue, // Alpha waves (8-12 Hz) - blue (relaxed)
+        .awake: Color.orange, // Beta waves (13-30 Hz) - orange (alert)
     ]
 
     var body: some View {
@@ -25,7 +26,7 @@ struct SleepBarChart: View {
                     Text("Sleep Duration")
                         .font(.headline)
                         .foregroundColor(.primary)
-                    Text(timeRange.rawValue)
+                    Text(self.timeRange.rawValue)
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -34,19 +35,19 @@ struct SleepBarChart: View {
             }
 
             // Stacked Bar Chart
-            Chart(filteredEntries, id: \.id) { entry in
+            Chart(self.filteredEntries, id: \.id) { entry in
                 ForEach(entry.stageBreakdown, id: \.type) { stage in
                     BarMark(
                         x: .value("Date", entry.wakeTime),
                         y: .value("Duration", stage.duration / 3600), // Convert to hours
                         stacking: .standard
                     )
-                    .foregroundStyle(stageColors[stage.type] ?? .gray)
+                    .foregroundStyle(self.stageColors[stage.type] ?? .gray)
                 }
             }
             .frame(height: 200)
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: max(1, (timeRange.days ?? 30) / 7))) { _ in
+                AxisMarks(values: .stride(by: .day, count: max(1, (self.timeRange.days ?? 30) / 7))) { _ in
                     AxisValueLabel(format: .dateTime.month(.abbreviated).day())
                     AxisGridLine()
                     AxisTick()
@@ -68,7 +69,7 @@ struct SleepBarChart: View {
                 ForEach([SleepStageType.deep, .rem, .core, .awake], id: \.self) { stage in
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(stageColors[stage] ?? .gray)
+                            .fill(self.stageColors[stage] ?? .gray)
                             .frame(width: 8, height: 8)
                         Text(stage.displayName)
                             .font(.caption)
@@ -87,13 +88,14 @@ struct SleepBarChart: View {
 
     // Filter entries based on selected time range
     private var filteredEntries: [SleepEntry] {
-        guard let days = timeRange.days else { return sleepEntries }
+        guard let days = timeRange.days else { return self.sleepEntries }
         let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        return sleepEntries.filter { $0.wakeTime >= cutoffDate }.prefix(days).map { $0 }
+        return self.sleepEntries.filter { $0.wakeTime >= cutoffDate }.prefix(days).map { $0 }
     }
 }
 
 // MARK: - Sleep Stage Breakdown Extension
+
 // Helper extension for stacked bar chart data processing
 
 extension SleepEntry {
@@ -102,7 +104,7 @@ extension SleepEntry {
         if stages.isEmpty {
             return [
                 StageBreakdown(type: .core, duration: duration * 0.85), // Assume most is core sleep
-                StageBreakdown(type: .awake, duration: duration * 0.15)  // Small awake portion
+                StageBreakdown(type: .awake, duration: duration * 0.15), // Small awake portion
             ]
         }
 
@@ -147,10 +149,12 @@ extension SleepStageType {
 }
 
 // MARK: - Sleep Optimization Visualization Components
+
 // User-friendly sleep charts designed for actionable insights and optimization
 // Following Fast LIFe design patterns with clear, intuitive visualizations
 
 // MARK: - Sleep Stage Breakdown Chart
+
 // Pie chart showing sleep stage distribution - much clearer than Apple's timeline
 
 struct SleepStageBreakdownChart: View {
@@ -158,10 +162,10 @@ struct SleepStageBreakdownChart: View {
 
     // Sleep optimization benchmarks (based on sleep research)
     private let optimalRanges = [
-        "Deep": 0.15...0.25,      // 15-25% deep sleep is optimal
-        "REM": 0.20...0.25,       // 20-25% REM sleep is optimal
-        "Core": 0.45...0.65,      // 45-65% core sleep is normal
-        "Awake": 0.00...0.05      // <5% awake time is good
+        "Deep": 0.15 ... 0.25, // 15-25% deep sleep is optimal
+        "REM": 0.20 ... 0.25, // 20-25% REM sleep is optimal
+        "Core": 0.45 ... 0.65, // 45-65% core sleep is normal
+        "Awake": 0.00 ... 0.05, // <5% awake time is good
     ]
 
     var body: some View {
@@ -172,7 +176,7 @@ struct SleepStageBreakdownChart: View {
                     Text("Sleep Quality")
                         .font(.headline)
                         .foregroundColor(.primary)
-                    Text(sleepEntry.formattedDuration)
+                    Text(self.sleepEntry.formattedDuration)
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.purple)
@@ -180,12 +184,12 @@ struct SleepStageBreakdownChart: View {
                 Spacer()
 
                 // Overall sleep score
-                SleepQualityScore(sleepEntry: sleepEntry)
+                SleepQualityScore(sleepEntry: self.sleepEntry)
             }
 
             HStack(spacing: 20) {
                 // Pie Chart
-                Chart(stageData, id: \.stage) { data in
+                Chart(self.stageData, id: \.stage) { data in
                     SectorMark(
                         angle: .value("Duration", data.percentage),
                         innerRadius: .ratio(0.5),
@@ -197,7 +201,7 @@ struct SleepStageBreakdownChart: View {
 
                 // Stage Breakdown with Optimization Status
                 VStack(spacing: 8) {
-                    ForEach(stageData, id: \.stage) { data in
+                    ForEach(self.stageData, id: \.stage) { data in
                         SleepStageRow(
                             stage: data.stage,
                             duration: data.duration,
@@ -219,8 +223,8 @@ struct SleepStageBreakdownChart: View {
 
     // Computed sleep stage data with optimization status
     private var stageData: [StageData] {
-        let stages = sleepEntry.stageDurations
-        let totalDuration = sleepEntry.duration
+        let stages = self.sleepEntry.stageDurations
+        let totalDuration = self.sleepEntry.duration
 
         return [
             StageData(
@@ -228,29 +232,29 @@ struct SleepStageBreakdownChart: View {
                 duration: stages.deep,
                 percentage: stages.deep / totalDuration,
                 color: .blue,
-                isOptimal: optimalRanges["Deep"]!.contains(stages.deep / totalDuration)
+                isOptimal: self.optimalRanges["Deep"]!.contains(stages.deep / totalDuration)
             ),
             StageData(
                 stage: "REM",
                 duration: stages.rem,
                 percentage: stages.rem / totalDuration,
                 color: .cyan,
-                isOptimal: optimalRanges["REM"]!.contains(stages.rem / totalDuration)
+                isOptimal: self.optimalRanges["REM"]!.contains(stages.rem / totalDuration)
             ),
             StageData(
                 stage: "Core",
                 duration: stages.core,
                 percentage: stages.core / totalDuration,
                 color: .indigo,
-                isOptimal: optimalRanges["Core"]!.contains(stages.core / totalDuration)
+                isOptimal: self.optimalRanges["Core"]!.contains(stages.core / totalDuration)
             ),
             StageData(
                 stage: "Awake",
                 duration: stages.awake,
                 percentage: stages.awake / totalDuration,
                 color: .orange,
-                isOptimal: optimalRanges["Awake"]!.contains(stages.awake / totalDuration)
-            )
+                isOptimal: self.optimalRanges["Awake"]!.contains(stages.awake / totalDuration)
+            ),
         ].filter { $0.duration > 0 } // Only show stages that occurred
     }
 }
@@ -276,31 +280,31 @@ struct SleepStageRow: View {
         HStack(spacing: 8) {
             // Stage color indicator
             Circle()
-                .fill(color)
+                .fill(self.color)
                 .frame(width: 8, height: 8)
 
             // Stage name
-            Text(stage)
+            Text(self.stage)
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .frame(width: 35, alignment: .leading)
 
             // Duration
-            Text(formattedDuration)
+            Text(self.formattedDuration)
                 .font(.caption)
                 .fontWeight(.medium)
                 .frame(width: 45, alignment: .leading)
 
             // Percentage
-            Text("\(Int(percentage * 100))%")
+            Text("\(Int(self.percentage * 100))%")
                 .font(.caption)
                 .fontWeight(.medium)
                 .frame(width: 30, alignment: .leading)
 
             // Optimization indicator
-            Image(systemName: isOptimal ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+            Image(systemName: self.isOptimal ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                 .font(.caption)
-                .foregroundColor(isOptimal ? .green : .yellow)
+                .foregroundColor(self.isOptimal ? .green : .yellow)
         }
     }
 
@@ -321,10 +325,10 @@ struct SleepQualityScore: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            Text("\(qualityScore)")
+            Text("\(self.qualityScore)")
                 .font(.title)
                 .fontWeight(.bold)
-                .foregroundColor(scoreColor)
+                .foregroundColor(self.scoreColor)
 
             Text("Score")
                 .font(.caption2)
@@ -333,14 +337,14 @@ struct SleepQualityScore: View {
         .padding(8)
         .background(
             Circle()
-                .fill(scoreColor.opacity(0.1))
+                .fill(self.scoreColor.opacity(0.1))
         )
     }
 
     // Calculate sleep quality score (0-100) based on stage optimization
     private var qualityScore: Int {
-        let stages = sleepEntry.stageDurations
-        let totalDuration = sleepEntry.duration
+        let stages = self.sleepEntry.stageDurations
+        let totalDuration = self.sleepEntry.duration
 
         guard totalDuration > 0 else { return 0 }
 
@@ -384,11 +388,11 @@ struct SleepQualityScore: View {
 
         // Duration score (25 points max) - 7-9 hours is optimal
         let hours = totalDuration / 3600
-        if hours >= 7 && hours <= 9 {
+        if hours >= 7, hours <= 9 {
             score += 25
-        } else if hours >= 6 && hours <= 10 {
+        } else if hours >= 6, hours <= 10 {
             score += 20
-        } else if hours >= 5 && hours <= 11 {
+        } else if hours >= 5, hours <= 11 {
             score += 15
         } else {
             score += 10
@@ -398,15 +402,16 @@ struct SleepQualityScore: View {
     }
 
     private var scoreColor: Color {
-        switch qualityScore {
-        case 80...100: return .green
-        case 60...79: return .yellow
+        switch self.qualityScore {
+        case 80 ... 100: return .green
+        case 60 ... 79: return .yellow
         default: return .red
         }
     }
 }
 
 // MARK: - Sleep Trend Chart
+
 // Line chart showing sleep quality trends over time for optimization insights
 
 struct SleepTrendChart: View {
@@ -445,7 +450,7 @@ struct SleepTrendChart: View {
 
                 Spacer()
 
-                Text(timeRange.title)
+                Text(self.timeRange.title)
                     .font(.caption)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -455,7 +460,7 @@ struct SleepTrendChart: View {
             }
 
             // Trend Chart
-            Chart(chartData, id: \.date) { data in
+            Chart(self.chartData, id: \.date) { data in
                 LineMark(
                     x: .value("Date", data.date),
                     y: .value("Quality Score", data.qualityScore)
@@ -471,7 +476,7 @@ struct SleepTrendChart: View {
             }
             .frame(height: 120)
             .chartXAxis {
-                AxisMarks(values: .stride(by: .day, count: timeRange.days / 7)) { _ in
+                AxisMarks(values: .stride(by: .day, count: self.timeRange.days / 7)) { _ in
                     AxisValueLabel(format: .dateTime.month(.abbreviated).day())
                     AxisGridLine()
                     AxisTick()
@@ -487,10 +492,10 @@ struct SleepTrendChart: View {
                     AxisGridLine()
                 }
             }
-            .chartYScale(domain: 0...100)
+            .chartYScale(domain: 0 ... 100)
 
             // Trend Summary
-            SleepTrendSummary(chartData: chartData)
+            SleepTrendSummary(chartData: self.chartData)
         }
         .padding()
         .background(
@@ -502,15 +507,15 @@ struct SleepTrendChart: View {
 
     // FIXED: Computed chart data with corrected Calendar API usage
     private var chartData: [TrendDataPoint] {
-        let filteredEntries = sleepEntries.filter { entry in
+        let filteredEntries = self.sleepEntries.filter { entry in
             let daysAgo = abs(entry.wakeTime.timeIntervalSince(Date()))
-            return daysAgo <= TimeInterval(timeRange.days * 24 * 3600)
+            return daysAgo <= TimeInterval(self.timeRange.days * 24 * 3600)
         }
 
         return filteredEntries.map { entry in
             TrendDataPoint(
                 date: entry.wakeTime,
-                qualityScore: calculateQualityScore(for: entry)
+                qualityScore: self.calculateQualityScore(for: entry)
             )
         }.sorted { $0.date < $1.date }
     }
@@ -547,9 +552,9 @@ struct SleepTrendChart: View {
 
         // Duration (25 points)
         let hours = totalDuration / 3600
-        if hours >= 7 && hours <= 9 { score += 25 }
-        else if hours >= 6 && hours <= 10 { score += 20 }
-        else if hours >= 5 && hours <= 11 { score += 15 }
+        if hours >= 7, hours <= 9 { score += 25 }
+        else if hours >= 6, hours <= 10 { score += 20 }
+        else if hours >= 5, hours <= 11 { score += 15 }
         else { score += 10 }
 
         return min(score, 100)
@@ -568,7 +573,7 @@ struct SleepTrendSummary: View {
         HStack(spacing: 20) {
             // Average score
             VStack(spacing: 2) {
-                Text("\(averageScore)")
+                Text("\(self.averageScore)")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)
@@ -580,13 +585,13 @@ struct SleepTrendSummary: View {
             // Trend direction
             VStack(spacing: 2) {
                 HStack(spacing: 4) {
-                    Image(systemName: trendDirection.icon)
+                    Image(systemName: self.trendDirection.icon)
                         .font(.caption)
-                        .foregroundColor(trendDirection.color)
-                    Text("\(abs(trendChange))")
+                        .foregroundColor(self.trendDirection.color)
+                    Text("\(abs(self.trendChange))")
                         .font(.title3)
                         .fontWeight(.semibold)
-                        .foregroundColor(trendDirection.color)
+                        .foregroundColor(self.trendDirection.color)
                 }
                 Text("Trend")
                     .font(.caption2)
@@ -595,7 +600,7 @@ struct SleepTrendSummary: View {
 
             // Best night
             VStack(spacing: 2) {
-                Text("\(bestScore)")
+                Text("\(self.bestScore)")
                     .font(.title3)
                     .fontWeight(.semibold)
                     .foregroundColor(.green)
@@ -607,18 +612,18 @@ struct SleepTrendSummary: View {
     }
 
     private var averageScore: Int {
-        guard !chartData.isEmpty else { return 0 }
-        return chartData.map(\.qualityScore).reduce(0, +) / chartData.count
+        guard !self.chartData.isEmpty else { return 0 }
+        return self.chartData.map(\.qualityScore).reduce(0, +) / self.chartData.count
     }
 
     private var bestScore: Int {
-        chartData.map(\.qualityScore).max() ?? 0
+        self.chartData.map(\.qualityScore).max() ?? 0
     }
 
     private var trendChange: Int {
-        guard chartData.count >= 2 else { return 0 }
-        let firstHalf = chartData.prefix(chartData.count / 2).map(\.qualityScore)
-        let secondHalf = chartData.suffix(chartData.count / 2).map(\.qualityScore)
+        guard self.chartData.count >= 2 else { return 0 }
+        let firstHalf = self.chartData.prefix(self.chartData.count / 2).map(\.qualityScore)
+        let secondHalf = self.chartData.suffix(self.chartData.count / 2).map(\.qualityScore)
 
         let firstAvg = firstHalf.reduce(0, +) / firstHalf.count
         let secondAvg = secondHalf.reduce(0, +) / secondHalf.count
@@ -627,9 +632,9 @@ struct SleepTrendSummary: View {
     }
 
     private var trendDirection: (icon: String, color: Color) {
-        if trendChange > 0 {
+        if self.trendChange > 0 {
             return ("arrow.up.right", .green)
-        } else if trendChange < 0 {
+        } else if self.trendChange < 0 {
             return ("arrow.down.right", .red)
         } else {
             return ("arrow.right", .gray)
@@ -638,6 +643,7 @@ struct SleepTrendSummary: View {
 }
 
 // MARK: - Sleep Consistency Metrics
+
 // Critical for sleep optimization - consistent schedules improve sleep quality significantly
 
 struct SleepConsistencyChart: View {
@@ -659,16 +665,16 @@ struct SleepConsistencyChart: View {
                 Spacer()
 
                 // Overall consistency score
-                ConsistencyScore(score: overallConsistencyScore)
+                ConsistencyScore(score: self.overallConsistencyScore)
             }
 
             HStack(spacing: 16) {
                 // Bedtime consistency
                 ConsistencyMetric(
                     title: "Bedtime",
-                    variance: bedtimeVariance,
-                    averageTime: averageBedtime,
-                    isGood: bedtimeVariance < 3600 // < 1 hour variance is good
+                    variance: self.bedtimeVariance,
+                    averageTime: self.averageBedtime,
+                    isGood: self.bedtimeVariance < 3600 // < 1 hour variance is good
                 )
 
                 Divider()
@@ -677,16 +683,16 @@ struct SleepConsistencyChart: View {
                 // Wake time consistency
                 ConsistencyMetric(
                     title: "Wake Time",
-                    variance: waketimeVariance,
-                    averageTime: averageWaketime,
-                    isGood: waketimeVariance < 3600 // < 1 hour variance is good
+                    variance: self.waketimeVariance,
+                    averageTime: self.averageWaketime,
+                    isGood: self.waketimeVariance < 3600 // < 1 hour variance is good
                 )
             }
 
             // Optimization tips
             SleepOptimizationTips(
-                bedtimeVariance: bedtimeVariance,
-                waketimeVariance: waketimeVariance
+                bedtimeVariance: self.bedtimeVariance,
+                waketimeVariance: self.waketimeVariance
             )
         }
         .padding()
@@ -701,15 +707,16 @@ struct SleepConsistencyChart: View {
 
     private var recentEntries: [SleepEntry] {
         let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
-        return sleepEntries.filter { $0.wakeTime >= sevenDaysAgo }.prefix(7).map { $0 }
+        return self.sleepEntries.filter { $0.wakeTime >= sevenDaysAgo }.prefix(7).map { $0 }
     }
 
     private var bedtimeVariance: TimeInterval {
-        guard recentEntries.count >= 2 else { return 0 }
+        guard self.recentEntries.count >= 2 else { return 0 }
 
-        let bedtimes = recentEntries.map { $0.bedTime }
+        let bedtimes = self.recentEntries.map(\.bedTime)
         let avgBedtime = bedtimes.reduce(Date(timeIntervalSince1970: 0)) { result, date in
-            Date(timeIntervalSince1970: result.timeIntervalSince1970 + date.timeIntervalSince1970 / Double(bedtimes.count))
+            Date(timeIntervalSince1970: result.timeIntervalSince1970 + date
+                .timeIntervalSince1970 / Double(bedtimes.count))
         }
 
         let variances = bedtimes.map { abs($0.timeIntervalSince(avgBedtime)) }
@@ -717,11 +724,12 @@ struct SleepConsistencyChart: View {
     }
 
     private var waketimeVariance: TimeInterval {
-        guard recentEntries.count >= 2 else { return 0 }
+        guard self.recentEntries.count >= 2 else { return 0 }
 
-        let waketimes = recentEntries.map { $0.wakeTime }
+        let waketimes = self.recentEntries.map(\.wakeTime)
         let avgWaketime = waketimes.reduce(Date(timeIntervalSince1970: 0)) { result, date in
-            Date(timeIntervalSince1970: result.timeIntervalSince1970 + date.timeIntervalSince1970 / Double(waketimes.count))
+            Date(timeIntervalSince1970: result.timeIntervalSince1970 + date
+                .timeIntervalSince1970 / Double(waketimes.count))
         }
 
         let variances = waketimes.map { abs($0.timeIntervalSince(avgWaketime)) }
@@ -729,20 +737,22 @@ struct SleepConsistencyChart: View {
     }
 
     private var averageBedtime: Date {
-        guard !recentEntries.isEmpty else { return Date() }
-        let totalInterval = recentEntries.map(\.bedTime).reduce(0) { $0 + $1.timeIntervalSince1970 }
-        return Date(timeIntervalSince1970: totalInterval / Double(recentEntries.count))
+        guard !self.recentEntries.isEmpty else { return Date() }
+        let totalInterval = self.recentEntries.map(\.bedTime).reduce(0) { $0 + $1.timeIntervalSince1970 }
+        return Date(timeIntervalSince1970: totalInterval / Double(self.recentEntries.count))
     }
 
     private var averageWaketime: Date {
-        guard !recentEntries.isEmpty else { return Date() }
-        let totalInterval = recentEntries.map(\.wakeTime).reduce(0) { $0 + $1.timeIntervalSince1970 }
-        return Date(timeIntervalSince1970: totalInterval / Double(recentEntries.count))
+        guard !self.recentEntries.isEmpty else { return Date() }
+        let totalInterval = self.recentEntries.map(\.wakeTime).reduce(0) { $0 + $1.timeIntervalSince1970 }
+        return Date(timeIntervalSince1970: totalInterval / Double(self.recentEntries.count))
     }
 
     private var overallConsistencyScore: Int {
-        let bedtimeScore = bedtimeVariance < 1800 ? 50 : max(0, 50 - Int(bedtimeVariance / 120)) // 30min = 50, decreases by 1 per 2min
-        let waketimeScore = waketimeVariance < 1800 ? 50 : max(0, 50 - Int(waketimeVariance / 120))
+        let bedtimeScore = self
+            .bedtimeVariance < 1800 ? 50 :
+            max(0, 50 - Int(self.bedtimeVariance / 120)) // 30min = 50, decreases by 1 per 2min
+        let waketimeScore = self.waketimeVariance < 1800 ? 50 : max(0, 50 - Int(self.waketimeVariance / 120))
         return bedtimeScore + waketimeScore
     }
 }
@@ -752,10 +762,10 @@ struct ConsistencyScore: View {
 
     var body: some View {
         VStack(spacing: 2) {
-            Text("\(score)")
+            Text("\(self.score)")
                 .font(.title2)
                 .fontWeight(.bold)
-                .foregroundColor(scoreColor)
+                .foregroundColor(self.scoreColor)
             Text("Score")
                 .font(.caption2)
                 .foregroundColor(.secondary)
@@ -763,14 +773,14 @@ struct ConsistencyScore: View {
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 8)
-                .fill(scoreColor.opacity(0.1))
+                .fill(self.scoreColor.opacity(0.1))
         )
     }
 
     private var scoreColor: Color {
-        switch score {
-        case 80...100: return .green
-        case 60...79: return .yellow
+        switch self.score {
+        case 80 ... 100: return .green
+        case 60 ... 79: return .yellow
         default: return .orange
         }
     }
@@ -786,24 +796,24 @@ struct ConsistencyMetric: View {
         VStack(spacing: 8) {
             // Title and status
             HStack(spacing: 4) {
-                Text(title)
+                Text(self.title)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                Image(systemName: isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
+                Image(systemName: self.isGood ? "checkmark.circle.fill" : "exclamationmark.circle.fill")
                     .font(.caption)
-                    .foregroundColor(isGood ? .green : .orange)
+                    .foregroundColor(self.isGood ? .green : .orange)
             }
 
             // Average time
-            Text(formatTime(averageTime))
+            Text(self.formatTime(self.averageTime))
                 .font(.title3)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
 
             // Variance
-            Text("±\(formatVariance(variance))")
+            Text("±\(self.formatVariance(self.variance))")
                 .font(.caption)
-                .foregroundColor(isGood ? .green : .orange)
+                .foregroundColor(self.isGood ? .green : .orange)
         }
     }
 
@@ -842,7 +852,7 @@ struct SleepOptimizationTips: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                ForEach(optimizationTips, id: \.self) { tip in
+                ForEach(self.optimizationTips, id: \.self) { tip in
                     HStack(alignment: .top, spacing: 6) {
                         Text("•")
                             .foregroundColor(.purple)
@@ -868,15 +878,15 @@ struct SleepOptimizationTips: View {
     private var optimizationTips: [String] {
         var tips: [String] = []
 
-        if bedtimeVariance > 3600 { // > 1 hour
+        if self.bedtimeVariance > 3600 { // > 1 hour
             tips.append("Try to go to bed within 30 minutes of the same time each night")
         }
 
-        if waketimeVariance > 3600 { // > 1 hour
+        if self.waketimeVariance > 3600 { // > 1 hour
             tips.append("Set a consistent wake time, even on weekends, to regulate your circadian rhythm")
         }
 
-        if bedtimeVariance < 1800 && waketimeVariance < 1800 { // Both good
+        if self.bedtimeVariance < 1800, self.waketimeVariance < 1800 { // Both good
             tips.append("Great consistency! This stable schedule supports optimal sleep quality")
         }
 

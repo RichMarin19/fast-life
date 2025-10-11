@@ -21,15 +21,15 @@ struct FastingStageDetailView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     // Header with icon and title
                     HStack(spacing: 16) {
-                        Text(stage.icon)
+                        Text(self.stage.icon)
                             .font(.system(size: 60))
 
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(stage.title)
+                            Text(self.stage.title)
                                 .font(.title2)
                                 .fontWeight(.bold)
 
-                            Text(stage.hourRange + " hours")
+                            Text(self.stage.hourRange + " hours")
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -44,7 +44,7 @@ struct FastingStageDetailView: View {
                             .fontWeight(.semibold)
                             .foregroundColor(.blue)
 
-                        ForEach(stage.description, id: \.self) { point in
+                        ForEach(self.stage.description, id: \.self) { point in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                     .font(.body)
@@ -70,7 +70,7 @@ struct FastingStageDetailView: View {
                                 .fontWeight(.semibold)
                         }
 
-                        ForEach(stage.physicalSigns, id: \.self) { sign in
+                        ForEach(self.stage.physicalSigns, id: \.self) { sign in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                     .font(.body)
@@ -96,7 +96,7 @@ struct FastingStageDetailView: View {
                                 .fontWeight(.semibold)
                         }
 
-                        ForEach(stage.recommendations, id: \.self) { rec in
+                        ForEach(self.stage.recommendations, id: \.self) { rec in
                             HStack(alignment: .top, spacing: 8) {
                                 Text("•")
                                     .font(.body)
@@ -122,7 +122,7 @@ struct FastingStageDetailView: View {
                                 .fontWeight(.semibold)
                         }
 
-                        Text(stage.didYouKnow)
+                        Text(self.stage.didYouKnow)
                             .font(.body)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -135,12 +135,14 @@ struct FastingStageDetailView: View {
                     // Per Apple HIG: Give users control over notification preferences
                     // Reference: https://developer.apple.com/design/human-interface-guidelines/notifications
                     Toggle(isOn: Binding(
-                        get: { doNotShowAgain },
+                        get: { self.doNotShowAgain },
                         set: { newValue in
-                            doNotShowAgain = newValue
+                            self.doNotShowAgain = newValue
                             let stageKey = "disabledStage_\(stage.startHour)h"
                             UserDefaults.standard.set(newValue, forKey: stageKey)
-                            print("Stage \(stage.startHour)h notifications \(newValue ? "disabled" : "enabled") from detail view")
+                            print(
+                                "Stage \(self.stage.startHour)h notifications \(newValue ? "disabled" : "enabled") from detail view"
+                            )
                         }
                     )) {
                         HStack(spacing: 8) {
@@ -168,7 +170,7 @@ struct FastingStageDetailView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }

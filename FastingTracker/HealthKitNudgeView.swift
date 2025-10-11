@@ -23,7 +23,7 @@ struct HealthKitNudgeView: View {
                         .foregroundColor(.primary)
                         .lineLimit(1)
 
-                    Text(nudgeMessage)
+                    Text(self.nudgeMessage)
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .lineLimit(nil)
@@ -35,7 +35,7 @@ struct HealthKitNudgeView: View {
                 // Action buttons
                 HStack(spacing: 8) {
                     Button("Connect") {
-                        onConnect()
+                        self.onConnect()
                     }
                     .font(.subheadline)
                     .fontWeight(.semibold)
@@ -45,7 +45,7 @@ struct HealthKitNudgeView: View {
                     .foregroundColor(.white)
                     .cornerRadius(20)
 
-                    Button(action: onDismiss) {
+                    Button(action: self.onDismiss) {
                         Image(systemName: "xmark")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -65,7 +65,7 @@ struct HealthKitNudgeView: View {
     }
 
     private var nudgeMessage: String {
-        switch dataType {
+        switch self.dataType {
         case .weight:
             return "Keep your weight data in sync across all your health apps"
         case .hydration:
@@ -113,18 +113,18 @@ class HealthKitNudgeManager: ObservableObject {
 
         // Auto-dismiss if already authorized for this data type
         // Following Apple HIG - don't show permission requests for granted permissions
-        if isAlreadyAuthorized(for: dataType) {
+        if self.isAlreadyAuthorized(for: dataType) {
             return false
         }
 
         // Special logic for fasting (Timer tab) - smart persistence
         if dataType == .fasting {
-            return shouldShowTimerNudge()
+            return self.shouldShowTimerNudge()
         }
 
         // Standard logic for other trackers (weight, hydration, sleep)
-        let dismissKey = nudgeDismissedPrefix + dataType.rawValue
-        if userDefaults.bool(forKey: dismissKey) {
+        let dismissKey = self.nudgeDismissedPrefix + dataType.rawValue
+        if self.userDefaults.bool(forKey: dismissKey) {
             return false
         }
 
@@ -136,32 +136,38 @@ class HealthKitNudgeManager: ObservableObject {
     /// Industry standard: Lose It shows contextual prompts immediately, not after multiple visits
     private func shouldShowTimerNudge() -> Bool {
         // Don't show if permanently dismissed
-        if userDefaults.bool(forKey: timerNudgePermanentlyDismissedKey) {
+        if self.userDefaults.bool(forKey: self.timerNudgePermanentlyDismissedKey) {
             return false
         }
 
         // Check if user has temporarily dismissed recently
-        let timerDismissed = userDefaults.bool(forKey: nudgeDismissedPrefix + "fasting")
+        let timerDismissed = self.userDefaults.bool(forKey: self.nudgeDismissedPrefix + "fasting")
         if timerDismissed {
             // Check if enough visits have passed since temporary dismiss
-            let currentCount = userDefaults.integer(forKey: timerVisitCountKey)
+            let currentCount = self.userDefaults.integer(forKey: self.timerVisitCountKey)
             let newCount = currentCount + 1
-            userDefaults.set(newCount, forKey: timerVisitCountKey)
+            self.userDefaults.set(newCount, forKey: self.timerVisitCountKey)
 
             // Show again after 5 visits from temporary dismiss
-            let shouldShow = (newCount % visitThreshold) == 0
+            let shouldShow = (newCount % self.visitThreshold) == 0
 
             if shouldShow {
                 // Clear temporary dismiss flag - user gets another chance
-                userDefaults.removeObject(forKey: nudgeDismissedPrefix + "fasting")
-                AppLogger.info("Timer nudge: Re-showing after \(visitThreshold) visits from temporary dismiss", category: AppLogger.general)
+                self.userDefaults.removeObject(forKey: self.nudgeDismissedPrefix + "fasting")
+                AppLogger.info(
+                    "Timer nudge: Re-showing after \(self.visitThreshold) visits from temporary dismiss",
+                    category: AppLogger.general
+                )
             }
 
             return shouldShow
         } else {
             // First time or not temporarily dismissed - show immediately
             // This matches behavior of Weight/Hydration/Sleep trackers per Apple HIG
-            AppLogger.info("Timer nudge: Showing immediately (consistent with other trackers)", category: AppLogger.general)
+            AppLogger.info(
+                "Timer nudge: Showing immediately (consistent with other trackers)",
+                category: AppLogger.general
+            )
             return true
         }
     }
@@ -172,14 +178,17 @@ class HealthKitNudgeManager: ObservableObject {
     func dismissNudge(for dataType: HealthDataType) {
         if dataType == .fasting {
             // For Timer tab: Set temporary dismiss flag and reset visit counter
-            let dismissKey = nudgeDismissedPrefix + dataType.rawValue
-            userDefaults.set(true, forKey: dismissKey)
-            userDefaults.set(0, forKey: timerVisitCountKey) // Reset counter
-            AppLogger.info("Timer nudge temporarily dismissed - will show again in \(visitThreshold) visits", category: AppLogger.general)
+            let dismissKey = self.nudgeDismissedPrefix + dataType.rawValue
+            self.userDefaults.set(true, forKey: dismissKey)
+            self.userDefaults.set(0, forKey: self.timerVisitCountKey) // Reset counter
+            AppLogger.info(
+                "Timer nudge temporarily dismissed - will show again in \(self.visitThreshold) visits",
+                category: AppLogger.general
+            )
         } else {
             // For other trackers: Permanent dismiss
-            let dismissKey = nudgeDismissedPrefix + dataType.rawValue
-            userDefaults.set(true, forKey: dismissKey)
+            let dismissKey = self.nudgeDismissedPrefix + dataType.rawValue
+            self.userDefaults.set(true, forKey: dismissKey)
             AppLogger.info("Nudge permanently dismissed for \(dataType.rawValue)", category: AppLogger.general)
         }
     }
@@ -187,7 +196,7 @@ class HealthKitNudgeManager: ObservableObject {
     /// Permanently dismiss Timer nudge (stop showing forever)
     /// Used when user explicitly chooses "Don't show again"
     func permanentlyDismissTimerNudge() {
-        userDefaults.set(true, forKey: timerNudgePermanentlyDismissedKey)
+        self.userDefaults.set(true, forKey: self.timerNudgePermanentlyDismissedKey)
         AppLogger.info("Timer nudge permanently dismissed by user", category: AppLogger.general)
     }
 
@@ -196,7 +205,7 @@ class HealthKitNudgeManager: ObservableObject {
     func handleAuthorizationGranted(for dataType: HealthDataType) {
         if dataType == .fasting {
             // Reset visit counter - no longer need to show nudges
-            userDefaults.removeObject(forKey: timerVisitCountKey)
+            self.userDefaults.removeObject(forKey: self.timerVisitCountKey)
             AppLogger.info("Timer nudge auto-dismissed - HealthKit enabled", category: AppLogger.general)
         }
     }
@@ -204,8 +213,8 @@ class HealthKitNudgeManager: ObservableObject {
     /// Reset nudge display state (for testing)
     func resetNudges() {
         for dataType in HealthDataType.allCases {
-            let dismissKey = nudgeDismissedPrefix + dataType.rawValue
-            userDefaults.removeObject(forKey: dismissKey)
+            let dismissKey = self.nudgeDismissedPrefix + dataType.rawValue
+            self.userDefaults.removeObject(forKey: dismissKey)
         }
         AppLogger.info("All health nudges reset", category: AppLogger.general)
     }

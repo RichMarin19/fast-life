@@ -100,18 +100,18 @@ struct FeaturePreviewCard: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 16) {
-            Image(systemName: icon)
+            Image(systemName: self.icon)
                 .font(.title2)
                 .foregroundColor(Color("FLSecondary"))
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 6) {
-                Text(title)
+                Text(self.title)
                     .font(.headline)
                     .fontWeight(.semibold)
                     .foregroundColor(.primary)
 
-                Text(description)
+                Text(self.description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

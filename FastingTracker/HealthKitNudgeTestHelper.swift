@@ -3,7 +3,6 @@ import Foundation
 /// Helper for testing the HealthKit nudge system
 /// Use this in debug mode to simulate different user states
 class HealthKitNudgeTestHelper {
-
     /// Simulate a user who skipped HealthKit during onboarding
     /// Call this to test the nudge system
     static func simulateSkipOnboarding() {
@@ -52,7 +51,8 @@ class HealthKitNudgeTestHelper {
 
         // Timer-specific state
         let timerVisitCount = UserDefaults.standard.integer(forKey: "healthkit_nudge_timer_visit_count")
-        let timerPermanentlyDismissed = UserDefaults.standard.bool(forKey: "healthkit_nudge_timer_permanently_dismissed")
+        let timerPermanentlyDismissed = UserDefaults.standard
+            .bool(forKey: "healthkit_nudge_timer_permanently_dismissed")
 
         print("🔍 NUDGE SYSTEM DEBUG STATE:")
         print("   onboardingCompleted: \(onboardingComplete)")
@@ -74,21 +74,21 @@ class HealthKitNudgeTestHelper {
 }
 
 #if DEBUG
-extension HealthKitNudgeTestHelper {
-    /// Quick test methods for use in debug console
-    /// Usage: HealthKitNudgeTestHelper.quickTestSkip()
-    static func quickTestSkip() {
-        simulateSkipOnboarding()
-        print("\n⚠️  Restart the app to see nudges in tracker views")
-    }
+    extension HealthKitNudgeTestHelper {
+        /// Quick test methods for use in debug console
+        /// Usage: HealthKitNudgeTestHelper.quickTestSkip()
+        static func quickTestSkip() {
+            self.simulateSkipOnboarding()
+            print("\n⚠️  Restart the app to see nudges in tracker views")
+        }
 
-    static func quickTestEnabled() {
-        simulateEnabledOnboarding()
-        print("\n⚠️  Restart the app - nudges should not appear")
-    }
+        static func quickTestEnabled() {
+            self.simulateEnabledOnboarding()
+            print("\n⚠️  Restart the app - nudges should not appear")
+        }
 
-    static func quickDebug() {
-        debugNudgeState()
+        static func quickDebug() {
+            self.debugNudgeState()
+        }
     }
-}
 #endif
