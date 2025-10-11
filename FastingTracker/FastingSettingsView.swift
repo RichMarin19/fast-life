@@ -17,26 +17,26 @@ struct FastingSettingsView: View {
             Form {
                 // Apple Health Integration Section
                 Section(header: Text("APPLE HEALTH INTEGRATION")) {
-                    Toggle("Sync with Apple Health", isOn: $localSyncEnabled)
-                        .onChange(of: localSyncEnabled) { _, newValue in
-                            setFastingSyncPreference(newValue)
+                    Toggle("Sync with Apple Health", isOn: self.$localSyncEnabled)
+                        .onChange(of: self.localSyncEnabled) { _, newValue in
+                            self.setFastingSyncPreference(newValue)
                         }
 
-                    if localSyncEnabled {
+                    if self.localSyncEnabled {
                         Button(action: {
-                            syncWithHealthKit()
+                            self.syncWithHealthKit()
                         }) {
                             HStack {
-                                if isSyncing {
+                                if self.isSyncing {
                                     ProgressView()
                                         .padding(.trailing, 4)
                                 } else {
                                     Image(systemName: "arrow.triangle.2.circlepath")
                                 }
-                                Text(isSyncing ? "Syncing..." : "Sync Now")
+                                Text(self.isSyncing ? "Syncing..." : "Sync Now")
                             }
                         }
-                        .disabled(isSyncing)
+                        .disabled(self.isSyncing)
                     }
 
                     Text("When enabled, fasting sessions will be synced with Apple Health as workouts automatically.")
@@ -49,7 +49,7 @@ struct FastingSettingsView: View {
                     HStack {
                         Text("Goal Duration")
                         Spacer()
-                        Text("\(Int(fastingManager.fastingGoalHours))h")
+                        Text("\(Int(self.fastingManager.fastingGoalHours))h")
                             .foregroundColor(.secondary)
                     }
 
@@ -63,7 +63,7 @@ struct FastingSettingsView: View {
                     HStack {
                         Text("Total Fasts")
                         Spacer()
-                        Text("\(fastingManager.fastingHistory.filter { $0.isComplete }.count)")
+                        Text("\(self.fastingManager.fastingHistory.filter(\.isComplete).count)")
                             .foregroundColor(.secondary)
                     }
 
@@ -71,7 +71,7 @@ struct FastingSettingsView: View {
                         Text("Tracking Since")
                         Spacer()
                         if let firstFast = fastingManager.fastingHistory.first {
-                            Text(formatTrackingSinceDate(firstFast.startTime))
+                            Text(self.formatTrackingSinceDate(firstFast.startTime))
                                 .foregroundColor(.secondary)
                         } else {
                             Text("No fasts yet")
@@ -79,18 +79,18 @@ struct FastingSettingsView: View {
                         }
                     }
 
-                    if fastingManager.fastingHistory.filter({ $0.isComplete }).count > 0 {
+                    if !self.fastingManager.fastingHistory.filter(\.isComplete).isEmpty {
                         HStack {
                             Text("Average Duration")
                             Spacer()
-                            Text(formatAverageDuration())
+                            Text(self.formatAverageDuration())
                                 .foregroundColor(.secondary)
                         }
 
                         HStack {
                             Text("Longest Fast")
                             Spacer()
-                            Text(formatLongestFast())
+                            Text(self.formatLongestFast())
                                 .foregroundColor(.secondary)
                         }
                     }
@@ -101,35 +101,35 @@ struct FastingSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
         }
         .onAppear {
-            loadSyncSettings()
+            self.loadSyncSettings()
         }
-        .alert("Sync Status", isPresented: $showingSyncAlert) {
+        .alert("Sync Status", isPresented: self.$showingSyncAlert) {
             // Following Apple HIG: Handle different authorization states appropriately
-            if syncMessage.contains("Permission denied") || syncMessage.contains("enable") {
+            if self.syncMessage.contains("Permission denied") || self.syncMessage.contains("enable") {
                 // Check if we can re-request authorization or if user must go to Settings
                 let authStatus = HealthKitManager.shared.getFastingAuthorizationStatus()
 
                 if authStatus == .notDetermined {
                     // Can still show native dialog
                     Button("Try Again") {
-                        syncWithHealthKit()
+                        self.syncWithHealthKit()
                     }
                 } else {
                     // Previously denied - must go to Settings manually
-                    Button("OK") { }
+                    Button("OK") {}
                 }
-                Button("Cancel", role: .cancel) { }
+                Button("Cancel", role: .cancel) {}
             } else {
-                Button("OK", role: .cancel) { }
+                Button("OK", role: .cancel) {}
             }
         } message: {
-            Text(syncMessage)
+            Text(self.syncMessage)
         }
     }
 
@@ -137,8 +137,8 @@ struct FastingSettingsView: View {
 
     private func loadSyncSettings() {
         // Check if fasting sync is enabled by checking if HealthKit is authorized
-        localSyncEnabled = HealthKitManager.shared.isFastingAuthorized()
-        AppLogger.info("Loaded fasting sync settings: enabled=\(localSyncEnabled)", category: AppLogger.healthKit)
+        self.localSyncEnabled = HealthKitManager.shared.isFastingAuthorized()
+        AppLogger.info("Loaded fasting sync settings: enabled=\(self.localSyncEnabled)", category: AppLogger.healthKit)
     }
 
     private func setFastingSyncPreference(_ enabled: Bool) {
@@ -154,9 +154,9 @@ struct FastingSettingsView: View {
                     } else {
                         AppLogger.info("Fasting HealthKit authorization denied", category: AppLogger.healthKit)
                         // Reset toggle if user denied permission
-                        localSyncEnabled = false
-                        syncMessage = "HealthKit authorization required. Enable workout access in: Settings → Privacy & Security → Health → Data Access & Devices → Fast LIFe → Turn on Workouts."
-                        showingSyncAlert = true
+                        self.localSyncEnabled = false
+                        self.syncMessage = "HealthKit authorization required. Enable workout access in: Settings → Privacy & Security → Health → Data Access & Devices → Fast LIFe → Turn on Workouts."
+                        self.showingSyncAlert = true
                     }
                 }
             }
@@ -170,7 +170,7 @@ struct FastingSettingsView: View {
     private func syncWithHealthKit() {
         AppLogger.info("Manual fasting sync requested", category: AppLogger.healthKit)
 
-        isSyncing = true
+        self.isSyncing = true
 
         // Request authorization if needed, then sync
         HealthKitManager.shared.requestFastingAuthorization { success, error in
@@ -180,12 +180,12 @@ struct FastingSettingsView: View {
 
                 if hasPermission {
                     // Permission granted - provide accurate sync status
-                    let completedFasts = fastingManager.fastingHistory.filter { $0.isComplete }
+                    let completedFasts = self.fastingManager.fastingHistory.filter(\.isComplete)
 
                     DispatchQueue.main.async {
                         self.isSyncing = false
 
-                        if completedFasts.count > 0 {
+                        if !completedFasts.isEmpty {
                             // NOTE: This reports local data count since fasting sync is write-only to HealthKit
                             // Unlike weight/water which are bidirectional, fasting sessions are only exported
                             // This is accurate behavior for export-only operations
@@ -198,7 +198,10 @@ struct FastingSettingsView: View {
                         // Update sync status
                         HealthKitManager.shared.updateFastingSyncStatus(success: true)
 
-                        AppLogger.info("Fasting HealthKit authorization confirmed: \(completedFasts.count) sessions available", category: AppLogger.healthKit)
+                        AppLogger.info(
+                            "Fasting HealthKit authorization confirmed: \(completedFasts.count) sessions available",
+                            category: AppLogger.healthKit
+                        )
                     }
                 } else {
                     DispatchQueue.main.async {
@@ -206,7 +209,10 @@ struct FastingSettingsView: View {
                         self.syncMessage = "Permission denied. Enable workout access in: Settings → Privacy & Security → Health → Data Access & Devices → Fast LIFe → Turn on Workouts."
                         self.showingSyncAlert = true
 
-                        AppLogger.info("Fasting HealthKit authorization denied after request", category: AppLogger.healthKit)
+                        AppLogger.info(
+                            "Fasting HealthKit authorization denied after request",
+                            category: AppLogger.healthKit
+                        )
                     }
                 }
             } else {
@@ -230,7 +236,7 @@ struct FastingSettingsView: View {
     }
 
     private func formatAverageDuration() -> String {
-        let completedFasts = fastingManager.fastingHistory.filter { $0.isComplete }
+        let completedFasts = self.fastingManager.fastingHistory.filter(\.isComplete)
         guard !completedFasts.isEmpty else { return "N/A" }
 
         let totalDuration = completedFasts.reduce(0) { total, fast in
@@ -249,10 +255,10 @@ struct FastingSettingsView: View {
     }
 
     private func formatLongestFast() -> String {
-        let completedFasts = fastingManager.fastingHistory.filter { $0.isComplete }
+        let completedFasts = self.fastingManager.fastingHistory.filter(\.isComplete)
         guard !completedFasts.isEmpty else { return "N/A" }
 
-        let longestDuration = completedFasts.map { $0.duration }.max() ?? 0
+        let longestDuration = completedFasts.map(\.duration).max() ?? 0
 
         let hours = Int(longestDuration / 3600)
         let minutes = Int((longestDuration.truncatingRemainder(dividingBy: 3600)) / 60)

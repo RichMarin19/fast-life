@@ -19,7 +19,7 @@ struct SleepTrackingView: View {
 
                 // HealthKit Nudge for first-time users who skipped onboarding
                 // Following Lose It app pattern - contextual banner with single Connect action
-                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .sleep) {
+                if self.showHealthKitNudge, self.nudgeManager.shouldShowNudge(for: .sleep) {
                     HealthKitNudgeView(
                         dataType: .sleep,
                         onConnect: {
@@ -31,22 +31,22 @@ struct SleepTrackingView: View {
                                     if success {
                                         print("✅ SleepTrackingView: Sleep authorization granted from nudge")
                                         // Enable sync automatically when granted from nudge
-                                        sleepManager.setSyncPreference(true)
+                                        self.sleepManager.setSyncPreference(true)
                                         // Hide nudge after successful connection
-                                        showHealthKitNudge = false
+                                        self.showHealthKitNudge = false
                                     } else {
                                         print("❌ SleepTrackingView: Sleep authorization denied from nudge")
                                         // Still hide nudge if user denied (don't keep asking)
-                                        nudgeManager.dismissNudge(for: .sleep)
-                                        showHealthKitNudge = false
+                                        self.nudgeManager.dismissNudge(for: .sleep)
+                                        self.showHealthKitNudge = false
                                     }
                                 }
                             }
                         },
                         onDismiss: {
                             // Mark nudge as dismissed - won't show again
-                            nudgeManager.dismissNudge(for: .sleep)
-                            showHealthKitNudge = false
+                            self.nudgeManager.dismissNudge(for: .sleep)
+                            self.showHealthKitNudge = false
                         }
                     )
                     .padding(.horizontal)
@@ -63,12 +63,12 @@ struct SleepTrackingView: View {
                     // Sleep progress ring
                     if let lastNight = sleepManager.lastNightSleep {
                         let sleepHours = lastNight.duration / 3600
-                        let progress = min(sleepHours / recommendedSleep, 1.0)
+                        let progress = min(sleepHours / self.recommendedSleep, 1.0)
 
                         Circle()
                             .trim(from: 0, to: progress)
                             .stroke(
-                                sleepHours >= recommendedSleep ? Color.green : Color.purple,
+                                sleepHours >= self.recommendedSleep ? Color.green : Color.purple,
                                 style: StrokeStyle(lineWidth: 20, lineCap: .round)
                             )
                             .frame(width: 250, height: 250)
@@ -102,7 +102,7 @@ struct SleepTrackingView: View {
                             Text("Goal")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("\(Int(recommendedSleep)) hrs")
+                            Text("\(Int(self.recommendedSleep)) hrs")
                                 .font(.system(size: 24, weight: .semibold, design: .rounded))
                                 .foregroundColor(.purple)
                         }
@@ -146,7 +146,7 @@ struct SleepTrackingView: View {
 
                 // Add Sleep Button
                 Button(action: {
-                    showingAddSleep = true
+                    self.showingAddSleep = true
                 }) {
                     HStack {
                         Image(systemName: "plus.circle.fill")
@@ -163,7 +163,7 @@ struct SleepTrackingView: View {
                 .padding(.horizontal, 40)
 
                 // Recent Sleep History
-                if !sleepManager.sleepEntries.isEmpty {
+                if !self.sleepManager.sleepEntries.isEmpty {
                     VStack(spacing: 12) {
                         Text("Recent Sleep")
                             .font(.headline)
@@ -171,9 +171,9 @@ struct SleepTrackingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 40)
 
-                        ForEach(Array(sleepManager.sleepEntries.prefix(5))) { entry in
+                        ForEach(Array(self.sleepManager.sleepEntries.prefix(5))) { entry in
                             SleepHistoryRow(sleep: entry, onDelete: {
-                                sleepManager.deleteSleepEntry(entry)
+                                self.sleepManager.deleteSleepEntry(entry)
                             })
                             .padding(.horizontal, 40)
                         }
@@ -190,26 +190,26 @@ struct SleepTrackingView: View {
         .onAppear {
             // Show HealthKit nudge for first-time users who skipped onboarding
             // Following Lose It pattern - contextual reminder on first tracker access
-            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .sleep)
-            if showHealthKitNudge {
+            self.showHealthKitNudge = self.nudgeManager.shouldShowNudge(for: .sleep)
+            if self.showHealthKitNudge {
                 print("📱 SleepTrackingView: Showing HealthKit nudge for first-time user")
             }
         }
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    showingSyncSettings = true
+                    self.showingSyncSettings = true
                 }) {
                     Image(systemName: "gear")
                         .foregroundColor(.purple)
                 }
             }
         }
-        .sheet(isPresented: $showingAddSleep) {
-            AddSleepView(sleepManager: sleepManager)
+        .sheet(isPresented: self.$showingAddSleep) {
+            AddSleepView(sleepManager: self.sleepManager)
         }
-        .sheet(isPresented: $showingSyncSettings) {
-            SleepSyncSettingsView(sleepManager: sleepManager)
+        .sheet(isPresented: self.$showingSyncSettings) {
+            SleepSyncSettingsView(sleepManager: self.sleepManager)
         }
     }
 }
@@ -230,22 +230,22 @@ struct SleepHistoryRow: View {
                 .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(formatDate(sleep.wakeTime))
+                Text(self.formatDate(self.sleep.wakeTime))
                     .font(.subheadline)
                     .fontWeight(.medium)
-                Text("\(formatTime(sleep.bedTime)) - \(formatTime(sleep.wakeTime))")
+                Text("\(self.formatTime(self.sleep.bedTime)) - \(self.formatTime(self.sleep.wakeTime))")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Text(sleep.formattedDuration)
+            Text(self.sleep.formattedDuration)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
 
-            Button(action: onDelete) {
+            Button(action: self.onDelete) {
                 Image(systemName: "trash")
                     .font(.subheadline)
                     .foregroundColor(.red)
@@ -284,13 +284,13 @@ struct AddSleepView: View {
         NavigationView {
             Form {
                 Section(header: Text("Sleep Times")) {
-                    DatePicker("Bed Time", selection: $bedTime, displayedComponents: [.date, .hourAndMinute])
-                    DatePicker("Wake Time", selection: $wakeTime, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Bed Time", selection: self.$bedTime, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Wake Time", selection: self.$wakeTime, displayedComponents: [.date, .hourAndMinute])
                 }
 
                 Section(header: Text("Sleep Duration")) {
-                    if wakeTime > bedTime {
-                        let duration = wakeTime.timeIntervalSince(bedTime)
+                    if self.wakeTime > self.bedTime {
+                        let duration = self.wakeTime.timeIntervalSince(self.bedTime)
                         let hours = Int(duration / 3600)
                         let minutes = Int((duration.truncatingRemainder(dividingBy: 3600)) / 60)
                         Text("\(hours) hours \(minutes) minutes")
@@ -302,10 +302,13 @@ struct AddSleepView: View {
                     }
                 }
 
-                Section(header: Text("Sleep Quality (Optional)"), footer: Text("Rate your sleep quality from 1 (poor) to 5 (excellent)")) {
-                    Picker("Quality", selection: $sleepQuality) {
+                Section(
+                    header: Text("Sleep Quality (Optional)"),
+                    footer: Text("Rate your sleep quality from 1 (poor) to 5 (excellent)")
+                ) {
+                    Picker("Quality", selection: self.$sleepQuality) {
                         Text("Not rated").tag(nil as Int?)
-                        ForEach(1...5, id: \.self) { rating in
+                        ForEach(1 ... 5, id: \.self) { rating in
                             HStack {
                                 Text("\(rating)")
                                 Text(String(repeating: "⭐", count: rating))
@@ -321,7 +324,7 @@ struct AddSleepView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -332,10 +335,10 @@ struct AddSleepView: View {
                             quality: sleepQuality,
                             source: .manual
                         )
-                        sleepManager.addSleepEntry(entry)
-                        dismiss()
+                        self.sleepManager.addSleepEntry(entry)
+                        self.dismiss()
                     }
-                    .disabled(wakeTime <= bedTime)
+                    .disabled(self.wakeTime <= self.bedTime)
                 }
             }
         }
@@ -353,9 +356,14 @@ struct SleepSyncSettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("HealthKit Sync"), footer: Text("Automatically sync sleep data with Apple Health. This allows you to see sleep tracked by your Apple Watch or other apps.")) {
+                Section(
+                    header: Text("HealthKit Sync"),
+                    footer: Text(
+                        "Automatically sync sleep data with Apple Health. This allows you to see sleep tracked by your Apple Watch or other apps."
+                    )
+                ) {
                     Toggle("Sync with HealthKit", isOn: Binding(
-                        get: { sleepManager.syncWithHealthKit },
+                        get: { self.sleepManager.syncWithHealthKit },
                         set: { newValue in
                             if newValue {
                                 // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
@@ -366,24 +374,24 @@ struct SleepSyncSettingsView: View {
                                     DispatchQueue.main.async {
                                         if success {
                                             print("✅ SleepTrackingView: Sleep authorization granted - enabling sync")
-                                            sleepManager.setSyncPreference(true)
+                                            self.sleepManager.setSyncPreference(true)
                                         } else {
                                             print("❌ SleepTrackingView: Sleep authorization denied")
-                                            sleepManager.setSyncPreference(false)
+                                            self.sleepManager.setSyncPreference(false)
                                         }
                                     }
                                 }
                             } else {
-                                sleepManager.setSyncPreference(false)
+                                self.sleepManager.setSyncPreference(false)
                             }
                         }
                     ))
                 }
 
-                if sleepManager.syncWithHealthKit {
+                if self.sleepManager.syncWithHealthKit {
                     Section {
                         Button(action: {
-                            showingSyncConfirmation = true
+                            self.showingSyncConfirmation = true
                         }) {
                             HStack {
                                 Image(systemName: "arrow.triangle.2.circlepath")
@@ -396,9 +404,11 @@ struct SleepSyncSettingsView: View {
 
                 Section(header: Text("About")) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Sleep tracking syncs with Apple Health to consolidate data from your Apple Watch, iPhone, and other sleep tracking apps.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text(
+                            "Sleep tracking syncs with Apple Health to consolidate data from your Apple Watch, iPhone, and other sleep tracking apps."
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
 
                         Text("Manually logged sleep is automatically saved to Apple Health when sync is enabled.")
                             .font(.caption)
@@ -411,14 +421,14 @@ struct SleepSyncSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
-            .alert("Sync from HealthKit", isPresented: $showingSyncConfirmation) {
-                Button("Cancel", role: .cancel) { }
+            .alert("Sync from HealthKit", isPresented: self.$showingSyncConfirmation) {
+                Button("Cancel", role: .cancel) {}
                 Button("Sync Now") {
-                    sleepManager.syncFromHealthKit()
+                    self.sleepManager.syncFromHealthKit()
                 }
             } message: {
                 Text("This will import sleep data from Apple Health for the last 30 days.")

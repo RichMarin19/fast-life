@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct WeightTrackingView: View {
     @StateObject private var weightManager = WeightManager()
@@ -13,8 +13,8 @@ struct WeightTrackingView: View {
     @State private var showingAddWeight = false
     @State private var showingSettings = false
     @State private var showingFirstTimeSetup = false
-    @State private var showingGoalEditor = false  // Quick access goal editor
-    @State private var showingTrends = false  // Weight trends detail view
+    @State private var showingGoalEditor = false // Quick access goal editor
+    @State private var showingTrends = false // Weight trends detail view
     @State private var selectedTimeRange: WeightTimeRange = .month
     @State private var showGoalLine = false
     @State private var weightGoal: Double = 180.0
@@ -22,10 +22,10 @@ struct WeightTrackingView: View {
 
     // UserDefaults keys for persistence
     private let showGoalLineKey = "showGoalLine"
-    private let weightGoalKey = "goalWeight"  // MUST match onboarding key (OnboardingView.swift line 686)
+    private let weightGoalKey = "goalWeight" // MUST match onboarding key (OnboardingView.swift line 686)
 
     private var healthKitNudgeView: AnyView? {
-        if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .weight) {
+        if self.showHealthKitNudge, self.nudgeManager.shouldShowNudge(for: .weight) {
             return AnyView(
                 HealthKitNudgeView(
                     dataType: .weight,
@@ -35,8 +35,8 @@ struct WeightTrackingView: View {
                             DispatchQueue.main.async {
                                 if success {
                                     print("✅ WeightTrackingView: Weight authorization granted from nudge")
-                                    weightManager.syncWithHealthKit = true
-                                    showHealthKitNudge = false
+                                    self.weightManager.syncWithHealthKit = true
+                                    self.showHealthKitNudge = false
                                 } else {
                                     print("❌ WeightTrackingView: Weight authorization denied from nudge")
                                 }
@@ -45,8 +45,8 @@ struct WeightTrackingView: View {
                     },
                     onDismiss: {
                         print("📱 WeightTrackingView: HealthKit nudge dismissed")
-                        showHealthKitNudge = false
-                        nudgeManager.dismissNudge(for: .weight)
+                        self.showHealthKitNudge = false
+                        self.nudgeManager.dismissNudge(for: .weight)
                     }
                 )
             )
@@ -57,87 +57,87 @@ struct WeightTrackingView: View {
     var body: some View {
         TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),
-            hasData: !weightManager.weightEntries.isEmpty,
-            nudge: healthKitNudgeView,
-            settingsAction: { showingSettings = true }
+            hasData: !self.weightManager.weightEntries.isEmpty,
+            nudge: self.healthKitNudgeView,
+            settingsAction: { self.showingSettings = true }
         ) {
-            if weightManager.weightEntries.isEmpty {
+            if self.weightManager.weightEntries.isEmpty {
                 EmptyWeightStateView(
-                    showingAddWeight: $showingAddWeight,
-                    healthKitManager: healthKitManager,
-                    weightManager: weightManager
+                    showingAddWeight: self.$showingAddWeight,
+                    healthKitManager: self.healthKitManager,
+                    weightManager: self.weightManager
                 )
             } else {
                 // Current Weight Card
                 CurrentWeightCard(
-                    weightManager: weightManager,
-                    weightGoal: weightGoal,
-                    showingGoalEditor: $showingGoalEditor,
-                    showingAddWeight: $showingAddWeight,
-                    showingTrends: $showingTrends
+                    weightManager: self.weightManager,
+                    weightGoal: self.weightGoal,
+                    showingGoalEditor: self.$showingGoalEditor,
+                    showingAddWeight: self.$showingAddWeight,
+                    showingTrends: self.$showingTrends
                 )
                 .padding(.horizontal)
 
                 // Weight Chart
                 WeightChartView(
-                    weightManager: weightManager,
-                    selectedTimeRange: $selectedTimeRange,
-                    showGoalLine: $showGoalLine,
-                    weightGoal: $weightGoal
+                    weightManager: self.weightManager,
+                    selectedTimeRange: self.$selectedTimeRange,
+                    showGoalLine: self.$showGoalLine,
+                    weightGoal: self.$weightGoal
                 )
                 .padding(.horizontal)
 
                 // Weight Statistics
-                WeightStatsView(weightManager: weightManager)
+                WeightStatsView(weightManager: self.weightManager)
                     .padding(.horizontal)
 
                 // Weight History List
-                WeightHistoryListView(weightManager: weightManager)
+                WeightHistoryListView(weightManager: self.weightManager)
                     .padding(.horizontal)
             }
         }
-        .sheet(isPresented: $showingAddWeight) {
-            AddWeightView(weightManager: weightManager)
+        .sheet(isPresented: self.$showingAddWeight) {
+            AddWeightView(weightManager: self.weightManager)
         }
-        .sheet(isPresented: $showingSettings) {
+        .sheet(isPresented: self.$showingSettings) {
             WeightSettingsView(
-                weightManager: weightManager,
-                showGoalLine: $showGoalLine,
-                weightGoal: $weightGoal
+                weightManager: self.weightManager,
+                showGoalLine: self.$showGoalLine,
+                weightGoal: self.$weightGoal
             )
         }
-        .sheet(isPresented: $showingGoalEditor) {
+        .sheet(isPresented: self.$showingGoalEditor) {
             FirstTimeWeightSetupView(
-                weightManager: weightManager,
-                weightGoal: $weightGoal,
-                showGoalLine: $showGoalLine
+                weightManager: self.weightManager,
+                weightGoal: self.$weightGoal,
+                showGoalLine: self.$showGoalLine
             )
         }
-        .sheet(isPresented: $showingTrends) {
-            WeightTrendsView(weightManager: weightManager)
+        .sheet(isPresented: self.$showingTrends) {
+            WeightTrendsView(weightManager: self.weightManager)
         }
         // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
-        .sheet(isPresented: $showingFirstTimeSetup) {
+        .sheet(isPresented: self.$showingFirstTimeSetup) {
             FirstTimeWeightSetupView(
-                weightManager: weightManager,
-                weightGoal: $weightGoal,
-                showGoalLine: $showGoalLine
+                weightManager: self.weightManager,
+                weightGoal: self.$weightGoal,
+                showGoalLine: self.$showGoalLine
             )
         }
         .onAppear {
             // Load saved goal settings from UserDefaults
-            loadGoalSettings()
+            self.loadGoalSettings()
 
             // Show first-time setup if user has no weight data
             // No delay needed - weightManager loads synchronously in init
-            if weightManager.weightEntries.isEmpty {
-                showingFirstTimeSetup = true
+            if self.weightManager.weightEntries.isEmpty {
+                self.showingFirstTimeSetup = true
             }
 
             // Show HealthKit nudge for first-time users who skipped onboarding
             // Following Lose It pattern - contextual reminder on first tracker access
-            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
-            if showHealthKitNudge {
+            self.showHealthKitNudge = self.nudgeManager.shouldShowNudge(for: .weight)
+            if self.showHealthKitNudge {
                 print("📱 WeightTrackingView: Showing HealthKit nudge for first-time user")
             }
 
@@ -145,11 +145,11 @@ struct WeightTrackingView: View {
             // User must explicitly tap "Connect" in nudge banner to authorize
             // This follows Lose It app pattern and Apple HIG contextual permission guidelines
         }
-        .onChange(of: showGoalLine) { _, _ in
-            saveGoalSettings()
+        .onChange(of: self.showGoalLine) { _, _ in
+            self.saveGoalSettings()
         }
-        .onChange(of: weightGoal) { _, _ in
-            saveGoalSettings()
+        .onChange(of: self.weightGoal) { _, _ in
+            self.saveGoalSettings()
         }
     }
 
@@ -157,17 +157,17 @@ struct WeightTrackingView: View {
 
     private func loadGoalSettings() {
         // Load show goal line preference (default: false)
-        showGoalLine = UserDefaults.standard.bool(forKey: showGoalLineKey)
+        self.showGoalLine = UserDefaults.standard.bool(forKey: self.showGoalLineKey)
 
         // Load weight goal (default: 180.0 if not set)
         if let savedGoal = UserDefaults.standard.object(forKey: weightGoalKey) as? Double {
-            weightGoal = savedGoal
+            self.weightGoal = savedGoal
         }
     }
 
     func saveGoalSettings() {
-        UserDefaults.standard.set(showGoalLine, forKey: showGoalLineKey)
-        UserDefaults.standard.set(weightGoal, forKey: weightGoalKey)
+        UserDefaults.standard.set(self.showGoalLine, forKey: self.showGoalLineKey)
+        UserDefaults.standard.set(self.weightGoal, forKey: self.weightGoalKey)
     }
 
     // Removed: handleHealthDataSelection - no longer needed with direct authorization
@@ -198,7 +198,7 @@ struct EmptyWeightStateView: View {
                 .padding(.horizontal)
 
             VStack(spacing: 12) {
-                Button(action: { showingAddWeight = true }) {
+                Button(action: { self.showingAddWeight = true }) {
                     Label("Add Weight Manually", systemImage: "plus.circle.fill")
                         .font(.headline)
                         .foregroundColor(.white)
@@ -211,12 +211,14 @@ struct EmptyWeightStateView: View {
                 Button(action: {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                     // Request weight permissions immediately when user wants to sync weight data
-                    print("📱 WeightTrackingView (EmptyState): Sync button tapped - requesting weight authorization directly")
+                    print(
+                        "📱 WeightTrackingView (EmptyState): Sync button tapped - requesting weight authorization directly"
+                    )
                     HealthKitManager.shared.requestWeightAuthorization { success, error in
                         if success {
                             print("✅ WeightTrackingView (EmptyState): Weight authorization granted - starting sync")
                             DispatchQueue.main.async {
-                                weightManager.syncFromHealthKit()
+                                self.weightManager.syncFromHealthKit()
                             }
                         } else {
                             print("❌ WeightTrackingView (EmptyState): Weight authorization denied")
@@ -242,13 +244,7 @@ struct EmptyWeightStateView: View {
     // Removed: handleHealthDataSelection - no longer needed with direct authorization
 }
 
-
-
-
 // MARK: - View Modifier for Conditional X-Axis Scale
-
-
-
 
 #Preview {
     WeightTrackingView()

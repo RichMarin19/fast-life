@@ -13,41 +13,47 @@ public class CrashReportManager {
     private let fileManager = FileManager.default
 
     // MARK: - Secure Storage Configuration
+
     // Following Apple File System Programming Guide for secure data storage
     // Reference: https://developer.apple.com/documentation/foundation/filemanager
 
     private lazy var secureLogsDirectory: URL = {
         // Use Application Support directory for app-specific data that should be backed up
         // but isn't user-facing content (following Apple guidelines)
-        guard let applicationSupportDirectory = fileManager.urls(for: .applicationSupportDirectory,
-                                                                 in: .userDomainMask).first else {
+        guard let applicationSupportDirectory = fileManager.urls(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask
+        ).first else {
             fatalError("Unable to access Application Support directory")
         }
 
         let crashLogsDirectory = applicationSupportDirectory.appendingPathComponent("CrashLogs", isDirectory: true)
 
         // Create directory if it doesn't exist
-        try? fileManager.createDirectory(at: crashLogsDirectory,
-                                       withIntermediateDirectories: true,
-                                       attributes: [.protectionKey: FileProtectionType.completeUnlessOpen])
+        try? self.fileManager.createDirectory(
+            at: crashLogsDirectory,
+            withIntermediateDirectories: true,
+            attributes: [.protectionKey: FileProtectionType.completeUnlessOpen]
+        )
 
         return crashLogsDirectory
     }()
 
     // MARK: - Categories from Beta Readiness Master Plan
+
     // Required categories: healthkit, hydration, weight, sleep, fasting, charts, notifications
 
     private enum CrashCategory: String {
-        case healthkit = "healthkit"
-        case hydration = "hydration"
-        case weight = "weight"
-        case sleep = "sleep"
-        case fasting = "fasting"
-        case charts = "charts"
-        case notifications = "notifications"
-        case general = "general"
-        case ui = "ui"
-        case persistence = "persistence"
+        case healthkit
+        case hydration
+        case weight
+        case sleep
+        case fasting
+        case charts
+        case notifications
+        case general
+        case ui
+        case persistence
     }
 
     private init() {
@@ -59,73 +65,73 @@ public class CrashReportManager {
     /// Initialize crash reporting system
     /// Call this from FastingTrackerApp.init() following Firebase setup guide
     public func initialize() {
-        guard !isInitialized else {
+        guard !self.isInitialized else {
             AppLogger.warning("CrashReportManager already initialized", category: AppLogger.general)
             return
         }
 
         #if DEBUG
-        AppLogger.info("CrashReportManager: Debug mode - crash reporting disabled", category: AppLogger.general)
+            AppLogger.info("CrashReportManager: Debug mode - crash reporting disabled", category: AppLogger.general)
         #else
-        // In production, this would initialize Firebase Crashlytics
-        // FirebaseApp.configure()
-        // Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
-        AppLogger.info("CrashReportManager initialized for production", category: AppLogger.general)
+            // In production, this would initialize Firebase Crashlytics
+            // FirebaseApp.configure()
+            // Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+            AppLogger.info("CrashReportManager initialized for production", category: AppLogger.general)
         #endif
 
-        isInitialized = true
+        self.isInitialized = true
     }
 
     // MARK: - Crash Reporting Methods
 
     /// Record a non-fatal error for HealthKit operations
     public func recordHealthKitError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .healthkit, context: context)
+        self.recordError(error, category: .healthkit, context: context)
     }
 
     /// Record a non-fatal error for hydration tracking
     public func recordHydrationError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .hydration, context: context)
+        self.recordError(error, category: .hydration, context: context)
     }
 
     /// Record a non-fatal error for weight tracking
     public func recordWeightError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .weight, context: context)
+        self.recordError(error, category: .weight, context: context)
     }
 
     /// Record a non-fatal error for sleep tracking
     public func recordSleepError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .sleep, context: context)
+        self.recordError(error, category: .sleep, context: context)
     }
 
     /// Record a non-fatal error for fasting operations
     public func recordFastingError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .fasting, context: context)
+        self.recordError(error, category: .fasting, context: context)
     }
 
     /// Record a non-fatal error for chart rendering
     public func recordChartError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .charts, context: context)
+        self.recordError(error, category: .charts, context: context)
     }
 
     /// Record a non-fatal error for notifications
     public func recordNotificationError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .notifications, context: context)
+        self.recordError(error, category: .notifications, context: context)
     }
 
     /// Record a non-fatal error for UI operations
     public func recordUIError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .ui, context: context)
+        self.recordError(error, category: .ui, context: context)
     }
 
     /// Record a non-fatal error for persistence operations
     public func recordPersistenceError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .persistence, context: context)
+        self.recordError(error, category: .persistence, context: context)
     }
 
     /// Record a general non-fatal error
     public func recordGeneralError(_ error: Error, context: [String: Any] = [:]) {
-        recordError(error, category: .general, context: context)
+        self.recordError(error, category: .general, context: context)
     }
 
     // MARK: - Private Implementation
@@ -139,23 +145,24 @@ public class CrashReportManager {
         AppLogger.error(fullMessage, category: AppLogger.general, error: error)
 
         // PHASE 0: Persist crash logs securely to Application Support
-        persistCrashLogSecurely(error: error, category: category, context: context)
+        self.persistCrashLogSecurely(error: error, category: category, context: context)
 
         #if DEBUG
-        // In debug mode, just log the error
-        print("🚨 CrashReport[\(category.rawValue)]: \(error.localizedDescription)")
-        if !context.isEmpty {
-            print("   Context: \(contextString)")
-        }
+            // In debug mode, just log the error
+            print("🚨 CrashReport[\(category.rawValue)]: \(error.localizedDescription)")
+            if !context.isEmpty {
+                print("   Context: \(contextString)")
+            }
         #else
-        // In production, this would record to Firebase Crashlytics
-        // Crashlytics.crashlytics().record(error: error)
-        // Crashlytics.crashlytics().setCustomKeys(context)
-        // Crashlytics.crashlytics().log("Category: \(category.rawValue)")
+            // In production, this would record to Firebase Crashlytics
+            // Crashlytics.crashlytics().record(error: error)
+            // Crashlytics.crashlytics().setCustomKeys(context)
+            // Crashlytics.crashlytics().log("Category: \(category.rawValue)")
         #endif
     }
 
     // MARK: - Secure Crash Log Persistence
+
     // Following Apple security guidelines: NSFileProtectionComplete for sensitive data
     // Reference: https://developer.apple.com/documentation/foundation/nsfileprotectioncomplete
 
@@ -171,11 +178,14 @@ public class CrashReportManager {
         do {
             let logData = try JSONEncoder().encode(logEntry)
             let filename = "\(timestamp.replacingOccurrences(of: ":", with: "-"))_\(category.rawValue).json"
-            let fileURL = secureLogsDirectory.appendingPathComponent(filename)
+            let fileURL = self.secureLogsDirectory.appendingPathComponent(filename)
 
             // Write with NSFileProtectionComplete for maximum security
             try logData.write(to: fileURL, options: [.atomic])
-            try fileManager.setAttributes([.protectionKey: FileProtectionType.complete], ofItemAtPath: fileURL.path)
+            try self.fileManager.setAttributes(
+                [.protectionKey: FileProtectionType.complete],
+                ofItemAtPath: fileURL.path
+            )
 
             AppLogger.info("Crash log persisted securely: \(filename)", category: AppLogger.general)
         } catch {
@@ -188,7 +198,7 @@ public class CrashReportManager {
     /// Log a custom message for debugging production issues
     /// Useful for tracking user actions that lead to crashes
     public func logCustomMessage(_ message: String, level: LogLevel = .info) {
-        logCustomMessage(message, category: .general, level: level)
+        self.logCustomMessage(message, category: .general, level: level)
     }
 
     /// Internal method with category parameter
@@ -211,8 +221,8 @@ public class CrashReportManager {
         }
 
         #if !DEBUG
-        // In production, this would log to Firebase Crashlytics
-        // Crashlytics.crashlytics().log(logMessage)
+            // In production, this would log to Firebase Crashlytics
+            // Crashlytics.crashlytics().log(logMessage)
         #endif
     }
 
@@ -226,8 +236,8 @@ public class CrashReportManager {
         AppLogger.info("Setting user context: \(hashedID)", category: AppLogger.general)
 
         #if !DEBUG
-        // In production, this would set user context in Firebase Crashlytics
-        // Crashlytics.crashlytics().setUserID(hashedID)
+            // In production, this would set user context in Firebase Crashlytics
+            // Crashlytics.crashlytics().setUserID(hashedID)
         #endif
     }
 
@@ -236,8 +246,8 @@ public class CrashReportManager {
         AppLogger.debug("Setting custom value: \(key)=\(value)", category: AppLogger.general)
 
         #if !DEBUG
-        // In production, this would set custom keys in Firebase Crashlytics
-        // Crashlytics.crashlytics().setCustomValue(value, forKey: key)
+            // In production, this would set custom keys in Firebase Crashlytics
+            // Crashlytics.crashlytics().setCustomValue(value, forKey: key)
         #endif
     }
 }
@@ -247,13 +257,17 @@ public class CrashReportManager {
 // MARK: - Convenience Extensions
 
 extension CrashReportManager {
-
     /// Quick method to record and log an error in one call
-    private func handleError(_ error: Error, in component: String, category: CrashCategory = .general, context: [String: Any] = [:]) {
+    private func handleError(
+        _ error: Error,
+        in component: String,
+        category: CrashCategory = .general,
+        context: [String: Any] = [:]
+    ) {
         var fullContext = context
         fullContext["component"] = component
 
-        recordError(error, category: category, context: fullContext)
+        self.recordError(error, category: category, context: fullContext)
     }
 
     /// Record performance issues (slow operations)
@@ -262,27 +276,28 @@ extension CrashReportManager {
             let context = [
                 "operation": operation,
                 "duration": String(format: "%.3f", duration),
-                "threshold": String(format: "%.3f", threshold)
+                "threshold": String(format: "%.3f", threshold),
             ]
 
-            logCustomMessage("Performance issue detected", category: .general, level: .warning)
+            self.logCustomMessage("Performance issue detected", category: .general, level: .warning)
 
             #if !DEBUG
-            // In production, record as non-fatal error
-            let error = NSError(
-                domain: "Performance",
-                code: 1001,
-                userInfo: [
-                    NSLocalizedDescriptionKey: "Operation '\(operation)' took \(String(format: "%.3f", duration))s (threshold: \(String(format: "%.3f", threshold))s)"
-                ]
-            )
-            recordError(error, category: .general, context: context)
+                // In production, record as non-fatal error
+                let error = NSError(
+                    domain: "Performance",
+                    code: 1001,
+                    userInfo: [
+                        NSLocalizedDescriptionKey: "Operation '\(operation)' took \(String(format: "%.3f", duration))s (threshold: \(String(format: "%.3f", threshold))s)",
+                    ]
+                )
+                self.recordError(error, category: .general, context: context)
             #endif
         }
     }
 }
 
 // MARK: - Secure Crash Log Data Model
+
 // Following Apple Codable best practices for secure JSON serialization
 // Reference: https://developer.apple.com/documentation/foundation/archives_and_serialization/encoding_and_decoding_custom_types
 
@@ -322,7 +337,7 @@ private struct AnyCodable: Codable {
             try container.encode(boolValue)
         } else {
             // Fallback: convert to string
-            try container.encode(String(describing: value))
+            try container.encode(String(describing: self.value))
         }
     }
 
@@ -330,13 +345,13 @@ private struct AnyCodable: Codable {
         let container = try decoder.singleValueContainer()
 
         if let stringValue = try? container.decode(String.self) {
-            value = stringValue
+            self.value = stringValue
         } else if let intValue = try? container.decode(Int.self) {
-            value = intValue
+            self.value = intValue
         } else if let doubleValue = try? container.decode(Double.self) {
-            value = doubleValue
+            self.value = doubleValue
         } else if let boolValue = try? container.decode(Bool.self) {
-            value = boolValue
+            self.value = boolValue
         } else {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported type")
         }

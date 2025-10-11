@@ -2,13 +2,13 @@ import Foundation
 import HealthKit
 
 // MARK: - Shared HealthKit Service Layer
+
 // Eliminates code duplication across manager classes while preserving granular control
 // Following Apple HealthKit Programming Guide patterns and Swift API Design Guidelines
 
 /// Shared utility service for common HealthKit operations
 /// Centralizes authorization patterns while preserving individual tracker settings
 class HealthKitService {
-
     // MARK: - Data Type Definitions
 
     /// Supported HealthKit data types for Fast LIFe app
@@ -27,23 +27,23 @@ class HealthKitService {
                 return [
                     HKObjectType.quantityType(forIdentifier: .bodyMass)!,
                     HKObjectType.quantityType(forIdentifier: .bodyMassIndex)!,
-                    HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!
+                    HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)!,
                 ]
             case .hydration:
                 return [
-                    HKObjectType.quantityType(forIdentifier: .dietaryWater)!
+                    HKObjectType.quantityType(forIdentifier: .dietaryWater)!,
                 ]
             case .sleep:
                 return [
-                    HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!
+                    HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!,
                 ]
             case .fasting:
                 return [
-                    HKObjectType.workoutType() // Fasting sessions stored as workouts
+                    HKObjectType.workoutType(), // Fasting sessions stored as workouts
                 ]
             case .mindfulness:
                 return [
-                    HKObjectType.categoryType(forIdentifier: .mindfulSession)!
+                    HKObjectType.categoryType(forIdentifier: .mindfulSession)!,
                 ]
             case .comprehensive:
                 // Combine all data types for advanced sync
@@ -64,23 +64,23 @@ class HealthKitService {
                 return [
                     HKObjectType.quantityType(forIdentifier: .bodyMass)! as HKSampleType,
                     HKObjectType.quantityType(forIdentifier: .bodyMassIndex)! as HKSampleType,
-                    HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)! as HKSampleType
+                    HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)! as HKSampleType,
                 ]
             case .hydration:
                 return [
-                    HKObjectType.quantityType(forIdentifier: .dietaryWater)! as HKSampleType
+                    HKObjectType.quantityType(forIdentifier: .dietaryWater)! as HKSampleType,
                 ]
             case .sleep:
                 return [
-                    HKObjectType.categoryType(forIdentifier: .sleepAnalysis)! as HKSampleType
+                    HKObjectType.categoryType(forIdentifier: .sleepAnalysis)! as HKSampleType,
                 ]
             case .fasting:
                 return [
-                    HKObjectType.workoutType() as HKSampleType // Fasting sessions stored as workouts
+                    HKObjectType.workoutType() as HKSampleType, // Fasting sessions stored as workouts
                 ]
             case .mindfulness:
                 return [
-                    HKObjectType.categoryType(forIdentifier: .mindfulSession)! as HKSampleType
+                    HKObjectType.categoryType(forIdentifier: .mindfulSession)! as HKSampleType,
                 ]
             case .comprehensive:
                 // Combine all data types for advanced sync
@@ -135,7 +135,10 @@ class HealthKitService {
         let writeTypes = dataType.writeTypes
 
         // Debug logging for transparency
-        AppLogger.info("DEBUG: readTypes count: \(readTypes.count), writeTypes count: \(writeTypes.count)", category: AppLogger.healthKit)
+        AppLogger.info(
+            "DEBUG: readTypes count: \(readTypes.count), writeTypes count: \(writeTypes.count)",
+            category: AppLogger.healthKit
+        )
         AppLogger.info("Requesting authorization for \(dataType.displayName) tracking", category: AppLogger.healthKit)
 
         // Use shared HealthKitManager instance to maintain singleton pattern
@@ -144,7 +147,10 @@ class HealthKitService {
         healthStore.requestAuthorization(toShare: writeTypes, read: readTypes) { success, error in
             // Apple pattern: Always dispatch callback to main queue for UI updates
             DispatchQueue.main.async {
-                AppLogger.info("DEBUG: Authorization callback - success: \(success), error: \(String(describing: error))", category: AppLogger.healthKit)
+                AppLogger.info(
+                    "DEBUG: Authorization callback - success: \(success), error: \(String(describing: error))",
+                    category: AppLogger.healthKit
+                )
 
                 if success {
                     AppLogger.info("\(dataType.displayName) authorization granted", category: AppLogger.healthKit)
@@ -153,9 +159,16 @@ class HealthKitService {
                 } else {
                     AppLogger.info("\(dataType.displayName) authorization denied", category: AppLogger.healthKit)
                     if let error = error {
-                        AppLogger.error("\(dataType.displayName) authorization error", category: AppLogger.healthKit, error: error)
+                        AppLogger.error(
+                            "\(dataType.displayName) authorization error",
+                            category: AppLogger.healthKit,
+                            error: error
+                        )
                     } else {
-                        AppLogger.warning("\(dataType.displayName) authorization denied with no error - this means Apple dialog never appeared", category: AppLogger.healthKit)
+                        AppLogger.warning(
+                            "\(dataType.displayName) authorization denied with no error - this means Apple dialog never appeared",
+                            category: AppLogger.healthKit
+                        )
                     }
                 }
 
@@ -168,31 +181,31 @@ class HealthKitService {
 
     /// Request weight-specific authorization (preserves existing API)
     static func requestWeightAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        requestAuthorization(for: .weight, completion: completion)
+        self.requestAuthorization(for: .weight, completion: completion)
     }
 
     /// Request hydration-specific authorization (preserves existing API)
     static func requestHydrationAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        requestAuthorization(for: .hydration, completion: completion)
+        self.requestAuthorization(for: .hydration, completion: completion)
     }
 
     /// Request sleep-specific authorization (preserves existing API)
     static func requestSleepAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        requestAuthorization(for: .sleep, completion: completion)
+        self.requestAuthorization(for: .sleep, completion: completion)
     }
 
     /// Request fasting-specific authorization (workouts for fasting sessions)
     static func requestFastingAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        requestAuthorization(for: .fasting, completion: completion)
+        self.requestAuthorization(for: .fasting, completion: completion)
     }
 
     /// Request mindfulness-specific authorization (mindful sessions for mood tracking)
     static func requestMindfulnessAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        requestAuthorization(for: .mindfulness, completion: completion)
+        self.requestAuthorization(for: .mindfulness, completion: completion)
     }
 
     /// Request comprehensive authorization for all data types
     static func requestComprehensiveAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        requestAuthorization(for: .comprehensive, completion: completion)
+        self.requestAuthorization(for: .comprehensive, completion: completion)
     }
 }

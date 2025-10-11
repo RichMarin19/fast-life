@@ -4,15 +4,15 @@ import Foundation
 /// Following Apple HealthKit Programming Guide for HKCategoryValueSleepAnalysis
 struct SleepEntry: Codable, Identifiable {
     let id: UUID
-    let bedTime: Date          // When user went to bed
-    let wakeTime: Date         // When user woke up
-    let quality: Int?          // Optional sleep quality rating (1-5)
+    let bedTime: Date // When user went to bed
+    let wakeTime: Date // When user woke up
+    let quality: Int? // Optional sleep quality rating (1-5)
     let source: SleepSource
-    let stages: [SleepStage]   // Detailed sleep stage data (Apple Health style)
+    let stages: [SleepStage] // Detailed sleep stage data (Apple Health style)
 
     /// Calculated sleep duration in hours
     var duration: TimeInterval {
-        wakeTime.timeIntervalSince(bedTime)
+        self.wakeTime.timeIntervalSince(self.bedTime)
     }
 
     /// Formatted duration string (e.g., "7h 30m")
@@ -30,7 +30,7 @@ struct SleepEntry: Codable, Identifiable {
         var core: TimeInterval = 0
         var deep: TimeInterval = 0
 
-        for stage in stages {
+        for stage in self.stages {
             let duration = stage.endTime.timeIntervalSince(stage.startTime)
             switch stage.type {
             case .awake:
@@ -50,7 +50,14 @@ struct SleepEntry: Codable, Identifiable {
         return StageDurations(awake: awake, rem: rem, core: core, deep: deep)
     }
 
-    init(id: UUID = UUID(), bedTime: Date, wakeTime: Date, quality: Int? = nil, source: SleepSource = .manual, stages: [SleepStage] = []) {
+    init(
+        id: UUID = UUID(),
+        bedTime: Date,
+        wakeTime: Date,
+        quality: Int? = nil,
+        source: SleepSource = .manual,
+        stages: [SleepStage] = []
+    ) {
         self.id = id
         self.bedTime = bedTime
         self.wakeTime = wakeTime
@@ -69,7 +76,7 @@ struct SleepStage: Codable, Identifiable {
     let type: SleepStageType
 
     var duration: TimeInterval {
-        endTime.timeIntervalSince(startTime)
+        self.endTime.timeIntervalSince(self.startTime)
     }
 
     init(id: UUID = UUID(), startTime: Date, endTime: Date, type: SleepStageType) {
@@ -83,11 +90,11 @@ struct SleepStage: Codable, Identifiable {
 /// Sleep stage types matching Apple HealthKit HKCategoryValueSleepAnalysis
 /// Reference: https://developer.apple.com/documentation/healthkit/hkcategoryvaluesleepanalysis
 enum SleepStageType: String, Codable, CaseIterable {
-    case inBed = "In Bed"           // HKCategoryValueSleepAnalysis.inBed
-    case awake = "Awake"           // HKCategoryValueSleepAnalysis.awake
-    case core = "Core"             // HKCategoryValueSleepAnalysis.asleepCore
-    case deep = "Deep"             // HKCategoryValueSleepAnalysis.asleepDeep
-    case rem = "REM"               // HKCategoryValueSleepAnalysis.asleepREM
+    case inBed = "In Bed" // HKCategoryValueSleepAnalysis.inBed
+    case awake = "Awake" // HKCategoryValueSleepAnalysis.awake
+    case core = "Core" // HKCategoryValueSleepAnalysis.asleepCore
+    case deep = "Deep" // HKCategoryValueSleepAnalysis.asleepDeep
+    case rem = "REM" // HKCategoryValueSleepAnalysis.asleepREM
 
     /// Color for timeline visualization (Apple Health style)
     var color: String {

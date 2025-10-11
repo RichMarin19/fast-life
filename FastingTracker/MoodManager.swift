@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 class MoodManager: ObservableObject {
     @Published var moodEntries: [MoodEntry] = []
@@ -8,6 +8,7 @@ class MoodManager: ObservableObject {
     private let moodEntriesKey = "moodEntries"
 
     // MARK: - HealthKit Sync Properties (Mindfulness Integration)
+
     @Published var syncWithHealthKit: Bool = false
     private let syncPreferenceKey = "moodSyncWithHealthKit"
     private let hasCompletedInitialImportKey = "moodHasCompletedInitialImport"
@@ -19,12 +20,12 @@ class MoodManager: ObservableObject {
     private var observerQuery: Any? // HKObserverQuery type-erased
 
     init() {
-        loadMoodEntries()
-        loadSyncPreference()
+        self.loadMoodEntries()
+        self.loadSyncPreference()
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isMindfulnessAuthorized() {
-            startObservingHealthKit()
+        if self.syncWithHealthKit, HealthKitManager.shared.isMindfulnessAuthorized() {
+            self.startObservingHealthKit()
         }
     }
 
@@ -49,7 +50,7 @@ class MoodManager: ObservableObject {
         // ROADMAP REQUIREMENT: Add dedupe guards for entries in the same time window
         // Following Apple duplicate detection pattern similar to HealthKit
         // Reference: https://developer.apple.com/documentation/healthkit/about_the_healthkit_framework
-        if isDuplicate(entry: entry, timeWindow: 3600) { // 1 hour window
+        if self.isDuplicate(entry: entry, timeWindow: 3600) { // 1 hour window
             AppLogger.warning("Prevented duplicate mood entry within 1 hour", category: AppLogger.mood)
             return
         }
@@ -66,9 +67,9 @@ class MoodManager: ObservableObject {
         AppLogger.info("Added mood entry: mood=\(clampedMood), energy=\(clampedEnergy)", category: AppLogger.mood)
 
         // Sync to HealthKit as Mindfulness session with mood metadata
-        if syncWithHealthKit && entry.source == .manual {
+        if self.syncWithHealthKit, entry.source == .manual {
             // Observer suppression prevents infinite sync loops
-            isSuppressingObserver = true
+            self.isSuppressingObserver = true
 
             HealthKitManager.shared.saveMoodAsMindfulness(
                 moodLevel: clampedMood,
@@ -83,22 +84,30 @@ class MoodManager: ObservableObject {
                 }
 
                 if let error = error {
-                    AppLogger.error("Failed to sync mood to HealthKit Mindfulness", category: AppLogger.mood, error: error)
+                    AppLogger.error(
+                        "Failed to sync mood to HealthKit Mindfulness",
+                        category: AppLogger.mood,
+                        error: error
+                    )
                 } else if success {
-                    AppLogger.info("Synced mood to HealthKit Mindfulness - mood=\(clampedMood), energy=\(clampedEnergy)", category: AppLogger.mood)
+                    AppLogger.info(
+                        "Synced mood to HealthKit Mindfulness - mood=\(clampedMood), energy=\(clampedEnergy)",
+                        category: AppLogger.mood
+                    )
                 }
             }
         }
     }
 
     // MARK: - Validation Methods
+
     // Following Apple input validation pattern
     // Reference: https://developer.apple.com/documentation/foundation/numberformatter
 
     /// Check if a potential mood entry would be a duplicate within time window
     /// Following roadmap requirement for dedupe guards
     private func isDuplicate(entry: MoodEntry, timeWindow: TimeInterval) -> Bool {
-        return moodEntries.contains { existingEntry in
+        self.moodEntries.contains { existingEntry in
             abs(entry.date.timeIntervalSince(existingEntry.date)) < timeWindow
         }
     }
@@ -106,7 +115,7 @@ class MoodManager: ObservableObject {
     /// Validate if mood entry can be added (public method for UI validation)
     func canAddMoodEntry(at date: Date = Date()) -> Bool {
         let tempEntry = MoodEntry(date: date, moodLevel: 5, energyLevel: 5, notes: nil)
-        return !isDuplicate(entry: tempEntry, timeWindow: 3600)
+        return !self.isDuplicate(entry: tempEntry, timeWindow: 3600)
     }
 
     /// Get time remaining until next mood entry can be added
@@ -131,12 +140,12 @@ class MoodManager: ObservableObject {
 
     /// Latest mood entry
     var latestEntry: MoodEntry? {
-        moodEntries.first
+        self.moodEntries.first
     }
 
     /// Average mood level over last 7 days
     var averageMoodLevel: Double? {
-        guard !moodEntries.isEmpty else { return nil }
+        guard !self.moodEntries.isEmpty else { return nil }
 
         let calendar = Calendar.current
         guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date()) else {
@@ -144,7 +153,7 @@ class MoodManager: ObservableObject {
             return nil
         }
 
-        let recentEntries = moodEntries.filter { $0.date >= sevenDaysAgo }
+        let recentEntries = self.moodEntries.filter { $0.date >= sevenDaysAgo }
         guard !recentEntries.isEmpty else { return nil }
 
         let totalMood = recentEntries.reduce(0) { $0 + $1.moodLevel }
@@ -153,7 +162,7 @@ class MoodManager: ObservableObject {
 
     /// Average energy level over last 7 days
     var averageEnergyLevel: Double? {
-        guard !moodEntries.isEmpty else { return nil }
+        guard !self.moodEntries.isEmpty else { return nil }
 
         let calendar = Calendar.current
         guard let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: Date()) else {
@@ -161,7 +170,7 @@ class MoodManager: ObservableObject {
             return nil
         }
 
-        let recentEntries = moodEntries.filter { $0.date >= sevenDaysAgo }
+        let recentEntries = self.moodEntries.filter { $0.date >= sevenDaysAgo }
         guard !recentEntries.isEmpty else { return nil }
 
         let totalEnergy = recentEntries.reduce(0) { $0 + $1.energyLevel }
@@ -175,14 +184,14 @@ class MoodManager: ObservableObject {
             return []
         }
 
-        return moodEntries.filter { $0.date >= startDate }
+        return self.moodEntries.filter { $0.date >= startDate }
     }
 
     // MARK: - Persistence
 
     private func saveMoodEntries() {
         if let encoded = try? JSONEncoder().encode(moodEntries) {
-            userDefaults.set(encoded, forKey: moodEntriesKey)
+            self.userDefaults.set(encoded, forKey: self.moodEntriesKey)
         }
     }
 
@@ -191,16 +200,17 @@ class MoodManager: ObservableObject {
               let entries = try? JSONDecoder().decode([MoodEntry].self, from: data) else {
             return
         }
-        moodEntries = entries.sorted { $0.date > $1.date }
+        self.moodEntries = entries.sorted { $0.date > $1.date }
     }
 
     // MARK: - Universal HealthKit Sync Architecture (Mindfulness Integration)
+
     // Following Universal Sync Architecture patterns from handoff.md
     // Revolutionary approach: Sync mood data as HealthKit Mindfulness sessions with custom metadata
 
     /// Automatic observer-triggered sync (Universal Method #1)
     func syncFromHealthKit(startDate: Date? = nil, completion: ((Int, Error?) -> Void)? = nil) {
-        guard syncWithHealthKit else {
+        guard self.syncWithHealthKit else {
             DispatchQueue.main.async {
                 completion?(0, nil)
             }
@@ -210,14 +220,24 @@ class MoodManager: ObservableObject {
         guard HealthKitManager.shared.isMindfulnessAuthorized() else {
             AppLogger.warning("HealthKit not authorized for mindfulness/mood sync", category: AppLogger.mood)
             DispatchQueue.main.async {
-                completion?(0, NSError(domain: "MoodManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit not authorized"]))
+                completion?(
+                    0,
+                    NSError(
+                        domain: "MoodManager",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "HealthKit not authorized"]
+                    )
+                )
             }
             return
         }
 
         // Prevent sync during observer suppression (manual operations)
-        guard !isSuppressingObserver else {
-            AppLogger.info("Skipping HealthKit mood sync - observer suppressed during manual operation", category: AppLogger.mood)
+        guard !self.isSuppressingObserver else {
+            AppLogger.info(
+                "Skipping HealthKit mood sync - observer suppressed during manual operation",
+                category: AppLogger.mood
+            )
             DispatchQueue.main.async {
                 completion?(0, nil)
             }
@@ -232,12 +252,20 @@ class MoodManager: ObservableObject {
         HealthKitManager.shared.fetchMoodFromMindfulness(startDate: fromDate) { [weak self] moodEntries in
             guard let self = self else {
                 DispatchQueue.main.async {
-                    completion?(0, NSError(domain: "MoodManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "MoodManager deallocated"]))
+                    completion?(
+                        0,
+                        NSError(
+                            domain: "MoodManager",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "MoodManager deallocated"]
+                        )
+                    )
                 }
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best
+            // practice)
             DispatchQueue.main.async {
                 // Track newly added entries for accurate reporting
                 var newlyAddedCount = 0
@@ -247,8 +275,8 @@ class MoodManager: ObservableObject {
                     // Comprehensive duplicate check following WeightManager pattern
                     let isDuplicate = self.moodEntries.contains { entry in
                         abs(entry.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes
-                        entry.moodLevel == hkEntry.moodLevel &&
-                        entry.energyLevel == hkEntry.energyLevel
+                            entry.moodLevel == hkEntry.moodLevel &&
+                            entry.energyLevel == hkEntry.energyLevel
                     }
 
                     if !isDuplicate {
@@ -269,7 +297,10 @@ class MoodManager: ObservableObject {
                 self.saveMoodEntries()
 
                 // Report sync results
-                AppLogger.info("HealthKit mood sync completed: \(newlyAddedCount) new mood entries added from Mindfulness", category: AppLogger.mood)
+                AppLogger.info(
+                    "HealthKit mood sync completed: \(newlyAddedCount) new mood entries added from Mindfulness",
+                    category: AppLogger.mood
+                )
                 completion?(newlyAddedCount, nil)
             }
         }
@@ -277,24 +308,42 @@ class MoodManager: ObservableObject {
 
     /// Complete historical data import (Universal Method #2)
     func syncFromHealthKitHistorical(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
-        guard syncWithHealthKit else {
+        guard self.syncWithHealthKit else {
             DispatchQueue.main.async {
-                completion(0, NSError(domain: "MoodManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]))
+                completion(
+                    0,
+                    NSError(
+                        domain: "MoodManager",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]
+                    )
+                )
             }
             return
         }
 
-        AppLogger.info("Starting historical mood sync from HealthKit Mindfulness from \(startDate)", category: AppLogger.mood)
+        AppLogger.info(
+            "Starting historical mood sync from HealthKit Mindfulness from \(startDate)",
+            category: AppLogger.mood
+        )
 
         HealthKitManager.shared.fetchMoodFromMindfulness(startDate: startDate) { [weak self] moodEntries in
             guard let self = self else {
                 DispatchQueue.main.async {
-                    completion(0, NSError(domain: "MoodManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "MoodManager instance deallocated"]))
+                    completion(
+                        0,
+                        NSError(
+                            domain: "MoodManager",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "MoodManager instance deallocated"]
+                        )
+                    )
                 }
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best
+            // practice)
             DispatchQueue.main.async {
                 // Track newly added entries for accurate reporting
                 var newlyAddedCount = 0
@@ -303,9 +352,10 @@ class MoodManager: ObservableObject {
                 for hkEntry in moodEntries {
                     // Historical import uses more flexible duplicate check
                     let isDuplicate = self.moodEntries.contains { entry in
-                        abs(entry.date.timeIntervalSince(hkEntry.date)) < 600 && // Within 10 minutes (flexible for historical)
-                        entry.moodLevel == hkEntry.moodLevel &&
-                        entry.energyLevel == hkEntry.energyLevel
+                        abs(entry.date.timeIntervalSince(hkEntry.date)) < 600 &&
+                            // Within 10 minutes (flexible for historical)
+                            entry.moodLevel == hkEntry.moodLevel &&
+                            entry.energyLevel == hkEntry.energyLevel
                     }
 
                     if !isDuplicate {
@@ -326,7 +376,10 @@ class MoodManager: ObservableObject {
                 self.saveMoodEntries()
 
                 // Report actual sync results
-                AppLogger.info("Historical HealthKit mood sync completed: \(newlyAddedCount) new mood entries imported from \(moodEntries.count) total Mindfulness sessions", category: AppLogger.mood)
+                AppLogger.info(
+                    "Historical HealthKit mood sync completed: \(newlyAddedCount) new mood entries imported from \(moodEntries.count) total Mindfulness sessions",
+                    category: AppLogger.mood
+                )
                 completion(newlyAddedCount, nil)
             }
         }
@@ -334,24 +387,42 @@ class MoodManager: ObservableObject {
 
     /// Manual sync with deletion detection (Universal Method #3)
     func syncFromHealthKitWithReset(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
-        guard syncWithHealthKit else {
+        guard self.syncWithHealthKit else {
             DispatchQueue.main.async {
-                completion(0, NSError(domain: "MoodManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]))
+                completion(
+                    0,
+                    NSError(
+                        domain: "MoodManager",
+                        code: 1,
+                        userInfo: [NSLocalizedDescriptionKey: "HealthKit sync is disabled"]
+                    )
+                )
             }
             return
         }
 
-        AppLogger.info("Starting manual mood sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.mood)
+        AppLogger.info(
+            "Starting manual mood sync with anchor reset for deletion detection from \(startDate)",
+            category: AppLogger.mood
+        )
 
         HealthKitManager.shared.fetchMoodFromMindfulness(startDate: startDate) { [weak self] moodEntries in
             guard let self = self else {
                 DispatchQueue.main.async {
-                    completion(0, NSError(domain: "MoodManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "MoodManager instance deallocated"]))
+                    completion(
+                        0,
+                        NSError(
+                            domain: "MoodManager",
+                            code: 2,
+                            userInfo: [NSLocalizedDescriptionKey: "MoodManager instance deallocated"]
+                        )
+                    )
                 }
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
+            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best
+            // practice)
             DispatchQueue.main.async {
                 // Industry Standard: Complete sync with deletion detection
                 // Step 1: Remove HealthKit entries that are no longer in Apple Health
@@ -367,8 +438,8 @@ class MoodManager: ObservableObject {
                     let stillExistsInHealthKit = moodEntries.contains { healthKitEntry in
                         let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
                         return timeDiff < 300 && // Within 5 minutes
-                               fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
-                               fastLifeEntry.energyLevel == healthKitEntry.energyLevel
+                            fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
+                            fastLifeEntry.energyLevel == healthKitEntry.energyLevel
                     }
 
                     return !stillExistsInHealthKit
@@ -381,8 +452,8 @@ class MoodManager: ObservableObject {
                     let alreadyExists = self.moodEntries.contains { fastLifeEntry in
                         let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
                         return timeDiff < 300 &&
-                               fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
-                               fastLifeEntry.energyLevel == healthKitEntry.energyLevel
+                            fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
+                            fastLifeEntry.energyLevel == healthKitEntry.energyLevel
                     }
 
                     if !alreadyExists {
@@ -403,7 +474,10 @@ class MoodManager: ObservableObject {
                 self.saveMoodEntries()
 
                 // Report comprehensive sync results
-                AppLogger.info("Manual HealthKit mood sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(moodEntries.count) total HealthKit Mindfulness entries", category: AppLogger.mood)
+                AppLogger.info(
+                    "Manual HealthKit mood sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(moodEntries.count) total HealthKit Mindfulness entries",
+                    category: AppLogger.mood
+                )
                 completion(addedCount, nil)
             }
         }
@@ -413,8 +487,11 @@ class MoodManager: ObservableObject {
 
     /// Start observing HealthKit for automatic mood sync (Universal Pattern)
     func startObservingHealthKit() {
-        guard syncWithHealthKit && HealthKitManager.shared.isMindfulnessAuthorized() else {
-            AppLogger.info("Mood HealthKit observer not started - sync disabled or not authorized", category: AppLogger.mood)
+        guard self.syncWithHealthKit, HealthKitManager.shared.isMindfulnessAuthorized() else {
+            AppLogger.info(
+                "Mood HealthKit observer not started - sync disabled or not authorized",
+                category: AppLogger.mood
+            )
             return
         }
 
@@ -429,19 +506,25 @@ class MoodManager: ObservableObject {
                     if let error = error {
                         AppLogger.error("Observer-triggered mood sync failed", category: AppLogger.mood, error: error)
                     } else if count > 0 {
-                        AppLogger.info("Observer-triggered mood sync: \(count) new mood entries added from Mindfulness", category: AppLogger.mood)
+                        AppLogger.info(
+                            "Observer-triggered mood sync: \(count) new mood entries added from Mindfulness",
+                            category: AppLogger.mood
+                        )
                     }
                 }
             }
         }
 
-        AppLogger.info("Mood HealthKit observer started successfully - automatic sync enabled via Mindfulness", category: AppLogger.mood)
+        AppLogger.info(
+            "Mood HealthKit observer started successfully - automatic sync enabled via Mindfulness",
+            category: AppLogger.mood
+        )
     }
 
     /// Stop observing HealthKit (Universal Pattern)
     func stopObservingHealthKit() {
         HealthKitManager.shared.stopObservingMindfulness()
-        observerQuery = nil
+        self.observerQuery = nil
         AppLogger.info("Mood HealthKit observer stopped", category: AppLogger.mood)
     }
 
@@ -449,8 +532,8 @@ class MoodManager: ObservableObject {
 
     func setSyncPreference(_ enabled: Bool) {
         AppLogger.info("Setting mood sync preference to \(enabled)", category: AppLogger.mood)
-        syncWithHealthKit = enabled
-        userDefaults.set(enabled, forKey: syncPreferenceKey)
+        self.syncWithHealthKit = enabled
+        self.userDefaults.set(enabled, forKey: self.syncPreferenceKey)
 
         if enabled {
             // Request Mindfulness authorization for mood sync
@@ -458,34 +541,44 @@ class MoodManager: ObservableObject {
                 HealthKitManager.shared.requestMindfulnessAuthorization { [weak self] success, error in
                     DispatchQueue.main.async {
                         if success {
-                            AppLogger.info("Mindfulness authorization granted for mood sync, syncing from HealthKit", category: AppLogger.mood)
+                            AppLogger.info(
+                                "Mindfulness authorization granted for mood sync, syncing from HealthKit",
+                                category: AppLogger.mood
+                            )
                             self?.syncFromHealthKit { _, _ in }
                             self?.startObservingHealthKit()
                         } else {
-                            AppLogger.error("Mindfulness authorization failed for mood sync", category: AppLogger.mood, error: error)
+                            AppLogger.error(
+                                "Mindfulness authorization failed for mood sync",
+                                category: AppLogger.mood,
+                                error: error
+                            )
                         }
                     }
                 }
             } else {
-                AppLogger.info("Already authorized for Mindfulness, syncing mood data from HealthKit", category: AppLogger.mood)
-                syncFromHealthKit { _, _ in }
-                startObservingHealthKit()
+                AppLogger.info(
+                    "Already authorized for Mindfulness, syncing mood data from HealthKit",
+                    category: AppLogger.mood
+                )
+                self.syncFromHealthKit { _, _ in }
+                self.startObservingHealthKit()
             }
         } else {
             AppLogger.info("Mood sync disabled, stopping HealthKit Mindfulness observer", category: AppLogger.mood)
-            stopObservingHealthKit()
+            self.stopObservingHealthKit()
         }
     }
 
     private func loadSyncPreference() {
-        syncWithHealthKit = userDefaults.bool(forKey: syncPreferenceKey)
+        self.syncWithHealthKit = self.userDefaults.bool(forKey: self.syncPreferenceKey)
     }
 
     func hasCompletedInitialImport() -> Bool {
-        return userDefaults.bool(forKey: hasCompletedInitialImportKey)
+        self.userDefaults.bool(forKey: self.hasCompletedInitialImportKey)
     }
 
     func markInitialImportComplete() {
-        userDefaults.set(true, forKey: hasCompletedInitialImportKey)
+        self.userDefaults.set(true, forKey: self.hasCompletedInitialImportKey)
     }
 }

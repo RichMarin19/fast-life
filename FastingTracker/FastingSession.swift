@@ -1,6 +1,7 @@
 import Foundation
 
 // MARK: - Data Source Enum for Fasting Tracking
+
 enum FastingDataSource: String, Codable, CaseIterable {
     case manual = "Manual"
     case healthKit = "HealthKit"
@@ -19,16 +20,16 @@ struct FastingSession: Codable, Identifiable {
             // If no end time, return 0 - don't use Date() which causes infinite re-renders
             return 0
         }
-        return end.timeIntervalSince(startTime)
+        return end.timeIntervalSince(self.startTime)
     }
 
     var isComplete: Bool {
-        endTime != nil
+        self.endTime != nil
     }
 
     var metGoal: Bool {
-        let goal = goalHours ?? 16 // Default to 16 hours if not set
-        return duration >= goal * 3600
+        let goal = self.goalHours ?? 16 // Default to 16 hours if not set
+        return self.duration >= goal * 3600
     }
 
     var eatingWindowHours: Double? {
@@ -36,7 +37,14 @@ struct FastingSession: Codable, Identifiable {
         return eatingWindow / 3600
     }
 
-    init(id: UUID = UUID(), startTime: Date, endTime: Date? = nil, goalHours: Double? = nil, eatingWindowDuration: TimeInterval? = nil, source: FastingDataSource = .manual) {
+    init(
+        id: UUID = UUID(),
+        startTime: Date,
+        endTime: Date? = nil,
+        goalHours: Double? = nil,
+        eatingWindowDuration: TimeInterval? = nil,
+        source: FastingDataSource = .manual
+    ) {
         self.id = id
         self.startTime = startTime
         self.endTime = endTime

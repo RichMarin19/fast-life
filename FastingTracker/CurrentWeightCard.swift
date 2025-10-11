@@ -13,10 +13,10 @@ struct CurrentWeightCard: View {
     /// Returns: (totalChange: Double, isLoss: Bool)
     /// Positive = loss, Negative = gain
     private func calculateTotalProgress() -> (amount: Double, isLoss: Bool)? {
-        guard weightManager.weightEntries.count >= 2 else { return nil }
+        guard self.weightManager.weightEntries.count >= 2 else { return nil }
 
         // Get FIRST entry (start weight from onboarding)
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        let sortedEntries = self.weightManager.weightEntries.sorted { $0.date < $1.date }
         guard let startWeight = sortedEntries.first?.weight,
               let currentWeight = sortedEntries.last?.weight else {
             return nil
@@ -30,12 +30,12 @@ struct CurrentWeightCard: View {
     /// More loss = more exciting emoji! 🎉
     private func celebrationEmoji(for lbs: Double) -> String {
         switch lbs {
-        case 0..<1:      return "👍"  // Small loss
-        case 1..<2:      return "💪"  // Good loss
-        case 2..<3:      return "🌟"  // Great loss
-        case 3..<5:      return "🎉"  // Excellent loss
-        case 5..<10:     return "🏆"  // Amazing loss
-        default:         return "🚀"  // Incredible loss!
+        case 0 ..< 1: return "👍" // Small loss
+        case 1 ..< 2: return "💪" // Good loss
+        case 2 ..< 3: return "🌟" // Great loss
+        case 3 ..< 5: return "🎉" // Excellent loss
+        case 5 ..< 10: return "🏆" // Amazing loss
+        default: return "🚀" // Incredible loss!
         }
     }
 
@@ -43,16 +43,16 @@ struct CurrentWeightCard: View {
     /// Psychology: More gain = MORE supportive, not harsh
     private func gentleGainMessage(for lbs: Double) -> (emoji: String, message: String, color: Color) {
         switch lbs {
-        case 0..<1:
+        case 0 ..< 1:
             // Tiny fluctuation - totally normal
             return ("💧", "Just water weight", Color("FLPrimary"))
-        case 1..<2:
+        case 1 ..< 2:
             // Small gain - gentle
             return ("🤝", "Small fluctuation, you've got this", Color("FLPrimary"))
-        case 2..<3:
+        case 2 ..< 3:
             // Medium gain - supportive
             return ("💙", "Keep going, progress isn't always linear", .cyan)
-        case 3..<5:
+        case 3 ..< 5:
             // Larger gain - very supportive
             return ("🌱", "Every journey has ups and downs", Color("FLSuccess").opacity(0.7))
         default:
@@ -63,17 +63,17 @@ struct CurrentWeightCard: View {
 
     /// Gets starting weight (first entry from onboarding)
     private func getStartWeight() -> Double? {
-        guard weightManager.weightEntries.count >= 1 else { return nil }
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        guard self.weightManager.weightEntries.count >= 1 else { return nil }
+        let sortedEntries = self.weightManager.weightEntries.sorted { $0.date < $1.date }
         return sortedEntries.first?.weight
     }
 
     /// Calculates weight remaining to reach goal
     private func calculateWeightToGo() -> Double? {
-        guard weightManager.weightEntries.count >= 1, weightGoal > 0 else { return nil }
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        guard self.weightManager.weightEntries.count >= 1, self.weightGoal > 0 else { return nil }
+        let sortedEntries = self.weightManager.weightEntries.sorted { $0.date < $1.date }
         guard let currentWeight = sortedEntries.last?.weight else { return nil }
-        let remaining = currentWeight - weightGoal
+        let remaining = currentWeight - self.weightGoal
         return remaining > 0 ? remaining : 0
     }
 
@@ -82,20 +82,20 @@ struct CurrentWeightCard: View {
     /// Returns nil if insufficient data or goal not set
     private func calculateProgressPercentage() -> Double? {
         // Require goal weight to be set
-        guard weightGoal > 0 else { return nil }
+        guard self.weightGoal > 0 else { return nil }
 
         // Need at least 2 entries (start and current)
-        guard weightManager.weightEntries.count >= 2 else { return nil }
+        guard self.weightManager.weightEntries.count >= 2 else { return nil }
 
         // Get starting weight (earliest entry) and current weight (latest entry)
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        let sortedEntries = self.weightManager.weightEntries.sorted { $0.date < $1.date }
         guard let startingWeight = sortedEntries.first?.weight,
               let currentWeight = sortedEntries.last?.weight else {
             return nil
         }
 
         // Calculate progress
-        let totalWeightToLose = startingWeight - weightGoal
+        let totalWeightToLose = startingWeight - self.weightGoal
         let weightLostSoFar = startingWeight - currentWeight
 
         // Only show progress if:
@@ -104,7 +104,7 @@ struct CurrentWeightCard: View {
         // 3. Haven't already passed the goal
         guard totalWeightToLose > 0,
               weightLostSoFar > 0,
-              currentWeight > weightGoal else {
+              currentWeight > self.weightGoal else {
             return nil
         }
 
@@ -128,7 +128,7 @@ struct CurrentWeightCard: View {
                         .foregroundColor(.secondary)
 
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(weightManager.displayWeight(for: latest), specifier: "%.1f")")
+                        Text("\(self.weightManager.displayWeight(for: latest), specifier: "%.1f")")
                             .font(.system(size: 48, weight: .bold))
                             .foregroundColor(Color("FLPrimary"))
                         Text("lbs")
@@ -140,9 +140,9 @@ struct CurrentWeightCard: View {
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                 }
-                .contentShape(Rectangle())  // Make entire area tappable
+                .contentShape(Rectangle()) // Make entire area tappable
                 .onTapGesture {
-                    showingAddWeight = true
+                    self.showingAddWeight = true
                 }
 
                 // Weight Change Display - EXCITING, MOTIVATIONAL, CELEBRATORY! 🎉
@@ -157,11 +157,11 @@ struct CurrentWeightCard: View {
                             // Per Apple HIG: "Make it easy for people to drill down into details"
                             HStack(spacing: 8) {
                                 // Celebration emoji - dynamic based on amount
-                                Text(celebrationEmoji(for: progress.amount))
+                                Text(self.celebrationEmoji(for: progress.amount))
                                     .font(.system(size: 28))
 
                                 // Weight lost - LARGE and PROUD
-                                Text("\((progress.amount), specifier: "%.1f") \("lbs") lost!")
+                                Text("\(progress.amount, specifier: "%.1f") \("lbs") lost!")
                                     .font(.system(size: 24, weight: .heavy, design: .rounded))
                                     .foregroundColor(.white)
 
@@ -181,16 +181,16 @@ struct CurrentWeightCard: View {
                             )
                             .cornerRadius(8)
                             .shadow(color: Color("FLSuccess").opacity(0.3), radius: 8, x: 0, y: 4)
-                            .contentShape(Rectangle())  // Make entire pill tappable
+                            .contentShape(Rectangle()) // Make entire pill tappable
                             .onTapGesture {
-                                showingTrends = true
+                                self.showingTrends = true
                             }
 
                         } else {
                             // WEIGHT GAIN - PROGRESSIVELY GENTLER as gain increases
                             // TAPPABLE - opens Trends view to see patterns
                             // Psychology: More supportive = users stay engaged
-                            let gentleMessage = gentleGainMessage(for: progress.amount)
+                            let gentleMessage = self.gentleGainMessage(for: progress.amount)
 
                             HStack(spacing: 8) {
                                 // Gentle emoji (changes based on amount)
@@ -206,9 +206,9 @@ struct CurrentWeightCard: View {
                             .padding(.vertical, 10)
                             .background(gentleMessage.color.opacity(0.08))
                             .cornerRadius(8)
-                            .contentShape(Rectangle())  // Make entire message tappable
+                            .contentShape(Rectangle()) // Make entire message tappable
                             .onTapGesture {
-                                showingTrends = true
+                                self.showingTrends = true
                             }
                         }
                     }
@@ -219,13 +219,13 @@ struct CurrentWeightCard: View {
                 // ENTIRE PILL IS TAPPABLE for maximum usability
                 // Per Apple HIG: "Make controls easy to interact with by giving them ample hit targets"
                 // Reference: https://developer.apple.com/design/human-interface-guidelines/buttons
-                if weightGoal > 0 {
+                if self.weightGoal > 0 {
                     Divider()
                         .padding(.vertical, 4)
 
                     // Entire pill is tappable - large hit target for better UX
                     Button(action: {
-                        showingGoalEditor = true
+                        self.showingGoalEditor = true
                     }) {
                         HStack(spacing: 10) {
                             // 🎯 Target emoji for visual excitement
@@ -233,12 +233,12 @@ struct CurrentWeightCard: View {
                                 .font(.system(size: 28))
 
                             // Goal label and value - COMPACT but still EXCITING!
-                            (Text("GOAL: ")
+                            Text("GOAL: ")
                                 .font(.system(size: 32, weight: .heavy, design: .rounded))
                                 .foregroundColor(Color("FLSuccess"))
-                            + Text("\(Int((weightGoal))) \("lbs")")
+                                + Text("\(Int(self.weightGoal)) \("lbs")")
                                 .font(.system(size: 32, weight: .heavy, design: .rounded))
-                                .foregroundColor(Color("FLSuccess")))
+                                .foregroundColor(Color("FLSuccess"))
 
                             // Gear icon visual indicator that this is editable
                             // No longer a separate button - entire pill is tappable
@@ -247,7 +247,7 @@ struct CurrentWeightCard: View {
                                 .foregroundColor(.gray)
                         }
                         .padding(.horizontal, 16)
-                        .padding(.vertical, 8)  // Reduced for more compact pill
+                        .padding(.vertical, 8) // Reduced for more compact pill
                         .background(
                             // Subtle green background for extra pop
                             RoundedRectangle(cornerRadius: 16)
@@ -259,7 +259,7 @@ struct CurrentWeightCard: View {
                                 .strokeBorder(Color("FLSuccess").opacity(0.3), lineWidth: 2)
                         )
                     }
-                    .buttonStyle(.plain)  // Removes default button styling, keeps custom design
+                    .buttonStyle(.plain) // Removes default button styling, keeps custom design
 
                     // Progress Ring - Beautiful circular visual progress indicator
                     // Inspired by milestone concept with sexy color scheme
@@ -273,7 +273,7 @@ struct CurrentWeightCard: View {
                             weightLost: progress.amount,
                             weightToGo: weightToGo,
                             startWeight: startWeight,
-                            goalWeight: weightGoal
+                            goalWeight: self.weightGoal
                         )
                         .padding(.top, 8)
                     }
@@ -340,30 +340,30 @@ struct CircularProgressRing: View {
 
                 // Progress arc (BLUE → GREEN gradient - shows progression!)
                 Circle()
-                    .trim(from: 0, to: CGFloat(percentage / 100))
+                    .trim(from: 0, to: CGFloat(self.percentage / 100))
                     .stroke(
                         AngularGradient(
                             colors: [Color("FLPrimary"), Color.cyan, Color("FLSuccess")],
                             center: .center,
                             startAngle: .degrees(0),
-                            endAngle: .degrees(360 * (percentage / 100))
+                            endAngle: .degrees(360 * (self.percentage / 100))
                         ),
                         style: StrokeStyle(lineWidth: 14, lineCap: .round)
                     )
                     .frame(width: 200, height: 200)
                     .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: percentage)
+                    .animation(.spring(response: 0.6, dampingFraction: 0.8), value: self.percentage)
 
                 // Center content
                 VStack(spacing: 4) {
                     // Milestone emoji (dynamic based on percentage)
-                    Text(milestoneEmoji(for: percentage))
+                    Text(self.milestoneEmoji(for: self.percentage))
                         .font(.system(size: 36))
 
                     // Large percentage
-                    Text("\(percentage, specifier: "%.0f")%")
+                    Text("\(self.percentage, specifier: "%.0f")%")
                         .font(.system(size: 44, weight: .heavy, design: .rounded))
-                        .foregroundColor(progressColor(for: percentage))
+                        .foregroundColor(self.progressColor(for: self.percentage))
 
                     // "COMPLETE" label
                     Text("COMPLETE")
@@ -377,7 +377,7 @@ struct CircularProgressRing: View {
             HStack(spacing: 24) {
                 // Weight Lost (left)
                 VStack(spacing: 2) {
-                    Text("\((weightLost), specifier: "%.1f") \("lbs")")
+                    Text("\(self.weightLost, specifier: "%.1f") \("lbs")")
                         .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundColor(Color("FLSuccess"))
                     Text("LOST")
@@ -394,7 +394,7 @@ struct CircularProgressRing: View {
                 // Weight To Go (right)
                 if let toGo = weightToGo, toGo > 0 {
                     VStack(spacing: 2) {
-                        Text("\((toGo), specifier: "%.1f") \("lbs")")
+                        Text("\(toGo, specifier: "%.1f") \("lbs")")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
                             .foregroundColor(.orange)
                         Text("TO GO")
@@ -409,9 +409,9 @@ struct CircularProgressRing: View {
             VStack(spacing: 8) {
                 // Dots row
                 HStack(spacing: 12) {
-                    ForEach(1...10, id: \.self) { milestone in
+                    ForEach(1 ... 10, id: \.self) { milestone in
                         Circle()
-                            .fill(milestoneColor(for: milestone, percentage: percentage))
+                            .fill(self.milestoneColor(for: milestone, percentage: self.percentage))
                             .frame(width: 20, height: 20)
                             .overlay(
                                 Circle()
@@ -421,7 +421,7 @@ struct CircularProgressRing: View {
                 }
 
                 // Progress text
-                Text("\(milestonesCompleted(for: percentage)) OF 10 MILESTONES COMPLETE")
+                Text("\(self.milestonesCompleted(for: self.percentage)) OF 10 MILESTONES COMPLETE")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.secondary)
                     .tracking(0.5)
@@ -435,44 +435,44 @@ struct CircularProgressRing: View {
     /// Returns motivational emoji based on progress percentage
     private func milestoneEmoji(for percentage: Double) -> String {
         switch percentage {
-        case 0..<10:    return "🌱"
-        case 10..<25:   return "💪"
-        case 25..<50:   return "⭐️"
-        case 50..<75:   return "🔥"
-        case 75..<90:   return "🏆"
-        case 90..<100:  return "🚀"
-        default:        return "👑"
+        case 0 ..< 10: return "🌱"
+        case 10 ..< 25: return "💪"
+        case 25 ..< 50: return "⭐️"
+        case 50 ..< 75: return "🔥"
+        case 75 ..< 90: return "🏆"
+        case 90 ..< 100: return "🚀"
+        default: return "👑"
         }
     }
 
     /// Returns color for percentage text based on progress
     private func progressColor(for percentage: Double) -> Color {
         switch percentage {
-        case 0..<33:    return Color("FLPrimary")
-        case 33..<66:   return .cyan
-        default:        return .green
+        case 0 ..< 33: return Color("FLPrimary")
+        case 33 ..< 66: return .cyan
+        default: return .green
         }
     }
 
     /// Returns how many milestones are completed (0-10)
     private func milestonesCompleted(for percentage: Double) -> Int {
-        return Int((percentage / 100) * 10)
+        Int((percentage / 100) * 10)
     }
 
     /// Returns color for each milestone dot matching the ring's gradient
     /// Creates smooth blue → cyan → green progression like the circular ring
     private func milestoneColor(for milestone: Int, percentage: Double) -> Color {
-        let completed = milestonesCompleted(for: percentage)
+        let completed = self.milestonesCompleted(for: percentage)
 
         if milestone <= completed {
             // Filled dots: smooth gradient matching ring (blue → cyan → green)
             // Distribute colors evenly across 10 milestones
             switch milestone {
-            case 1...3:
+            case 1 ... 3:
                 return Color("FLPrimary")
-            case 4...6:
+            case 4 ... 6:
                 return .cyan
-            case 7...10:
+            case 7 ... 10:
                 return .green
             default:
                 return Color("FLPrimary")

@@ -5,15 +5,15 @@ import OSLog
 
 /// Log severity levels matching OSLog's LogType
 public enum LogLevel: Int, Comparable {
-    case debug = 0      // Verbose, development-only
-    case info = 1       // General informational messages
-    case notice = 2     // Default level, notable events
-    case warning = 3    // Potential issues
-    case error = 4      // Errors that don't crash
-    case fault = 5      // Critical failures
+    case debug = 0 // Verbose, development-only
+    case info = 1 // General informational messages
+    case notice = 2 // Default level, notable events
+    case warning = 3 // Potential issues
+    case error = 4 // Errors that don't crash
+    case fault = 5 // Critical failures
 
     public static func < (lhs: LogLevel, rhs: LogLevel) -> Bool {
-        return lhs.rawValue < rhs.rawValue
+        lhs.rawValue < rhs.rawValue
     }
 
     var osLogType: OSLogType {
@@ -49,12 +49,12 @@ enum LogCategory: String {
 // MARK: - App Log Infrastructure
 
 /// Central logging infrastructure
-struct AppLog {
+enum AppLog {
     static let subsystem = "ai.fastlife.app"
 
     /// Creates a logger for a specific category
     static func logger(for category: LogCategory) -> Logger {
-        return Logger(subsystem: subsystem, category: category.rawValue)
+        Logger(subsystem: self.subsystem, category: category.rawValue)
     }
 }
 
@@ -62,25 +62,24 @@ struct AppLog {
 
 /// Main logging facade - replaces all print() statements
 class Log {
-
     // MARK: - Runtime Control
 
     /// Current runtime log level (can be overridden by debug screen)
     private static var runtimeLevel: LogLevel = {
         #if DEBUG
-        return .debug  // Show everything in development
+            return .debug // Show everything in development
         #elseif TESTFLIGHT
-        return .info   // Show info+ in TestFlight
+            return .info // Show info+ in TestFlight
         #else
-        return .notice // Show notice+ in production
+            return .notice // Show notice+ in production
         #endif
     }()
 
     /// Override runtime level (used by hidden debug screen)
     static func setRuntimeLevel(_ level: LogLevel) {
-        runtimeLevel = level
+        self.runtimeLevel = level
         UserDefaults.standard.set(level.rawValue, forKey: "LogRuntimeLevel")
-        notice("Runtime log level changed", category: .general, metadata: ["level": "\(level)"])
+        self.notice("Runtime log level changed", category: .general, metadata: ["level": "\(level)"])
     }
 
     /// Get current runtime level
@@ -89,54 +88,64 @@ class Log {
            let level = LogLevel(rawValue: savedLevel) {
             return level
         }
-        return runtimeLevel
+        return self.runtimeLevel
     }
 
     // MARK: - Logging Methods
 
     /// Debug-level log (verbose, development only)
     static func debug(_ message: String, category: LogCategory = .general, metadata: [String: String] = [:]) {
-        log(message, level: .debug, category: category, metadata: metadata)
+        self.log(message, level: .debug, category: category, metadata: metadata)
     }
 
     /// Info-level log (general informational)
     static func info(_ message: String, category: LogCategory = .general, metadata: [String: String] = [:]) {
-        log(message, level: .info, category: category, metadata: metadata)
+        self.log(message, level: .info, category: category, metadata: metadata)
     }
 
     /// Notice-level log (notable events, default level)
     static func notice(_ message: String, category: LogCategory = .general, metadata: [String: String] = [:]) {
-        log(message, level: .notice, category: category, metadata: metadata)
+        self.log(message, level: .notice, category: category, metadata: metadata)
     }
 
     /// Warning-level log (potential issues)
     static func warning(_ message: String, category: LogCategory = .general, metadata: [String: String] = [:]) {
-        log(message, level: .warning, category: category, metadata: metadata)
+        self.log(message, level: .warning, category: category, metadata: metadata)
     }
 
     /// Error-level log (errors that don't crash)
-    static func error(_ message: String, category: LogCategory = .general, metadata: [String: String] = [:], error: Error? = nil) {
+    static func error(
+        _ message: String,
+        category: LogCategory = .general,
+        metadata: [String: String] = [:],
+        error: Error? = nil
+    ) {
         var finalMetadata = metadata
         if let error = error {
             finalMetadata["error"] = error.localizedDescription
         }
-        log(message, level: .error, category: category, metadata: finalMetadata)
+        self.log(message, level: .error, category: category, metadata: finalMetadata)
     }
 
     /// Fault-level log (critical failures)
-    static func fault(_ message: String, category: LogCategory = .general, metadata: [String: String] = [:], error: Error? = nil) {
+    static func fault(
+        _ message: String,
+        category: LogCategory = .general,
+        metadata: [String: String] = [:],
+        error: Error? = nil
+    ) {
         var finalMetadata = metadata
         if let error = error {
             finalMetadata["error"] = error.localizedDescription
         }
-        log(message, level: .fault, category: category, metadata: finalMetadata)
+        self.log(message, level: .fault, category: category, metadata: finalMetadata)
     }
 
     // MARK: - Core Log Function
 
     private static func log(_ message: String, level: LogLevel, category: LogCategory, metadata: [String: String]) {
         // Check runtime level
-        guard level >= getRuntimeLevel() else { return }
+        guard level >= self.getRuntimeLevel() else { return }
 
         let logger = AppLog.logger(for: category)
 
@@ -165,30 +174,30 @@ class Log {
 
     /// Log a count/quantity without revealing actual health data
     static func logCount(_ count: Int, action: String, category: LogCategory) {
-        info("\(action): \(count) items", category: category)
+        self.info("\(action): \(count) items", category: category)
     }
 
     /// Log a successful operation without revealing data
     static func logSuccess(_ operation: String, category: LogCategory) {
-        info("✅ \(operation) completed successfully", category: category)
+        self.info("✅ \(operation) completed successfully", category: category)
     }
 
     /// Log a failed operation with error details
     static func logFailure(_ operation: String, category: LogCategory, error errorDetails: Error? = nil) {
-        error("❌ \(operation) failed", category: category, error: errorDetails)
+        self.error("❌ \(operation) failed", category: category, error: errorDetails)
     }
 
     /// Log an authorization request (never log the result, only the request)
     static func logAuthRequest(_ dataType: String, category: LogCategory = .healthkit) {
-        info("📱 Requesting authorization for \(dataType)", category: category)
+        self.info("📱 Requesting authorization for \(dataType)", category: category)
     }
 
     /// Log an authorization result (boolean only, no sensitive data)
     static func logAuthResult(_ dataType: String, granted: Bool, category: LogCategory = .healthkit) {
         if granted {
-            info("✅ Authorization granted for \(dataType)", category: category)
+            self.info("✅ Authorization granted for \(dataType)", category: category)
         } else {
-            warning("❌ Authorization denied for \(dataType)", category: category)
+            self.warning("❌ Authorization denied for \(dataType)", category: category)
         }
     }
 }
@@ -201,46 +210,46 @@ class PerformanceLog {
 
     /// Begin a performance interval
     static func begin(_ name: StaticString, id: OSSignpostID = .exclusive) {
-        os_signpost(.begin, log: log, name: name, signpostID: id)
+        os_signpost(.begin, log: self.log, name: name, signpostID: id)
     }
 
     /// End a performance interval
     static func end(_ name: StaticString, id: OSSignpostID = .exclusive) {
-        os_signpost(.end, log: log, name: name, signpostID: id)
+        os_signpost(.end, log: self.log, name: name, signpostID: id)
     }
 
     /// Log an event within an interval
     static func event(_ name: StaticString, id: OSSignpostID = .exclusive, message: String = "") {
-        os_signpost(.event, log: log, name: name, signpostID: id, "%{public}s", message)
+        os_signpost(.event, log: self.log, name: name, signpostID: id, "%{public}s", message)
     }
 
     // MARK: - Convenience Methods
 
     /// Measure chart rendering performance
     static func beginChartRender() {
-        begin("Chart Render")
+        self.begin("Chart Render")
     }
 
     static func endChartRender() {
-        end("Chart Render")
+        self.end("Chart Render")
     }
 
     /// Measure HealthKit sync performance
     static func beginHealthKitSync() {
-        begin("HealthKit Sync")
+        self.begin("HealthKit Sync")
     }
 
     static func endHealthKitSync() {
-        end("HealthKit Sync")
+        self.end("HealthKit Sync")
     }
 
     /// Measure database query performance
     static func beginDatabaseQuery() {
-        begin("Database Query")
+        self.begin("Database Query")
     }
 
     static func endDatabaseQuery() {
-        end("Database Query")
+        self.end("Database Query")
     }
 }
 
@@ -251,6 +260,6 @@ extension Log {
     /// Replace print() with this during migration
     @available(*, deprecated, message: "Use Log.debug/info/notice instead")
     static func print(_ message: String, category: LogCategory = .general) {
-        debug(message, category: category)
+        self.debug(message, category: category)
     }
 }

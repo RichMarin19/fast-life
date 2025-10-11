@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct MoodTrackingView: View {
     @StateObject private var moodManager = MoodManager()
@@ -13,7 +13,7 @@ struct MoodTrackingView: View {
                     .frame(height: 20)
 
                 // Mood & Energy Circles
-                MoodEnergyCirclesView(moodManager: moodManager)
+                MoodEnergyCirclesView(moodManager: self.moodManager)
 
                 // 7-Day Averages
                 if let avgMood = moodManager.averageMoodLevel,
@@ -41,11 +41,11 @@ struct MoodTrackingView: View {
                 }
 
                 // Graphs Section
-                MoodEnergyGraphsView(moodManager: moodManager, selectedTimeRange: $selectedTimeRange)
+                MoodEnergyGraphsView(moodManager: self.moodManager, selectedTimeRange: self.$selectedTimeRange)
                     .padding(.horizontal, 20)
 
                 // Recent Entries
-                if !moodManager.moodEntries.isEmpty {
+                if !self.moodManager.moodEntries.isEmpty {
                     VStack(spacing: 12) {
                         Text("Recent Entries")
                             .font(.headline)
@@ -53,9 +53,9 @@ struct MoodTrackingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 40)
 
-                        ForEach(Array(moodManager.moodEntries.prefix(5))) { entry in
+                        ForEach(Array(self.moodManager.moodEntries.prefix(5))) { entry in
                             MoodEntryRow(entry: entry, onDelete: {
-                                moodManager.deleteMoodEntry(entry)
+                                self.moodManager.deleteMoodEntry(entry)
                             })
                             .padding(.horizontal, 40)
                         }
@@ -72,15 +72,15 @@ struct MoodTrackingView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: {
-                    showingAddEntry = true
+                    self.showingAddEntry = true
                 }) {
                     Image(systemName: "plus.circle.fill")
                         .foregroundColor(.orange)
                 }
             }
         }
-        .sheet(isPresented: $showingAddEntry) {
-            AddMoodEntryView(moodManager: moodManager)
+        .sheet(isPresented: self.$showingAddEntry) {
+            AddMoodEntryView(moodManager: self.moodManager)
         }
     }
 }
@@ -186,7 +186,7 @@ struct MoodEnergyGraphsView: View {
     var body: some View {
         VStack(spacing: 20) {
             // Time Range Picker
-            Picker("Range", selection: $selectedTimeRange) {
+            Picker("Range", selection: self.$selectedTimeRange) {
                 Text("7 Days").tag(7)
                 Text("30 Days").tag(30)
                 Text("90 Days").tag(90)
@@ -216,7 +216,7 @@ struct MoodEnergyGraphsView: View {
                             )
                             .foregroundStyle(.orange)
                         }
-                        .chartYScale(domain: 0...10)
+                        .chartYScale(domain: 0 ... 10)
                         .frame(height: 200)
                     } else {
                         Text("No mood data for this period")
@@ -257,7 +257,7 @@ struct MoodEnergyGraphsView: View {
                             )
                             .foregroundStyle(Color("FLPrimary"))
                         }
-                        .chartYScale(domain: 0...10)
+                        .chartYScale(domain: 0 ... 10)
                         .frame(height: 200)
                     } else {
                         Text("No energy data for this period")
@@ -288,9 +288,9 @@ struct MoodEntryRow: View {
         HStack(spacing: 12) {
             // Mood & Energy Emojis
             VStack(spacing: 4) {
-                Text(entry.moodEmoji)
+                Text(self.entry.moodEmoji)
                     .font(.system(size: 24))
-                Text(entry.energyEmoji)
+                Text(self.entry.energyEmoji)
                     .font(.system(size: 20))
             }
             .frame(width: 50, height: 50)
@@ -298,7 +298,7 @@ struct MoodEntryRow: View {
             .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(formatDate(entry.date))
+                Text(self.formatDate(self.entry.date))
                     .font(.subheadline)
                     .fontWeight(.medium)
                 if let notes = entry.notes, !notes.isEmpty {
@@ -307,7 +307,7 @@ struct MoodEntryRow: View {
                         .foregroundColor(.secondary)
                         .lineLimit(1)
                 } else {
-                    Text("\(entry.moodDescription) mood")
+                    Text("\(self.entry.moodDescription) mood")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -320,7 +320,7 @@ struct MoodEntryRow: View {
                     Text("M:")
                         .font(.caption2)
                         .foregroundColor(.secondary)
-                    Text("\(entry.moodLevel)")
+                    Text("\(self.entry.moodLevel)")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                 }
@@ -328,13 +328,13 @@ struct MoodEntryRow: View {
                     Text("E:")
                         .font(.caption2)
                         .foregroundColor(.secondary)
-                    Text("\(entry.energyLevel)")
+                    Text("\(self.entry.energyLevel)")
                         .font(.subheadline)
                         .fontWeight(.semibold)
                 }
             }
 
-            Button(action: onDelete) {
+            Button(action: self.onDelete) {
                 Image(systemName: "trash")
                     .font(.subheadline)
                     .foregroundColor(.red)
@@ -375,15 +375,15 @@ struct AddMoodEntryView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Text("\(Int(moodLevel))")
+                                Text("\(Int(self.moodLevel))")
                                     .font(.title2)
                                     .fontWeight(.bold)
-                                    .foregroundColor(moodColor(for: Int(moodLevel)))
-                                Text(moodEmoji(for: Int(moodLevel)))
+                                    .foregroundColor(self.moodColor(for: Int(self.moodLevel)))
+                                Text(self.moodEmoji(for: Int(self.moodLevel)))
                                     .font(.title2)
                             }
 
-                            Slider(value: $moodLevel, in: 1...10, step: 1)
+                            Slider(value: self.$moodLevel, in: 1 ... 10, step: 1)
                                 .tint(.orange)
 
                             HStack {
@@ -407,15 +407,15 @@ struct AddMoodEntryView: View {
                                     .font(.subheadline)
                                     .foregroundColor(.secondary)
                                 Spacer()
-                                Text("\(Int(energyLevel))")
+                                Text("\(Int(self.energyLevel))")
                                     .font(.title2)
                                     .fontWeight(.bold)
-                                    .foregroundColor(energyColor(for: Int(energyLevel)))
-                                Text(energyEmoji(for: Int(energyLevel)))
+                                    .foregroundColor(self.energyColor(for: Int(self.energyLevel)))
+                                Text(self.energyEmoji(for: Int(self.energyLevel)))
                                     .font(.title2)
                             }
 
-                            Slider(value: $energyLevel, in: 1...10, step: 1)
+                            Slider(value: self.$energyLevel, in: 1 ... 10, step: 1)
                                 .tint(Color("FLPrimary"))
 
                             HStack {
@@ -433,7 +433,7 @@ struct AddMoodEntryView: View {
                 }
 
                 Section(header: Text("Notes (Optional)")) {
-                    TextEditor(text: $notes)
+                    TextEditor(text: self.$notes)
                         .frame(minHeight: 100)
                 }
             }
@@ -442,18 +442,18 @@ struct AddMoodEntryView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
-                        let notesText = notes.trimmingCharacters(in: .whitespacesAndNewlines)
-                        moodManager.addMoodEntry(
-                            moodLevel: Int(moodLevel),
-                            energyLevel: Int(energyLevel),
+                        let notesText = self.notes.trimmingCharacters(in: .whitespacesAndNewlines)
+                        self.moodManager.addMoodEntry(
+                            moodLevel: Int(self.moodLevel),
+                            energyLevel: Int(self.energyLevel),
                             notes: notesText.isEmpty ? nil : notesText
                         )
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }

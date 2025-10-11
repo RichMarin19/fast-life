@@ -22,7 +22,7 @@ struct HydrationTrackingView: View {
 
                 // HealthKit Nudge for first-time users who skipped onboarding
                 // Following Lose It app pattern - contextual banner with single Connect action
-                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .hydration) {
+                if self.showHealthKitNudge, self.nudgeManager.shouldShowNudge(for: .hydration) {
                     HealthKitNudgeView(
                         dataType: .hydration,
                         onConnect: {
@@ -36,20 +36,20 @@ struct HydrationTrackingView: View {
                                         // Enable sync automatically when granted from nudge
                                         // Note: HydrationManager doesn't have enableSync() method yet
                                         // For now, we'll just hide the nudge
-                                        showHealthKitNudge = false
+                                        self.showHealthKitNudge = false
                                     } else {
                                         print("❌ HydrationTrackingView: Hydration authorization denied from nudge")
                                         // Still hide nudge if user denied (don't keep asking)
-                                        nudgeManager.dismissNudge(for: .hydration)
-                                        showHealthKitNudge = false
+                                        self.nudgeManager.dismissNudge(for: .hydration)
+                                        self.showHealthKitNudge = false
                                     }
                                 }
                             }
                         },
                         onDismiss: {
                             // Mark nudge as dismissed - won't show again
-                            nudgeManager.dismissNudge(for: .hydration)
-                            showHealthKitNudge = false
+                            self.nudgeManager.dismissNudge(for: .hydration)
+                            self.showHealthKitNudge = false
                         }
                     )
                     .padding(.horizontal)
@@ -65,33 +65,35 @@ struct HydrationTrackingView: View {
 
                     // Water segment (cyan)
                     Circle()
-                        .trim(from: 0, to: hydrationManager.todaysProgressByType(.water))
+                        .trim(from: 0, to: self.hydrationManager.todaysProgressByType(.water))
                         .stroke(Color.cyan, style: StrokeStyle(lineWidth: 20, lineCap: .round))
                         .frame(width: 250, height: 250)
                         .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.water))
+                        .animation(.linear(duration: 0.5), value: self.hydrationManager.todaysProgressByType(.water))
 
                     // Coffee segment (brown) - starts after water
                     Circle()
                         .trim(
-                            from: hydrationManager.todaysProgressByType(.water),
-                            to: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee)
+                            from: self.hydrationManager.todaysProgressByType(.water),
+                            to: self.hydrationManager.todaysProgressByType(.water) + self.hydrationManager
+                                .todaysProgressByType(.coffee)
                         )
                         .stroke(Color.brown, style: StrokeStyle(lineWidth: 20, lineCap: .round))
                         .frame(width: 250, height: 250)
                         .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.coffee))
+                        .animation(.linear(duration: 0.5), value: self.hydrationManager.todaysProgressByType(.coffee))
 
                     // Tea segment (green) - starts after water + coffee
                     Circle()
                         .trim(
-                            from: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee),
-                            to: hydrationManager.todaysProgress()
+                            from: self.hydrationManager.todaysProgressByType(.water) + self.hydrationManager
+                                .todaysProgressByType(.coffee),
+                            to: self.hydrationManager.todaysProgress()
                         )
                         .stroke(Color.green, style: StrokeStyle(lineWidth: 20, lineCap: .round))
                         .frame(width: 250, height: 250)
                         .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.tea))
+                        .animation(.linear(duration: 0.5), value: self.hydrationManager.todaysProgressByType(.tea))
 
                     VStack(spacing: 12) {
                         Image(systemName: "drop.fill")
@@ -103,8 +105,10 @@ struct HydrationTrackingView: View {
                             Text("Today")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("\(Int(hydrationManager.todaysTotalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                            Text(
+                                "\(Int(self.hydrationManager.todaysTotalInPreferredUnit())) \(self.hydrationManager.currentUnitAbbreviation)"
+                            )
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
                         }
 
                         // Goal
@@ -112,26 +116,30 @@ struct HydrationTrackingView: View {
                             Text("Goal")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            Text("\(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
-                                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                                .foregroundColor(.cyan)
+                            Text(
+                                "\(Int(self.hydrationManager.dailyGoalInPreferredUnit())) \(self.hydrationManager.currentUnitAbbreviation)"
+                            )
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
+                            .foregroundColor(.cyan)
                         }
                     }
                 }
 
                 // Progress Percentage
-                Text("\(hydrationManager.todaysProgressPercentage())%")
+                Text("\(self.hydrationManager.todaysProgressPercentage())%")
                     .font(.title2)
                     .foregroundColor(.secondary)
 
                 // Goal Settings Button
                 Button(action: {
-                    showingGoalSettings = true
+                    self.showingGoalSettings = true
                 }) {
                     HStack {
-                        Text("Daily Goal: \(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
+                        Text(
+                            "Daily Goal: \(Int(self.hydrationManager.dailyGoalInPreferredUnit())) \(self.hydrationManager.currentUnitAbbreviation)"
+                        )
+                        .font(.headline)
+                        .foregroundColor(.secondary)
                         Image(systemName: "gearshape.fill")
                             .foregroundColor(.cyan)
                     }
@@ -155,8 +163,8 @@ struct HydrationTrackingView: View {
                             type: .water,
                             color: .cyan,
                             action: {
-                                selectedDrinkType = .water
-                                showingDrinkPicker = true
+                                self.selectedDrinkType = .water
+                                self.showingDrinkPicker = true
                             }
                         )
 
@@ -165,8 +173,8 @@ struct HydrationTrackingView: View {
                             type: .coffee,
                             color: .brown,
                             action: {
-                                selectedDrinkType = .coffee
-                                showingDrinkPicker = true
+                                self.selectedDrinkType = .coffee
+                                self.showingDrinkPicker = true
                             }
                         )
 
@@ -175,8 +183,8 @@ struct HydrationTrackingView: View {
                             type: .tea,
                             color: .green,
                             action: {
-                                selectedDrinkType = .tea
-                                showingDrinkPicker = true
+                                self.selectedDrinkType = .tea
+                                self.showingDrinkPicker = true
                             }
                         )
                     }
@@ -185,7 +193,7 @@ struct HydrationTrackingView: View {
                 .padding(.bottom, 20)
 
                 // Today's Drinks History
-                if !hydrationManager.todaysDrinks().isEmpty {
+                if !self.hydrationManager.todaysDrinks().isEmpty {
                     VStack(spacing: 12) {
                         Text("Today's Drinks")
                             .font(.headline)
@@ -193,9 +201,9 @@ struct HydrationTrackingView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 40)
 
-                        ForEach(hydrationManager.todaysDrinks()) { drink in
+                        ForEach(self.hydrationManager.todaysDrinks()) { drink in
                             DrinkHistoryRow(drink: drink, onDelete: {
-                                hydrationManager.deleteDrinkEntry(drink)
+                                self.hydrationManager.deleteDrinkEntry(drink)
                             })
                             .padding(.horizontal, 40)
                         }
@@ -211,14 +219,14 @@ struct HydrationTrackingView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // Check if hydration goal needs to be set
-            if hydrationManager.dailyGoalOunces == 0 {
-                showingGoalSettings = true
+            if self.hydrationManager.dailyGoalOunces == 0 {
+                self.showingGoalSettings = true
             }
 
             // Show HealthKit nudge for first-time users who skipped onboarding
             // Following Lose It pattern - contextual reminder on first tracker access
-            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .hydration)
-            if showHealthKitNudge {
+            self.showHealthKitNudge = self.nudgeManager.shouldShowNudge(for: .hydration)
+            if self.showHealthKitNudge {
                 print("📱 HydrationTrackingView: Showing HealthKit nudge for first-time user")
             }
         }
@@ -229,7 +237,7 @@ struct HydrationTrackingView: View {
                     // Request hydration permissions immediately when user wants to sync
                     print("📱 HydrationTrackingView: Requesting hydration authorization directly")
                     // Following Weight tracker successful pattern - show user choice dialog
-                    showHydrationSyncDialog = true
+                    self.showHydrationSyncDialog = true
                 }) {
                     Label("Sync with Apple Health", systemImage: "heart.fill")
                         .font(.caption)
@@ -238,22 +246,22 @@ struct HydrationTrackingView: View {
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
-                NavigationLink(destination: HydrationHistoryView(hydrationManager: hydrationManager)) {
+                NavigationLink(destination: HydrationHistoryView(hydrationManager: self.hydrationManager)) {
                     Image(systemName: "chart.bar.fill")
                         .foregroundColor(.cyan)
                 }
             }
         }
-        .sheet(isPresented: $showingGoalSettings) {
-            HydrationGoalSettingsView(hydrationManager: hydrationManager)
+        .sheet(isPresented: self.$showingGoalSettings) {
+            HydrationGoalSettingsView(hydrationManager: self.hydrationManager)
         }
-        .sheet(isPresented: $showingDrinkPicker) {
+        .sheet(isPresented: self.$showingDrinkPicker) {
             DrinkAmountPickerView(
-                drinkType: selectedDrinkType,
-                hydrationManager: hydrationManager
+                drinkType: self.selectedDrinkType,
+                hydrationManager: self.hydrationManager
             )
         }
-        .alert("Import Hydration Data", isPresented: $showHydrationSyncDialog) {
+        .alert("Import Hydration Data", isPresented: self.$showHydrationSyncDialog) {
             // Following Weight tracker successful pattern - user choice for import scope
             // Industry standards (MyFitnessPal/Lose It): Always let user choose import type
             Button("Import All Historical Data") {
@@ -262,7 +270,7 @@ struct HydrationTrackingView: View {
                     DispatchQueue.main.async {
                         if success {
                             print("✅ HydrationTrackingView: Hydration authorization granted - syncing all data")
-                            hydrationManager.syncFromHealthKit()
+                            self.hydrationManager.syncFromHealthKit()
                         } else {
                             print("❌ HydrationTrackingView: Hydration authorization denied")
                         }
@@ -275,16 +283,18 @@ struct HydrationTrackingView: View {
                     DispatchQueue.main.async {
                         if success {
                             print("✅ HydrationTrackingView: Hydration authorization granted - future only sync")
-                            hydrationManager.syncToHealthKit()
+                            self.hydrationManager.syncToHealthKit()
                         } else {
                             print("❌ HydrationTrackingView: Hydration authorization denied")
                         }
                     }
                 }
             }
-            Button("Cancel", role: .cancel) { }
+            Button("Cancel", role: .cancel) {}
         } message: {
-            Text("Choose how to sync your hydration data with Apple Health. You can import all your historical hydration entries or start fresh with only future entries.")
+            Text(
+                "Choose how to sync your hydration data with Apple Health. You can import all your historical hydration entries or start fresh with only future entries."
+            )
         }
     }
 }
@@ -297,27 +307,27 @@ struct DrinkButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
+        Button(action: self.action) {
             VStack(spacing: 8) {
-                Image(systemName: type.icon)
+                Image(systemName: self.type.icon)
                     .font(.system(size: 32))
                     .foregroundColor(.white)
                     .frame(width: 60, height: 60)
-                    .background(color)
+                    .background(self.color)
                     .cornerRadius(12)
 
-                Text(type.rawValue)
+                Text(self.type.rawValue)
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.primary)
 
-                Text("\(Int(type.standardServing)) oz")
+                Text("\(Int(self.type.standardServing)) oz")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
-            .background(color.opacity(0.1))
+            .background(self.color.opacity(0.1))
             .cornerRadius(12)
         }
     }
@@ -331,30 +341,30 @@ struct DrinkHistoryRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: drink.type.icon)
+            Image(systemName: self.drink.type.icon)
                 .font(.system(size: 20))
-                .foregroundColor(drinkColor)
+                .foregroundColor(self.drinkColor)
                 .frame(width: 40, height: 40)
-                .background(drinkColor.opacity(0.15))
+                .background(self.drinkColor.opacity(0.15))
                 .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(drink.type.rawValue)
+                Text(self.drink.type.rawValue)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                Text(formatTime(drink.date))
+                Text(self.formatTime(self.drink.date))
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Text("\(Int(drink.amount)) oz")
+            Text("\(Int(self.drink.amount)) oz")
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
 
-            Button(action: onDelete) {
+            Button(action: self.onDelete) {
                 Image(systemName: "trash")
                     .font(.subheadline)
                     .foregroundColor(.red)
@@ -367,7 +377,7 @@ struct DrinkHistoryRow: View {
     }
 
     private var drinkColor: Color {
-        switch drink.type {
+        switch self.drink.type {
         case .water: return .cyan
         case .coffee: return .brown
         case .tea: return .green
@@ -398,20 +408,22 @@ struct HydrationGoalSettingsView: View {
             Form {
                 Section(header: Text("Daily Hydration Goal")) {
                     HStack {
-                        TextField("Goal (\(hydrationManager.currentUnitAbbreviation))", text: $goalInput)
+                        TextField("Goal (\(self.hydrationManager.currentUnitAbbreviation))", text: self.$goalInput)
                             .keyboardType(.numberPad)
                             .onAppear {
-                                goalInput = String(Int(hydrationManager.dailyGoalInPreferredUnit()))
+                                self.goalInput = String(Int(self.hydrationManager.dailyGoalInPreferredUnit()))
                             }
-                        Text(hydrationManager.currentUnitAbbreviation)
+                        Text(self.hydrationManager.currentUnitAbbreviation)
                             .foregroundColor(.secondary)
                     }
                 }
 
                 Section {
-                    Text("Recommended daily water intake is \(Int(appSettings.hydrationUnit.fromOunces(64))) \(appSettings.hydrationUnit.abbreviation) (8 glasses). Adjust based on your activity level and climate.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text(
+                        "Recommended daily water intake is \(Int(self.appSettings.hydrationUnit.fromOunces(64))) \(self.appSettings.hydrationUnit.abbreviation) (8 glasses). Adjust based on your activity level and climate."
+                    )
+                    .font(.caption)
+                    .foregroundColor(.secondary)
                 }
             }
             .navigationTitle("Hydration Goal")
@@ -419,15 +431,15 @@ struct HydrationGoalSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         if let newGoal = Double(goalInput), newGoal > 0 {
-                            hydrationManager.updateDailyGoalFromPreferredUnit(newGoal)
+                            self.hydrationManager.updateDailyGoalFromPreferredUnit(newGoal)
                         }
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
@@ -450,7 +462,7 @@ struct DrinkAmountPickerView: View {
     private let presetAmounts: [Double] = [4, 8, 12, 16, 20, 24, 32]
 
     var drinkColor: Color {
-        switch drinkType {
+        switch self.drinkType {
         case .water: return .cyan
         case .coffee: return .brown
         case .tea: return .green
@@ -464,14 +476,14 @@ struct DrinkAmountPickerView: View {
                     .frame(height: 20)
 
                 // Drink Icon
-                Image(systemName: drinkType.icon)
+                Image(systemName: self.drinkType.icon)
                     .font(.system(size: 60))
                     .foregroundColor(.white)
                     .frame(width: 100, height: 100)
-                    .background(drinkColor)
+                    .background(self.drinkColor)
                     .cornerRadius(20)
 
-                Text(drinkType.rawValue)
+                Text(self.drinkType.rawValue)
                     .font(.title2)
                     .fontWeight(.bold)
 
@@ -486,10 +498,10 @@ struct DrinkAmountPickerView: View {
 
                     ScrollView {
                         VStack(spacing: 12) {
-                            ForEach(presetAmounts, id: \.self) { amount in
+                            ForEach(self.presetAmounts, id: \.self) { amount in
                                 Button(action: {
-                                    selectedAmount = amount
-                                    useCustomAmount = false
+                                    self.selectedAmount = amount
+                                    self.useCustomAmount = false
                                 }) {
                                     HStack {
                                         Text("\(Int(amount)) oz")
@@ -499,15 +511,15 @@ struct DrinkAmountPickerView: View {
 
                                         Spacer()
 
-                                        if !useCustomAmount && selectedAmount == amount {
+                                        if !self.useCustomAmount, self.selectedAmount == amount {
                                             Image(systemName: "checkmark.circle.fill")
-                                                .foregroundColor(drinkColor)
+                                                .foregroundColor(self.drinkColor)
                                         }
                                     }
                                     .padding()
                                     .background(
-                                        (!useCustomAmount && selectedAmount == amount) ?
-                                        drinkColor.opacity(0.15) : Color(.systemGray6)
+                                        (!self.useCustomAmount && self.selectedAmount == amount) ?
+                                            self.drinkColor.opacity(0.15) : Color(.systemGray6)
                                     )
                                     .cornerRadius(12)
                                 }
@@ -521,21 +533,21 @@ struct DrinkAmountPickerView: View {
                                     .padding(.horizontal)
 
                                 HStack {
-                                    TextField("Enter amount", text: $customAmount)
+                                    TextField("Enter amount", text: self.$customAmount)
                                         .keyboardType(.decimalPad)
                                         .padding()
                                         .background(
-                                            useCustomAmount ?
-                                            drinkColor.opacity(0.15) : Color(.systemGray6)
+                                            self.useCustomAmount ?
+                                                self.drinkColor.opacity(0.15) : Color(.systemGray6)
                                         )
                                         .cornerRadius(12)
-                                        .onChange(of: customAmount) { _, newValue in
+                                        .onChange(of: self.customAmount) { _, newValue in
                                             if !newValue.isEmpty {
-                                                useCustomAmount = true
+                                                self.useCustomAmount = true
                                             }
                                         }
 
-                                    Text(hydrationManager.currentUnitAbbreviation)
+                                    Text(self.hydrationManager.currentUnitAbbreviation)
                                         .foregroundColor(.secondary)
                                 }
                             }
@@ -548,17 +560,17 @@ struct DrinkAmountPickerView: View {
 
                 // Add Button
                 Button(action: {
-                    let amount = useCustomAmount ?
-                        (Double(customAmount) ?? selectedAmount) : selectedAmount
-                    hydrationManager.addDrink(type: drinkType, amount: amount)
-                    dismiss()
+                    let amount = self.useCustomAmount ?
+                        (Double(self.customAmount) ?? self.selectedAmount) : self.selectedAmount
+                    self.hydrationManager.addDrink(type: self.drinkType, amount: amount)
+                    self.dismiss()
                 }) {
-                    Text("Add \(drinkType.rawValue)")
+                    Text("Add \(self.drinkType.rawValue)")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(drinkColor)
+                        .background(self.drinkColor)
                         .cornerRadius(12)
                 }
                 .padding(.horizontal)
@@ -569,7 +581,7 @@ struct DrinkAmountPickerView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }

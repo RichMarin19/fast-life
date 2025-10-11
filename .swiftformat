@@ -1,0 +1,31 @@
+# SwiftFormat Configuration for FastLIFe
+# Based on Apple Swift Style Guide and industry best practices
+
+# File options
+--exclude Pods,fastlane,.build,docs
+
+# Format options
+--indent 4
+--tabwidth 4
+--maxwidth 120
+--wraparguments before-first
+--wrapcollections before-first
+--closingparen balanced
+--commas always
+--trimwhitespace nonblank-lines
+--insertlines true
+--removelines true
+--allman false
+--stripunusedargs unnamed-only
+--self insert
+--importgrouping testable-bottom
+--patternlet hoist
+
+# Rules to enable
+--enable isEmpty
+--enable sortedImports
+--enable redundantSelf
+
+# Rules to disable (for existing codebase compatibility)
+--disable unusedArguments
+--disable wrapMultilineStatementBraces

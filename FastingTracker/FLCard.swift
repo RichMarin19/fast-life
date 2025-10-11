@@ -20,13 +20,28 @@ struct FLCard<Content: View>: View {
             case .primary:
                 return (.white, 0.1, 15, EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
             case .success:
-                return (Color("FLSuccess").opacity(0.05), 0.05, 10, EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
+                return (
+                    Color("FLSuccess").opacity(0.05),
+                    0.05,
+                    10,
+                    EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
+                )
             case .warning:
-                return (Color("FLWarning").opacity(0.05), 0.05, 10, EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
+                return (
+                    Color("FLWarning").opacity(0.05),
+                    0.05,
+                    10,
+                    EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
+                )
             case .compact:
                 return (.white, 0.05, 10, EdgeInsets(top: 12, leading: 12, bottom: 12, trailing: 12))
             case .stats:
-                return (Color(UIColor.secondarySystemGroupedBackground), 0.03, 5, EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16))
+                return (
+                    Color(UIColor.secondarySystemGroupedBackground),
+                    0.03,
+                    5,
+                    EdgeInsets(top: 16, leading: 16, bottom: 16, trailing: 16)
+                )
             }
         }
     }
@@ -77,21 +92,20 @@ struct FLCard<Content: View>: View {
     }
 
     var body: some View {
-        content
-            .padding(padding)
-            .background(backgroundColor)
-            .cornerRadius(cornerRadius)
+        self.content
+            .padding(self.padding)
+            .background(self.backgroundColor)
+            .cornerRadius(self.cornerRadius)
             .shadow(
-                color: .black.opacity(shadowOpacity),
-                radius: shadowRadius,
-                x: shadowOffset.width,
-                y: shadowOffset.height
+                color: .black.opacity(self.shadowOpacity),
+                radius: self.shadowRadius,
+                x: self.shadowOffset.width,
+                y: self.shadowOffset.height
             )
     }
 }
 
 // MARK: - Specialized Card Types
-
 
 // MARK: - Card Content Helpers
 
@@ -120,16 +134,16 @@ struct FLMetricView: View {
     var body: some View {
         VStack(spacing: 4) {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Text(value)
+                Text(self.value)
                     .font(.system(size: 36, weight: .bold))
-                    .foregroundColor(valueColor)
-                if !unit.isEmpty {
-                    Text(unit)
+                    .foregroundColor(self.valueColor)
+                if !self.unit.isEmpty {
+                    Text(self.unit)
                         .font(.title2)
-                        .foregroundColor(unitColor)
+                        .foregroundColor(self.unitColor)
                 }
             }
-            Text(label)
+            Text(self.label)
                 .font(.caption)
                 .foregroundColor(.secondary)
         }

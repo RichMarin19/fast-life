@@ -1,7 +1,8 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 // MARK: - Hydration Chart View
+
 // Extracted from HydrationHistoryView.swift for better code organization
 // Following Apple MVVM patterns and SwiftUI Charts best practices
 
@@ -15,7 +16,7 @@ struct HydrationChartView: View {
                 .font(.headline)
 
             Chart {
-                ForEach(chartData(), id: \.date) { data in
+                ForEach(self.chartData(), id: \.date) { data in
                     // Water bar (stacked bottom)
                     BarMark(
                         x: .value("Date", data.date, unit: .day),
@@ -38,19 +39,19 @@ struct HydrationChartView: View {
                     .foregroundStyle(Color.green)
 
                     // Goal line
-                    RuleMark(y: .value("Goal", hydrationManager.dailyGoalOunces))
+                    RuleMark(y: .value("Goal", self.hydrationManager.dailyGoalOunces))
                         .foregroundStyle(Color.orange.opacity(0.5))
                         .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                 }
             }
             .chartXAxis {
-                AxisMarks(values: getXAxisValues()) { value in
+                AxisMarks(values: self.getXAxisValues()) { value in
                     AxisGridLine()
                     AxisTick()
-                    if timeRange == .year || timeRange == .all {
+                    if self.timeRange == .year || self.timeRange == .all {
                         // Show month abbreviations for year/all view
                         AxisValueLabel(format: .dateTime.month(.abbreviated))
-                    } else if timeRange == .month || timeRange == .threeMonths {
+                    } else if self.timeRange == .month || self.timeRange == .threeMonths {
                         // Show day numbers for month/3-month view
                         AxisValueLabel {
                             if let date = value.as(Date.self) {
@@ -78,10 +79,10 @@ struct HydrationChartView: View {
 
     private func getXAxisValues() -> AxisMarkValues {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+        let cutoffDate = calendar.date(byAdding: .day, value: -self.timeRange.days, to: Date()) ?? Date()
         let daysDifference = calendar.dateComponents([.day], from: cutoffDate, to: Date()).day ?? 1
 
-        switch timeRange {
+        switch self.timeRange {
         case .week:
             // Show every day (7 days)
             return .stride(by: .day, count: 1)
@@ -117,13 +118,13 @@ struct HydrationChartView: View {
 
     private func chartData() -> [(date: Date, water: Double, coffee: Double, tea: Double)] {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -timeRange.days, to: Date()) ?? Date()
+        let cutoffDate = calendar.date(byAdding: .day, value: -self.timeRange.days, to: Date()) ?? Date()
 
         // Create daily buckets
         var dailyData: [Date: (water: Double, coffee: Double, tea: Double)] = [:]
 
         // Fill in data
-        for entry in hydrationManager.drinkEntries.filter({ $0.date >= cutoffDate }) {
+        for entry in self.hydrationManager.drinkEntries.filter({ $0.date >= cutoffDate }) {
             let dayStart = calendar.startOfDay(for: entry.date)
 
             if dailyData[dayStart] == nil {

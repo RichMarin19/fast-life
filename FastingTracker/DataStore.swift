@@ -13,7 +13,6 @@ protocol DataStore {
 /// UserDefaults wrapper with size limits and comprehensive error handling
 /// Implements protocol-based data store pattern for production reliability
 class UserDefaultsDataStore: DataStore {
-
     private let userDefaults: UserDefaults
     private let maxDataSize: Int = 1_048_576 // 1MB limit per key (iOS UserDefaults best practice)
 
@@ -29,17 +28,17 @@ class UserDefaultsDataStore: DataStore {
 
         var errorDescription: String? {
             switch self {
-            case .encodingFailed(let key):
+            case let .encodingFailed(key):
                 return "Failed to encode data for key '\(key)'"
-            case .decodingFailed(let key):
+            case let .decodingFailed(key):
                 return "Failed to decode data for key '\(key)'"
-            case .dataTooLarge(let key, let size, let limit):
+            case let .dataTooLarge(key, size, limit):
                 return "Data for key '\(key)' is too large (\(size) bytes, limit: \(limit) bytes)"
-            case .keyNotFound(let key):
+            case let .keyNotFound(key):
                 return "No data found for key '\(key)'"
-            case .persistenceFailed(let key):
+            case let .persistenceFailed(key):
                 return "Failed to persist data for key '\(key)'"
-            case .invalidData(let key):
+            case let .invalidData(key):
                 return "Invalid data format for key '\(key)'"
             }
         }
@@ -61,39 +60,42 @@ class UserDefaultsDataStore: DataStore {
             let data = try encoder.encode(object)
 
             // Check size limits to prevent UserDefaults bloat
-            if data.count > maxDataSize {
-                let error = DataStoreError.dataTooLarge(key, data.count, maxDataSize)
+            if data.count > self.maxDataSize {
+                let error = DataStoreError.dataTooLarge(key, data.count, self.maxDataSize)
                 CrashReportManager.shared.recordPersistenceError(error, context: [
                     "operation": "save",
                     "key": key,
                     "dataSize": data.count,
-                    "limit": maxDataSize
+                    "limit": self.maxDataSize,
                 ])
                 throw error
             }
 
             // Save to UserDefaults
-            userDefaults.set(data, forKey: key)
+            self.userDefaults.set(data, forKey: key)
 
             // Verify persistence (iOS can silently fail UserDefaults operations)
-            guard userDefaults.data(forKey: key) != nil else {
+            guard self.userDefaults.data(forKey: key) != nil else {
                 let error = DataStoreError.persistenceFailed(key)
                 CrashReportManager.shared.recordPersistenceError(error, context: [
                     "operation": "save_verification",
-                    "key": key
+                    "key": key,
                 ])
                 throw error
             }
 
             // Log successful save for debugging
-            AppLogger.debug("Successfully saved data for key '\(key)' (\(data.count) bytes)", category: AppLogger.general)
+            AppLogger.debug(
+                "Successfully saved data for key '\(key)' (\(data.count) bytes)",
+                category: AppLogger.general
+            )
 
         } catch let encodingError as EncodingError {
             let error = DataStoreError.encodingFailed(key)
             CrashReportManager.shared.recordPersistenceError(error, context: [
                 "operation": "encode",
                 "key": key,
-                "underlyingError": encodingError.localizedDescription
+                "underlyingError": encodingError.localizedDescription,
             ])
             throw error
         } catch {
@@ -105,7 +107,7 @@ class UserDefaultsDataStore: DataStore {
                 CrashReportManager.shared.recordPersistenceError(wrappedError, context: [
                     "operation": "save_general",
                     "key": key,
-                    "underlyingError": error.localizedDescription
+                    "underlyingError": error.localizedDescription,
                 ])
                 throw wrappedError
             }
@@ -114,7 +116,7 @@ class UserDefaultsDataStore: DataStore {
 
     func load<T: Codable>(_ type: T.Type, forKey key: String) throws -> T? {
         // Check if key exists
-        guard exists(forKey: key) else {
+        guard self.exists(forKey: key) else {
             return nil // Not an error - key might not exist yet
         }
 
@@ -123,7 +125,7 @@ class UserDefaultsDataStore: DataStore {
             let error = DataStoreError.invalidData(key)
             CrashReportManager.shared.recordPersistenceError(error, context: [
                 "operation": "load_missing_data",
-                "key": key
+                "key": key,
             ])
             throw error
         }
@@ -133,7 +135,10 @@ class UserDefaultsDataStore: DataStore {
             decoder.dateDecodingStrategy = .iso8601 // Consistent date handling
             let object = try decoder.decode(type, from: data)
 
-            AppLogger.debug("Successfully loaded data for key '\(key)' (\(data.count) bytes)", category: AppLogger.general)
+            AppLogger.debug(
+                "Successfully loaded data for key '\(key)' (\(data.count) bytes)",
+                category: AppLogger.general
+            )
             return object
 
         } catch let decodingError as DecodingError {
@@ -142,7 +147,7 @@ class UserDefaultsDataStore: DataStore {
                 "operation": "decode",
                 "key": key,
                 "dataSize": data.count,
-                "underlyingError": decodingError.localizedDescription
+                "underlyingError": decodingError.localizedDescription,
             ])
             throw error
         } catch {
@@ -150,26 +155,26 @@ class UserDefaultsDataStore: DataStore {
             CrashReportManager.shared.recordPersistenceError(wrappedError, context: [
                 "operation": "load_general",
                 "key": key,
-                "underlyingError": error.localizedDescription
+                "underlyingError": error.localizedDescription,
             ])
             throw wrappedError
         }
     }
 
     func remove(forKey key: String) throws {
-        guard exists(forKey: key) else {
+        guard self.exists(forKey: key) else {
             // Not an error - key might already be removed
             return
         }
 
-        userDefaults.removeObject(forKey: key)
+        self.userDefaults.removeObject(forKey: key)
 
         // Verify removal
-        if exists(forKey: key) {
+        if self.exists(forKey: key) {
             let error = DataStoreError.persistenceFailed(key)
             CrashReportManager.shared.recordPersistenceError(error, context: [
                 "operation": "remove_verification",
-                "key": key
+                "key": key,
             ])
             throw error
         }
@@ -178,10 +183,11 @@ class UserDefaultsDataStore: DataStore {
     }
 
     func exists(forKey key: String) -> Bool {
-        return userDefaults.object(forKey: key) != nil
+        self.userDefaults.object(forKey: key) != nil
     }
 
     // MARK: - Data Migration Methods
+
     // Following Apple Data Migration Guidelines
     // Reference: https://developer.apple.com/documentation/coredata/lightweight_migration
 
@@ -191,29 +197,29 @@ class UserDefaultsDataStore: DataStore {
         var migrationCount = 0
 
         // Migrate simple value types
-        if hasOldFormatData(forKey: "fastingGoalHours") {
-            migrateDoubleValue(forKey: "fastingGoalHours")
+        if self.hasOldFormatData(forKey: "fastingGoalHours") {
+            self.migrateDoubleValue(forKey: "fastingGoalHours")
             migrationCount += 1
         }
 
-        if hasOldFormatData(forKey: "currentStreak") {
-            migrateIntValue(forKey: "currentStreak")
+        if self.hasOldFormatData(forKey: "currentStreak") {
+            self.migrateIntValue(forKey: "currentStreak")
             migrationCount += 1
         }
 
-        if hasOldFormatData(forKey: "longestStreak") {
-            migrateIntValue(forKey: "longestStreak")
+        if self.hasOldFormatData(forKey: "longestStreak") {
+            self.migrateIntValue(forKey: "longestStreak")
             migrationCount += 1
         }
 
         // Migrate complex types (arrays)
-        if hasOldFormatData(forKey: "fastingHistory") {
-            migrateFastingHistory()
+        if self.hasOldFormatData(forKey: "fastingHistory") {
+            self.migrateFastingHistory()
             migrationCount += 1
         }
 
-        if hasOldFormatData(forKey: "currentFastingSession") {
-            migrateCurrentSession()
+        if self.hasOldFormatData(forKey: "currentFastingSession") {
+            self.migrateCurrentSession()
             migrationCount += 1
         }
 
@@ -231,7 +237,7 @@ class UserDefaultsDataStore: DataStore {
         if object is Data { return false }
 
         // If it's a basic type (String, Number, Array, Dict), it's old format
-        return object is String || object is NSNumber || object is Array<Any> || object is Dictionary<String, Any>
+        return object is String || object is NSNumber || object is [Any] || object is [String: Any]
     }
 
     /// Migrates Double value from old format
@@ -239,7 +245,7 @@ class UserDefaultsDataStore: DataStore {
         guard let value = userDefaults.object(forKey: key) as? Double else { return }
 
         do {
-            try save(value, forKey: key)
+            try self.save(value, forKey: key)
             AppLogger.debug("Migrated \(key): \(value)", category: AppLogger.general)
         } catch {
             AppLogger.error("Failed to migrate \(key): \(error)", category: AppLogger.general)
@@ -251,7 +257,7 @@ class UserDefaultsDataStore: DataStore {
         guard let value = userDefaults.object(forKey: key) as? Int else { return }
 
         do {
-            try save(value, forKey: key)
+            try self.save(value, forKey: key)
             AppLogger.debug("Migrated \(key): \(value)", category: AppLogger.general)
         } catch {
             AppLogger.error("Failed to migrate \(key): \(error)", category: AppLogger.general)
@@ -271,7 +277,7 @@ class UserDefaultsDataStore: DataStore {
         }
 
         do {
-            try save(migratedSessions, forKey: "fastingHistory")
+            try self.save(migratedSessions, forKey: "fastingHistory")
             AppLogger.debug("Migrated fastingHistory: \(migratedSessions.count) sessions", category: AppLogger.general)
         } catch {
             AppLogger.error("Failed to migrate fastingHistory: \(error)", category: AppLogger.general)
@@ -284,7 +290,7 @@ class UserDefaultsDataStore: DataStore {
 
         if let session = createFastingSession(from: sessionDict) {
             do {
-                try save(session, forKey: "currentFastingSession")
+                try self.save(session, forKey: "currentFastingSession")
                 AppLogger.debug("Migrated currentFastingSession", category: AppLogger.general)
             } catch {
                 AppLogger.error("Failed to migrate currentFastingSession: \(error)", category: AppLogger.general)
@@ -318,14 +324,16 @@ class UserDefaultsDataStore: DataStore {
 // MARK: - Safe DataStore Extension
 
 extension DataStore {
-
     /// Safe save with automatic error handling and logging
     func safeSave<T: Codable>(_ object: T, forKey key: String) -> Bool {
         do {
             try save(object, forKey: key)
             return true
         } catch {
-            AppLogger.error("Failed to save data for key '\(key)': \(error.localizedDescription)", category: AppLogger.general)
+            AppLogger.error(
+                "Failed to save data for key '\(key)': \(error.localizedDescription)",
+                category: AppLogger.general
+            )
             return false
         }
     }
@@ -335,7 +343,10 @@ extension DataStore {
         do {
             return try load(type, forKey: key) ?? defaultValue
         } catch {
-            AppLogger.error("Failed to load data for key '\(key)': \(error.localizedDescription)", category: AppLogger.general)
+            AppLogger.error(
+                "Failed to load data for key '\(key)': \(error.localizedDescription)",
+                category: AppLogger.general
+            )
             return defaultValue
         }
     }
@@ -346,7 +357,10 @@ extension DataStore {
             try remove(forKey: key)
             return true
         } catch {
-            AppLogger.error("Failed to remove data for key '\(key)': \(error.localizedDescription)", category: AppLogger.general)
+            AppLogger.error(
+                "Failed to remove data for key '\(key)': \(error.localizedDescription)",
+                category: AppLogger.general
+            )
             return false
         }
     }
@@ -369,7 +383,7 @@ class AppDataStore {
 
     /// Access to migration functionality for testing
     static var dataStore: UserDefaultsDataStore {
-        return shared as! UserDefaultsDataStore
+        shared as! UserDefaultsDataStore
     }
 }
 
@@ -377,7 +391,6 @@ class AppDataStore {
 
 /// Helper class for migrating existing UserDefaults usage to protocol-based store
 class DataStoreMigrationHelper {
-
     private let dataStore: DataStore
 
     init(dataStore: DataStore = AppDataStore.shared) {
@@ -390,10 +403,13 @@ class DataStoreMigrationHelper {
         let userDefaults = UserDefaults.standard
 
         if let value = userDefaults.string(forKey: oldKey) {
-            let success = dataStore.safeSave(value, forKey: targetKey)
+            let success = self.dataStore.safeSave(value, forKey: targetKey)
             if success {
                 userDefaults.removeObject(forKey: oldKey)
-                AppLogger.info("Migrated string value from '\(oldKey)' to protocol-based store", category: AppLogger.general)
+                AppLogger.info(
+                    "Migrated string value from '\(oldKey)' to protocol-based store",
+                    category: AppLogger.general
+                )
             }
         }
     }
@@ -405,10 +421,13 @@ class DataStoreMigrationHelper {
 
         if userDefaults.object(forKey: oldKey) != nil {
             let value = userDefaults.bool(forKey: oldKey)
-            let success = dataStore.safeSave(value, forKey: targetKey)
+            let success = self.dataStore.safeSave(value, forKey: targetKey)
             if success {
                 userDefaults.removeObject(forKey: oldKey)
-                AppLogger.info("Migrated bool value from '\(oldKey)' to protocol-based store", category: AppLogger.general)
+                AppLogger.info(
+                    "Migrated bool value from '\(oldKey)' to protocol-based store",
+                    category: AppLogger.general
+                )
             }
         }
     }
@@ -419,10 +438,13 @@ class DataStoreMigrationHelper {
         let userDefaults = UserDefaults.standard
 
         if let value = userDefaults.object(forKey: oldKey) as? Date {
-            let success = dataStore.safeSave(value, forKey: targetKey)
+            let success = self.dataStore.safeSave(value, forKey: targetKey)
             if success {
                 userDefaults.removeObject(forKey: oldKey)
-                AppLogger.info("Migrated date value from '\(oldKey)' to protocol-based store", category: AppLogger.general)
+                AppLogger.info(
+                    "Migrated date value from '\(oldKey)' to protocol-based store",
+                    category: AppLogger.general
+                )
             }
         }
     }
@@ -431,44 +453,44 @@ class DataStoreMigrationHelper {
 // MARK: - Testing Support
 
 #if DEBUG
-/// Mock data store for unit testing
-class MockDataStore: DataStore {
-    private var storage: [String: Data] = [:]
-    var shouldThrowError = false
-    var throwErrorOnKeys: Set<String> = []
+    /// Mock data store for unit testing
+    class MockDataStore: DataStore {
+        private var storage: [String: Data] = [:]
+        var shouldThrowError = false
+        var throwErrorOnKeys: Set<String> = []
 
-    func save<T: Codable>(_ object: T, forKey key: String) throws {
-        if shouldThrowError || throwErrorOnKeys.contains(key) {
-            throw UserDefaultsDataStore.DataStoreError.persistenceFailed(key)
+        func save<T: Codable>(_ object: T, forKey key: String) throws {
+            if self.shouldThrowError || self.throwErrorOnKeys.contains(key) {
+                throw UserDefaultsDataStore.DataStoreError.persistenceFailed(key)
+            }
+
+            let data = try JSONEncoder().encode(object)
+            self.storage[key] = data
         }
 
-        let data = try JSONEncoder().encode(object)
-        storage[key] = data
-    }
+        func load<T: Codable>(_ type: T.Type, forKey key: String) throws -> T? {
+            if self.shouldThrowError || self.throwErrorOnKeys.contains(key) {
+                throw UserDefaultsDataStore.DataStoreError.decodingFailed(key)
+            }
 
-    func load<T: Codable>(_ type: T.Type, forKey key: String) throws -> T? {
-        if shouldThrowError || throwErrorOnKeys.contains(key) {
-            throw UserDefaultsDataStore.DataStoreError.decodingFailed(key)
+            guard let data = storage[key] else { return nil }
+            return try JSONDecoder().decode(type, from: data)
         }
 
-        guard let data = storage[key] else { return nil }
-        return try JSONDecoder().decode(type, from: data)
-    }
+        func remove(forKey key: String) throws {
+            if self.shouldThrowError || self.throwErrorOnKeys.contains(key) {
+                throw UserDefaultsDataStore.DataStoreError.persistenceFailed(key)
+            }
 
-    func remove(forKey key: String) throws {
-        if shouldThrowError || throwErrorOnKeys.contains(key) {
-            throw UserDefaultsDataStore.DataStoreError.persistenceFailed(key)
+            self.storage.removeValue(forKey: key)
         }
 
-        storage.removeValue(forKey: key)
-    }
+        func exists(forKey key: String) -> Bool {
+            self.storage[key] != nil
+        }
 
-    func exists(forKey key: String) -> Bool {
-        return storage[key] != nil
+        func clearAll() {
+            self.storage.removeAll()
+        }
     }
-
-    func clearAll() {
-        storage.removeAll()
-    }
-}
 #endif

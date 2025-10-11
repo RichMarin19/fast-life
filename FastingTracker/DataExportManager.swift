@@ -27,12 +27,12 @@ class DataExportManager {
         csvContent += "=== FASTING HISTORY ===\n"
         csvContent += "Start Time,End Time,Duration (hours),Goal (hours),Met Goal,Eating Window (hours)\n"
 
-        let fastingHistory = loadFastingHistory()
+        let fastingHistory = self.loadFastingHistory()
         print("📊 Fasting entries: \(fastingHistory.count)")
 
         for session in fastingHistory {
-            let startTime = formatDate(session.startTime)
-            let endTime = session.endTime.map { formatDate($0) } ?? "Ongoing"
+            let startTime = self.formatDate(session.startTime)
+            let endTime = session.endTime.map { self.formatDate($0) } ?? "Ongoing"
             let duration = String(format: "%.2f", session.duration / 3600)
             let goal = session.goalHours.map { String(format: "%.1f", $0) } ?? "N/A"
             let metGoal = session.metGoal ? "Yes" : "No"
@@ -47,11 +47,11 @@ class DataExportManager {
         csvContent += "=== WEIGHT TRACKING ===\n"
         csvContent += "Date,Weight (lbs),BMI,Body Fat %,Source\n"
 
-        let weightEntries = loadWeightEntries()
+        let weightEntries = self.loadWeightEntries()
         print("📊 Weight entries: \(weightEntries.count)")
 
         for entry in weightEntries {
-            let date = formatDate(entry.date)
+            let date = self.formatDate(entry.date)
             let weight = String(format: "%.1f", entry.weight)
             let bmi = entry.bmi.map { String(format: "%.1f", $0) } ?? ""
             let bodyFat = entry.bodyFat.map { String(format: "%.1f", $0) } ?? ""
@@ -66,12 +66,12 @@ class DataExportManager {
         csvContent += "=== HYDRATION TRACKING ===\n"
         csvContent += "Date,Time,Type,Amount (oz)\n"
 
-        let drinkEntries = loadDrinkEntries()
+        let drinkEntries = self.loadDrinkEntries()
         print("📊 Hydration entries: \(drinkEntries.count)")
 
         for entry in drinkEntries {
-            let date = formatDate(entry.date, includeTime: false)
-            let time = formatTime(entry.date)
+            let date = self.formatDate(entry.date, includeTime: false)
+            let time = self.formatTime(entry.date)
             let type = entry.type.rawValue.capitalized
             let amount = String(format: "%.1f", entry.amount)
 
@@ -84,12 +84,12 @@ class DataExportManager {
         csvContent += "=== SLEEP TRACKING ===\n"
         csvContent += "Bed Time,Wake Time,Duration (hours),Quality (1-5),Source\n"
 
-        let sleepEntries = loadSleepEntries()
+        let sleepEntries = self.loadSleepEntries()
         print("📊 Sleep entries: \(sleepEntries.count)")
 
         for entry in sleepEntries {
-            let bedTime = formatDate(entry.bedTime)
-            let wakeTime = formatDate(entry.wakeTime)
+            let bedTime = self.formatDate(entry.bedTime)
+            let wakeTime = self.formatDate(entry.wakeTime)
             let hours = String(format: "%.1f", entry.duration / 3600)
             let quality = entry.quality.map { String($0) } ?? ""
             let source = entry.source.rawValue
@@ -103,11 +103,11 @@ class DataExportManager {
         csvContent += "=== MOOD & ENERGY TRACKING ===\n"
         csvContent += "Date,Mood (1-10),Energy (1-10),Notes\n"
 
-        let moodEntries = loadMoodEntries()
+        let moodEntries = self.loadMoodEntries()
         print("📊 Mood entries: \(moodEntries.count)")
 
         for entry in moodEntries {
-            let date = formatDate(entry.date)
+            let date = self.formatDate(entry.date)
             let mood = String(entry.moodLevel)
             let energy = String(entry.energyLevel)
             let notes = entry.notes?.replacingOccurrences(of: "\"", with: "\"\"") ?? ""
@@ -121,7 +121,7 @@ class DataExportManager {
         csvContent += "=== STATISTICS SUMMARY ===\n"
         csvContent += "Metric,Value\n"
 
-        let stats = calculateStatistics(
+        let stats = self.calculateStatistics(
             fastingHistory: fastingHistory,
             weightEntries: weightEntries,
             drinkEntries: drinkEntries,
@@ -153,7 +153,7 @@ class DataExportManager {
               let history = try? JSONDecoder().decode([FastingSession].self, from: data) else {
             return []
         }
-        return history.filter { $0.isComplete }.sorted { $0.startTime > $1.startTime }
+        return history.filter(\.isComplete).sorted { $0.startTime > $1.startTime }
     }
 
     private func loadWeightEntries() -> [WeightEntry] {
@@ -201,9 +201,10 @@ class DataExportManager {
 
         // Fasting stats
         let totalFasts = fastingHistory.count
-        let completedGoals = fastingHistory.filter { $0.metGoal }.count
+        let completedGoals = fastingHistory.filter(\.metGoal).count
         let goalRate = totalFasts > 0 ? Double(completedGoals) / Double(totalFasts) * 100 : 0
-        let avgDuration = fastingHistory.isEmpty ? 0 : fastingHistory.map { $0.duration }.reduce(0, +) / Double(totalFasts) / 3600
+        let avgDuration = fastingHistory.isEmpty ? 0 : fastingHistory.map(\.duration)
+            .reduce(0, +) / Double(totalFasts) / 3600
 
         stats["Total Fasts Completed"] = "\(totalFasts)"
         stats["Goals Met"] = "\(completedGoals)"
@@ -247,15 +248,15 @@ class DataExportManager {
 
         // Mood stats
         if !moodEntries.isEmpty {
-            let avgMood = Double(moodEntries.map { $0.moodLevel }.reduce(0, +)) / Double(moodEntries.count)
-            let avgEnergy = Double(moodEntries.map { $0.energyLevel }.reduce(0, +)) / Double(moodEntries.count)
+            let avgMood = Double(moodEntries.map(\.moodLevel).reduce(0, +)) / Double(moodEntries.count)
+            let avgEnergy = Double(moodEntries.map(\.energyLevel).reduce(0, +)) / Double(moodEntries.count)
             stats["Average Mood"] = String(format: "%.1f/10", avgMood)
             stats["Average Energy"] = String(format: "%.1f/10", avgEnergy)
             stats["Total Mood Entries"] = "\(moodEntries.count)"
         }
 
         // Export metadata
-        stats["Export Date"] = formatDate(Date())
+        stats["Export Date"] = self.formatDate(Date())
         stats["App Version"] = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
 
         return stats

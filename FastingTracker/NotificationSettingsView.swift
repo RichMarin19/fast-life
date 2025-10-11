@@ -44,16 +44,16 @@ struct NotificationSettingsView: View {
         List {
             // Master Toggle Section
             Section {
-                Toggle(isOn: $notificationsEnabled) {
+                Toggle(isOn: self.$notificationsEnabled) {
                     HStack(spacing: 12) {
                         Image(systemName: "bell.badge.fill")
                             .font(.title2)
-                            .foregroundColor(notificationsEnabled ? .orange : .gray)
+                            .foregroundColor(self.notificationsEnabled ? .orange : .gray)
 
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Enable Notifications")
                                 .font(.headline)
-                            Text(notificationsEnabled ? "Coaching active" : "Coaching paused")
+                            Text(self.notificationsEnabled ? "Coaching active" : "Coaching paused")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         }
@@ -62,13 +62,15 @@ struct NotificationSettingsView: View {
             } header: {
                 Text("Notification Status")
             } footer: {
-                Text("Get personalized guidance powered by YOUR fasting data—patterns, progress, and current stage—for smarter, timely motivation.")
+                Text(
+                    "Get personalized guidance powered by YOUR fasting data—patterns, progress, and current stage—for smarter, timely motivation."
+                )
             }
 
             // Mode Selection Section
-            if notificationsEnabled {
+            if self.notificationsEnabled {
                 Section {
-                    Picker("Coaching Intensity", selection: $notificationMode) {
+                    Picker("Coaching Intensity", selection: self.$notificationMode) {
                         ForEach(NotificationMode.allCases, id: \.self) { mode in
                             Text(mode.displayName).tag(mode.rawValue)
                         }
@@ -79,20 +81,20 @@ struct NotificationSettingsView: View {
                     // Selected mode description
                     VStack(alignment: .leading, spacing: 8) {
                         HStack {
-                            Image(systemName: selectedMode.icon)
-                                .foregroundColor(selectedMode.color)
-                            Text(selectedMode.displayName)
+                            Image(systemName: self.selectedMode.icon)
+                                .foregroundColor(self.selectedMode.color)
+                            Text(self.selectedMode.displayName)
                                 .font(.headline)
                         }
 
-                        Text(selectedMode.description)
+                        Text(self.selectedMode.description)
                             .font(.subheadline)
                             .foregroundColor(.secondary)
 
                         HStack(spacing: 4) {
                             Image(systemName: "clock.fill")
                                 .font(.caption)
-                            Text(selectedMode.frequency)
+                            Text(self.selectedMode.frequency)
                                 .font(.caption)
                         }
                         .foregroundColor(.secondary)
@@ -102,7 +104,9 @@ struct NotificationSettingsView: View {
                 } header: {
                     Text("Coaching Mode")
                 } footer: {
-                    Text("Control how we use your data to send insights. More messages = more real-time guidance based on your patterns and progress.")
+                    Text(
+                        "Control how we use your data to send insights. More messages = more real-time guidance based on your patterns and progress."
+                    )
                 }
 
                 // My Wake Time Section
@@ -111,12 +115,12 @@ struct NotificationSettingsView: View {
                         get: {
                             let formatter = DateFormatter()
                             formatter.dateFormat = "HH:mm"
-                            return formatter.date(from: wakeTimeString) ?? Date()
+                            return formatter.date(from: self.wakeTimeString) ?? Date()
                         },
                         set: { newDate in
                             let formatter = DateFormatter()
                             formatter.dateFormat = "HH:mm"
-                            wakeTimeString = formatter.string(from: newDate)
+                            self.wakeTimeString = formatter.string(from: newDate)
                         }
                     ), displayedComponents: .hourAndMinute)
 
@@ -124,9 +128,11 @@ struct NotificationSettingsView: View {
                         Image(systemName: "info.circle")
                             .font(.caption)
                             .foregroundColor(.blue)
-                        Text("Used for 'after wake' notification triggers. You can sync with Sleep Tracker in a future update.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text(
+                            "Used for 'after wake' notification triggers. You can sync with Sleep Tracker in a future update."
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     }
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 20, bottom: 8, trailing: 20))
@@ -139,9 +145,9 @@ struct NotificationSettingsView: View {
                 // Notification Types Section
                 Section {
                     // Expanded View Toggle
-                    Toggle(isOn: $expandedTriggersView) {
+                    Toggle(isOn: self.$expandedTriggersView) {
                         HStack(spacing: 12) {
-                            Image(systemName: expandedTriggersView ? "list.bullet.indent" : "chevron.right.circle")
+                            Image(systemName: self.expandedTriggersView ? "list.bullet.indent" : "chevron.right.circle")
                                 .font(.title3)
                                 .foregroundColor(.blue)
                                 .frame(width: 32)
@@ -150,7 +156,9 @@ struct NotificationSettingsView: View {
                                 Text("Expanded View")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                Text(expandedTriggersView ? "Showing all trigger options inline" : "Tap notification types to customize triggers")
+                                Text(self
+                                    .expandedTriggersView ? "Showing all trigger options inline" :
+                                    "Tap notification types to customize triggers")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -161,17 +169,17 @@ struct NotificationSettingsView: View {
 
                     // Select All / Deselect All Button
                     Button(action: {
-                        let shouldEnableAll = !allTypesEnabled
-                        hydrationEnabled = shouldEnableAll
-                        didYouKnowEnabled = shouldEnableAll
-                        milestonesEnabled = shouldEnableAll
-                        stagesEnabled = shouldEnableAll
-                        goalReminderEnabled = shouldEnableAll
+                        let shouldEnableAll = !self.allTypesEnabled
+                        self.hydrationEnabled = shouldEnableAll
+                        self.didYouKnowEnabled = shouldEnableAll
+                        self.milestonesEnabled = shouldEnableAll
+                        self.stagesEnabled = shouldEnableAll
+                        self.goalReminderEnabled = shouldEnableAll
                     }) {
                         HStack {
-                            Image(systemName: allTypesEnabled ? "checkmark.circle.fill" : "circle")
-                                .foregroundColor(allTypesEnabled ? .blue : .gray)
-                            Text(allTypesEnabled ? "Deselect All" : "Select All")
+                            Image(systemName: self.allTypesEnabled ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(self.allTypesEnabled ? .blue : .gray)
+                            Text(self.allTypesEnabled ? "Deselect All" : "Select All")
                                 .font(.headline)
                                 .foregroundColor(.blue)
                             Spacer()
@@ -182,7 +190,7 @@ struct NotificationSettingsView: View {
                     Divider()
 
                     // Hydration Reminders
-                    Toggle(isOn: $hydrationEnabled) {
+                    Toggle(isOn: self.$hydrationEnabled) {
                         HStack(spacing: 12) {
                             Image(systemName: "drop.fill")
                                 .font(.title3)
@@ -202,10 +210,10 @@ struct NotificationSettingsView: View {
                     }
 
                     // Trigger customization for Hydration
-                    if hydrationEnabled {
-                        if expandedTriggersView {
+                    if self.hydrationEnabled {
+                        if self.expandedTriggersView {
                             // Expanded mode: Show inline picker
-                            Picker("Frequency", selection: $hydrationTrigger) {
+                            Picker("Frequency", selection: self.$hydrationTrigger) {
                                 ForEach(HydrationTrigger.allCases, id: \.self) { trigger in
                                     Text(trigger.displayName).tag(trigger.rawValue)
                                 }
@@ -216,7 +224,8 @@ struct NotificationSettingsView: View {
                             // Compact mode: Show current selection + chevron, navigate to detail
                             NavigationLink(destination: HydrationTriggersView()) {
                                 HStack {
-                                    Text(HydrationTrigger(rawValue: hydrationTrigger)?.displayName ?? "Every 3 hours")
+                                    Text(HydrationTrigger(rawValue: self.hydrationTrigger)?
+                                        .displayName ?? "Every 3 hours")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -233,8 +242,8 @@ struct NotificationSettingsView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Picker("", selection: $maxHydrationPerDay) {
-                                ForEach(1...5, id: \.self) { num in
+                            Picker("", selection: self.$maxHydrationPerDay) {
+                                ForEach(1 ... 5, id: \.self) { num in
                                     Text("\(num)").tag(num)
                                 }
                             }
@@ -249,7 +258,7 @@ struct NotificationSettingsView: View {
                     Divider()
 
                     // Did You Know Facts
-                    Toggle(isOn: $didYouKnowEnabled) {
+                    Toggle(isOn: self.$didYouKnowEnabled) {
                         HStack(spacing: 12) {
                             Image(systemName: "lightbulb.fill")
                                 .font(.title3)
@@ -269,10 +278,10 @@ struct NotificationSettingsView: View {
                     }
 
                     // Trigger customization for Did You Know
-                    if didYouKnowEnabled {
-                        if expandedTriggersView {
+                    if self.didYouKnowEnabled {
+                        if self.expandedTriggersView {
                             // Expanded mode: Show inline picker
-                            Picker("Timing", selection: $didYouKnowTrigger) {
+                            Picker("Timing", selection: self.$didYouKnowTrigger) {
                                 ForEach(DidYouKnowTrigger.allCases, id: \.self) { trigger in
                                     Text(trigger.displayName).tag(trigger.rawValue)
                                 }
@@ -283,7 +292,8 @@ struct NotificationSettingsView: View {
                             // Compact mode: Show current selection + chevron, navigate to detail
                             NavigationLink(destination: DidYouKnowTriggersView()) {
                                 HStack {
-                                    Text(DidYouKnowTrigger(rawValue: didYouKnowTrigger)?.displayName ?? "Mid-morning (10 AM)")
+                                    Text(DidYouKnowTrigger(rawValue: self.didYouKnowTrigger)?
+                                        .displayName ?? "Mid-morning (10 AM)")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -298,8 +308,8 @@ struct NotificationSettingsView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Picker("", selection: $maxDidYouKnowPerDay) {
-                                ForEach(1...5, id: \.self) { num in
+                            Picker("", selection: self.$maxDidYouKnowPerDay) {
+                                ForEach(1 ... 5, id: \.self) { num in
                                     Text("\(num)").tag(num)
                                 }
                             }
@@ -314,7 +324,7 @@ struct NotificationSettingsView: View {
                     Divider()
 
                     // Milestone Celebrations
-                    Toggle(isOn: $milestonesEnabled) {
+                    Toggle(isOn: self.$milestonesEnabled) {
                         HStack(spacing: 12) {
                             Image(systemName: "star.fill")
                                 .font(.title3)
@@ -334,10 +344,10 @@ struct NotificationSettingsView: View {
                     }
 
                     // Trigger customization for Milestones
-                    if milestonesEnabled {
-                        if expandedTriggersView {
+                    if self.milestonesEnabled {
+                        if self.expandedTriggersView {
                             // Expanded mode: Show inline picker
-                            Picker("Timing", selection: $milestonesTrigger) {
+                            Picker("Timing", selection: self.$milestonesTrigger) {
                                 ForEach(MilestonesTrigger.allCases, id: \.self) { trigger in
                                     Text(trigger.displayName).tag(trigger.rawValue)
                                 }
@@ -348,7 +358,8 @@ struct NotificationSettingsView: View {
                             // Compact mode: Show current selection + chevron, navigate to detail
                             NavigationLink(destination: MilestonesTriggersView()) {
                                 HStack {
-                                    Text(MilestonesTrigger(rawValue: milestonesTrigger)?.displayName ?? "When goal is reached")
+                                    Text(MilestonesTrigger(rawValue: self.milestonesTrigger)?
+                                        .displayName ?? "When goal is reached")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -363,8 +374,8 @@ struct NotificationSettingsView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Picker("", selection: $maxMilestonePerDay) {
-                                ForEach(1...5, id: \.self) { num in
+                            Picker("", selection: self.$maxMilestonePerDay) {
+                                ForEach(1 ... 5, id: \.self) { num in
                                     Text("\(num)").tag(num)
                                 }
                             }
@@ -379,7 +390,7 @@ struct NotificationSettingsView: View {
                     Divider()
 
                     // Stage Transitions
-                    Toggle(isOn: $stagesEnabled) {
+                    Toggle(isOn: self.$stagesEnabled) {
                         HStack(spacing: 12) {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .font(.title3)
@@ -399,10 +410,10 @@ struct NotificationSettingsView: View {
                     }
 
                     // Trigger customization for Stage Transitions
-                    if stagesEnabled {
-                        if expandedTriggersView {
+                    if self.stagesEnabled {
+                        if self.expandedTriggersView {
                             // Expanded mode: Show inline picker
-                            Picker("Timing", selection: $stagesTrigger) {
+                            Picker("Timing", selection: self.$stagesTrigger) {
                                 ForEach(StagesTrigger.allCases, id: \.self) { trigger in
                                     Text(trigger.displayName).tag(trigger.rawValue)
                                 }
@@ -413,7 +424,8 @@ struct NotificationSettingsView: View {
                             // Compact mode: Show current selection + chevron, navigate to detail
                             NavigationLink(destination: StageTransitionsTriggersView()) {
                                 HStack {
-                                    Text(StagesTrigger(rawValue: stagesTrigger)?.displayName ?? "When entering stage")
+                                    Text(StagesTrigger(rawValue: self.stagesTrigger)?
+                                        .displayName ?? "When entering stage")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -428,8 +440,8 @@ struct NotificationSettingsView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Picker("", selection: $maxStagePerDay) {
-                                ForEach(1...5, id: \.self) { num in
+                            Picker("", selection: self.$maxStagePerDay) {
+                                ForEach(1 ... 5, id: \.self) { num in
                                     Text("\(num)").tag(num)
                                 }
                             }
@@ -444,7 +456,7 @@ struct NotificationSettingsView: View {
                     Divider()
 
                     // Goal Reminders
-                    Toggle(isOn: $goalReminderEnabled) {
+                    Toggle(isOn: self.$goalReminderEnabled) {
                         HStack(spacing: 12) {
                             Image(systemName: "target")
                                 .font(.title3)
@@ -464,10 +476,10 @@ struct NotificationSettingsView: View {
                     }
 
                     // Trigger customization for Goal Reminders
-                    if goalReminderEnabled {
-                        if expandedTriggersView {
+                    if self.goalReminderEnabled {
+                        if self.expandedTriggersView {
                             // Expanded mode: Show inline picker
-                            Picker("Timing", selection: $goalReminderTrigger) {
+                            Picker("Timing", selection: self.$goalReminderTrigger) {
                                 ForEach(GoalReminderTrigger.allCases, id: \.self) { trigger in
                                     Text(trigger.displayName).tag(trigger.rawValue)
                                 }
@@ -478,7 +490,8 @@ struct NotificationSettingsView: View {
                             // Compact mode: Show current selection + chevron, navigate to detail
                             NavigationLink(destination: GoalRemindersTriggersView()) {
                                 HStack {
-                                    Text(GoalReminderTrigger(rawValue: goalReminderTrigger)?.displayName ?? "15 min before goal")
+                                    Text(GoalReminderTrigger(rawValue: self.goalReminderTrigger)?
+                                        .displayName ?? "15 min before goal")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                     Spacer()
@@ -493,8 +506,8 @@ struct NotificationSettingsView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                             Spacer()
-                            Picker("", selection: $maxGoalReminderPerDay) {
-                                ForEach(1...5, id: \.self) { num in
+                            Picker("", selection: self.$maxGoalReminderPerDay) {
+                                ForEach(1 ... 5, id: \.self) { num in
                                     Text("\(num)").tag(num)
                                 }
                             }
@@ -515,10 +528,10 @@ struct NotificationSettingsView: View {
             // Quiet Hours Section
             // Per Apple HIG: Give users control over notification delivery times
             // Reference: https://developer.apple.com/design/human-interface-guidelines/notifications
-            if notificationsEnabled {
+            if self.notificationsEnabled {
                 Section {
                     // Enable/Disable Toggle
-                    Toggle(isOn: $quietHoursEnabled) {
+                    Toggle(isOn: self.$quietHoursEnabled) {
                         HStack(spacing: 12) {
                             Image(systemName: "moon.zzz.fill")
                                 .font(.title3)
@@ -529,52 +542,56 @@ struct NotificationSettingsView: View {
                                 Text("Enable Quiet Hours")
                                     .font(.subheadline)
                                     .fontWeight(.medium)
-                                Text(quietHoursEnabled ? "Notifications paused during sleep" : "Notifications allowed anytime")
+                                Text(self
+                                    .quietHoursEnabled ? "Notifications paused during sleep" :
+                                    "Notifications allowed anytime")
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
                         }
                     }
 
-                    if quietHoursEnabled {
+                    if self.quietHoursEnabled {
                         // Start Time Picker
                         DatePicker("Start Time", selection: Binding(
                             get: {
                                 let formatter = DateFormatter()
                                 formatter.dateFormat = "HH:mm"
-                                return formatter.date(from: quietHoursStartString) ?? Date()
+                                return formatter.date(from: self.quietHoursStartString) ?? Date()
                             },
                             set: { newDate in
                                 let formatter = DateFormatter()
                                 formatter.dateFormat = "HH:mm"
-                                quietHoursStartString = formatter.string(from: newDate)
+                                self.quietHoursStartString = formatter.string(from: newDate)
                             }
                         ), displayedComponents: .hourAndMinute)
-                        .padding(.leading, 44)
+                            .padding(.leading, 44)
 
                         // End Time Picker
                         DatePicker("End Time", selection: Binding(
                             get: {
                                 let formatter = DateFormatter()
                                 formatter.dateFormat = "HH:mm"
-                                return formatter.date(from: quietHoursEndString) ?? Date()
+                                return formatter.date(from: self.quietHoursEndString) ?? Date()
                             },
                             set: { newDate in
                                 let formatter = DateFormatter()
                                 formatter.dateFormat = "HH:mm"
-                                quietHoursEndString = formatter.string(from: newDate)
+                                self.quietHoursEndString = formatter.string(from: newDate)
                             }
                         ), displayedComponents: .hourAndMinute)
-                        .padding(.leading, 44)
+                            .padding(.leading, 44)
 
                         // Info box
                         HStack(spacing: 8) {
                             Image(systemName: "info.circle")
                                 .font(.caption)
                                 .foregroundColor(.blue)
-                            Text("Notifications won't be sent during these hours. Scheduled notifications will fire after quiet hours end.")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                            Text(
+                                "Notifications won't be sent during these hours. Scheduled notifications will fire after quiet hours end."
+                            )
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                         }
                         .padding(.leading, 44)
                         .listRowBackground(Color.clear)
@@ -582,7 +599,9 @@ struct NotificationSettingsView: View {
                 } header: {
                     Text("Quiet Hours")
                 } footer: {
-                    Text("Control when notifications can be delivered. Future update will allow syncing with Sleep Tracker.")
+                    Text(
+                        "Control when notifications can be delivered. Future update will allow syncing with Sleep Tracker."
+                    )
                 }
             }
 
@@ -611,7 +630,10 @@ struct NotificationSettingsView: View {
                         icon: "moon.zzz.fill",
                         color: .indigo,
                         title: "Quiet Hours",
-                        description: quietHoursEnabled ? "Respects your sleep (\(formatTime(quietHoursStartString)) - \(formatTime(quietHoursEndString)))" : "Disabled - notifications anytime"
+                        description: self
+                            .quietHoursEnabled ?
+                            "Respects your sleep (\(self.formatTime(self.quietHoursStartString)) - \(self.formatTime(self.quietHoursEndString)))" :
+                            "Disabled - notifications anytime"
                     )
                 }
             } header: {
@@ -624,12 +646,13 @@ struct NotificationSettingsView: View {
 
     // Computed property for selected mode
     private var selectedMode: NotificationMode {
-        NotificationMode(rawValue: notificationMode) ?? .balanced
+        NotificationMode(rawValue: self.notificationMode) ?? .balanced
     }
 
     // Computed property to check if all types are enabled
     private var allTypesEnabled: Bool {
-        hydrationEnabled && didYouKnowEnabled && milestonesEnabled && stagesEnabled && goalReminderEnabled
+        self.hydrationEnabled && self.didYouKnowEnabled && self.milestonesEnabled && self.stagesEnabled && self
+            .goalReminderEnabled
     }
 
     // Helper function to format time strings (e.g., "21:00" -> "9:00 PM")
@@ -651,9 +674,9 @@ struct NotificationSettingsView: View {
 // MARK: - Notification Mode Enum
 
 enum NotificationMode: String, CaseIterable {
-    case minimal = "minimal"
-    case balanced = "balanced"
-    case coaching = "coaching"
+    case minimal
+    case balanced
+    case coaching
 
     var displayName: String {
         switch self {
@@ -702,10 +725,10 @@ enum NotificationMode: String, CaseIterable {
 // MARK: - Trigger Enums
 
 enum HydrationTrigger: String, CaseIterable {
-    case every2h = "every2h"
-    case every3h = "every3h"
-    case every4h = "every4h"
-    case custom = "custom"
+    case every2h
+    case every3h
+    case every4h
+    case custom
 
     var displayName: String {
         switch self {
@@ -720,8 +743,8 @@ enum HydrationTrigger: String, CaseIterable {
 enum DidYouKnowTrigger: String, CaseIterable {
     case afterWake = "afterwake"
     case midMorning = "midmorning"
-    case afternoon = "afternoon"
-    case evening = "evening"
+    case afternoon
+    case evening
 
     var displayName: String {
         switch self {
@@ -787,7 +810,7 @@ struct HydrationTriggersView: View {
     var body: some View {
         List {
             Section {
-                Picker("Hydration Reminder Frequency", selection: $hydrationTrigger) {
+                Picker("Hydration Reminder Frequency", selection: self.$hydrationTrigger) {
                     ForEach(HydrationTrigger.allCases, id: \.self) { trigger in
                         Text(trigger.displayName).tag(trigger.rawValue)
                     }
@@ -797,7 +820,9 @@ struct HydrationTriggersView: View {
             } header: {
                 Text("When to Send")
             } footer: {
-                Text("Choose how often you'd like hydration reminders during your fast. Staying hydrated is crucial for successful fasting.")
+                Text(
+                    "Choose how often you'd like hydration reminders during your fast. Staying hydrated is crucial for successful fasting."
+                )
             }
 
             Section {
@@ -805,7 +830,7 @@ struct HydrationTriggersView: View {
                     TriggerOptionRow(
                         title: "Every 2 hours",
                         description: "Frequent reminders for maximum hydration support",
-                        isSelected: hydrationTrigger == HydrationTrigger.every2h.rawValue
+                        isSelected: self.hydrationTrigger == HydrationTrigger.every2h.rawValue
                     )
 
                     Divider()
@@ -813,7 +838,7 @@ struct HydrationTriggersView: View {
                     TriggerOptionRow(
                         title: "Every 3 hours",
                         description: "Balanced hydration support (recommended)",
-                        isSelected: hydrationTrigger == HydrationTrigger.every3h.rawValue
+                        isSelected: self.hydrationTrigger == HydrationTrigger.every3h.rawValue
                     )
 
                     Divider()
@@ -821,7 +846,7 @@ struct HydrationTriggersView: View {
                     TriggerOptionRow(
                         title: "Every 4 hours",
                         description: "Occasional reminders for experienced fasters",
-                        isSelected: hydrationTrigger == HydrationTrigger.every4h.rawValue
+                        isSelected: self.hydrationTrigger == HydrationTrigger.every4h.rawValue
                     )
 
                     Divider()
@@ -829,7 +854,7 @@ struct HydrationTriggersView: View {
                     TriggerOptionRow(
                         title: "Custom interval",
                         description: "Set your own reminder schedule",
-                        isSelected: hydrationTrigger == HydrationTrigger.custom.rawValue
+                        isSelected: self.hydrationTrigger == HydrationTrigger.custom.rawValue
                     )
                 }
             } header: {
@@ -847,7 +872,7 @@ struct DidYouKnowTriggersView: View {
     var body: some View {
         List {
             Section {
-                Picker("Did You Know Fact Timing", selection: $didYouKnowTrigger) {
+                Picker("Did You Know Fact Timing", selection: self.$didYouKnowTrigger) {
                     ForEach(DidYouKnowTrigger.allCases, id: \.self) { trigger in
                         Text(trigger.displayName).tag(trigger.rawValue)
                     }
@@ -865,7 +890,7 @@ struct DidYouKnowTriggersView: View {
                     TriggerOptionRow(
                         title: "1 hour after wake",
                         description: "Start your day with fasting knowledge",
-                        isSelected: didYouKnowTrigger == DidYouKnowTrigger.afterWake.rawValue
+                        isSelected: self.didYouKnowTrigger == DidYouKnowTrigger.afterWake.rawValue
                     )
 
                     Divider()
@@ -873,7 +898,7 @@ struct DidYouKnowTriggersView: View {
                     TriggerOptionRow(
                         title: "Mid-morning (10 AM)",
                         description: "Learn during your morning routine (recommended)",
-                        isSelected: didYouKnowTrigger == DidYouKnowTrigger.midMorning.rawValue
+                        isSelected: self.didYouKnowTrigger == DidYouKnowTrigger.midMorning.rawValue
                     )
 
                     Divider()
@@ -881,7 +906,7 @@ struct DidYouKnowTriggersView: View {
                     TriggerOptionRow(
                         title: "Afternoon (2 PM)",
                         description: "Educational content during midday",
-                        isSelected: didYouKnowTrigger == DidYouKnowTrigger.afternoon.rawValue
+                        isSelected: self.didYouKnowTrigger == DidYouKnowTrigger.afternoon.rawValue
                     )
 
                     Divider()
@@ -889,7 +914,7 @@ struct DidYouKnowTriggersView: View {
                     TriggerOptionRow(
                         title: "Evening (7 PM)",
                         description: "Wind down with fasting insights",
-                        isSelected: didYouKnowTrigger == DidYouKnowTrigger.evening.rawValue
+                        isSelected: self.didYouKnowTrigger == DidYouKnowTrigger.evening.rawValue
                     )
                 }
             } header: {
@@ -907,7 +932,7 @@ struct MilestonesTriggersView: View {
     var body: some View {
         List {
             Section {
-                Picker("Milestone Celebration Timing", selection: $milestonesTrigger) {
+                Picker("Milestone Celebration Timing", selection: self.$milestonesTrigger) {
                     ForEach(MilestonesTrigger.allCases, id: \.self) { trigger in
                         Text(trigger.displayName).tag(trigger.rawValue)
                     }
@@ -925,7 +950,7 @@ struct MilestonesTriggersView: View {
                     TriggerOptionRow(
                         title: "When goal is reached",
                         description: "Celebrate the moment you hit your milestone (recommended)",
-                        isSelected: milestonesTrigger == MilestonesTrigger.whenReached.rawValue
+                        isSelected: self.milestonesTrigger == MilestonesTrigger.whenReached.rawValue
                     )
 
                     Divider()
@@ -933,7 +958,7 @@ struct MilestonesTriggersView: View {
                     TriggerOptionRow(
                         title: "15 min before goal",
                         description: "Get motivated as you approach your milestone",
-                        isSelected: milestonesTrigger == MilestonesTrigger.min15Before.rawValue
+                        isSelected: self.milestonesTrigger == MilestonesTrigger.min15Before.rawValue
                     )
 
                     Divider()
@@ -941,7 +966,7 @@ struct MilestonesTriggersView: View {
                     TriggerOptionRow(
                         title: "30 min before goal",
                         description: "Prepare for your upcoming achievement",
-                        isSelected: milestonesTrigger == MilestonesTrigger.min30Before.rawValue
+                        isSelected: self.milestonesTrigger == MilestonesTrigger.min30Before.rawValue
                     )
 
                     Divider()
@@ -949,7 +974,7 @@ struct MilestonesTriggersView: View {
                     TriggerOptionRow(
                         title: "1 hour before goal",
                         description: "Early reminder to stay focused",
-                        isSelected: milestonesTrigger == MilestonesTrigger.hour1Before.rawValue
+                        isSelected: self.milestonesTrigger == MilestonesTrigger.hour1Before.rawValue
                     )
                 }
             } header: {
@@ -967,7 +992,7 @@ struct StageTransitionsTriggersView: View {
     var body: some View {
         List {
             Section {
-                Picker("Stage Transition Timing", selection: $stagesTrigger) {
+                Picker("Stage Transition Timing", selection: self.$stagesTrigger) {
                     ForEach(StagesTrigger.allCases, id: \.self) { trigger in
                         Text(trigger.displayName).tag(trigger.rawValue)
                     }
@@ -985,7 +1010,7 @@ struct StageTransitionsTriggersView: View {
                     TriggerOptionRow(
                         title: "When entering stage",
                         description: "Learn what's happening the moment you transition (recommended)",
-                        isSelected: stagesTrigger == StagesTrigger.whenEntering.rawValue
+                        isSelected: self.stagesTrigger == StagesTrigger.whenEntering.rawValue
                     )
 
                     Divider()
@@ -993,7 +1018,7 @@ struct StageTransitionsTriggersView: View {
                     TriggerOptionRow(
                         title: "30 min into stage",
                         description: "Get stage insights after you've settled in",
-                        isSelected: stagesTrigger == StagesTrigger.min30Into.rawValue
+                        isSelected: self.stagesTrigger == StagesTrigger.min30Into.rawValue
                     )
 
                     Divider()
@@ -1001,7 +1026,7 @@ struct StageTransitionsTriggersView: View {
                     TriggerOptionRow(
                         title: "1 hour into stage",
                         description: "Delayed notification for deeper stage understanding",
-                        isSelected: stagesTrigger == StagesTrigger.hour1Into.rawValue
+                        isSelected: self.stagesTrigger == StagesTrigger.hour1Into.rawValue
                     )
                 }
             } header: {
@@ -1019,7 +1044,7 @@ struct GoalRemindersTriggersView: View {
     var body: some View {
         List {
             Section {
-                Picker("Goal Reminder Timing", selection: $goalReminderTrigger) {
+                Picker("Goal Reminder Timing", selection: self.$goalReminderTrigger) {
                     ForEach(GoalReminderTrigger.allCases, id: \.self) { trigger in
                         Text(trigger.displayName).tag(trigger.rawValue)
                     }
@@ -1037,7 +1062,7 @@ struct GoalRemindersTriggersView: View {
                     TriggerOptionRow(
                         title: "15 min before goal",
                         description: "Perfect for final prep like weighing in or meal planning",
-                        isSelected: goalReminderTrigger == GoalReminderTrigger.min15Before.rawValue
+                        isSelected: self.goalReminderTrigger == GoalReminderTrigger.min15Before.rawValue
                     )
 
                     Divider()
@@ -1045,7 +1070,7 @@ struct GoalRemindersTriggersView: View {
                     TriggerOptionRow(
                         title: "30 min before goal",
                         description: "Get ready to break your fast with healthy choices",
-                        isSelected: goalReminderTrigger == GoalReminderTrigger.min30Before.rawValue
+                        isSelected: self.goalReminderTrigger == GoalReminderTrigger.min30Before.rawValue
                     )
 
                     Divider()
@@ -1053,7 +1078,7 @@ struct GoalRemindersTriggersView: View {
                     TriggerOptionRow(
                         title: "1 hour before goal",
                         description: "Early reminder to prepare for your eating window",
-                        isSelected: goalReminderTrigger == GoalReminderTrigger.hour1Before.rawValue
+                        isSelected: self.goalReminderTrigger == GoalReminderTrigger.hour1Before.rawValue
                     )
 
                     Divider()
@@ -1061,7 +1086,7 @@ struct GoalRemindersTriggersView: View {
                     TriggerOptionRow(
                         title: "When goal is reached",
                         description: "Celebrate the moment you hit your fasting goal",
-                        isSelected: goalReminderTrigger == GoalReminderTrigger.atGoal.rawValue
+                        isSelected: self.goalReminderTrigger == GoalReminderTrigger.atGoal.rawValue
                     )
                 }
             } header: {
@@ -1083,18 +1108,18 @@ struct TriggerOptionRow: View {
     var body: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(self.title)
                     .font(.subheadline)
-                    .fontWeight(isSelected ? .semibold : .medium)
-                    .foregroundColor(isSelected ? .blue : .primary)
-                Text(description)
+                    .fontWeight(self.isSelected ? .semibold : .medium)
+                    .foregroundColor(self.isSelected ? .blue : .primary)
+                Text(self.description)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            if isSelected {
+            if self.isSelected {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.blue)
                     .font(.title3)
@@ -1113,16 +1138,16 @@ struct NotificationFeatureRow: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: icon)
+            Image(systemName: self.icon)
                 .font(.title3)
-                .foregroundColor(color)
+                .foregroundColor(self.color)
                 .frame(width: 32)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(title)
+                Text(self.title)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                Text(description)
+                Text(self.description)
                     .font(.caption)
                     .foregroundColor(.secondary)
             }

@@ -70,14 +70,14 @@ struct StateBadge: View {
     }
 
     var body: some View {
-        Text(text)
-            .font(size.font)
+        Text(self.text)
+            .font(self.size.font)
             .fontWeight(.semibold)
-            .foregroundColor(style.colors.foreground)
-            .padding(size.padding)
+            .foregroundColor(self.style.colors.foreground)
+            .padding(self.size.padding)
             .background(
                 Capsule()
-                    .fill(style.colors.background)
+                    .fill(self.style.colors.background)
             )
     }
 }
@@ -126,10 +126,10 @@ struct SyncStatusView: View {
                 Text(errorMessage)
                     .font(.caption)
                     .foregroundColor(.secondary)
-            } else if isEnabled {
+            } else if self.isEnabled {
                 StateBadge.success("HealthKit Connected")
                 if let lastSync = lastSyncDate {
-                    Text("Last sync: \(lastSync, formatter: relativeDateFormatter)")
+                    Text("Last sync: \(lastSync, formatter: self.relativeDateFormatter)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -156,15 +156,15 @@ struct GoalStatusBadge: View {
     let unit: String
 
     private var progress: Double {
-        goal > 0 ? current / goal : 0
+        self.goal > 0 ? self.current / self.goal : 0
     }
 
     private var status: (text: String, style: StateBadge.BadgeStyle) {
-        if progress >= 1.0 {
+        if self.progress >= 1.0 {
             return ("Goal Met! 🎉", .success)
-        } else if progress >= 0.8 {
+        } else if self.progress >= 0.8 {
             return ("Almost There!", .warning)
-        } else if progress >= 0.5 {
+        } else if self.progress >= 0.5 {
             return ("On Track", .info)
         } else {
             return ("Getting Started", .neutral)
@@ -173,19 +173,19 @@ struct GoalStatusBadge: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            StateBadge(status.text, style: status.style, size: .small)
+            StateBadge(self.status.text, style: self.status.style, size: .small)
 
             HStack(spacing: 4) {
-                Text("\(current, specifier: "%.1f") / \(goal, specifier: "%.0f") \(unit)")
+                Text("\(self.current, specifier: "%.1f") / \(self.goal, specifier: "%.0f") \(self.unit)")
                     .font(.caption)
                     .foregroundColor(.secondary)
 
                 Spacer()
 
-                Text("\(Int(progress * 100))%")
+                Text("\(Int(self.progress * 100))%")
                     .font(.caption)
                     .fontWeight(.semibold)
-                    .foregroundColor(status.style.colors.background)
+                    .foregroundColor(self.status.style.colors.background)
             }
         }
     }

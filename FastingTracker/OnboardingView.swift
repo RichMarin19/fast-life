@@ -16,10 +16,9 @@ struct OnboardingView: View {
     @FocusState private var isGoalWeightFocused: Bool
     @FocusState private var isFastingGoalFocused: Bool
     @FocusState private var isHydrationGoalFocused: Bool
-    @FocusState private var isKeyboardPrewarmFocused: Bool  // Hidden field for keyboard initialization
+    @FocusState private var isKeyboardPrewarmFocused: Bool // Hidden field for keyboard initialization
 
     @Binding var isOnboardingComplete: Bool
-
 
     init(isOnboardingComplete: Binding<Bool>) {
         self._isOnboardingComplete = isOnboardingComplete
@@ -33,40 +32,48 @@ struct OnboardingView: View {
     }
 
     var body: some View {
-        TabView(selection: $currentPage) {
+        TabView(selection: self.$currentPage) {
             // Page 1: Welcome
-            welcomePage
+            self.welcomePage
                 .tag(0)
 
             // Page 2: Current Weight
-            currentWeightPage
+            self.currentWeightPage
                 .tag(1)
 
             // Page 3: Goal Weight
-            goalWeightPage
+            self.goalWeightPage
                 .tag(2)
 
             // Page 4: Fasting Goal
-            fastingGoalPage
+            self.fastingGoalPage
                 .tag(3)
 
             // Page 5: Hydration Goal
-            hydrationGoalPage
+            self.hydrationGoalPage
                 .tag(4)
 
             // Page 6: HealthKit Sync
-            healthKitSyncPage
+            self.healthKitSyncPage
                 .tag(5)
 
             // Page 7: Notification Permission
-            notificationPermissionPage
+            self.notificationPermissionPage
                 .tag(6)
         }
         .tabViewStyle(.page)
-        .onChange(of: currentPage) { oldValue, newValue in
+        .onChange(of: self.currentPage) { oldValue, newValue in
             print("\n📱 === ONBOARDING: PAGE CHANGED ===")
             print("From page: \(oldValue) → To page: \(newValue)")
-            let pageNames = ["Welcome", "Current Weight", "Goal Weight", "Fasting Goal", "Hydration Goal", "HealthKit Sync", "Notifications"]
+            let pageNames = [
+                "Welcome",
+                "Current Weight",
+                "Goal Weight",
+                "Fasting Goal",
+                "Hydration Goal",
+                "HealthKit Sync",
+                "Notifications",
+            ]
             if newValue < pageNames.count {
                 print("Now showing: \(pageNames[newValue])")
             }
@@ -92,66 +99,82 @@ struct OnboardingView: View {
                 .frame(width: 0, height: 0)
                 .opacity(0)
                 .disabled(true)
-                .focused($isKeyboardPrewarmFocused)
+                .focused(self.$isKeyboardPrewarmFocused)
 
             VStack(spacing: 30) {
                 Spacer()
 
                 HStack(spacing: 0) {
-                Text("Fast L")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundColor(.blue)
-                Text("IF")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundColor(.green)
-                Text("e")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundColor(.cyan)
-            }
+                    Text("Fast L")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundColor(.blue)
+                    Text("IF")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                    Text("e")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundColor(.cyan)
+                }
 
-            Text("Your Intermittent Fasting Companion")
-                .font(.title3)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Your Intermittent Fasting Companion")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
 
-            Spacer()
+                Spacer()
 
-            VStack(spacing: 20) {
-                FeatureRow(icon: "timer", title: "Track Fasting", description: "Monitor your fasting windows and streaks")
-                FeatureRow(icon: "drop.fill", title: "Stay Hydrated", description: "Log water, coffee, and tea intake")
-                FeatureRow(icon: "bed.double.fill", title: "Sleep Tracking", description: "Monitor sleep quality and duration")
-                FeatureRow(icon: "scalemass.fill", title: "Weight Goals", description: "Track progress with HealthKit integration")
-            }
-            .padding(.horizontal)
+                VStack(spacing: 20) {
+                    FeatureRow(
+                        icon: "timer",
+                        title: "Track Fasting",
+                        description: "Monitor your fasting windows and streaks"
+                    )
+                    FeatureRow(
+                        icon: "drop.fill",
+                        title: "Stay Hydrated",
+                        description: "Log water, coffee, and tea intake"
+                    )
+                    FeatureRow(
+                        icon: "bed.double.fill",
+                        title: "Sleep Tracking",
+                        description: "Monitor sleep quality and duration"
+                    )
+                    FeatureRow(
+                        icon: "scalemass.fill",
+                        title: "Weight Goals",
+                        description: "Track progress with HealthKit integration"
+                    )
+                }
+                .padding(.horizontal)
 
-            Spacer()
+                Spacer()
 
-            Button(action: {
-                print("\n📱 === ONBOARDING: WELCOME PAGE ===")
-                print("✅ 'Get Started' button tapped")
-                print("→ Advancing to page 1 (Current Weight)")
-                print("===================================\n")
-                currentPage = 1
-            }) {
-                Text("Get Started")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(15)
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
-            }  // End VStack
-        }  // End ZStack
+                Button(action: {
+                    print("\n📱 === ONBOARDING: WELCOME PAGE ===")
+                    print("✅ 'Get Started' button tapped")
+                    print("→ Advancing to page 1 (Current Weight)")
+                    print("===================================\n")
+                    self.currentPage = 1
+                }) {
+                    Text("Get Started")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(15)
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 40)
+            } // End VStack
+        } // End ZStack
         .task {
             // Trigger keyboard pre-warming after page fully loads
             // Delay ensures page renders first, then keyboard initializes in background
-            try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 second delay
-            isKeyboardPrewarmFocused = true
-            try? await Task.sleep(nanoseconds: 100_000_000)  // 0.1 second (just enough to init)
-            isKeyboardPrewarmFocused = false  // Unfocus immediately
+            try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 second delay
+            self.isKeyboardPrewarmFocused = true
+            try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 second (just enough to init)
+            self.isKeyboardPrewarmFocused = false // Unfocus immediately
         }
     }
 
@@ -173,12 +196,12 @@ struct OnboardingView: View {
             Spacer()
 
             HStack {
-                TextField("Enter weight", text: $currentWeight)
+                TextField("Enter weight", text: self.$currentWeight)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .font(.system(size: 48, weight: .bold))
                     .frame(maxWidth: .infinity)
-                    .focused($isWeightFocused)
+                    .focused(self.$isWeightFocused)
 
                 Text("lbs")
                     .font(.title)
@@ -186,7 +209,7 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 40)
             .onAppear {
-                isWeightFocused = true
+                self.isWeightFocused = true
             }
 
             Spacer()
@@ -195,11 +218,11 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: CURRENT WEIGHT PAGE ===")
                     print("⬅️  'Back' button tapped")
-                    print("Current weight entered: '\(currentWeight)'")
+                    print("Current weight entered: '\(self.currentWeight)'")
                     print("→ Going back to page 0 (Welcome)")
                     print("=========================================\n")
-                    dismissKeyboard()
-                    currentPage = 0
+                    self.dismissKeyboard()
+                    self.currentPage = 0
                 }) {
                     Text("Back")
                         .font(.headline)
@@ -213,20 +236,20 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: CURRENT WEIGHT PAGE ===")
                     print("✅ 'Next' button tapped")
-                    print("Current weight entered: '\(currentWeight)' lbs")
+                    print("Current weight entered: '\(self.currentWeight)' lbs")
                     print("→ Advancing to page 2 (Goal Weight)")
                     print("=========================================\n")
-                    currentPage = 2
+                    self.currentPage = 2
                 }) {
                     Text("Next")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(currentWeight.isEmpty ? Color.gray : Color.blue)
+                        .background(self.currentWeight.isEmpty ? Color.gray : Color.blue)
                         .cornerRadius(15)
                 }
-                .disabled(currentWeight.isEmpty)
+                .disabled(self.currentWeight.isEmpty)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 40)
@@ -251,12 +274,12 @@ struct OnboardingView: View {
             Spacer()
 
             HStack {
-                TextField("Enter goal", text: $goalWeight)
+                TextField("Enter goal", text: self.$goalWeight)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .font(.system(size: 48, weight: .bold))
                     .frame(maxWidth: .infinity)
-                    .focused($isGoalWeightFocused)
+                    .focused(self.$isGoalWeightFocused)
 
                 Text("lbs")
                     .font(.title)
@@ -264,7 +287,7 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 40)
             .onAppear {
-                isGoalWeightFocused = true
+                self.isGoalWeightFocused = true
             }
 
             Spacer()
@@ -273,10 +296,10 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: GOAL WEIGHT PAGE ===")
                     print("⬅️  'Back' button tapped")
-                    print("Goal weight entered: '\(goalWeight)'")
+                    print("Goal weight entered: '\(self.goalWeight)'")
                     print("→ Going back to page 1 (Current Weight)")
                     print("=======================================\n")
-                    currentPage = 1
+                    self.currentPage = 1
                 }) {
                     Text("Back")
                         .font(.headline)
@@ -290,20 +313,20 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: GOAL WEIGHT PAGE ===")
                     print("✅ 'Next' button tapped")
-                    print("Goal weight entered: '\(goalWeight)' lbs")
+                    print("Goal weight entered: '\(self.goalWeight)' lbs")
                     print("→ Advancing to page 3 (Fasting Goal)")
                     print("=======================================\n")
-                    currentPage = 3
+                    self.currentPage = 3
                 }) {
                     Text("Next")
                         .font(.headline)
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(goalWeight.isEmpty ? Color.gray : Color.blue)
+                        .background(self.goalWeight.isEmpty ? Color.gray : Color.blue)
                         .cornerRadius(15)
                 }
-                .disabled(goalWeight.isEmpty)
+                .disabled(self.goalWeight.isEmpty)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 40)
@@ -329,19 +352,19 @@ struct OnboardingView: View {
             Spacer()
                 .frame(height: 10)
 
-            Text("\(Int(fastingGoal)) Hours")
+            Text("\(Int(self.fastingGoal)) Hours")
                 .font(.system(size: 48, weight: .bold))
                 .foregroundColor(.blue)
 
-            Picker("Fasting Goal", selection: $fastingGoal) {
+            Picker("Fasting Goal", selection: self.$fastingGoal) {
                 ForEach([12.0, 14.0, 16.0, 18.0, 20.0, 24.0], id: \.self) { hours in
                     Text("\(Int(hours))h").tag(hours)
                 }
             }
             .pickerStyle(.wheel)
             .frame(height: 150)
-            .onChange(of: fastingGoal) { _, newValue in
-                fastingGoalText = String(Int(newValue))
+            .onChange(of: self.fastingGoal) { _, newValue in
+                self.fastingGoalText = String(Int(newValue))
             }
 
             VStack(spacing: 8) {
@@ -350,7 +373,7 @@ struct OnboardingView: View {
                     .foregroundColor(.secondary)
 
                 HStack {
-                    TextField("Hours", text: $fastingGoalText)
+                    TextField("Hours", text: self.$fastingGoalText)
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.center)
                         .font(.title2)
@@ -358,17 +381,17 @@ struct OnboardingView: View {
                         .padding(10)
                         .background(Color(.systemGray6))
                         .cornerRadius(10)
-                        .focused($isFastingGoalFocused)
+                        .focused(self.$isFastingGoalFocused)
                         .onAppear {
                             // Ensure default value "16" is displayed
                             // State initialization sets this, but explicitly ensure it's visible
-                            if fastingGoalText.isEmpty {
-                                fastingGoalText = "16"
+                            if self.fastingGoalText.isEmpty {
+                                self.fastingGoalText = "16"
                             }
                         }
-                        .onChange(of: fastingGoalText) { _, newValue in
-                            if let hours = Double(newValue), hours >= 1 && hours <= 48 {
-                                fastingGoal = hours
+                        .onChange(of: self.fastingGoalText) { _, newValue in
+                            if let hours = Double(newValue), hours >= 1, hours <= 48 {
+                                self.fastingGoal = hours
                             }
                         }
 
@@ -389,10 +412,10 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: FASTING GOAL PAGE ===")
                     print("⬅️  'Back' button tapped")
-                    print("Fasting goal set: \(Int(fastingGoal)) hours")
+                    print("Fasting goal set: \(Int(self.fastingGoal)) hours")
                     print("→ Going back to page 2 (Goal Weight)")
                     print("========================================\n")
-                    currentPage = 2
+                    self.currentPage = 2
                 }) {
                     Text("Back")
                         .font(.headline)
@@ -406,10 +429,10 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: FASTING GOAL PAGE ===")
                     print("✅ 'Next' button tapped")
-                    print("Fasting goal set: \(Int(fastingGoal)) hours")
+                    print("Fasting goal set: \(Int(self.fastingGoal)) hours")
                     print("→ Advancing to page 4 (Hydration Goal)")
                     print("========================================\n")
-                    currentPage = 4
+                    self.currentPage = 4
                 }) {
                     Text("Next")
                         .font(.headline)
@@ -424,7 +447,7 @@ struct OnboardingView: View {
             .padding(.bottom, 110)
         }
         .onAppear {
-            isFastingGoalFocused = true
+            self.isFastingGoalFocused = true
         }
     }
 
@@ -447,19 +470,19 @@ struct OnboardingView: View {
             Spacer()
                 .frame(height: 10)
 
-            Text("\(Int(hydrationGoal)) oz")
+            Text("\(Int(self.hydrationGoal)) oz")
                 .font(.system(size: 48, weight: .bold))
                 .foregroundColor(.cyan)
 
-            Picker("Hydration Goal", selection: $hydrationGoal) {
+            Picker("Hydration Goal", selection: self.$hydrationGoal) {
                 ForEach([60.0, 70.0, 80.0, 90.0, 100.0, 110.0, 120.0], id: \.self) { oz in
                     Text("\(Int(oz)) oz").tag(oz)
                 }
             }
             .pickerStyle(.wheel)
             .frame(height: 150)
-            .onChange(of: hydrationGoal) { _, newValue in
-                hydrationGoalText = String(Int(newValue))
+            .onChange(of: self.hydrationGoal) { _, newValue in
+                self.hydrationGoalText = String(Int(newValue))
             }
 
             VStack(spacing: 8) {
@@ -468,7 +491,7 @@ struct OnboardingView: View {
                     .foregroundColor(.secondary)
 
                 HStack {
-                    TextField("Ounces", text: $hydrationGoalText)
+                    TextField("Ounces", text: self.$hydrationGoalText)
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.center)
                         .font(.title2)
@@ -476,10 +499,10 @@ struct OnboardingView: View {
                         .padding(10)
                         .background(Color(.systemGray6))
                         .cornerRadius(10)
-                        .focused($isHydrationGoalFocused)
-                        .onChange(of: hydrationGoalText) { _, newValue in
-                            if let oz = Double(newValue), oz >= 1 && oz <= 300 {
-                                hydrationGoal = oz
+                        .focused(self.$isHydrationGoalFocused)
+                        .onChange(of: self.hydrationGoalText) { _, newValue in
+                            if let oz = Double(newValue), oz >= 1, oz <= 300 {
+                                self.hydrationGoal = oz
                             }
                         }
 
@@ -500,10 +523,10 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: HYDRATION GOAL PAGE ===")
                     print("⬅️  'Back' button tapped")
-                    print("Hydration goal set: \(Int(hydrationGoal)) oz")
+                    print("Hydration goal set: \(Int(self.hydrationGoal)) oz")
                     print("→ Going back to page 3 (Fasting Goal)")
                     print("==========================================\n")
-                    currentPage = 3
+                    self.currentPage = 3
                 }) {
                     Text("Back")
                         .font(.headline)
@@ -517,10 +540,10 @@ struct OnboardingView: View {
                 Button(action: {
                     print("\n📱 === ONBOARDING: HYDRATION GOAL PAGE ===")
                     print("✅ 'Next' button tapped")
-                    print("Hydration goal set: \(Int(hydrationGoal)) oz")
+                    print("Hydration goal set: \(Int(self.hydrationGoal)) oz")
                     print("→ Advancing to page 5 (HealthKit Sync)")
                     print("==========================================\n")
-                    currentPage = 5
+                    self.currentPage = 5
                 }) {
                     Text("Next")
                         .font(.headline)
@@ -535,7 +558,7 @@ struct OnboardingView: View {
             .padding(.bottom, 110)
         }
         .onAppear {
-            isHydrationGoalFocused = true
+            self.isHydrationGoalFocused = true
         }
     }
 
@@ -549,9 +572,14 @@ struct OnboardingView: View {
                 .font(.system(size: 72))
                 .foregroundColor(.red)
                 .onAppear {
-                    isWeightFocused = false
-                    isGoalWeightFocused = false
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    self.isWeightFocused = false
+                    self.isGoalWeightFocused = false
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil,
+                        from: nil,
+                        for: nil
+                    )
                 }
 
             Text("Sync with Apple Health")
@@ -572,7 +600,9 @@ struct OnboardingView: View {
                     print("\n📱 === ONBOARDING: HEALTHKIT SYNC PAGE ===")
                     print("✅ 'Sync All Historical Data' button tapped")
                     print("🔐 Requesting HealthKit authorization (shows native iOS dialog)")
-                    print("Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization")
+                    print(
+                        "Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization"
+                    )
                     print("")
 
                     // CRITICAL: Request authorization on main thread
@@ -580,42 +610,42 @@ struct OnboardingView: View {
                     // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
                     DispatchQueue.main.async {
                         HealthKitManager.shared.requestAuthorization { success, error in
-                        if success {
-                            print("✅ HealthKit authorization dialog completed")
+                            if success {
+                                print("✅ HealthKit authorization dialog completed")
 
-                            // Verify which permissions were actually granted
-                            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
-                            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
-                            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+                                // Verify which permissions were actually granted
+                                let weightGranted = HealthKitManager.shared.isWeightAuthorized()
+                                let waterGranted = HealthKitManager.shared.isWaterAuthorized()
+                                let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
 
-                            print("🔍 Permissions granted:")
-                            print("  Weight: \(weightGranted ? "✅" : "❌")")
-                            print("  Water: \(waterGranted ? "✅" : "❌")")
-                            print("  Sleep: \(sleepGranted ? "✅" : "❌")")
+                                print("🔍 Permissions granted:")
+                                print("  Weight: \(weightGranted ? "✅" : "❌")")
+                                print("  Water: \(waterGranted ? "✅" : "❌")")
+                                print("  Sleep: \(sleepGranted ? "✅" : "❌")")
 
-                            if weightGranted || waterGranted || sleepGranted {
-                                print("✅ At least one permission granted → sync enabled")
-                                print("💾 Saving preference: syncHealthKit=true, futureOnly=false")
-                                saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
+                                if weightGranted || waterGranted || sleepGranted {
+                                    print("✅ At least one permission granted → sync enabled")
+                                    print("💾 Saving preference: syncHealthKit=true, futureOnly=false")
+                                    self.saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
+                                    print("→ Advancing to page 6 (Notifications)")
+                                    print("==========================================\n")
+                                    self.currentPage = 6
+                                } else {
+                                    print("⚠️  ZERO permissions granted")
+                                    print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
+                                    self.saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                                    print("ℹ️  User can enable permissions later in app settings")
+                                    print("==========================================\n")
+                                    self.currentPage = 6
+                                }
+                            } else {
+                                print("❌ HealthKit authorization failed: \(String(describing: error))")
+                                print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
+                                self.saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
                                 print("→ Advancing to page 6 (Notifications)")
                                 print("==========================================\n")
-                                currentPage = 6
-                            } else {
-                                print("⚠️  ZERO permissions granted")
-                                print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
-                                saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                                print("ℹ️  User can enable permissions later in app settings")
-                                print("==========================================\n")
-                                currentPage = 6
+                                self.currentPage = 6
                             }
-                        } else {
-                            print("❌ HealthKit authorization failed: \(String(describing: error))")
-                            print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
-                            saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                            print("→ Advancing to page 6 (Notifications)")
-                            print("==========================================\n")
-                            currentPage = 6
-                        }
                         }
                     }
                 }) {
@@ -637,7 +667,9 @@ struct OnboardingView: View {
                     print("\n📱 === ONBOARDING: HEALTHKIT SYNC PAGE ===")
                     print("✅ 'Sync Future Data Only' button tapped")
                     print("🔐 Requesting HealthKit authorization (shows native iOS dialog)")
-                    print("Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization")
+                    print(
+                        "Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization"
+                    )
                     print("")
 
                     // CRITICAL: Request authorization on main thread
@@ -645,42 +677,42 @@ struct OnboardingView: View {
                     // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
                     DispatchQueue.main.async {
                         HealthKitManager.shared.requestAuthorization { success, error in
-                        if success {
-                            print("✅ HealthKit authorization dialog completed")
+                            if success {
+                                print("✅ HealthKit authorization dialog completed")
 
-                            // Verify which permissions were actually granted
-                            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
-                            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
-                            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+                                // Verify which permissions were actually granted
+                                let weightGranted = HealthKitManager.shared.isWeightAuthorized()
+                                let waterGranted = HealthKitManager.shared.isWaterAuthorized()
+                                let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
 
-                            print("🔍 Permissions granted:")
-                            print("  Weight: \(weightGranted ? "✅" : "❌")")
-                            print("  Water: \(waterGranted ? "✅" : "❌")")
-                            print("  Sleep: \(sleepGranted ? "✅" : "❌")")
+                                print("🔍 Permissions granted:")
+                                print("  Weight: \(weightGranted ? "✅" : "❌")")
+                                print("  Water: \(waterGranted ? "✅" : "❌")")
+                                print("  Sleep: \(sleepGranted ? "✅" : "❌")")
 
-                            if weightGranted || waterGranted || sleepGranted {
-                                print("✅ At least one permission granted → sync enabled")
-                                print("💾 Saving preference: syncHealthKit=true, futureOnly=true")
-                                saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
+                                if weightGranted || waterGranted || sleepGranted {
+                                    print("✅ At least one permission granted → sync enabled")
+                                    print("💾 Saving preference: syncHealthKit=true, futureOnly=true")
+                                    self.saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
+                                    print("→ Advancing to page 6 (Notifications)")
+                                    print("==========================================\n")
+                                    self.currentPage = 6
+                                } else {
+                                    print("⚠️  ZERO permissions granted")
+                                    print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
+                                    self.saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                                    print("ℹ️  User can enable permissions later in app settings")
+                                    print("==========================================\n")
+                                    self.currentPage = 6
+                                }
+                            } else {
+                                print("❌ HealthKit authorization failed: \(String(describing: error))")
+                                print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
+                                self.saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
                                 print("→ Advancing to page 6 (Notifications)")
                                 print("==========================================\n")
-                                currentPage = 6
-                            } else {
-                                print("⚠️  ZERO permissions granted")
-                                print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
-                                saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                                print("ℹ️  User can enable permissions later in app settings")
-                                print("==========================================\n")
-                                currentPage = 6
+                                self.currentPage = 6
                             }
-                        } else {
-                            print("❌ HealthKit authorization failed: \(String(describing: error))")
-                            print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
-                            saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                            print("→ Advancing to page 6 (Notifications)")
-                            print("==========================================\n")
-                            currentPage = 6
-                        }
                         }
                     }
                 }) {
@@ -702,10 +734,10 @@ struct OnboardingView: View {
                     print("\n📱 === ONBOARDING: HEALTHKIT SYNC PAGE ===")
                     print("⏭️  'Skip for Now' button tapped")
                     print("💾 Saving preference: syncHealthKit=false, futureOnly=false")
-                    saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                    self.saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
                     print("→ Advancing to page 6 (Notifications)")
                     print("==========================================\n")
-                    currentPage = 6
+                    self.currentPage = 6
                 }) {
                     Text("Skip for Now")
                         .font(.headline)
@@ -725,7 +757,7 @@ struct OnboardingView: View {
                 print("⬅️  'Back' button tapped")
                 print("→ Going back to page 4 (Hydration Goal)")
                 print("==========================================\n")
-                currentPage = 4
+                self.currentPage = 4
             }) {
                 Text("Back")
                     .font(.headline)
@@ -767,7 +799,7 @@ struct OnboardingView: View {
                         print("Notification authorization result: \(granted ? "✅ Granted" : "❌ Denied")")
                         print("→ Completing onboarding...")
                         print("========================================\n")
-                        completeOnboarding()
+                        self.completeOnboarding()
                     }
                 }) {
                     Text("Enable Notifications")
@@ -784,7 +816,7 @@ struct OnboardingView: View {
                     print("⏭️  'Maybe Later' button tapped")
                     print("→ Completing onboarding (without notification permission)...")
                     print("========================================\n")
-                    completeOnboarding()
+                    self.completeOnboarding()
                 }) {
                     Text("Maybe Later")
                         .font(.headline)
@@ -804,7 +836,7 @@ struct OnboardingView: View {
                 print("⬅️  'Back' button tapped")
                 print("→ Going back to page 5 (HealthKit Sync)")
                 print("========================================\n")
-                currentPage = 5
+                self.currentPage = 5
             }) {
                 Text("Back")
                     .font(.headline)
@@ -829,8 +861,10 @@ struct OnboardingView: View {
         print("  - syncHealthKit: \(syncHealthKit)")
         print("  - futureOnly: \(futureOnly)")
         print("Saving to @State variable healthKitSyncChoice...")
-        healthKitSyncChoice = (syncHealthKit, futureOnly)
-        print("✅ healthKitSyncChoice updated: (enabled: \(healthKitSyncChoice.enabled), futureOnly: \(healthKitSyncChoice.futureOnly))")
+        self.healthKitSyncChoice = (syncHealthKit, futureOnly)
+        print(
+            "✅ healthKitSyncChoice updated: (enabled: \(self.healthKitSyncChoice.enabled), futureOnly: \(self.healthKitSyncChoice.futureOnly))"
+        )
         print("ℹ️  Note: This is stored in @State, NOT UserDefaults (used later in completeOnboarding)")
         print("====================================\n")
     }
@@ -871,28 +905,28 @@ struct OnboardingView: View {
         // CRITICAL: Use setFastingGoal() to persist to UserDefaults, not direct property assignment
         // Direct assignment only sets in-memory value, doesn't persist across app launches
         print("\n📊 Saving fasting goal...")
-        print("Calling fastingManager.setFastingGoal(hours: \(fastingGoal))...")
-        fastingManager.setFastingGoal(hours: fastingGoal)
-        print("✅ Fasting goal saved: \(Int(fastingGoal)) hours")
+        print("Calling fastingManager.setFastingGoal(hours: \(self.fastingGoal))...")
+        fastingManager.setFastingGoal(hours: self.fastingGoal)
+        print("✅ Fasting goal saved: \(Int(self.fastingGoal)) hours")
 
         // Save hydration goal
         // CRITICAL: Use updateDailyGoal() to persist to UserDefaults, not direct property assignment
         // Direct assignment only sets in-memory @Published value, doesn't persist across app launches
         // Reference: https://developer.apple.com/documentation/foundation/userdefaults
         print("\n📊 Saving hydration goal...")
-        print("Calling hydrationManager.updateDailyGoal(\(hydrationGoal))...")
-        hydrationManager.updateDailyGoal(hydrationGoal)
-        print("✅ Hydration goal saved: \(Int(hydrationGoal)) oz")
+        print("Calling hydrationManager.updateDailyGoal(\(self.hydrationGoal))...")
+        hydrationManager.updateDailyGoal(self.hydrationGoal)
+        print("✅ Hydration goal saved: \(Int(self.hydrationGoal)) oz")
 
         // Sync with HealthKit if requested (authorization was already requested on HealthKit page)
         // CRITICAL: Only sync data for permissions that were actually granted (granular sync)
         // Per Apple: "Respect the user's privacy preferences and only access authorized data"
         // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
         print("\n🔐 Checking HealthKit sync preference...")
-        print("healthKitSyncChoice.enabled: \(healthKitSyncChoice.enabled)")
-        print("healthKitSyncChoice.futureOnly: \(healthKitSyncChoice.futureOnly)")
+        print("healthKitSyncChoice.enabled: \(self.healthKitSyncChoice.enabled)")
+        print("healthKitSyncChoice.futureOnly: \(self.healthKitSyncChoice.futureOnly)")
 
-        if healthKitSyncChoice.enabled {
+        if self.healthKitSyncChoice.enabled {
             print("✅ HealthKit sync enabled → checking granular permissions...")
 
             // Check which specific permissions were granted
@@ -936,7 +970,7 @@ struct OnboardingView: View {
 
         // Save HealthKit skip status for nudge system
         print("\n💾 Saving HealthKit skip status for nudge system...")
-        let skippedHealthKit = !healthKitSyncChoice.enabled
+        let skippedHealthKit = !self.healthKitSyncChoice.enabled
         UserDefaults.standard.set(skippedHealthKit, forKey: "healthKitSkippedOnboarding")
         print("healthKitSkippedOnboarding = \(skippedHealthKit)")
 
@@ -945,7 +979,7 @@ struct OnboardingView: View {
         print("Setting UserDefaults key 'onboardingCompleted' = true")
         UserDefaults.standard.set(true, forKey: "onboardingCompleted")
         print("Setting isOnboardingComplete = true")
-        isOnboardingComplete = true
+        self.isOnboardingComplete = true
         print("✅ Onboarding completed successfully!")
         print("==============================\n")
     }
@@ -960,15 +994,15 @@ struct FeatureRow: View {
 
     var body: some View {
         HStack(spacing: 15) {
-            Image(systemName: icon)
+            Image(systemName: self.icon)
                 .font(.title2)
                 .foregroundColor(.blue)
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(title)
+                Text(self.title)
                     .font(.headline)
-                Text(description)
+                Text(self.description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

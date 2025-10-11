@@ -51,21 +51,21 @@ struct AdvancedView: View {
     @State private var navigationPath = NavigationPath()
 
     var body: some View {
-        NavigationStack(path: $navigationPath) {
+        NavigationStack(path: self.$navigationPath) {
             ScrollView {
                 VStack(spacing: 16) {
-                    headerSection
-                    featureCards
+                    self.headerSection
+                    self.featureCards
                     Spacer()
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: String.self, destination: navigationDestination)
+            .navigationDestination(for: String.self, destination: self.navigationDestination)
         }
-        .onChange(of: shouldPopToRoot) { _, newValue in
+        .onChange(of: self.shouldPopToRoot) { _, newValue in
             if newValue {
-                navigationPath = NavigationPath()
-                shouldPopToRoot = false
+                self.navigationPath = NavigationPath()
+                self.shouldPopToRoot = false
             }
         }
     }
@@ -87,7 +87,7 @@ struct AdvancedView: View {
                 icon: "scalemass.fill",
                 color: .blue,
                 destination: "weightTracking",
-                navigationPath: $navigationPath
+                navigationPath: self.$navigationPath
             )
 
             FeatureButton(
@@ -96,7 +96,7 @@ struct AdvancedView: View {
                 icon: "drop.fill",
                 color: .cyan,
                 destination: "hydrationTracking",
-                navigationPath: $navigationPath
+                navigationPath: self.$navigationPath
             )
 
             FeatureButton(
@@ -105,7 +105,7 @@ struct AdvancedView: View {
                 icon: "bed.double.fill",
                 color: .purple,
                 destination: "sleepTracking",
-                navigationPath: $navigationPath
+                navigationPath: self.$navigationPath
             )
 
             FeatureButton(
@@ -114,7 +114,7 @@ struct AdvancedView: View {
                 icon: "face.smiling.fill",
                 color: .orange,
                 destination: "moodTracking",
-                navigationPath: $navigationPath
+                navigationPath: self.$navigationPath
             )
 
             FeatureButton(
@@ -123,7 +123,7 @@ struct AdvancedView: View {
                 icon: "bell.badge.fill",
                 color: .orange,
                 destination: "notificationSettings",
-                navigationPath: $navigationPath
+                navigationPath: self.$navigationPath
             )
 
             FeatureButton(
@@ -132,7 +132,7 @@ struct AdvancedView: View {
                 icon: "gear",
                 color: .gray,
                 destination: "settings",
-                navigationPath: $navigationPath
+                navigationPath: self.$navigationPath
             )
         }
     }
@@ -152,9 +152,9 @@ struct AdvancedView: View {
             NotificationSettingsView()
         case "settings":
             AppSettingsView(
-                shouldResetToOnboarding: $shouldResetToOnboarding,
-                isOnboardingComplete: $isOnboardingComplete,
-                selectedTab: $selectedTab
+                shouldResetToOnboarding: self.$shouldResetToOnboarding,
+                isOnboardingComplete: self.$isOnboardingComplete,
+                selectedTab: self.$selectedTab
             )
         default:
             EmptyView()
@@ -171,12 +171,12 @@ struct FeatureButton: View {
     @Binding var navigationPath: NavigationPath
 
     var body: some View {
-        Button(action: { navigationPath.append(destination) }) {
+        Button(action: { self.navigationPath.append(self.destination) }) {
             AdvancedFeatureCard(
-                title: title,
-                description: description,
-                icon: icon,
-                color: color,
+                title: self.title,
+                description: self.description,
+                icon: self.icon,
+                color: self.color,
                 isAvailable: true
             )
         }
@@ -194,20 +194,20 @@ struct AdvancedFeatureCard: View {
 
     var body: some View {
         HStack(spacing: 16) {
-            Image(systemName: icon)
+            Image(systemName: self.icon)
                 .font(.system(size: 36))
-                .foregroundColor(isAvailable ? color : .gray)
+                .foregroundColor(self.isAvailable ? self.color : .gray)
                 .frame(width: 60, height: 60)
-                .background(isAvailable ? color.opacity(0.15) : Color.gray.opacity(0.15))
+                .background(self.isAvailable ? self.color.opacity(0.15) : Color.gray.opacity(0.15))
                 .cornerRadius(12)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(title)
+                    Text(self.title)
                         .font(.headline)
-                        .foregroundColor(isAvailable ? .primary : .secondary)
+                        .foregroundColor(self.isAvailable ? .primary : .secondary)
 
-                    if !isAvailable {
+                    if !self.isAvailable {
                         Text("Coming Soon")
                             .font(.caption)
                             .foregroundColor(.white)
@@ -218,7 +218,7 @@ struct AdvancedFeatureCard: View {
                     }
                 }
 
-                Text(description)
+                Text(self.description)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(2)
@@ -226,7 +226,7 @@ struct AdvancedFeatureCard: View {
 
             Spacer()
 
-            if isAvailable {
+            if self.isAvailable {
                 Image(systemName: "chevron.right")
                     .font(.body)
                     .foregroundColor(.secondary)
@@ -236,7 +236,7 @@ struct AdvancedFeatureCard: View {
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
-        .opacity(isAvailable ? 1.0 : 0.7)
+        .opacity(self.isAvailable ? 1.0 : 0.7)
     }
 }
 
@@ -259,30 +259,33 @@ struct AppSettingsView: View {
 
     var body: some View {
         List {
-            dataImportExportSection
+            self.dataImportExportSection
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var dataImportExportSection: some View {
-        Section(header: Text("Data Import & Export"), footer: Text("Export your data for backup or import previously exported data to restore.")) {
-            Button(action: { exportData() }) {
+        Section(
+            header: Text("Data Import & Export"),
+            footer: Text("Export your data for backup or import previously exported data to restore.")
+        ) {
+            Button(action: { self.exportData() }) {
                 HStack {
-                    if isExporting {
+                    if self.isExporting {
                         ProgressView()
                             .padding(.trailing, 8)
                     } else {
                         Image(systemName: "square.and.arrow.up")
                             .foregroundColor(.blue)
                     }
-                    Text(isExporting ? "Exporting..." : "Export All Data to CSV")
+                    Text(self.isExporting ? "Exporting..." : "Export All Data to CSV")
                         .foregroundColor(.primary)
                 }
             }
-            .disabled(isExporting)
+            .disabled(self.isExporting)
 
-            Button(action: { showingImportFilePicker = true }) {
+            Button(action: { self.showingImportFilePicker = true }) {
                 HStack {
                     Image(systemName: "square.and.arrow.down")
                         .foregroundColor(.green)
@@ -295,9 +298,9 @@ struct AppSettingsView: View {
 
     private func exportData() {
         // Simplified export - just set state for UI feedback
-        isExporting = true
+        self.isExporting = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            isExporting = false
+            self.isExporting = false
         }
     }
 }

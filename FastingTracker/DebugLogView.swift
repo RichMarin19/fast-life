@@ -14,8 +14,13 @@ struct DebugLogView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("Runtime Log Level"), footer: Text("Controls which logs appear in Console.app and Instruments. Changes take effect immediately. Default levels:\n• DEBUG build: .debug (all logs)\n• TESTFLIGHT build: .info\n• RELEASE build: .notice")) {
-                    Picker("Log Level", selection: $selectedLevel) {
+                Section(
+                    header: Text("Runtime Log Level"),
+                    footer: Text(
+                        "Controls which logs appear in Console.app and Instruments. Changes take effect immediately. Default levels:\n• DEBUG build: .debug (all logs)\n• TESTFLIGHT build: .info\n• RELEASE build: .notice"
+                    )
+                ) {
+                    Picker("Log Level", selection: self.$selectedLevel) {
                         Text("🔍 Debug (Verbose)").tag(LogLevel.debug)
                         Text("ℹ️ Info").tag(LogLevel.info)
                         Text("📢 Notice (Default)").tag(LogLevel.notice)
@@ -24,7 +29,7 @@ struct DebugLogView: View {
                         Text("💥 Fault (Critical)").tag(LogLevel.fault)
                     }
                     .pickerStyle(.inline)
-                    .onChange(of: selectedLevel) { _, newValue in
+                    .onChange(of: self.selectedLevel) { _, newValue in
                         Log.setRuntimeLevel(newValue)
                     }
                 }
@@ -34,23 +39,26 @@ struct DebugLogView: View {
                         Text("Build Type")
                         Spacer()
                         #if DEBUG
-                        Text("DEBUG").foregroundColor(.orange)
+                            Text("DEBUG").foregroundColor(.orange)
                         #elseif TESTFLIGHT
-                        Text("TESTFLIGHT").foregroundColor(.blue)
+                            Text("TESTFLIGHT").foregroundColor(.blue)
                         #else
-                        Text("RELEASE").foregroundColor(.green)
+                            Text("RELEASE").foregroundColor(.green)
                         #endif
                     }
 
                     HStack {
                         Text("Active Log Level")
                         Spacer()
-                        Text(logLevelName(selectedLevel))
+                        Text(self.logLevelName(self.selectedLevel))
                             .foregroundColor(.secondary)
                     }
                 }
 
-                Section(header: Text("Log Categories"), footer: Text("All categories use the selected log level above.")) {
+                Section(
+                    header: Text("Log Categories"),
+                    footer: Text("All categories use the selected log level above.")
+                ) {
                     ForEach([
                         ("HealthKit", LogCategory.healthkit),
                         ("Weight", LogCategory.weight),
@@ -63,7 +71,7 @@ struct DebugLogView: View {
                         ("Settings", LogCategory.settings),
                         ("Storage", LogCategory.storage),
                         ("Performance", LogCategory.performance),
-                        ("General", LogCategory.general)
+                        ("General", LogCategory.general),
                     ], id: \.0) { name, category in
                         HStack {
                             Text(name)
@@ -80,18 +88,22 @@ struct DebugLogView: View {
                         Text("**Console.app (Mac)**")
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                        Text("1. Connect device to Mac\n2. Open Console.app\n3. Select device in sidebar\n4. Filter: subsystem:ai.fastlife.app")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text(
+                            "1. Connect device to Mac\n2. Open Console.app\n3. Select device in sidebar\n4. Filter: subsystem:ai.fastlife.app"
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
 
                         Divider()
 
                         Text("**Instruments (Performance)**")
                             .font(.subheadline)
                             .fontWeight(.semibold)
-                        Text("1. Open Xcode → Product → Profile\n2. Choose 'os_signpost' template\n3. View chart rendering & sync performance")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text(
+                            "1. Open Xcode → Product → Profile\n2. Choose 'os_signpost' template\n3. View chart rendering & sync performance"
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
                     }
                 }
 
@@ -99,13 +111,13 @@ struct DebugLogView: View {
                     Button(action: {
                         // Reset to default
                         #if DEBUG
-                        Log.setRuntimeLevel(.debug)
+                            Log.setRuntimeLevel(.debug)
                         #elseif TESTFLIGHT
-                        Log.setRuntimeLevel(.info)
+                            Log.setRuntimeLevel(.info)
                         #else
-                        Log.setRuntimeLevel(.notice)
+                            Log.setRuntimeLevel(.notice)
                         #endif
-                        selectedLevel = Log.getRuntimeLevel()
+                        self.selectedLevel = Log.getRuntimeLevel()
                     }) {
                         HStack {
                             Image(systemName: "arrow.counterclockwise")
@@ -119,7 +131,7 @@ struct DebugLogView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }

@@ -2,9 +2,9 @@ import SwiftUI
 
 @main
 struct FastLifeApp: App {
-    @State private var selectedTab: Int = 0  // Always start at Timer tab (index 0)
-    @State private var shouldPopToRoot = false  // Trigger navigation pop
-    @State private var shouldResetToOnboarding = false  // Trigger full app reset
+    @State private var selectedTab: Int = 0 // Always start at Timer tab (index 0)
+    @State private var shouldPopToRoot = false // Trigger navigation pop
+    @State private var shouldResetToOnboarding = false // Trigger full app reset
     @State private var isOnboardingComplete: Bool = UserDefaults.standard.bool(forKey: "onboardingCompleted")
 
     init() {
@@ -23,13 +23,13 @@ struct FastLifeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if isOnboardingComplete && !shouldResetToOnboarding {
-                mainTabView
+            if self.isOnboardingComplete, !self.shouldResetToOnboarding {
+                self.mainTabView
             } else {
-                OnboardingView(isOnboardingComplete: $isOnboardingComplete)
+                OnboardingView(isOnboardingComplete: self.$isOnboardingComplete)
                     .onAppear {
                         // Reset the flag when onboarding appears
-                        shouldResetToOnboarding = false
+                        self.shouldResetToOnboarding = false
                     }
             }
         }
@@ -37,25 +37,25 @@ struct FastLifeApp: App {
 
     private var mainTabView: some View {
         MainTabView(
-            shouldPopToRoot: $shouldPopToRoot,
-            shouldResetToOnboarding: $shouldResetToOnboarding,
-            isOnboardingComplete: $isOnboardingComplete,
-            selectedTab: $selectedTab,
-            tabBinding: tabBinding
+            shouldPopToRoot: self.$shouldPopToRoot,
+            shouldResetToOnboarding: self.$shouldResetToOnboarding,
+            isOnboardingComplete: self.$isOnboardingComplete,
+            selectedTab: self.$selectedTab,
+            tabBinding: self.tabBinding
         )
     }
 
     // Custom binding to reset More tab navigation to root when switching tabs
     private var tabBinding: Binding<Int> {
         Binding(
-            get: { selectedTab },
+            get: { self.selectedTab },
             set: { newValue in
                 // Reset More tab to root view whenever switching TO it
                 // This ensures Advanced Features is always shown first
                 if newValue == 3 {
-                    shouldPopToRoot = true
+                    self.shouldPopToRoot = true
                 }
-                selectedTab = newValue
+                self.selectedTab = newValue
             }
         )
     }
@@ -73,10 +73,10 @@ struct MainTabView: View {
     let tabBinding: Binding<Int>
 
     var body: some View {
-        TabView(selection: tabBinding) {
+        TabView(selection: self.tabBinding) {
             // Timer tab - Always loaded (default tab)
             ContentView()
-                .environmentObject(fastingManager)
+                .environmentObject(self.fastingManager)
                 .tabItem {
                     Label("Timer", systemImage: "clock")
                 }
@@ -91,20 +91,20 @@ struct MainTabView: View {
 
             // Analytics tab - Lazy loaded (cross-tracker insights coming soon)
             LazyView(AnalyticsView())
-            .tabItem {
-                Label("Analytics", systemImage: "chart.bar.xaxis")
-            }
-            .tag(2)
+                .tabItem {
+                    Label("Analytics", systemImage: "chart.bar.xaxis")
+                }
+                .tag(2)
 
             // More tab - Lazy loaded (navigation stack)
             LazyView(
                 AdvancedView(
-                    shouldPopToRoot: $shouldPopToRoot,
-                    shouldResetToOnboarding: $shouldResetToOnboarding,
-                    isOnboardingComplete: $isOnboardingComplete,
-                    selectedTab: $selectedTab
+                    shouldPopToRoot: self.$shouldPopToRoot,
+                    shouldResetToOnboarding: self.$shouldResetToOnboarding,
+                    isOnboardingComplete: self.$isOnboardingComplete,
+                    selectedTab: self.$selectedTab
                 )
-                .environmentObject(fastingManager)
+                .environmentObject(self.fastingManager)
             )
             .tabItem {
                 Label("More", systemImage: "ellipsis.circle")
@@ -115,7 +115,7 @@ struct MainTabView: View {
             // Load fasting history asynchronously after UI renders
             // This prevents blocking app launch with heavy data loading
             // History loads in background and displays inline in Timer tab (like Weight Tracker pattern)
-            fastingManager.loadHistoryAsync()
+            self.fastingManager.loadHistoryAsync()
         }
     }
 }
@@ -133,6 +133,6 @@ struct LazyView<Content: View>: View {
     }
 
     var body: Content {
-        build()
+        self.build()
     }
 }

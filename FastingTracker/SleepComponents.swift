@@ -1,6 +1,7 @@
 import SwiftUI
 
 // MARK: - Sleep History Row Component
+
 // Extracted from SleepTrackingView.swift for better code organization
 // Following Apple MVVM patterns and SwiftUI component architecture
 
@@ -18,22 +19,22 @@ struct SleepHistoryRow: View {
                 .cornerRadius(8)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(formatDate(sleep.wakeTime))
+                Text(self.formatDate(self.sleep.wakeTime))
                     .font(.subheadline)
                     .fontWeight(.medium)
-                Text("\(formatTime(sleep.bedTime)) - \(formatTime(sleep.wakeTime))")
+                Text("\(self.formatTime(self.sleep.bedTime)) - \(self.formatTime(self.sleep.wakeTime))")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             Spacer()
 
-            Text(sleep.formattedDuration)
+            Text(self.sleep.formattedDuration)
                 .font(.subheadline)
                 .fontWeight(.semibold)
                 .foregroundColor(.primary)
 
-            Button(action: onDelete) {
+            Button(action: self.onDelete) {
                 Image(systemName: "trash")
                     .font(.subheadline)
                     .foregroundColor(.red)
@@ -72,13 +73,13 @@ struct AddSleepView: View {
         NavigationView {
             Form {
                 Section(header: Text("Sleep Times")) {
-                    DatePicker("Bed Time", selection: $bedTime, displayedComponents: [.date, .hourAndMinute])
-                    DatePicker("Wake Time", selection: $wakeTime, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Bed Time", selection: self.$bedTime, displayedComponents: [.date, .hourAndMinute])
+                    DatePicker("Wake Time", selection: self.$wakeTime, displayedComponents: [.date, .hourAndMinute])
                 }
 
                 Section(header: Text("Sleep Duration")) {
-                    if wakeTime > bedTime {
-                        let duration = wakeTime.timeIntervalSince(bedTime)
+                    if self.wakeTime > self.bedTime {
+                        let duration = self.wakeTime.timeIntervalSince(self.bedTime)
                         let hours = Int(duration / 3600)
                         let minutes = Int((duration.truncatingRemainder(dividingBy: 3600)) / 60)
                         Text("\(hours) hours \(minutes) minutes")
@@ -90,10 +91,13 @@ struct AddSleepView: View {
                     }
                 }
 
-                Section(header: Text("Sleep Quality (Optional)"), footer: Text("Rate your sleep quality from 1 (poor) to 5 (excellent)")) {
-                    Picker("Quality", selection: $sleepQuality) {
+                Section(
+                    header: Text("Sleep Quality (Optional)"),
+                    footer: Text("Rate your sleep quality from 1 (poor) to 5 (excellent)")
+                ) {
+                    Picker("Quality", selection: self.$sleepQuality) {
                         Text("Not rated").tag(nil as Int?)
-                        ForEach(1...5, id: \.self) { rating in
+                        ForEach(1 ... 5, id: \.self) { rating in
                             HStack {
                                 Text("\(rating)")
                                 Text(String(repeating: "⭐", count: rating))
@@ -109,7 +113,7 @@ struct AddSleepView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -120,10 +124,10 @@ struct AddSleepView: View {
                             quality: sleepQuality,
                             source: .manual
                         )
-                        sleepManager.addSleepEntry(entry)
-                        dismiss()
+                        self.sleepManager.addSleepEntry(entry)
+                        self.dismiss()
                     }
-                    .disabled(wakeTime <= bedTime)
+                    .disabled(self.wakeTime <= self.bedTime)
                 }
             }
         }
@@ -148,9 +152,14 @@ struct SleepSyncSettingsView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text("HealthKit Sync"), footer: Text("Automatically sync sleep data with Apple Health. This allows you to see sleep tracked by your Apple Watch or other apps.")) {
+                Section(
+                    header: Text("HealthKit Sync"),
+                    footer: Text(
+                        "Automatically sync sleep data with Apple Health. This allows you to see sleep tracked by your Apple Watch or other apps."
+                    )
+                ) {
                     Toggle("Sync with HealthKit", isOn: Binding(
-                        get: { sleepManager.syncWithHealthKit },
+                        get: { self.sleepManager.syncWithHealthKit },
                         set: { newValue in
                             if newValue {
                                 // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
@@ -160,53 +169,55 @@ struct SleepSyncSettingsView: View {
                                     DispatchQueue.main.async {
                                         if success {
                                             print("✅ SleepTrackingView: Sleep authorization granted - enabling sync")
-                                            sleepManager.setSyncPreference(true)
+                                            self.sleepManager.setSyncPreference(true)
                                         } else {
                                             print("❌ SleepTrackingView: Sleep authorization denied")
-                                            sleepManager.setSyncPreference(false)
+                                            self.sleepManager.setSyncPreference(false)
                                         }
                                     }
                                 }
                             } else {
-                                sleepManager.setSyncPreference(false)
+                                self.sleepManager.setSyncPreference(false)
                             }
                         }
                     ))
                 }
 
-                if sleepManager.syncWithHealthKit {
+                if self.sleepManager.syncWithHealthKit {
                     Section {
                         Button(action: {
                             // Industry standard: Check if user already made initial import choice
                             // Following Weight Settings successful pattern
-                            if hasCompletedInitialImport() {
+                            if self.hasCompletedInitialImport() {
                                 // User already made choice - proceed with regular sync
-                                performRegularSync()
+                                self.performRegularSync()
                             } else {
                                 // First time - show historical import choice dialog
-                                showingSyncConfirmation = true
+                                self.showingSyncConfirmation = true
                             }
                         }) {
                             HStack {
-                                if isSyncing {
+                                if self.isSyncing {
                                     ProgressView()
                                         .padding(.trailing, 4)
                                 } else {
                                     Image(systemName: "arrow.triangle.2.circlepath")
                                         .foregroundColor(.purple)
                                 }
-                                Text(isSyncing ? "Syncing..." : "Sync from HealthKit Now")
+                                Text(self.isSyncing ? "Syncing..." : "Sync from HealthKit Now")
                             }
                         }
-                        .disabled(isSyncing)
+                        .disabled(self.isSyncing)
                     }
                 }
 
                 Section(header: Text("About")) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text("Sleep tracking syncs with Apple Health to consolidate data from your Apple Watch, iPhone, and other sleep tracking apps.")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        Text(
+                            "Sleep tracking syncs with Apple Health to consolidate data from your Apple Watch, iPhone, and other sleep tracking apps."
+                        )
+                        .font(.caption)
+                        .foregroundColor(.secondary)
 
                         Text("Manually logged sleep is automatically saved to Apple Health when sync is enabled.")
                             .font(.caption)
@@ -219,32 +230,35 @@ struct SleepSyncSettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
-                        dismiss()
+                        self.dismiss()
                     }
                 }
             }
-            .alert("Import Sleep Data", isPresented: $showingSyncConfirmation) {
+            .alert("Import Sleep Data", isPresented: self.$showingSyncConfirmation) {
                 // Following Weight tracker successful pattern - user choice for import scope
                 // Industry standards (MyFitnessPal/Lose It): Always let user choose import type
                 Button("Import All Historical Data") {
-                    performHistoricalSync()
+                    self.performHistoricalSync()
                 }
                 Button("Future Data Only") {
-                    performFutureSync()
+                    self.performFutureSync()
                 }
-                Button("Cancel", role: .cancel) { }
+                Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Choose how to sync your sleep data with Apple Health. You can import all your historical sleep entries or start fresh with only future entries.")
+                Text(
+                    "Choose how to sync your sleep data with Apple Health. You can import all your historical sleep entries or start fresh with only future entries."
+                )
             }
-            .alert("Sync Status", isPresented: $showingSyncAlert) {
-                Button("OK") { }
+            .alert("Sync Status", isPresented: self.$showingSyncAlert) {
+                Button("OK") {}
             } message: {
-                Text(syncMessage)
+                Text(self.syncMessage)
             }
         }
     }
 
     // MARK: - Sync Methods
+
     // Following Weight Settings successful pattern for manual sync with user feedback
 
     private func performHistoricalSync() {
@@ -253,11 +267,11 @@ struct SleepSyncSettingsView: View {
         // Use 2-year lookback to ensure we capture all possible historical sleep data
         let startDate = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
 
-        isSyncing = true
+        self.isSyncing = true
 
         // Use anchored sync with anchor reset for deletion detection
         // Following Apple HealthKit Programming Guide: Use anchored query with reset for manual sync
-        sleepManager.syncFromHealthKitWithReset(startDate: startDate) { syncedCount, error in
+        self.sleepManager.syncFromHealthKitWithReset(startDate: startDate) { syncedCount, error in
             DispatchQueue.main.async {
                 self.isSyncing = false
 
@@ -294,10 +308,10 @@ struct SleepSyncSettingsView: View {
         // Future sync: Start from today going forward
         let startDate = Calendar.current.date(byAdding: .day, value: -1, to: Date()) ?? Date()
 
-        isSyncing = true
+        self.isSyncing = true
 
         // Use regular sync (no anchor reset) for future-only sync
-        sleepManager.syncFromHealthKit(startDate: startDate)
+        self.sleepManager.syncFromHealthKit(startDate: startDate)
 
         // Provide immediate feedback since regular sync doesn't have completion handler
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
@@ -318,10 +332,10 @@ struct SleepSyncSettingsView: View {
         // Use comprehensive sync with anchor reset for manual sync (industry standard)
         let startDate = Calendar.current.date(byAdding: .year, value: -2, to: Date()) ?? Date()
 
-        isSyncing = true
+        self.isSyncing = true
 
         // Use anchored sync with reset for deletion detection
-        sleepManager.syncFromHealthKitWithReset(startDate: startDate) { syncedCount, error in
+        self.sleepManager.syncFromHealthKitWithReset(startDate: startDate) { syncedCount, error in
             DispatchQueue.main.async {
                 self.isSyncing = false
 
@@ -347,18 +361,19 @@ struct SleepSyncSettingsView: View {
     /// Check if user has completed initial historical import choice
     /// Following industry standard: One-time setup, then seamless auto-sync
     private func hasCompletedInitialImport() -> Bool {
-        return userDefaults.bool(forKey: hasCompletedInitialImportKey)
+        self.userDefaults.bool(forKey: self.hasCompletedInitialImportKey)
     }
 
     /// Mark initial import as completed (user made their choice)
     /// Following Apple iCloud, MyFitnessPal pattern: Remember user choice permanently
     private func markInitialImportCompleted() {
-        userDefaults.set(true, forKey: hasCompletedInitialImportKey)
+        self.userDefaults.set(true, forKey: self.hasCompletedInitialImportKey)
         AppLogger.info("Marked sleep initial import as completed", category: AppLogger.sleep)
     }
 }
 
 // MARK: - Sleep Stage Timeline Component
+
 // Following Apple Health design pattern for sleep stage visualization
 // Replicates the horizontal bar chart with color-coded sleep stages
 
@@ -368,10 +383,10 @@ struct SleepStageTimelineView: View {
     var body: some View {
         VStack(spacing: 16) {
             // Main timeline chart
-            SleepTimelineChart(sleepEntry: sleepEntry)
+            SleepTimelineChart(sleepEntry: self.sleepEntry)
 
             // Stage duration summary (Apple Health pattern)
-            StageSummaryView(stageDurations: sleepEntry.stageDurations)
+            StageSummaryView(stageDurations: self.sleepEntry.stageDurations)
         }
         .padding()
         .background(Color(.systemBackground))
@@ -385,7 +400,7 @@ struct SleepTimelineChart: View {
 
     // Calculate timeline parameters
     private var totalDuration: TimeInterval {
-        sleepEntry.wakeTime.timeIntervalSince(sleepEntry.bedTime)
+        self.sleepEntry.wakeTime.timeIntervalSince(self.sleepEntry.bedTime)
     }
 
     private var timeLabels: [String] {
@@ -394,10 +409,10 @@ struct SleepTimelineChart: View {
         formatter.dateFormat = "h a"
 
         var labels: [String] = []
-        let startTime = sleepEntry.bedTime
-        let interval: TimeInterval = totalDuration / 4 // 4 time points
+        let startTime = self.sleepEntry.bedTime
+        let interval: TimeInterval = self.totalDuration / 4 // 4 time points
 
-        for i in 0...4 {
+        for i in 0 ... 4 {
             let time = startTime.addingTimeInterval(interval * TimeInterval(i))
             labels.append(formatter.string(from: time))
         }
@@ -415,7 +430,7 @@ struct SleepTimelineChart: View {
                         .fontWeight(.medium)
 
                     HStack(alignment: .lastTextBaseline, spacing: 4) {
-                        let duration = sleepEntry.duration
+                        let duration = self.sleepEntry.duration
                         let hours = Int(duration / 3600)
                         let minutes = Int((duration.truncatingRemainder(dividingBy: 3600)) / 60)
 
@@ -433,7 +448,7 @@ struct SleepTimelineChart: View {
                             .foregroundColor(.secondary)
                     }
 
-                    Text(formatDateRange(sleepEntry.bedTime, sleepEntry.wakeTime))
+                    Text(self.formatDateRange(self.sleepEntry.bedTime, self.sleepEntry.wakeTime))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -450,27 +465,27 @@ struct SleepTimelineChart: View {
 
             // Timeline bars (4 rows like Apple Health)
             VStack(spacing: 4) {
-                StageTimelineRow(title: "Awake", stageType: .awake, sleepEntry: sleepEntry)
-                StageTimelineRow(title: "REM", stageType: .rem, sleepEntry: sleepEntry)
-                StageTimelineRow(title: "Core", stageType: .core, sleepEntry: sleepEntry)
-                StageTimelineRow(title: "Deep", stageType: .deep, sleepEntry: sleepEntry)
+                StageTimelineRow(title: "Awake", stageType: .awake, sleepEntry: self.sleepEntry)
+                StageTimelineRow(title: "REM", stageType: .rem, sleepEntry: self.sleepEntry)
+                StageTimelineRow(title: "Core", stageType: .core, sleepEntry: self.sleepEntry)
+                StageTimelineRow(title: "Deep", stageType: .deep, sleepEntry: self.sleepEntry)
             }
             .padding(.vertical, 8)
 
             // Time labels at bottom
             HStack {
-                ForEach(0..<timeLabels.count, id: \.self) { index in
+                ForEach(0 ..< self.timeLabels.count, id: \.self) { index in
                     if index == 0 {
-                        Text(timeLabels[index])
+                        Text(self.timeLabels[index])
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
-                    } else if index == timeLabels.count - 1 {
-                        Text(timeLabels[index])
+                    } else if index == self.timeLabels.count - 1 {
+                        Text(self.timeLabels[index])
                             .font(.caption)
                             .foregroundColor(.secondary)
                     } else {
-                        Text(timeLabels[index])
+                        Text(self.timeLabels[index])
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Spacer()
@@ -495,7 +510,7 @@ struct StageTimelineRow: View {
     var body: some View {
         HStack(spacing: 8) {
             // Stage label
-            Text(title)
+            Text(self.title)
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .frame(width: 40, alignment: .leading)
@@ -510,12 +525,12 @@ struct StageTimelineRow: View {
                         .cornerRadius(2)
 
                     // Stage segments
-                    ForEach(sleepEntry.stages.filter { $0.type == stageType }, id: \.id) { stage in
-                        let startOffset = offsetForTime(stage.startTime, in: geometry.size.width)
-                        let width = widthForDuration(stage.duration, in: geometry.size.width)
+                    ForEach(self.sleepEntry.stages.filter { $0.type == self.stageType }, id: \.id) { stage in
+                        let startOffset = self.offsetForTime(stage.startTime, in: geometry.size.width)
+                        let width = self.widthForDuration(stage.duration, in: geometry.size.width)
 
                         Rectangle()
-                            .fill(colorForStageType(stageType))
+                            .fill(self.colorForStageType(self.stageType))
                             .frame(width: width, height: 20)
                             .cornerRadius(2)
                             .offset(x: startOffset)
@@ -527,13 +542,13 @@ struct StageTimelineRow: View {
     }
 
     private func offsetForTime(_ time: Date, in totalWidth: CGFloat) -> CGFloat {
-        let totalDuration = sleepEntry.wakeTime.timeIntervalSince(sleepEntry.bedTime)
-        let timeOffset = time.timeIntervalSince(sleepEntry.bedTime)
+        let totalDuration = self.sleepEntry.wakeTime.timeIntervalSince(self.sleepEntry.bedTime)
+        let timeOffset = time.timeIntervalSince(self.sleepEntry.bedTime)
         return CGFloat(timeOffset / totalDuration) * totalWidth
     }
 
     private func widthForDuration(_ duration: TimeInterval, in totalWidth: CGFloat) -> CGFloat {
-        let totalDuration = sleepEntry.wakeTime.timeIntervalSince(sleepEntry.bedTime)
+        let totalDuration = self.sleepEntry.wakeTime.timeIntervalSince(self.sleepEntry.bedTime)
         return CGFloat(duration / totalDuration) * totalWidth
     }
 
@@ -566,25 +581,25 @@ struct StageSummaryView: View {
                 StageDurationRow(
                     color: .orange,
                     title: "Awake",
-                    duration: stageDurations.formatted(stageDurations.awake)
+                    duration: self.stageDurations.formatted(self.stageDurations.awake)
                 )
 
                 StageDurationRow(
                     color: .cyan.opacity(0.7),
                     title: "REM",
-                    duration: stageDurations.formatted(stageDurations.rem)
+                    duration: self.stageDurations.formatted(self.stageDurations.rem)
                 )
 
                 StageDurationRow(
                     color: .blue,
                     title: "Core",
-                    duration: stageDurations.formatted(stageDurations.core)
+                    duration: self.stageDurations.formatted(self.stageDurations.core)
                 )
 
                 StageDurationRow(
                     color: .blue.opacity(0.8),
                     title: "Deep",
-                    duration: stageDurations.formatted(stageDurations.deep)
+                    duration: self.stageDurations.formatted(self.stageDurations.deep)
                 )
             }
         }
@@ -597,15 +612,15 @@ struct StageSummaryTab: View {
 
     var body: some View {
         Button(action: {}) {
-            Text(title)
+            Text(self.title)
                 .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundColor(isSelected ? .primary : .secondary)
+                .fontWeight(self.isSelected ? .semibold : .regular)
+                .foregroundColor(self.isSelected ? .primary : .secondary)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(isSelected ? Color(.systemGray6) : Color.clear)
+                        .fill(self.isSelected ? Color(.systemGray6) : Color.clear)
                 )
         }
     }
@@ -620,16 +635,16 @@ struct StageDurationRow: View {
         HStack(spacing: 12) {
             // Color indicator
             Circle()
-                .fill(color)
+                .fill(self.color)
                 .frame(width: 12, height: 12)
 
-            Text(title)
+            Text(self.title)
                 .font(.subheadline)
                 .foregroundColor(.primary)
 
             Spacer()
 
-            Text(duration)
+            Text(self.duration)
                 .font(.subheadline)
                 .fontWeight(.medium)
                 .foregroundColor(.primary)
@@ -662,15 +677,43 @@ struct StageDurationRow: View {
     let wakeTime = Date()
 
     let sampleStages = [
-        SleepStage(startTime: bedTime, endTime: bedTime.addingTimeInterval(30*60), type: .inBed),
-        SleepStage(startTime: bedTime.addingTimeInterval(30*60), endTime: bedTime.addingTimeInterval(90*60), type: .core),
-        SleepStage(startTime: bedTime.addingTimeInterval(90*60), endTime: bedTime.addingTimeInterval(120*60), type: .deep),
-        SleepStage(startTime: bedTime.addingTimeInterval(120*60), endTime: bedTime.addingTimeInterval(180*60), type: .core),
-        SleepStage(startTime: bedTime.addingTimeInterval(180*60), endTime: bedTime.addingTimeInterval(210*60), type: .rem),
-        SleepStage(startTime: bedTime.addingTimeInterval(210*60), endTime: bedTime.addingTimeInterval(240*60), type: .awake),
-        SleepStage(startTime: bedTime.addingTimeInterval(240*60), endTime: bedTime.addingTimeInterval(360*60), type: .core),
-        SleepStage(startTime: bedTime.addingTimeInterval(360*60), endTime: bedTime.addingTimeInterval(420*60), type: .deep),
-        SleepStage(startTime: bedTime.addingTimeInterval(420*60), endTime: wakeTime, type: .rem)
+        SleepStage(startTime: bedTime, endTime: bedTime.addingTimeInterval(30 * 60), type: .inBed),
+        SleepStage(
+            startTime: bedTime.addingTimeInterval(30 * 60),
+            endTime: bedTime.addingTimeInterval(90 * 60),
+            type: .core
+        ),
+        SleepStage(
+            startTime: bedTime.addingTimeInterval(90 * 60),
+            endTime: bedTime.addingTimeInterval(120 * 60),
+            type: .deep
+        ),
+        SleepStage(
+            startTime: bedTime.addingTimeInterval(120 * 60),
+            endTime: bedTime.addingTimeInterval(180 * 60),
+            type: .core
+        ),
+        SleepStage(
+            startTime: bedTime.addingTimeInterval(180 * 60),
+            endTime: bedTime.addingTimeInterval(210 * 60),
+            type: .rem
+        ),
+        SleepStage(
+            startTime: bedTime.addingTimeInterval(210 * 60),
+            endTime: bedTime.addingTimeInterval(240 * 60),
+            type: .awake
+        ),
+        SleepStage(
+            startTime: bedTime.addingTimeInterval(240 * 60),
+            endTime: bedTime.addingTimeInterval(360 * 60),
+            type: .core
+        ),
+        SleepStage(
+            startTime: bedTime.addingTimeInterval(360 * 60),
+            endTime: bedTime.addingTimeInterval(420 * 60),
+            type: .deep
+        ),
+        SleepStage(startTime: bedTime.addingTimeInterval(420 * 60), endTime: wakeTime, type: .rem),
     ]
 
     let sampleSleep = SleepEntry(

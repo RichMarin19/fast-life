@@ -1,7 +1,8 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 // MARK: - Hydration History View
+
 // Refactored from 1,087 → ~140 lines (87% reduction)
 // Following Apple MVVM patterns and Phase 3a component extraction lessons
 
@@ -12,8 +13,8 @@ struct HydrationHistoryView: View {
 
     private var selectedIdentifiableDate: Binding<IdentifiableDate?> {
         Binding(
-            get: { selectedDate.map { IdentifiableDate(date: $0) } },
-            set: { selectedDate = $0?.date }
+            get: { self.selectedDate.map { IdentifiableDate(date: $0) } },
+            set: { self.selectedDate = $0?.date }
         )
     }
 
@@ -40,14 +41,14 @@ struct HydrationHistoryView: View {
             VStack(spacing: 20) {
                 // Calendar View
                 HydrationCalendarView(
-                    hydrationManager: hydrationManager,
-                    selectedDate: $selectedDate
+                    hydrationManager: self.hydrationManager,
+                    selectedDate: self.$selectedDate
                 )
                 .padding(.horizontal)
                 .padding(.top)
 
                 // Time Range Picker
-                Picker("Time Range", selection: $selectedTimeRange) {
+                Picker("Time Range", selection: self.$selectedTimeRange) {
                     ForEach(TimeRange.allCases, id: \.self) { range in
                         Text(range.rawValue).tag(range)
                     }
@@ -57,22 +58,22 @@ struct HydrationHistoryView: View {
 
                 // Hydration Chart
                 HydrationChartView(
-                    hydrationManager: hydrationManager,
-                    timeRange: selectedTimeRange
+                    hydrationManager: self.hydrationManager,
+                    timeRange: self.selectedTimeRange
                 )
                 .padding()
 
                 // Daily Average Stats
                 HydrationStatsView(
-                    hydrationManager: hydrationManager,
-                    timeRange: selectedTimeRange
+                    hydrationManager: self.hydrationManager,
+                    timeRange: self.selectedTimeRange
                 )
                 .padding()
 
                 // Drink Type Breakdown
                 DrinkTypeBreakdownView(
-                    hydrationManager: hydrationManager,
-                    timeRange: selectedTimeRange
+                    hydrationManager: self.hydrationManager,
+                    timeRange: self.selectedTimeRange
                 )
                 .padding()
 
@@ -84,12 +85,12 @@ struct HydrationHistoryView: View {
                         .padding(.horizontal)
                         .padding(.bottom, 10)
 
-                    ForEach(groupedDailyData(), id: \.date) { dayData in
+                    ForEach(self.groupedDailyData(), id: \.date) { dayData in
                         DailyHydrationRowView(
                             date: dayData.date,
                             totalOunces: dayData.total,
                             breakdown: dayData.breakdown,
-                            goalOunces: hydrationManager.dailyGoalOunces
+                            goalOunces: self.hydrationManager.dailyGoalOunces
                         )
                         .padding(.horizontal)
                         .padding(.vertical, 8)
@@ -103,8 +104,8 @@ struct HydrationHistoryView: View {
         }
         .navigationTitle("Hydration History")
         .navigationBarTitleDisplayMode(.inline)
-        .sheet(item: selectedIdentifiableDate) { identifiableDate in
-            AddEditHydrationView(date: identifiableDate.date, hydrationManager: hydrationManager)
+        .sheet(item: self.selectedIdentifiableDate) { identifiableDate in
+            AddEditHydrationView(date: identifiableDate.date, hydrationManager: self.hydrationManager)
         }
     }
 
@@ -112,10 +113,10 @@ struct HydrationHistoryView: View {
 
     private func groupedDailyData() -> [(date: Date, total: Double, breakdown: [DrinkType: Double])] {
         let calendar = Calendar.current
-        let cutoffDate = calendar.date(byAdding: .day, value: -selectedTimeRange.days, to: Date()) ?? Date()
+        let cutoffDate = calendar.date(byAdding: .day, value: -self.selectedTimeRange.days, to: Date()) ?? Date()
 
         // Filter entries within time range
-        let filteredEntries = hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
+        let filteredEntries = self.hydrationManager.drinkEntries.filter { $0.date >= cutoffDate }
 
         // Group by day
         var dailyData: [Date: (total: Double, breakdown: [DrinkType: Double])] = [:]

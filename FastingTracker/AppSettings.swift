@@ -8,6 +8,7 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     // MARK: - Unit Preferences
+
     // Following Apple @AppStorage pattern for persistent user preferences
     // Reference: https://developer.apple.com/documentation/swiftui/appstorage
 
@@ -15,26 +16,28 @@ final class AppSettings: ObservableObject {
     @AppStorage("weightUnit") var weightUnit: WeightUnit = .pounds
 
     // MARK: - Default Tracker (Phase 3 Roadmap Implementation)
+
     // Following roadmap specification for default start tracker
 
     @AppStorage("app.defaultTracker") private var defaultTrackerRawValue: String = ""
 
     @Published var defaultTracker: TrackerType? {
         didSet {
-            defaultTrackerRawValue = defaultTracker?.rawValue ?? ""
+            self.defaultTrackerRawValue = self.defaultTracker?.rawValue ?? ""
         }
     }
 
     private init() {
         // Initialize default tracker from stored raw value
         // Following Apple pattern for enum persistence via raw values
-        if !defaultTrackerRawValue.isEmpty {
-            defaultTracker = TrackerType(rawValue: defaultTrackerRawValue)
+        if !self.defaultTrackerRawValue.isEmpty {
+            self.defaultTracker = TrackerType(rawValue: self.defaultTrackerRawValue)
         }
     }
 }
 
 // MARK: - Unit Enumerations
+
 // Following Apple naming conventions and CaseIterable for UI selection
 // Reference: https://docs.swift.org/swift-book/LanguageGuide/Enumerations.html
 
@@ -52,7 +55,7 @@ enum HydrationUnit: String, CaseIterable, Identifiable {
     }
 
     var abbreviation: String {
-        return rawValue
+        rawValue
     }
 
     /// Convert from ounces to this unit
@@ -88,7 +91,7 @@ enum WeightUnit: String, CaseIterable, Identifiable {
     }
 
     var abbreviation: String {
-        return rawValue
+        rawValue
     }
 
     /// Convert from pounds to this unit
@@ -111,14 +114,15 @@ enum WeightUnit: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Tracker Type (Phase 3 Roadmap Implementation)
+
 // Following roadmap specification exactly as provided
 
 enum TrackerType: String, CaseIterable, Identifiable {
-    case weight = "weight"
-    case fasting = "fasting"
-    case hydration = "hydration"
-    case sleep = "sleep"
-    case mood = "mood"
+    case weight
+    case fasting
+    case hydration
+    case sleep
+    case mood
 
     var id: String { rawValue }
 
@@ -144,6 +148,7 @@ enum TrackerType: String, CaseIterable, Identifiable {
 }
 
 // MARK: - Shared UI Utilities
+
 // Following Apple's architecture guidelines for shared UI types
 
 /// Wrapper for Date that conforms to Identifiable for use in SwiftUI sheets and lists
@@ -152,6 +157,6 @@ struct IdentifiableDate: Identifiable {
     let date: Date
 
     var id: TimeInterval {
-        date.timeIntervalSince1970
+        self.date.timeIntervalSince1970
     }
 }

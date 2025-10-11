@@ -3,13 +3,21 @@ import Foundation
 struct WeightEntry: Codable, Identifiable {
     let id: UUID
     let date: Date
-    let weight: Double  // in pounds (will convert based on user preference later)
+    let weight: Double // in pounds (will convert based on user preference later)
     let bmi: Double?
-    let bodyFat: Double?  // percentage
+    let bodyFat: Double? // percentage
     let source: WeightSource
-    let healthKitUUID: UUID?  // For precise HealthKit sample deletion (Apple best practice)
+    let healthKitUUID: UUID? // For precise HealthKit sample deletion (Apple best practice)
 
-    init(id: UUID = UUID(), date: Date, weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, source: WeightSource = .manual, healthKitUUID: UUID? = nil) {
+    init(
+        id: UUID = UUID(),
+        date: Date,
+        weight: Double,
+        bmi: Double? = nil,
+        bodyFat: Double? = nil,
+        source: WeightSource = .manual,
+        healthKitUUID: UUID? = nil
+    ) {
         self.id = id
         self.date = date
         self.weight = weight

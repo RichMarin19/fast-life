@@ -1,5 +1,6 @@
-import SwiftUI
 import Charts
+import SwiftUI
+
 // MARK: - Weight Chart View
 
 enum WeightTimeRange: String, CaseIterable {
@@ -34,18 +35,18 @@ struct WeightChartView: View {
         let calendar = Calendar.current
 
         // Special handling for Day view: show current calendar day (12am to now)
-        if selectedTimeRange == .day {
+        if self.selectedTimeRange == .day {
             let startOfToday = calendar.startOfDay(for: Date())
-            return weightManager.weightEntries.filter { $0.date >= startOfToday }
+            return self.weightManager.weightEntries.filter { $0.date >= startOfToday }
         }
 
         // For other views: use rolling time window (last N days)
         guard let days = selectedTimeRange.days else {
-            return weightManager.weightEntries
+            return self.weightManager.weightEntries
         }
 
         let cutoffDate = calendar.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        return weightManager.weightEntries.filter { $0.date >= cutoffDate }
+        return self.weightManager.weightEntries.filter { $0.date >= cutoffDate }
     }
 
     // MARK: - Daily Averaged Entries for Week/Month/3Months/Year/All View
@@ -61,10 +62,12 @@ struct WeightChartView: View {
         }
 
         // Calculate average weight for each day
-        let averagedEntries = groupedByDay.map { (day, entries) -> WeightEntry in
+        let averagedEntries = groupedByDay.map { day, entries -> WeightEntry in
             let avgWeight = entries.reduce(0.0) { $0 + $1.weight } / Double(entries.count)
-            let avgBMI = entries.compactMap { $0.bmi }.isEmpty ? nil : entries.compactMap { $0.bmi }.reduce(0.0, +) / Double(entries.compactMap { $0.bmi }.count)
-            let avgBodyFat = entries.compactMap { $0.bodyFat }.isEmpty ? nil : entries.compactMap { $0.bodyFat }.reduce(0.0, +) / Double(entries.compactMap { $0.bodyFat }.count)
+            let avgBMI = entries.compactMap(\.bmi).isEmpty ? nil : entries.compactMap(\.bmi)
+                .reduce(0.0, +) / Double(entries.compactMap(\.bmi).count)
+            let avgBodyFat = entries.compactMap(\.bodyFat).isEmpty ? nil : entries.compactMap(\.bodyFat)
+                .reduce(0.0, +) / Double(entries.compactMap(\.bodyFat).count)
 
             // Use the most recent entry's metadata for the day
             let mostRecentEntry = entries.sorted { $0.date > $1.date }.first!
@@ -85,13 +88,13 @@ struct WeightChartView: View {
 
     /// Returns the appropriate data set based on selected time range
     var chartData: [WeightEntry] {
-        switch selectedTimeRange {
+        switch self.selectedTimeRange {
         case .day:
             // Day view: Show ALL individual data points (no averaging)
-            return filteredEntries
+            return self.filteredEntries
         case .week, .month, .threeMonths, .year, .all:
             // Week/Month/3Months/Year/All view: Show daily averaged data (one point per day)
-            return dailyAveragedEntries
+            return self.dailyAveragedEntries
         }
     }
 
@@ -99,14 +102,14 @@ struct WeightChartView: View {
     var selectedEntry: WeightEntry? {
         guard let selectedDate = selectedDate else { return nil }
 
-        return chartData.min(by: { entry1, entry2 in
+        return self.chartData.min(by: { entry1, entry2 in
             abs(entry1.date.timeIntervalSince(selectedDate)) < abs(entry2.date.timeIntervalSince(selectedDate))
         })
     }
 
     /// Get current time range label for display (e.g., "September 2025" for Month view)
     var timeRangeLabel: String? {
-        guard selectedTimeRange == .month else { return nil }
+        guard self.selectedTimeRange == .month else { return nil }
 
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
@@ -122,7 +125,7 @@ struct WeightChartView: View {
                 Text("Weight Chart")
                     .font(.headline)
                 Spacer()
-                Picker("Time Range", selection: $selectedTimeRange) {
+                Picker("Time Range", selection: self.$selectedTimeRange) {
                     ForEach(WeightTimeRange.allCases, id: \.self) { range in
                         Text(range.rawValue).tag(range)
                     }
@@ -142,9 +145,9 @@ struct WeightChartView: View {
             // Progress percentage moved to CurrentWeightCard (below goal pill)
             // This keeps related information grouped together per Apple HIG
 
-            if !chartData.isEmpty {
+            if !self.chartData.isEmpty {
                 Chart {
-                    ForEach(chartData) { entry in
+                    ForEach(self.chartData) { entry in
                         LineMark(
                             x: .value("Date", entry.date),
                             y: .value("Weight", entry.weight)
@@ -159,8 +162,8 @@ struct WeightChartView: View {
                         .foregroundStyle(Color("FLPrimary"))
                     }
 
-                    if showGoalLine {
-                        RuleMark(y: .value("Goal", weightGoal))
+                    if self.showGoalLine {
+                        RuleMark(y: .value("Goal", self.weightGoal))
                             .foregroundStyle(.green)
                             .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
                             .annotation(position: .top, alignment: .trailing) {
@@ -177,86 +180,88 @@ struct WeightChartView: View {
                             .lineStyle(StrokeStyle(lineWidth: 2))
                             .annotation(position: .top, alignment: .center) {
                                 VStack(spacing: 4) {
-                                    Text("\(weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
-                                        .font(.caption)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.white)
-                                        .padding(.horizontal, 8)
-                                        .padding(.vertical, 4)
-                                        .background(Color("FLPrimary"))
-                                        .cornerRadius(8)
+                                    Text(
+                                        "\(self.weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")"
+                                    )
+                                    .font(.caption)
+                                    .fontWeight(.semibold)
+                                    .foregroundColor(.white)
+                                    .padding(.horizontal, 8)
+                                    .padding(.vertical, 4)
+                                    .background(Color("FLPrimary"))
+                                    .cornerRadius(8)
                                 }
                             }
                     }
                 }
                 .frame(height: 250)
                 .chartXAxis {
-                    if selectedTimeRange == .day {
+                    if self.selectedTimeRange == .day {
                         // Day view: Show 3-hour increments starting from 6am
-                        AxisMarks(values: dayXAxisValues) { value in
+                        AxisMarks(values: self.dayXAxisValues) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
-                                    Text(xAxisLabel(for: date))
+                                    Text(self.xAxisLabel(for: date))
                                         .font(.caption2)
                                 }
                                 AxisGridLine()
                                 AxisTick()
                             }
                         }
-                    } else if selectedTimeRange == .week {
+                    } else if self.selectedTimeRange == .week {
                         // Week view: Show all 7 days
-                        AxisMarks(values: weekXAxisValues) { value in
+                        AxisMarks(values: self.weekXAxisValues) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
-                                    Text(xAxisLabel(for: date))
+                                    Text(self.xAxisLabel(for: date))
                                         .font(.caption2)
                                 }
                                 AxisGridLine()
                                 AxisTick()
                             }
                         }
-                    } else if selectedTimeRange == .month {
+                    } else if self.selectedTimeRange == .month {
                         // Month view: Adaptive marks based on data range
-                        AxisMarks(values: monthXAxisValues) { value in
+                        AxisMarks(values: self.monthXAxisValues) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
-                                    Text(xAxisLabel(for: date))
+                                    Text(self.xAxisLabel(for: date))
                                         .font(.caption2)
                                 }
                                 AxisGridLine()
                                 AxisTick()
                             }
                         }
-                    } else if selectedTimeRange == .threeMonths {
+                    } else if self.selectedTimeRange == .threeMonths {
                         // 3 Months view: Show 12 marks (4 per month)
-                        AxisMarks(values: threeMonthsXAxisValues) { value in
+                        AxisMarks(values: self.threeMonthsXAxisValues) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
-                                    Text(xAxisLabel(for: date))
+                                    Text(self.xAxisLabel(for: date))
                                         .font(.caption2)
                                 }
                                 AxisGridLine()
                                 AxisTick()
                             }
                         }
-                    } else if selectedTimeRange == .year {
+                    } else if self.selectedTimeRange == .year {
                         // Year view: Show 12 marks (one per month)
-                        AxisMarks(values: yearXAxisValues) { value in
+                        AxisMarks(values: self.yearXAxisValues) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
-                                    Text(xAxisLabel(for: date))
+                                    Text(self.xAxisLabel(for: date))
                                         .font(.caption2)
                                 }
                                 AxisGridLine()
                                 AxisTick()
                             }
                         }
-                    } else if selectedTimeRange == .all {
+                    } else if self.selectedTimeRange == .all {
                         // All view: Adaptive marks based on data span
-                        AxisMarks(values: allXAxisValues) { value in
+                        AxisMarks(values: self.allXAxisValues) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
-                                    Text(xAxisLabel(for: date))
+                                    Text(self.xAxisLabel(for: date))
                                         .font(.caption2)
                                 }
                                 AxisGridLine()
@@ -268,7 +273,7 @@ struct WeightChartView: View {
                         AxisMarks(values: .automatic) { value in
                             if let date = value.as(Date.self) {
                                 AxisValueLabel {
-                                    Text(xAxisLabel(for: date))
+                                    Text(self.xAxisLabel(for: date))
                                         .font(.caption2)
                                 }
                                 AxisGridLine()
@@ -278,9 +283,9 @@ struct WeightChartView: View {
                     }
                 }
                 .chartYAxis {
-                    if selectedTimeRange == .day {
+                    if self.selectedTimeRange == .day {
                         // Day view: Show fewer marks with "lbs" suffix
-                        AxisMarks(position: .leading, values: dayYAxisValues) { value in
+                        AxisMarks(position: .leading, values: self.dayYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
                                     Text("\(Int(weight)) lbs")
@@ -290,9 +295,9 @@ struct WeightChartView: View {
                             AxisGridLine()
                             AxisTick()
                         }
-                    } else if selectedTimeRange == .week {
+                    } else if self.selectedTimeRange == .week {
                         // Week view: Show weight values at 1lb intervals with "lbs" suffix
-                        AxisMarks(position: .leading, values: weekYAxisValues) { value in
+                        AxisMarks(position: .leading, values: self.weekYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
                                     Text("\(Int(weight)) lbs")
@@ -302,9 +307,9 @@ struct WeightChartView: View {
                             AxisGridLine()
                             AxisTick()
                         }
-                    } else if selectedTimeRange == .month {
+                    } else if self.selectedTimeRange == .month {
                         // Month view: Show 10 evenly-spaced marks with "lbs" suffix
-                        AxisMarks(position: .leading, values: monthYAxisValues) { value in
+                        AxisMarks(position: .leading, values: self.monthYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
                                     Text("\(Int(round(weight))) lbs")
@@ -314,9 +319,9 @@ struct WeightChartView: View {
                             AxisGridLine()
                             AxisTick()
                         }
-                    } else if selectedTimeRange == .threeMonths {
+                    } else if self.selectedTimeRange == .threeMonths {
                         // 3 Months view: Show 10 evenly-spaced marks with "lbs" suffix
-                        AxisMarks(position: .leading, values: threeMonthsYAxisValues) { value in
+                        AxisMarks(position: .leading, values: self.threeMonthsYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
                                     Text("\(Int(round(weight))) lbs")
@@ -326,9 +331,9 @@ struct WeightChartView: View {
                             AxisGridLine()
                             AxisTick()
                         }
-                    } else if selectedTimeRange == .year {
+                    } else if self.selectedTimeRange == .year {
                         // Year view: Show 10 evenly-spaced marks with "lbs" suffix
-                        AxisMarks(position: .leading, values: yearYAxisValues) { value in
+                        AxisMarks(position: .leading, values: self.yearYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
                                     Text("\(Int(round(weight))) lbs")
@@ -338,9 +343,9 @@ struct WeightChartView: View {
                             AxisGridLine()
                             AxisTick()
                         }
-                    } else if selectedTimeRange == .all {
+                    } else if self.selectedTimeRange == .all {
                         // All view: Show 10 evenly-spaced marks with "lbs" suffix
-                        AxisMarks(position: .leading, values: allYAxisValues) { value in
+                        AxisMarks(position: .leading, values: self.allYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
                                     Text("\(Int(round(weight))) lbs")
@@ -354,9 +359,9 @@ struct WeightChartView: View {
                         AxisMarks(position: .leading)
                     }
                 }
-                .chartYScale(domain: yAxisDomain)
-                .modifier(XAxisScaleModifier(domain: xAxisDomain))
-                .chartXSelection(value: $selectedDate)
+                .chartYScale(domain: self.yAxisDomain)
+                .modifier(XAxisScaleModifier(domain: self.xAxisDomain))
+                .chartXSelection(value: self.$selectedDate)
             } else {
                 Text("No data for selected time range")
                     .foregroundColor(.secondary)
@@ -374,7 +379,7 @@ struct WeightChartView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
 
-                            Text("\(weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
+                            Text("\(self.weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
                                 .font(.title3)
                                 .fontWeight(.bold)
                                 .foregroundColor(Color("FLPrimary"))
@@ -423,7 +428,7 @@ struct WeightChartView: View {
                         }
 
                         Button(action: {
-                            selectedDate = nil
+                            self.selectedDate = nil
                         }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(.gray)
@@ -434,7 +439,7 @@ struct WeightChartView: View {
                 .transition(.opacity)
             }
 
-            Toggle("Show Goal Line", isOn: $showGoalLine)
+            Toggle("Show Goal Line", isOn: self.$showGoalLine)
                 .font(.subheadline)
         }
         .padding()
@@ -448,7 +453,7 @@ struct WeightChartView: View {
     private func xAxisLabel(for date: Date) -> String {
         let calendar = Calendar.current
 
-        switch selectedTimeRange {
+        switch self.selectedTimeRange {
         case .day:
             // Show hour for Day view (e.g., "12am", "1am", "2pm")
             let formatter = DateFormatter()
@@ -486,7 +491,6 @@ struct WeightChartView: View {
         }
     }
 
-
     // MARK: - X-Axis Domain for Day View
 
     /// Returns the X-axis date range for Day/Month view
@@ -495,9 +499,9 @@ struct WeightChartView: View {
     var xAxisDomain: ClosedRange<Date>? {
         let calendar = Calendar.current
 
-        switch selectedTimeRange {
+        switch self.selectedTimeRange {
         case .day:
-            guard !chartData.isEmpty else { return nil }
+            guard !self.chartData.isEmpty else { return nil }
 
             let today = calendar.startOfDay(for: Date())
 
@@ -512,20 +516,20 @@ struct WeightChartView: View {
             }
 
             // Find the earliest entry time
-            let dates = chartData.map { $0.date }
+            let dates = self.chartData.map(\.date)
             guard let minDate = dates.min() else { return nil }
 
             // If earliest entry is before 6am, adjust start time to that entry
             let rangeStart = min(defaultStart, minDate)
 
             // Always end at midnight (12am next day)
-            return rangeStart...defaultEnd
+            return rangeStart ... defaultEnd
 
         case .month:
-            guard !chartData.isEmpty else { return nil }
+            guard !self.chartData.isEmpty else { return nil }
 
             // Extend domain by 1 day on each side for easier point selection
-            let dates = chartData.map { $0.date }
+            let dates = self.chartData.map(\.date)
             guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
 
             guard let rangeStart = calendar.date(byAdding: .day, value: -1, to: minDate),
@@ -533,13 +537,13 @@ struct WeightChartView: View {
                 return nil
             }
 
-            return rangeStart...rangeEnd
+            return rangeStart ... rangeEnd
 
         case .threeMonths:
-            guard !chartData.isEmpty else { return nil }
+            guard !self.chartData.isEmpty else { return nil }
 
             // Extend domain by 2 days on each side for easier point selection
-            let dates = chartData.map { $0.date }
+            let dates = self.chartData.map(\.date)
             guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
 
             guard let rangeStart = calendar.date(byAdding: .day, value: -2, to: minDate),
@@ -547,13 +551,13 @@ struct WeightChartView: View {
                 return nil
             }
 
-            return rangeStart...rangeEnd
+            return rangeStart ... rangeEnd
 
         case .year:
-            guard !chartData.isEmpty else { return nil }
+            guard !self.chartData.isEmpty else { return nil }
 
             // Extend domain by 3 days on each side for easier point selection
-            let dates = chartData.map { $0.date }
+            let dates = self.chartData.map(\.date)
             guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
 
             guard let rangeStart = calendar.date(byAdding: .day, value: -3, to: minDate),
@@ -561,13 +565,13 @@ struct WeightChartView: View {
                 return nil
             }
 
-            return rangeStart...rangeEnd
+            return rangeStart ... rangeEnd
 
         case .all:
-            guard !chartData.isEmpty else { return nil }
+            guard !self.chartData.isEmpty else { return nil }
 
             // Extend domain by 5 days on each side for easier point selection
-            let dates = chartData.map { $0.date }
+            let dates = self.chartData.map(\.date)
             guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
 
             guard let rangeStart = calendar.date(byAdding: .day, value: -5, to: minDate),
@@ -575,7 +579,7 @@ struct WeightChartView: View {
                 return nil
             }
 
-            return rangeStart...rangeEnd
+            return rangeStart ... rangeEnd
 
         default:
             return nil
@@ -586,7 +590,7 @@ struct WeightChartView: View {
 
     /// Generates X-axis time marks every 3 hours starting from 6am (or earlier if data exists)
     var dayXAxisValues: [Date] {
-        guard selectedTimeRange == .day, let domain = xAxisDomain else { return [] }
+        guard self.selectedTimeRange == .day, let domain = xAxisDomain else { return [] }
 
         let calendar = Calendar.current
         let startDate = domain.lowerBound
@@ -606,8 +610,13 @@ struct WeightChartView: View {
         // Generate marks every 3 hours from adjusted start to midnight (24:00)
         var currentHour = adjustedStartHour
         while currentHour <= 24 {
-            if let date = calendar.date(bySettingHour: currentHour % 24, minute: 0, second: 0, of: currentHour < 24 ? today : calendar.date(byAdding: .day, value: 1, to: today)!) {
-                if date >= startDate && date <= endDate {
+            if let date = calendar.date(
+                bySettingHour: currentHour % 24,
+                minute: 0,
+                second: 0,
+                of: currentHour < 24 ? today : calendar.date(byAdding: .day, value: 1, to: today)!
+            ) {
+                if date >= startDate, date <= endDate {
                     values.append(date)
                 }
             }
@@ -621,14 +630,14 @@ struct WeightChartView: View {
 
     /// Generates X-axis marks for each of the last 7 days
     var weekXAxisValues: [Date] {
-        guard selectedTimeRange == .week else { return [] }
+        guard self.selectedTimeRange == .week else { return [] }
 
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
         // Generate last 7 days (including today)
         var values: [Date] = []
-        for daysAgo in (0..<7).reversed() {
+        for daysAgo in (0 ..< 7).reversed() {
             if let date = calendar.date(byAdding: .day, value: -daysAgo, to: today) {
                 values.append(date)
             }
@@ -640,11 +649,11 @@ struct WeightChartView: View {
     /// Generates X-axis marks for Month view: Adaptive based on data range
     /// Shows 6-10 evenly-spaced dates depending on how much data exists
     var monthXAxisValues: [Date] {
-        guard selectedTimeRange == .month else { return [] }
-        guard !chartData.isEmpty else { return [] }
+        guard self.selectedTimeRange == .month else { return [] }
+        guard !self.chartData.isEmpty else { return [] }
 
         let calendar = Calendar.current
-        let dates = chartData.map { $0.date }
+        let dates = self.chartData.map(\.date)
         guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
 
         // Calculate the number of days in the actual data range
@@ -667,7 +676,7 @@ struct WeightChartView: View {
         var values: [Date] = []
         let interval = Double(daysBetween) / Double(numberOfMarks - 1)
 
-        for i in 0..<numberOfMarks {
+        for i in 0 ..< numberOfMarks {
             let daysToAdd = Int(round(Double(i) * interval))
             if let date = calendar.date(byAdding: .day, value: daysToAdd, to: calendar.startOfDay(for: minDate)) {
                 values.append(date)
@@ -680,11 +689,11 @@ struct WeightChartView: View {
     /// Generates X-axis marks for 3 Months view: 12 marks over last 90 days (4 per month)
     /// Creates marks at ~7-8 day intervals for balanced visual spacing
     var threeMonthsXAxisValues: [Date] {
-        guard selectedTimeRange == .threeMonths else { return [] }
-        guard !chartData.isEmpty else { return [] }
+        guard self.selectedTimeRange == .threeMonths else { return [] }
+        guard !self.chartData.isEmpty else { return [] }
 
         let calendar = Calendar.current
-        let dates = chartData.map { $0.date }
+        let dates = self.chartData.map(\.date)
         guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
 
         // Calculate the number of days in the actual data range
@@ -698,7 +707,7 @@ struct WeightChartView: View {
         var values: [Date] = []
         let interval = Double(daysBetween) / Double(numberOfMarks - 1)
 
-        for i in 0..<numberOfMarks {
+        for i in 0 ..< numberOfMarks {
             let daysToAdd = Int(round(Double(i) * interval))
             if let date = calendar.date(byAdding: .day, value: daysToAdd, to: calendar.startOfDay(for: minDate)) {
                 values.append(date)
@@ -711,11 +720,11 @@ struct WeightChartView: View {
     /// Generates X-axis marks for Year view: 12 marks (one per month) over last 365 days
     /// Shows month abbreviations for clear temporal reference
     var yearXAxisValues: [Date] {
-        guard selectedTimeRange == .year else { return [] }
-        guard !chartData.isEmpty else { return [] }
+        guard self.selectedTimeRange == .year else { return [] }
+        guard !self.chartData.isEmpty else { return [] }
 
         let calendar = Calendar.current
-        let dates = chartData.map { $0.date }
+        let dates = self.chartData.map(\.date)
         guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
 
         // Calculate number of months in data range
@@ -728,7 +737,7 @@ struct WeightChartView: View {
         var values: [Date] = []
         let interval = Double(monthsBetween) / Double(numberOfMarks - 1)
 
-        for i in 0..<numberOfMarks {
+        for i in 0 ..< numberOfMarks {
             let monthsToAdd = Int(round(Double(i) * interval))
             if let date = calendar.date(byAdding: .month, value: monthsToAdd, to: calendar.startOfDay(for: minDate)) {
                 values.append(date)
@@ -741,11 +750,11 @@ struct WeightChartView: View {
     /// Generates X-axis marks for All view: Adaptive based on total data span
     /// Scales from months to years depending on data range
     var allXAxisValues: [Date] {
-        guard selectedTimeRange == .all else { return [] }
-        guard !chartData.isEmpty else { return [] }
+        guard self.selectedTimeRange == .all else { return [] }
+        guard !self.chartData.isEmpty else { return [] }
 
         let calendar = Calendar.current
-        let dates = chartData.map { $0.date }
+        let dates = self.chartData.map(\.date)
         guard let minDate = dates.min(), let maxDate = dates.max() else { return [] }
 
         // Calculate the span in months
@@ -773,9 +782,13 @@ struct WeightChartView: View {
         var values: [Date] = []
         let interval = Double(monthsBetween) / Double(numberOfMarks - 1)
 
-        for i in 0..<numberOfMarks {
+        for i in 0 ..< numberOfMarks {
             let unitsToAdd = Int(round(Double(i) * interval))
-            if let date = calendar.date(byAdding: intervalComponent, value: unitsToAdd, to: calendar.startOfDay(for: minDate)) {
+            if let date = calendar.date(
+                byAdding: intervalComponent,
+                value: unitsToAdd,
+                to: calendar.startOfDay(for: minDate)
+            ) {
                 values.append(date)
             }
         }
@@ -789,7 +802,9 @@ struct WeightChartView: View {
         guard let selectedEntry = selectedEntry else { return nil }
 
         // For Day view (without averaging), always show the actual time
-        guard selectedTimeRange == .week || selectedTimeRange == .month || selectedTimeRange == .threeMonths || selectedTimeRange == .year || selectedTimeRange == .all else {
+        guard self.selectedTimeRange == .week || self.selectedTimeRange == .month || self
+            .selectedTimeRange == .threeMonths || self.selectedTimeRange == .year || self.selectedTimeRange == .all
+        else {
             return selectedEntry.date
         }
 
@@ -797,7 +812,7 @@ struct WeightChartView: View {
         let calendar = Calendar.current
         let selectedDay = calendar.startOfDay(for: selectedEntry.date)
 
-        let entriesForDay = filteredEntries.filter { entry in
+        let entriesForDay = self.filteredEntries.filter { entry in
             calendar.isDate(entry.date, inSameDayAs: selectedDay)
         }
 
@@ -810,7 +825,7 @@ struct WeightChartView: View {
 
     /// For Day view: Generates 5-6 evenly-spaced values for cleaner Y-axis
     private var dayYAxisValues: [Double] {
-        let domain = yAxisDomain
+        let domain = self.yAxisDomain
         let min = domain.lowerBound
         let max = domain.upperBound
 
@@ -821,7 +836,7 @@ struct WeightChartView: View {
 
     /// For Week view: Generates evenly-spaced values at 1lb intervals for 5lb range
     private var weekYAxisValues: [Double] {
-        let domain = yAxisDomain
+        let domain = self.yAxisDomain
         let min = domain.lowerBound
         let max = domain.upperBound
 
@@ -836,7 +851,7 @@ struct WeightChartView: View {
 
     /// For Month view: Generates 10 evenly-spaced Y-axis marks
     private var monthYAxisValues: [Double] {
-        let domain = yAxisDomain
+        let domain = self.yAxisDomain
         let min = domain.lowerBound
         let max = domain.upperBound
 
@@ -849,7 +864,7 @@ struct WeightChartView: View {
 
     /// For 3 Months view: Generates 10 evenly-spaced Y-axis marks
     private var threeMonthsYAxisValues: [Double] {
-        let domain = yAxisDomain
+        let domain = self.yAxisDomain
         let min = domain.lowerBound
         let max = domain.upperBound
 
@@ -862,7 +877,7 @@ struct WeightChartView: View {
 
     /// For Year view: Generates 10 evenly-spaced Y-axis marks
     private var yearYAxisValues: [Double] {
-        let domain = yAxisDomain
+        let domain = self.yAxisDomain
         let min = domain.lowerBound
         let max = domain.upperBound
 
@@ -875,7 +890,7 @@ struct WeightChartView: View {
 
     /// For All view: Generates 10 evenly-spaced Y-axis marks
     private var allYAxisValues: [Double] {
-        let domain = yAxisDomain
+        let domain = self.yAxisDomain
         let min = domain.lowerBound
         let max = domain.upperBound
 
@@ -889,15 +904,15 @@ struct WeightChartView: View {
     // MARK: - Y-Axis Domain
 
     private var yAxisDomain: ClosedRange<Double> {
-        guard !chartData.isEmpty else {
-            return 0...200 // Default range
+        guard !self.chartData.isEmpty else {
+            return 0 ... 200 // Default range
         }
 
-        let weights = chartData.map { $0.weight }
+        let weights = self.chartData.map(\.weight)
         let minWeight = weights.min() ?? 0
         let maxWeight = weights.max() ?? 200
 
-        switch selectedTimeRange {
+        switch self.selectedTimeRange {
         case .day:
             // For Day view: 10lb range (average ± 5 lbs) with 1lb increments
             // Calculate average weight for the day
@@ -907,7 +922,7 @@ struct WeightChartView: View {
             let rangeMin = round(avgWeight) - 5
             let rangeMax = round(avgWeight) + 5
 
-            return rangeMin...rangeMax
+            return rangeMin ... rangeMax
 
         case .week:
             // For Week view: Default 5lb range (average ± 2.5 lbs), adaptive if needed
@@ -925,14 +940,14 @@ struct WeightChartView: View {
 
             if dataRange <= 5 {
                 // Data fits within 5lb range, use default
-                return defaultRangeMin...defaultRangeMax
+                return defaultRangeMin ... defaultRangeMax
             } else {
                 // Data exceeds 5lb range, expand adaptively
                 // Add 10% padding to actual data range
                 let padding = dataRange * 0.1
                 let rangeMin = floor(minWeight - padding)
                 let rangeMax = ceil(maxWeight + padding)
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             }
 
         case .month:
@@ -940,7 +955,7 @@ struct WeightChartView: View {
             // With dynamic adjustment when goal line is shown
             let dataRange = maxWeight - minWeight
 
-            if showGoalLine {
+            if self.showGoalLine {
                 // Goal line is shown: Start Y-axis just below goal weight
                 // Determine appropriate padding based on relationship between data and goal
                 let highestValue = max(maxWeight, weightGoal)
@@ -955,17 +970,17 @@ struct WeightChartView: View {
                     belowGoalPadding = 20.0 // Large fluctuation: 20 lb padding
                 }
 
-                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMin = self.weightGoal - belowGoalPadding
                 let rangeMax = max(highestValue + 2, rangeMin + 10) // Ensure at least 10lb range
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             } else {
                 // No goal line: Center on data with adaptive padding
                 let padding = max(dataRange * 0.15, 3.0) // At least 3 lbs padding
                 let rangeMin = floor(minWeight - padding)
                 let rangeMax = ceil(maxWeight + padding)
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             }
 
         case .threeMonths:
@@ -973,7 +988,7 @@ struct WeightChartView: View {
             // Adaptive based on 90-day weight fluctuation with goal line support
             let dataRange = maxWeight - minWeight
 
-            if showGoalLine {
+            if self.showGoalLine {
                 // Goal line is shown: Start Y-axis below goal weight
                 let highestValue = max(maxWeight, weightGoal)
 
@@ -987,17 +1002,17 @@ struct WeightChartView: View {
                     belowGoalPadding = 25.0 // Large fluctuation: 25 lb padding
                 }
 
-                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMin = self.weightGoal - belowGoalPadding
                 let rangeMax = max(highestValue + 3, rangeMin + 15) // Ensure at least 15lb range
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             } else {
                 // No goal line: Center on data with adaptive padding
                 let padding = max(dataRange * 0.2, 5.0) // At least 5 lbs padding (20% for longer range)
                 let rangeMin = floor(minWeight - padding)
                 let rangeMax = ceil(maxWeight + padding)
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             }
 
         case .year:
@@ -1005,7 +1020,7 @@ struct WeightChartView: View {
             // Shows broader trends with goal line support
             let dataRange = maxWeight - minWeight
 
-            if showGoalLine {
+            if self.showGoalLine {
                 // Goal line shown: Position Y-axis below goal for year-long journey view
                 let highestValue = max(maxWeight, weightGoal)
 
@@ -1019,17 +1034,17 @@ struct WeightChartView: View {
                     belowGoalPadding = 35.0 // Large fluctuation: 35 lb padding
                 }
 
-                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMin = self.weightGoal - belowGoalPadding
                 let rangeMax = max(highestValue + 5, rangeMin + 20) // Ensure at least 20lb range
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             } else {
                 // No goal line: Center on data with generous padding for year view
                 let padding = max(dataRange * 0.25, 8.0) // At least 8 lbs padding (25% for year)
                 let rangeMin = floor(minWeight - padding)
                 let rangeMax = ceil(maxWeight + padding)
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             }
 
         case .all:
@@ -1037,7 +1052,7 @@ struct WeightChartView: View {
             // Scales from months to years of data
             let dataRange = maxWeight - minWeight
 
-            if showGoalLine {
+            if self.showGoalLine {
                 // Goal line shown: Adaptive positioning for all-time view
                 let highestValue = max(maxWeight, weightGoal)
 
@@ -1051,17 +1066,17 @@ struct WeightChartView: View {
                     belowGoalPadding = 40.0 // Large range: 40 lb padding
                 }
 
-                let rangeMin = weightGoal - belowGoalPadding
+                let rangeMin = self.weightGoal - belowGoalPadding
                 let rangeMax = max(highestValue + 5, rangeMin + 25) // Ensure at least 25lb range
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             } else {
                 // No goal line: Maximum adaptive padding for all-time trends
                 let padding = max(dataRange * 0.3, 10.0) // At least 10 lbs padding (30% for all-time)
                 let rangeMin = floor(minWeight - padding)
                 let rangeMax = ceil(maxWeight + padding)
 
-                return rangeMin...rangeMax
+                return rangeMin ... rangeMax
             }
         }
     }
