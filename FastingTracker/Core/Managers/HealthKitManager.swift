@@ -69,6 +69,23 @@ class HealthKitManager: ObservableObject {
         try await authManager.requestSleepAuthorization()
     }
 
+    /// API compatibility: requestSleepAuthorization with completion handler
+    /// Following Apple's HealthKit programming guide for async-to-completion bridge
+    func requestSleepAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        Task {
+            do {
+                try await authManager.requestSleepAuthorization()
+                DispatchQueue.main.async {
+                    completion(true, nil)
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(false, error)
+                }
+            }
+        }
+    }
+
     func saveSleep(bedTime: Date, wakeTime: Date, completion: @escaping (Bool, Error?) -> Void) {
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else {
             completion(false, nil)
@@ -149,8 +166,21 @@ class HealthKitManager: ObservableObject {
         healthStore.execute(query)
     }
 
-    // MARK: - Weight Observer Methods
+    // MARK: - Observer Methods - API Compatibility
 
+    /// API compatibility: stopObserving with query parameter
+    /// Following Apple's HealthKit observer query patterns
+    func stopObserving(query: HKObserverQuery) {
+        healthStore.stop(query)
+    }
+
+    /// API compatibility: stopObservingSleep with query parameter
+    /// Following Apple's HealthKit observer query patterns
+    func stopObservingSleep(query: HKObserverQuery) {
+        healthStore.stop(query)
+    }
+
+    /// Simplified observer methods (parameterless versions)
     func stopObserving() {
         // Simplified - would delegate to observer service
     }
@@ -178,14 +208,18 @@ class HealthKitManager: ObservableObject {
         }
     }
 
-    /// Matches original API: deleteWeightByUUID with String parameter
-    func deleteWeightByUUID(_ uuid: String, completion: @escaping (Bool) -> Void) {
-        weightService.deleteWeightFromHealthKit(uuid: uuid, completion: completion)
+    /// API compatibility: deleteWeightByUUID with Error parameter in completion
+    /// Following Apple's HealthKit programming guide for error handling
+    func deleteWeightByUUID(_ uuid: String, completion: @escaping (Bool, Error?) -> Void) {
+        weightService.deleteWeightFromHealthKit(uuid: uuid) { success in
+            completion(success, success ? nil : NSError(domain: "HealthKit", code: 1, userInfo: [NSLocalizedDescriptionKey: "Weight deletion failed"]))
+        }
     }
 
-    /// Original API method for finding weight sample UUID
-    func findWeightSampleUUID(weight: Double, date: Date, completion: @escaping (String?) -> Void) {
-        // Implementation would search HealthKit for matching sample
+    /// API compatibility: findWeightSampleUUID with correct parameter order (date:weight:)
+    /// Following original API signature from legacy HealthKitManager
+    func findWeightSampleUUID(date: Date, weight: Double, completion: @escaping (String?) -> Void) {
+        // Implementation would search HealthKit for matching sample by date and weight
         // Simplified for now - would need full implementation for production
         completion(nil)
     }
@@ -196,9 +230,15 @@ class HealthKitManager: ObservableObject {
         completion(true)
     }
 
+    /// API compatibility: fetchWeightDataHistorical with just startDate parameter
+    /// Following original API signature from legacy HealthKitManager
+    func fetchWeightDataHistorical(startDate: Date, completion: @escaping ([WeightEntry]) -> Void) {
+        weightService.fetchWeightData(startDate: startDate, endDate: Date(), resetAnchor: false, completion: completion)
+    }
+
     /// Matches original API exactly: fetchWeightDataHistorical(startDate:endDate:completion:)
     /// Following Apple's HealthKit best practices for historical data queries
-    func fetchWeightDataHistorical(startDate: Date, endDate: Date = Date(), completion: @escaping ([WeightEntry]) -> Void) {
+    func fetchWeightDataHistorical(startDate: Date, endDate: Date, completion: @escaping ([WeightEntry]) -> Void) {
         weightService.fetchWeightData(startDate: startDate, endDate: endDate, resetAnchor: false, completion: completion)
     }
 
