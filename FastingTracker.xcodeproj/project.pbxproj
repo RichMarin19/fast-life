@@ -67,23 +67,23 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		5243F23D2E8F27C70051A731 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		5243F23D2E8F27C70051A731 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		5243F23F2E900F440051A731 /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepEntry.swift; sourceTree = "<group>"; };
-		5243F2402E900F440051A731 /* SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepManager.swift; sourceTree = "<group>"; };
+		5243F2402E900F440051A731 /* SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
 		5243F2412E900F440051A731 /* SleepTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepTrackingView.swift; sourceTree = "<group>"; };
 		5243F2472E9029970051A731 /* MoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodEntry.swift; sourceTree = "<group>"; };
-		5243F2482E9029970051A731 /* MoodManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodManager.swift; sourceTree = "<group>"; };
+		5243F2482E9029970051A731 /* MoodManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/MoodManager.swift; sourceTree = "<group>"; };
 		5243F2492E9029970051A731 /* MoodTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrackingView.swift; sourceTree = "<group>"; };
-		5289E06C2E8D0DAD00254E70 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightsView.swift; sourceTree = "<group>"; };
+		5289E06C2E8D0DAD00254E70 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/InsightsView.swift; sourceTree = "<group>"; };
 		5289E06E2E8D5F6500254E70 /* AddWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWeightView.swift; sourceTree = "<group>"; };
 		5289E06F2E8D5F6500254E70 /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedView.swift; sourceTree = "<group>"; };
 		5289E0702E8D5F6500254E70 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
 		5289E0712E8D5F6500254E70 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
-		5289E0722E8D5F6500254E70 /* WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightManager.swift; sourceTree = "<group>"; };
+		5289E0722E8D5F6500254E70 /* WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
 		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackingView.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
-		5289E07E2E8D700000254E70 /* HydrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationManager.swift; sourceTree = "<group>"; };
+		5289E07E2E8D700000254E70 /* HydrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HydrationManager.swift; sourceTree = "<group>"; };
 		5289E0802E8D700100254E70 /* HydrationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationTrackingView.swift; sourceTree = "<group>"; };
 		5289E0822E8D700200254E70 /* HydrationHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationHistoryView.swift; sourceTree = "<group>"; };
 		52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSettingsView.swift; sourceTree = "<group>"; };
@@ -93,7 +93,7 @@
 		52B2CFC02E94B8A40061FCFF /* CSVImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CSVImporter.swift; sourceTree = "<group>"; };
 		52B2CFC22E94EE630061FCFF /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLogger.swift; sourceTree = "<group>"; };
 		52B2CFC42E95A9C80061FCFF /* CrashReportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CrashReportManager.swift; sourceTree = "<group>"; };
-		52B2CFC52E95A9C80061FCFF /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataStore.swift; sourceTree = "<group>"; };
+		52B2CFC52E95A9C80061FCFF /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Persistence/DataStore.swift; sourceTree = "<group>"; };
 		52B2CFCA2E95A9F50061FCFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		52B2CFCC2E96C3060061FCFF /* HealthDataPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataPreferences.swift; sourceTree = "<group>"; };
 		52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataSelectionView.swift; sourceTree = "<group>"; };
@@ -106,20 +106,20 @@
 		52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateBadge.swift; sourceTree = "<group>"; };
 		52B2CFDB2E986F7D0061FCFF /* TrackerScreenShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerScreenShell.swift; sourceTree = "<group>"; };
 		52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartView.swift; sourceTree = "<group>"; };
-		52B2CFDD2E986F7D0061FCFF /* WeightComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightComponents.swift; sourceTree = "<group>"; };
+		52B2CFDD2E986F7D0061FCFF /* WeightComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightComponents.swift; sourceTree = "<group>"; };
 		52B2CFE42E9880B50061FCFF /* HydrationCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationCalendarView.swift; sourceTree = "<group>"; };
 		52B2CFE52E9880B50061FCFF /* HydrationChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationChartView.swift; sourceTree = "<group>"; };
-		52B2CFE62E9880B50061FCFF /* HydrationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationComponents.swift; sourceTree = "<group>"; };
-		52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodComponents.swift; sourceTree = "<group>"; };
-		52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepComponents.swift; sourceTree = "<group>"; };
+		52B2CFE62E9880B50061FCFF /* HydrationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HydrationComponents.swift; sourceTree = "<group>"; };
+		52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/MoodComponents.swift; sourceTree = "<group>"; };
+		52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepComponents.swift; sourceTree = "<group>"; };
 		52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
-		52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepVisualizationComponents.swift; sourceTree = "<group>"; };
+		52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepVisualizationComponents.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		A1000008000000000000001 /* FastingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingSession.swift; sourceTree = "<group>"; };
-		A1000010000000000000001 /* FastingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingManager.swift; sourceTree = "<group>"; };
-		A1000012000000000000001 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationManager.swift; sourceTree = "<group>"; };
+		A1000010000000000000001 /* FastingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/FastingManager.swift; sourceTree = "<group>"; };
+		A1000012000000000000001 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationManager.swift; sourceTree = "<group>"; };
 		A1000014000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000015000000000000001 /* Fast lIFe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fast lIFe.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000016000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
