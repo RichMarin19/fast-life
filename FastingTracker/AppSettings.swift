@@ -143,15 +143,3 @@ enum TrackerType: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Shared UI Utilities
-// Following Apple's architecture guidelines for shared UI types
-
-/// Wrapper for Date that conforms to Identifiable for use in SwiftUI sheets and lists
-/// Using TimeInterval as ID for performance optimization per Apple guidelines
-struct IdentifiableDate: Identifiable {
-    let date: Date
-
-    var id: TimeInterval {
-        date.timeIntervalSince1970
-    }
-}

@@ -58,8 +58,8 @@ struct FLTheme {
     struct Typography {
         static let largeTitle = Font.largeTitle.bold()
         static let title = Font.title.bold()
-        static let title2 = Font.title2.semibold()
-        static let title3 = Font.title3.semibold()
+        static let title2 = Font.title2.weight(.semibold)
+        static let title3 = Font.title3.weight(.semibold)
         static let headline = Font.headline
         static let body = Font.body
         static let callout = Font.callout

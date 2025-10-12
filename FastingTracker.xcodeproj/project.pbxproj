@@ -66,6 +66,19 @@
 		FF00000100000000000000A1 /* FastingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A1 /* FastingStage.swift */; };
 		FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000400000000000000A1 /* FastingStageDetailView.swift */; };
 		FF00000500000000000000A1 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000600000000000000A1 /* AnalyticsView.swift */; };
+		ID001001000000000000001 /* IdentifiableDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ID001002000000000000001 /* IdentifiableDate.swift */; };
+		TH001001000000000000001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = TH001002000000000000001 /* Theme.swift */; };
+		GS001001000000000000001 /* GoalSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS001002000000000000001 /* GoalSettingsView.swift */; };
+		HR001001000000000000001 /* HistoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HR001002000000000000001 /* HistoryRowView.swift */; };
+		SF001001000000000000001 /* StopFastConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF001002000000000000001 /* StopFastConfirmationView.swift */; };
+		FC001001000000000000001 /* FastingHealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC001002000000000000001 /* FastingHealthKitNudgeView.swift */; };
+		FC002001000000000000001 /* EditFastTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC002002000000000000001 /* EditFastTimesView.swift */; };
+		ES001001000000000000001 /* EditStartTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ES001002000000000000001 /* EditStartTimeView.swift */; };
+		FC003001000000000000001 /* FastingSyncOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC003002000000000000001 /* FastingSyncOptionsView.swift */; };
+		FC004001000000000000001 /* StreakCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC004002000000000000001 /* StreakCalendarView.swift */; };
+		FC005001000000000000001 /* FastingGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC005002000000000000001 /* FastingGraphView.swift */; };
+		FC006001000000000000001 /* TotalStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC006002000000000000001 /* TotalStatsView.swift */; };
+		FC007001000000000000001 /* AddEditFastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC007002000000000000001 /* AddEditFastView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -131,6 +144,19 @@
 		FF00000200000000000000A1 /* FastingStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStage.swift; sourceTree = "<group>"; };
 		FF00000400000000000000A1 /* FastingStageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingStageDetailView.swift; sourceTree = "<group>"; };
 		FF00000600000000000000A1 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsView.swift; sourceTree = "<group>"; };
+		ID001002000000000000001 /* IdentifiableDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/IdentifiableDate.swift; sourceTree = "<group>"; };
+		TH001002000000000000001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		GS001002000000000000001 /* GoalSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/GoalSettingsView.swift; sourceTree = "<group>"; };
+		HR001002000000000000001 /* HistoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HistoryRowView.swift; sourceTree = "<group>"; };
+		SF001002000000000000001 /* StopFastConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StopFastConfirmationView.swift; sourceTree = "<group>"; };
+		FC001002000000000000001 /* FastingHealthKitNudgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingHealthKitNudgeView.swift; sourceTree = "<group>"; };
+		FC002002000000000000001 /* EditFastTimesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditFastTimesView.swift; sourceTree = "<group>"; };
+		ES001002000000000000001 /* EditStartTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditStartTimeView.swift; sourceTree = "<group>"; };
+		FC003002000000000000001 /* FastingSyncOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingSyncOptionsView.swift; sourceTree = "<group>"; };
+		FC004002000000000000001 /* StreakCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StreakCalendarView.swift; sourceTree = "<group>"; };
+		FC005002000000000000001 /* FastingGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingGraphView.swift; sourceTree = "<group>"; };
+		FC006002000000000000001 /* TotalStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TotalStatsView.swift; sourceTree = "<group>"; };
+		FC007002000000000000001 /* AddEditFastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AddEditFastView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -216,6 +242,19 @@
 				A1000012000000000000001 /* NotificationManager.swift */,
 				A1000014000000000000001 /* Assets.xcassets */,
 				A1000016000000000000001 /* Info.plist */,
+				ID001002000000000000001 /* IdentifiableDate.swift */,
+				TH001002000000000000001 /* Theme.swift */,
+				GS001002000000000000001 /* GoalSettingsView.swift */,
+				HR001002000000000000001 /* HistoryRowView.swift */,
+				SF001002000000000000001 /* StopFastConfirmationView.swift */,
+				FC001002000000000000001 /* FastingHealthKitNudgeView.swift */,
+				FC002002000000000000001 /* EditFastTimesView.swift */,
+				ES001002000000000000001 /* EditStartTimeView.swift */,
+				FC003002000000000000001 /* FastingSyncOptionsView.swift */,
+				FC004002000000000000001 /* StreakCalendarView.swift */,
+				FC005002000000000000001 /* FastingGraphView.swift */,
+				FC006002000000000000001 /* TotalStatsView.swift */,
+				FC007002000000000000001 /* AddEditFastView.swift */,
 			);
 			path = FastingTracker;
 			sourceTree = "<group>";
@@ -355,6 +394,19 @@
 				52B2CFE22E986F7D0061FCFF /* TrackerScreenShell.swift in Sources */,
 				52B2CFE32E986F7D0061FCFF /* WeightChartView.swift in Sources */,
 				A1000031000000000000001 /* AppSettings.swift in Sources */,
+				ID001001000000000000001 /* IdentifiableDate.swift in Sources */,
+				TH001001000000000000001 /* Theme.swift in Sources */,
+				GS001001000000000000001 /* GoalSettingsView.swift in Sources */,
+				HR001001000000000000001 /* HistoryRowView.swift in Sources */,
+				SF001001000000000000001 /* StopFastConfirmationView.swift in Sources */,
+				FC001001000000000000001 /* FastingHealthKitNudgeView.swift in Sources */,
+				FC002001000000000000001 /* EditFastTimesView.swift in Sources */,
+				ES001001000000000000001 /* EditStartTimeView.swift in Sources */,
+				FC003001000000000000001 /* FastingSyncOptionsView.swift in Sources */,
+				FC004001000000000000001 /* StreakCalendarView.swift in Sources */,
+				FC005001000000000000001 /* FastingGraphView.swift in Sources */,
+				FC006001000000000000001 /* TotalStatsView.swift in Sources */,
+				FC007001000000000000001 /* AddEditFastView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

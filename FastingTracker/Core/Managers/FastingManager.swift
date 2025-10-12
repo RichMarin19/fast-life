@@ -201,6 +201,12 @@ class FastingManager: ObservableObject {
         NotificationManager.shared.cancelGoalNotification()
     }
 
+    /// API compatibility: deleteCurrentFast delegates to deleteFast
+    /// Following established naming convention compatibility pattern
+    func deleteCurrentFast() {
+        deleteFast()
+    }
+
     func stopFastWithCustomTimes(startTime: Date, endTime: Date) {
         guard var session = currentSession else { return }
 

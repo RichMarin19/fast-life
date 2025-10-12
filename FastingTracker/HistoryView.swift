@@ -97,7 +97,3 @@ struct HistoryListView: View {
     }
 }
 
-struct IdentifiableDate: Identifiable {
-    let id = UUID()
-    let date: Date
-}

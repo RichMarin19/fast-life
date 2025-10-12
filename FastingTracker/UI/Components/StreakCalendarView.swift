@@ -1,11 +1,7 @@
 import SwiftUI
 
-// MARK: - Hydration Calendar View
-// Extracted from HydrationHistoryView.swift for better code organization
-// Following Apple MVVM patterns and SwiftUI component architecture
-
-struct HydrationCalendarView: View {
-    @ObservedObject var hydrationManager: HydrationManager
+struct StreakCalendarView: View {
+    @EnvironmentObject var fastingManager: FastingManager
     @Binding var selectedDate: Date?
     @State private var displayedMonth: Date = Date()
 
@@ -13,8 +9,8 @@ struct HydrationCalendarView: View {
         VStack(spacing: 16) {
             // Header with Month/Year
             HStack {
-                Image(systemName: "drop.fill")
-                    .foregroundColor(.cyan)
+                Image(systemName: "flame.fill")
+                    .foregroundColor(.orange)
                     .font(.title2)
 
                 Button(action: previousMonth) {
@@ -36,16 +32,16 @@ struct HydrationCalendarView: View {
 
                 Spacer()
 
-                Text("\(hydrationManager.currentStreak) day\(hydrationManager.currentStreak == 1 ? "" : "s")")
+                Text("\(fastingManager.currentStreak) day\(fastingManager.currentStreak == 1 ? "" : "s")")
                     .font(.headline)
-                    .foregroundColor(.cyan)
+                    .foregroundColor(.orange)
             }
 
             // Calendar Grid (Current Month)
             VStack(spacing: 12) {
                 // Weekday headers
                 HStack(spacing: 8) {
-                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
+                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { index, day in
                         Text(day)
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -82,16 +78,15 @@ struct HydrationCalendarView: View {
                     Circle()
                         .fill(Color.gray.opacity(0.2))
                         .frame(width: 12, height: 12)
-                    Text("No Data")
+                    Text("No Fast")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
         }
         .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        .background(Color.gray.opacity(0.05))
+        .cornerRadius(8)
     }
 
     @ViewBuilder
@@ -105,11 +100,8 @@ struct HydrationCalendarView: View {
                     if weekIndex * 7 + dayIndex < monthDays.count {
                         let dateItem = daysByWeek[weekIndex][dayIndex]
                         if let date = dateItem {
-                            HydrationDayView(
-                                date: date,
-                                selectedDate: $selectedDate,
-                                hydrationManager: hydrationManager
-                            )
+                            CalendarDayView(date: date, selectedDate: $selectedDate)
+                                .environmentObject(fastingManager)
                         } else {
                             Color.clear
                                 .frame(maxWidth: .infinity)
@@ -182,27 +174,24 @@ struct HydrationCalendarView: View {
     }
 }
 
-// MARK: - Hydration Day View
-
-struct HydrationDayView: View {
+struct CalendarDayView: View {
     let date: Date
     @Binding var selectedDate: Date?
-    @ObservedObject var hydrationManager: HydrationManager
+    @EnvironmentObject var fastingManager: FastingManager
 
     var body: some View {
         let calendar = Calendar.current
         let dayNumber = calendar.component(.day, from: date)
-        let dayStatus = getDayStatus()
 
         ZStack {
             // Background
             RoundedRectangle(cornerRadius: 8)
                 .fill(dayStatus == .goalMet ? Color.orange.opacity(0.1) :
-                      dayStatus == .partial ? Color.red.opacity(0.1) :
+                      dayStatus == .incomplete ? Color.red.opacity(0.1) :
                       Color.gray.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isToday() ? Color.blue : Color.clear, lineWidth: 2)
+                        .stroke(isToday() ? Color("FLPrimary") : Color.clear, lineWidth: 2)
                 )
 
             VStack(spacing: 4) {
@@ -217,7 +206,7 @@ struct HydrationDayView: View {
                         Image(systemName: "flame.fill")
                             .foregroundColor(.orange)
                             .font(.system(size: 16))
-                    } else if dayStatus == .partial {
+                    } else if dayStatus == .incomplete {
                         Image(systemName: "xmark")
                             .foregroundColor(.red)
                             .font(.system(size: 12))
@@ -237,48 +226,33 @@ struct HydrationDayView: View {
         Calendar.current.isDateInToday(date)
     }
 
-    private func getDayStatus() -> DayStatus {
+    private var dayStatus: DayStatus {
         let calendar = Calendar.current
-        let dayStart = calendar.startOfDay(for: date)
+        let targetDay = calendar.startOfDay(for: date)
 
-        // Today always shows as no data (day not complete yet)
-        if calendar.isDateInToday(date) {
-            return .noData
+        // Find fasts that started on this day
+        for session in fastingManager.fastingHistory {
+            let sessionDay = calendar.startOfDay(for: session.startTime)
+            if sessionDay == targetDay {
+                return session.metGoal ? .goalMet : .incomplete
+            }
         }
 
-        // Get drinks for this day
-        let dayDrinks = hydrationManager.drinkEntries.filter { entry in
-            calendar.isDate(entry.date, inSameDayAs: dayStart)
-        }
-
-        if dayDrinks.isEmpty {
-            return .noData
-        }
-
-        let totalOunces = dayDrinks.reduce(0.0) { $0 + $1.amount }
-
-        if totalOunces >= hydrationManager.dailyGoalOunces {
-            return .goalMet
-        } else {
-            return .partial
-        }
-    }
-
-    enum DayStatus {
-        case goalMet
-        case partial
-        case noData
+        return .noFast
     }
 }
 
-// MARK: - Array Extension for Calendar Chunking
+enum DayStatus {
+    case goalMet
+    case incomplete
+    case noFast
+}
 
-// MARK: - Preview
-
-#Preview {
-    HydrationCalendarView(
-        hydrationManager: HydrationManager(),
-        selectedDate: .constant(Date())
-    )
-    .padding()
+// Array extension for chunking into groups
+extension Array {
+    func chunked(into size: Int) -> [[Element]] {
+        return stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
+        }
+    }
 }

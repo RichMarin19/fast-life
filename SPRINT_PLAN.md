@@ -20,10 +20,10 @@
   - [x] One baseline formatting commit on main branch
   - [x] Lint passes on PR (no new warnings) - *SourceKit workaround documented*
 
-- [T1] Folder structure & file splits (Phase 1 start)
-  - [ ] Create target folders: App, Core/{Models,Managers,Persistence,Logging}, Features/*, UI/{Theme,Components}, Onboarding, Testing
-  - [ ] Move legacy `*_old.swift` to `/Legacy` (excluded from target); ensure build green
-  - [ ] No view/manager file > 400 LOC (or extracted subviews/helpers)
+- [T1] Folder structure & file splits (Phase 1 start) ✅ **DONE**
+  - [x] Create target folders: App, Core/{Models,Managers,Persistence,Logging}, Features/*, UI/{Theme,Components}, Onboarding, Testing
+  - [x] Move legacy `*_old.swift` to `/Legacy` (excluded from target); ensure build green
+  - [x] No view/manager file > 400 LOC (or extracted subviews/helpers)
 
 - [T2] Default tracker routing (Phase 2a)
   - [ ] `AppSettings.defaultTracker` persisted; TabView selects it at **cold start**

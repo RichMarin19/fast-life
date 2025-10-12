@@ -119,14 +119,12 @@ struct WeightSettingsView: View {
             .navigationTitle("Weight Settings")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        // Update weight goal if valid
-                        if let newGoal = Double(weightGoalString), newGoal > 0 {
-                            weightGoal = newGoal
-                        }
-                        dismiss()
+                Button("Done") {
+                    // Update weight goal if valid
+                    if let newGoal = Double(weightGoalString), newGoal > 0 {
+                        weightGoal = newGoal
                     }
+                    dismiss()
                 }
             }
         }
@@ -240,10 +238,8 @@ struct WeightSettingsView: View {
                 .navigationTitle("Weight Sync")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button("Done") {
-                            showingWeightSyncDetails = false
-                        }
+                    Button("Done") {
+                        showingWeightSyncDetails = false
                     }
                 }
             }

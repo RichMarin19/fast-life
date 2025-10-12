@@ -166,11 +166,11 @@ class HealthKitWeightService {
             let source = detectWeightSource(from: sample)
 
             let entry = WeightEntry(
-                id: sample.uuid.uuidString,
-                weight: weight,
+                id: sample.uuid,
                 date: sample.startDate,
+                weight: weight,
                 source: source,
-                healthKitUUID: sample.uuid.uuidString
+                healthKitUUID: sample.uuid
             )
 
             // Keep the most recent sample for each day
