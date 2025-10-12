@@ -13,5 +13,6 @@ Example: `T2: route app to default start tracker on launch`
 
 ## Notes
 - Keep files ≤ 400 LOC or extract subviews/helpers.
+- **SwiftUI views >500 LOC hit compilation timeouts** - use @ViewBuilder computed properties to decompose large views
 - No `!` or `as!`. Use `guard`/`if let` with error logging.
 - `.onChange` closures use two params: `{ oldValue, newValue in }` or `{ _, newValue in }`.

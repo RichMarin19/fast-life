@@ -1679,10 +1679,53 @@ guard syncWithHealthKit else {
 3. **Mark Function @discardableResult** - When appropriate everywhere
 4. **Remove Binding Entirely** - Calculate inline where needed
 
-#### **4. View Decomposition Strategy:**
-- **Compiler Timeout Threshold**: ~500 lines of SwiftUI body triggers type-checking issues
-- **Solution Pattern**: Break into computed properties, not separate files initially
-- **Apple Standard**: Use focused, single-responsibility view components
+#### **4. View Decomposition Strategy (UPDATED - ContentView Refactoring Experience):**
+
+**Compiler Timeout Threshold:** ~500 lines of SwiftUI body triggers "unable to type-check this expression in reasonable time"
+
+**✅ PROVEN SOLUTION PATTERN (T1 ContentView Success):**
+1. **@ViewBuilder Computed Properties**: Break complex views into `@ViewBuilder private var sectionName: some View`
+2. **Complete Content Migration**: REMOVE all content from main body after adding to computed properties
+3. **Single Source Rendering**: Each UI element must render exactly once - never in both main body AND computed properties
+4. **Systematic Verification**: Build and test after each section extraction
+
+**❌ CRITICAL PITFALL - DUPLICATE RENDERING (NEVER REPEAT):**
+- **PROBLEM**: During view decomposition, leaving duplicate content in both main body AND computed properties
+- **SYMPTOM**: UI elements appear twice (2 "Start Fast" buttons, 2 goal displays, etc.)
+- **ROOT CAUSE**: Incomplete content migration - added to computed properties but didn't remove from main body
+- **SOLUTION**: After adding content to computed properties, IMMEDIATELY remove from main VStack body
+- **APPLE STANDARD**: SwiftUI Single Source of Truth principle - each view renders once
+
+**EXAMPLE - CORRECT DECOMPOSITION PATTERN:**
+```swift
+var body: some View {
+    VStack {
+        // ONLY call computed properties - no direct content
+        healthKitNudgeSection
+        titleSection
+        timerSection
+    }
+}
+
+@ViewBuilder
+private var timerSection: some View {
+    // ALL timer content goes here - progress ring, buttons, etc.
+}
+```
+
+**Xcode Project Management (CRITICAL):**
+- **Missing File References**: When creating new components, must add to ALL Xcode project sections:
+  - PBXBuildFile (Sources compilation)
+  - PBXFileReference (File system reference)
+  - PBXGroup (Project navigator grouping)
+  - Sources build phase (Actual compilation)
+- **SYMPTOM**: "Cannot find 'ComponentName' in scope" despite file existing
+- **SOLUTION**: Add file to Xcode project immediately after creation using proper UUID patterns
+
+**Performance Impact:**
+- **Before**: 638-line ContentView causing compilation timeouts
+- **After**: Clean 26-line main body + focused computed properties
+- **Result**: Fast compilation, maintained functionality, enhanced maintainability
 
 #### **5. Threading Compliance (CRITICAL FOR SWIFTUI):**
 - **Rule**: ALL @Published property updates MUST be on main thread
@@ -1717,6 +1760,9 @@ guard syncWithHealthKit else {
 | **State Management** | @StateObject vs @ObservedObject confusion | Use @StateObject for new instances, @ObservedObject for shared | Follow Apple MVVM guidelines |
 | **Import Issues** | Missing framework imports | Add required import statements | Verify all dependencies before coding |
 | **HealthKit Observer** | Observer not triggering automatic sync | Use specific data type authorization (isWeightAuthorized vs isAuthorized) | Check Apple HealthKit observer requirements |
+| **SwiftUI Compilation Timeout** | "Unable to type-check this expression in reasonable time" | Break view into @ViewBuilder computed properties | Keep SwiftUI body under 500 lines |
+| **Duplicate UI Rendering** | UI elements appear twice (2 buttons, etc.) | Remove content from main body after moving to computed properties | Complete content migration during decomposition |
+| **Xcode Missing References** | "Cannot find 'ComponentName' in scope" despite file existing | Add file to ALL Xcode project sections (BuildFile, FileReference, Group, Sources) | Add files to Xcode project immediately after creation |
 
 ### 🔍 Detailed Error Log
 
@@ -1765,6 +1811,30 @@ TrackerScreenShell(
     // Sheet at same indentation level as TrackerScreenShell
 }
 ```
+
+#### **Error #006 - ContentView SwiftUI Compilation Timeout & Duplicate UI Elements**
+- **Date**: 2025-01-12
+- **Files**: ContentView.swift (638 lines → 26 lines main body), EditStartTimeView.swift (missing Xcode references)
+- **Errors**:
+  1. "The compiler is unable to type-check this expression in reasonable time; try breaking up the expression into distinct sub-expressions"
+  2. "Cannot find 'EditStartTimeView' in scope"
+  3. Duplicate UI elements (2 "Start Fast" buttons, 2 goal displays)
+- **Root Causes**:
+  1. ContentView body exceeded ~500 line SwiftUI compilation threshold
+  2. Missing Xcode project file references for new components
+  3. Incomplete content migration during view decomposition - left duplicate content in main body AND computed properties
+- **Solutions Applied**:
+  1. **View Decomposition**: Broke 638-line body into `@ViewBuilder` computed properties (`healthKitNudgeSection`, `titleSection`, `timerSection`)
+  2. **Xcode Project Management**: Added EditStartTimeView to ALL required sections (PBXBuildFile, PBXFileReference, PBXGroup, Sources build phase)
+  3. **Complete Content Migration**: REMOVED all duplicate content from main VStack body after moving to computed properties
+- **Pattern**: SwiftUI performance optimization through focused computed properties while maintaining single source of truth
+- **Apple Standard**: SwiftUI Single Source of Truth principle - each UI element renders exactly once
+- **Results**:
+  - ✅ Fast compilation (no timeouts)
+  - ✅ Single UI element rendering (no duplicates)
+  - ✅ All functionality preserved
+  - ✅ Enhanced maintainability with organized code structure
+- **Prevention**: During view decomposition, immediately remove content from main body after moving to computed properties
 
 #### **Error #003 - Chart Style Mismatch with User Requirements**
 - **Date**: 2025-01-10
