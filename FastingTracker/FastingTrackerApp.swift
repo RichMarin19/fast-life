@@ -2,7 +2,7 @@ import SwiftUI
 
 @main
 struct FastLifeApp: App {
-    @State private var selectedTab: Int = 0  // Always start at Timer tab (index 0)
+    @State private var selectedTab: Int = 2  // Always start at Hub tab (index 2 - center tab)
     @State private var shouldPopToRoot = false  // Trigger navigation pop
     @State private var shouldResetToOnboarding = false  // Trigger full app reset
     @State private var isOnboardingComplete: Bool = UserDefaults.standard.bool(forKey: "onboardingCompleted")
@@ -50,9 +50,9 @@ struct FastLifeApp: App {
         Binding(
             get: { selectedTab },
             set: { newValue in
-                // Reset More tab to root view whenever switching TO it
-                // This ensures Advanced Features is always shown first
-                if newValue == 3 {
+                // Reset Me tab to root view whenever switching TO it
+                // This ensures Me tab is always shown first
+                if newValue == 4 {
                     shouldPopToRoot = true
                 }
                 selectedTab = newValue
@@ -74,29 +74,36 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: tabBinding) {
-            // Timer tab - Always loaded (default tab)
-            ContentView()
-                .environmentObject(fastingManager)
+            // Stats tab - Analytics and cross-tracker insights
+            LazyView(AnalyticsView())
                 .tabItem {
-                    Label("Timer", systemImage: "clock")
+                    Label("Stats", systemImage: "chart.bar.xaxis")
                 }
                 .tag(0)
 
-            // Insights tab - Lazy loaded when user first navigates to it
-            LazyView(InsightsView())
+            // Coach tab - AI coaching and guidance (placeholder for now)
+            LazyView(CoachView())
                 .tabItem {
-                    Label("Insights", systemImage: "lightbulb.fill")
+                    Label("Coach", systemImage: "person.crop.circle.badge.checkmark")
                 }
                 .tag(1)
 
-            // Analytics tab - Lazy loaded (cross-tracker insights coming soon)
-            LazyView(AnalyticsView())
-            .tabItem {
-                Label("Analytics", systemImage: "chart.bar.xaxis")
-            }
-            .tag(2)
+            // Hub tab - Central dashboard (NEW DEFAULT - Always loaded)
+            HubView()
+                .environmentObject(fastingManager)
+                .tabItem {
+                    Label("Hub", systemImage: "house.circle.fill")
+                }
+                .tag(2)
 
-            // More tab - Lazy loaded (navigation stack)
+            // Learn tab - Educational content and insights
+            LazyView(InsightsView())
+                .tabItem {
+                    Label("Learn", systemImage: "lightbulb.fill")
+                }
+                .tag(3)
+
+            // Me tab - Settings, profile, and advanced features
             LazyView(
                 AdvancedView(
                     shouldPopToRoot: $shouldPopToRoot,
@@ -107,14 +114,14 @@ struct MainTabView: View {
                 .environmentObject(fastingManager)
             )
             .tabItem {
-                Label("More", systemImage: "ellipsis.circle")
+                Label("Me", systemImage: "person.circle")
             }
-            .tag(3)
+            .tag(4)
         }
         .onAppear {
             // Load fasting history asynchronously after UI renders
             // This prevents blocking app launch with heavy data loading
-            // History loads in background and displays inline in Timer tab (like Weight Tracker pattern)
+            // History loads in background and displays inline in Hub tab (central dashboard pattern)
             fastingManager.loadHistoryAsync()
         }
     }

@@ -128,7 +128,7 @@ enum TrackerType: String, CaseIterable, Identifiable {
         case .fasting: return "Fasting"
         case .hydration: return "Hydration"
         case .sleep: return "Sleep"
-        case .mood: return "Mood"
+        case .mood: return "Mood & Energy"
         }
     }
 
@@ -139,6 +139,17 @@ enum TrackerType: String, CaseIterable, Identifiable {
         case .hydration: return "drop.fill"
         case .sleep: return "bed.double.fill"
         case .mood: return "face.smiling"
+        }
+    }
+
+    // Emoji icons for Hub display (visual consistency)
+    var icon: String {
+        switch self {
+        case .weight: return "⚖️"
+        case .fasting: return "🔥"
+        case .hydration: return "💧"
+        case .sleep: return "😴"
+        case .mood: return "😊⚡"
         }
     }
 }
