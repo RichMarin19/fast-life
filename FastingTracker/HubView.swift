@@ -20,7 +20,10 @@ struct HubView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                VStack(spacing: 16) {
+                VStack(spacing: 0) {
+                    // MARK: - Top Status Bar (Heart Rate - Luxury Spec Section 2)
+                    TopStatusBar()
+
                     // MARK: - Tracker List (5 trackers in full-width layout)
                     LazyVStack(spacing: 12) {
                         ForEach(trackerOrder, id: \.self) { tracker in
@@ -45,11 +48,11 @@ struct HubView: View {
                 }
             }
             .background(
-                // Navy background with gradient using Asset Catalog colors
+                // Luxury background gradient (following exact spec colors)
                 LinearGradient(
                     colors: [
-                        Color("FLPrimary"),        // Navy blue
-                        Color("FLSecondary")       // Secondary accent
+                        Color(hex: "#0D1B2A"),     // background.dark
+                        Color(hex: "#0B1020")      // background.gradient end
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -181,21 +184,32 @@ struct TrackerSummaryCard: View {
     var body: some View {
         NavigationLink(destination: destinationView) {
             HStack(spacing: 16) {
-                // Icon with accent color (larger for full-width)
-                Text(tracker.icon)
-                    .font(.system(size: 50))
+                // Luxury SF Symbol icon with emerald accent (following spec)
+                Image(systemName: tracker.icon)
+                    .font(.system(size: tracker == trackerOrder.first ? 32 : 24, weight: .medium))
+                    .foregroundColor(tracker == trackerOrder.first ? Color(hex: "#1ABC9C") : .white)
+                    .shadow(color: tracker == trackerOrder.first ? Color(hex: "#1ABC9C").opacity(0.3) : Color.clear, radius: 4, x: 0, y: 0)
 
                 // Tracker info section
                 VStack(alignment: .leading, spacing: 6) {
-                    // Tracker name
-                    Text(tracker.displayName)
-                        .font(.system(.title3, design: .rounded, weight: .semibold))
-                        .foregroundColor(.white)
+                    // Tracker name with status chip (4pt grid aligned)
+                    HStack(spacing: 12) {
+                        Text(tracker.displayName)
+                            .font(.system(.title3, design: .rounded, weight: .semibold))
+                            .foregroundColor(.white)
+
+                        // Status chip for featured tracker
+                        if tracker == trackerOrder.first && tracker == .fasting {
+                            statusChip(isActive: fastingManager.isActive)
+                        }
+
+                        Spacer()
+                    }
 
                     // Dynamic enhanced display for featured tracker (first in order)
                     if tracker == trackerOrder.first {
-                        // Enhanced display for featured tracker (larger size with more info)
-                        VStack(alignment: .leading, spacing: 8) {
+                        // Enhanced display for featured tracker (4pt grid alignment system)
+                        VStack(alignment: .leading, spacing: 12) {
                             // Enhanced display for fasting tracker
                             if tracker == .fasting {
                                 // Enhanced time label with better visibility
@@ -242,6 +256,9 @@ struct TrackerSummaryCard: View {
                                     }
                                 }
 
+                                // Meta row with start time • target • % (luxury spec requirement)
+                                metaRow
+
                                 // Streak display (bottom row)
                                 if fastingManager.currentStreak > 0 {
                                     HStack {
@@ -258,15 +275,8 @@ struct TrackerSummaryCard: View {
                                     }
                                 }
                             } else {
-                                // Enhanced display for other featured trackers (placeholder for future implementation)
-                                Text(tracker.displayName)
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(.white)
-
-                                Text("Enhanced view - more details")
-                                    .font(.subheadline)
-                                    .foregroundColor(.white.opacity(0.7))
+                                // Enhanced display for other featured trackers
+                                enhancedTrackerView(for: tracker)
                             }
                         }
                     } else {
@@ -305,7 +315,7 @@ struct TrackerSummaryCard: View {
             .frame(maxWidth: .infinity)
             .frame(minHeight: tracker == trackerOrder.first ? 200 : 80)
             .background(
-                // Glass-morphism effect on navy background
+                // Luxury glass-morphism cards (following spec)
                 RoundedRectangle(cornerRadius: 16)
                     .fill(.ultraThinMaterial)
                     .overlay(
@@ -313,8 +323,8 @@ struct TrackerSummaryCard: View {
                             .strokeBorder(
                                 LinearGradient(
                                     colors: [
-                                        Color("FLSecondary").opacity(0.6),
-                                        Color("FLWarning").opacity(0.3)
+                                        Color(hex: "#1ABC9C").opacity(0.4),    // accent.primary
+                                        Color(hex: "#D4AF37").opacity(0.2)     // accent.gold
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -322,8 +332,190 @@ struct TrackerSummaryCard: View {
                                 lineWidth: 1.5
                             )
                     )
+                    .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)  // Elevation from spec
             )
         }
+    }
+
+    // MARK: - Meta Row (Following Luxury Spec Layout)
+    /// Meta row with start time • target • % complete (equal spacing, center aligned)
+    @ViewBuilder
+    private var metaRow: some View {
+        if tracker == .fasting && tracker == trackerOrder.first {
+            HStack {
+                // Start time
+                if fastingManager.isActive, let startTime = fastingManager.currentSession?.startTime {
+                    VStack(spacing: 2) {
+                        Text("Start")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color(hex: "#D0D4DA"))
+                        Text(formatTime(startTime))
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                }
+
+                Spacer()
+
+                // Target time
+                if fastingManager.isActive {
+                    VStack(spacing: 2) {
+                        Text("Target")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color(hex: "#D0D4DA"))
+                        Text("\(Int(fastingManager.fastingGoalHours))h")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                }
+
+                Spacer()
+
+                // Progress percentage
+                VStack(spacing: 2) {
+                    Text("Progress")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color(hex: "#D0D4DA"))
+                    Text("\(Int(fastingManager.progress * 100))%")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color(hex: "#1ABC9C"))
+                }
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.2))
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Enhanced Tracker Views (Following Luxury Spec)
+    @ViewBuilder
+    private func enhancedTrackerView(for tracker: TrackerType) -> some View {
+        switch tracker {
+        case .weight:
+            VStack(alignment: .leading, spacing: 8) {
+                // Status chip for weight tracking
+                if tracker == trackerOrder.first {
+                    statusChip(isActive: true) // Assume active for demo
+                }
+
+                // Weight display with units
+                HStack(alignment: .center) {
+                    Text("Current Weight")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("-- lbs")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "#1ABC9C"))
+                        Text("No data yet")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+            }
+
+        case .sleep:
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center) {
+                    Text("Last Night")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("-- hrs")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "#1ABC9C"))
+                        Text("No data yet")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+            }
+
+        case .hydration:
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center) {
+                    Text("Daily Goal")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("0%")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "#1ABC9C"))
+                        Text("0 / 64 oz")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+            }
+
+        case .mood:
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center) {
+                    Text("Today's Mood")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("--/10")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(Color(hex: "#1ABC9C"))
+                        Text("Not rated")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                }
+            }
+
+        case .fasting:
+            // This case is handled separately above
+            EmptyView()
+        }
+    }
+
+    // MARK: - Time Formatting Helper
+    private func formatTime(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+        return formatter.string(from: date)
+    }
+
+    // MARK: - Status Chip (Following Luxury Spec Design)
+    /// Creates a status chip with 12pt radius following spec requirements
+    @ViewBuilder
+    private func statusChip(isActive: Bool) -> some View {
+        Text(isActive ? "Active" : "Paused")
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundColor(isActive ? .white : Color(hex: "#D0D4DA"))
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(isActive ? Color(hex: "#1ABC9C") : Color.gray.opacity(0.3))
+                    .shadow(color: isActive ? Color(hex: "#1ABC9C").opacity(0.3) : Color.clear, radius: 2, x: 0, y: 1)
+            )
     }
 }
 
@@ -386,6 +578,35 @@ struct MiniProgressRing: View {
                 .shadow(color: isActive ? Color.blue.opacity(0.3) : Color.clear, radius: 2, x: 0, y: 0)
                 .animation(.linear(duration: 1), value: progress)
         }
+    }
+}
+
+// MARK: - Color Extension for Hex Values (Following Luxury Spec)
+
+extension Color {
+    init(hex: String) {
+        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: // RGB (12-bit)
+            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: // RGB (24-bit)
+            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: // ARGB (32-bit)
+            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default:
+            (a, r, g, b) = (1, 1, 1, 0)
+        }
+
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue:  Double(b) / 255,
+            opacity: Double(a) / 255
+        )
     }
 }
 

@@ -142,14 +142,15 @@ enum TrackerType: String, CaseIterable, Identifiable {
         }
     }
 
-    // Emoji icons for Hub display (visual consistency)
+    // Luxury SF Symbol icons following luxury spec design guidelines
+    // Style: Minimalist line icons, 2pt rounded strokes, 24pt/28pt bounding box
     var icon: String {
         switch self {
-        case .weight: return "⚖️"
-        case .fasting: return "🔥"
-        case .hydration: return "💧"
-        case .sleep: return "😴"
-        case .mood: return "😊⚡"
+        case .weight: return "scalemass.fill"           // Modern scale outline
+        case .fasting: return "timer.circle.fill"       // Circular timer design
+        case .hydration: return "drop.fill"             // Single water drop silhouette
+        case .sleep: return "moon.circle.fill"          // Crescent moon outline
+        case .mood: return "face.smiling.fill"          // Simple smile design
         }
     }
 }

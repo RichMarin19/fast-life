@@ -81,6 +81,8 @@
 		FC007001000000000000001 /* AddEditFastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC007002000000000000001 /* AddEditFastView.swift */; };
 		HV001001000000000000001 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HV001002000000000000001 /* HubView.swift */; };
 		CV001001000000000000001 /* CoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CV001002000000000000001 /* CoachView.swift */; };
+		TSB01001000000000000001 /* TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* TopStatusBar.swift */; };
+		HRM01001000000000000001 /* HeartRateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HRM01002000000000000001 /* HeartRateManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -161,6 +163,8 @@
 		FC007002000000000000001 /* AddEditFastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AddEditFastView.swift; sourceTree = "<group>"; };
 		HV001002000000000000001 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubView.swift; sourceTree = "<group>"; };
 		CV001002000000000000001 /* CoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachView.swift; sourceTree = "<group>"; };
+		TSB01002000000000000001 /* TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
+		HRM01002000000000000001 /* HeartRateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HeartRateManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -259,6 +263,8 @@
 				FC005002000000000000001 /* FastingGraphView.swift */,
 				FC006002000000000000001 /* TotalStatsView.swift */,
 				FC007002000000000000001 /* AddEditFastView.swift */,
+				TSB01002000000000000001 /* TopStatusBar.swift */,
+				HRM01002000000000000001 /* HeartRateManager.swift */,
 				HV001002000000000000001 /* HubView.swift */,
 				CV001002000000000000001 /* CoachView.swift */,
 			);
@@ -413,6 +419,8 @@
 				FC005001000000000000001 /* FastingGraphView.swift in Sources */,
 				FC006001000000000000001 /* TotalStatsView.swift in Sources */,
 				FC007001000000000000001 /* AddEditFastView.swift in Sources */,
+				TSB01001000000000000001 /* TopStatusBar.swift in Sources */,
+				HRM01001000000000000001 /* HeartRateManager.swift in Sources */,
 				HV001001000000000000001 /* HubView.swift in Sources */,
 				CV001001000000000000001 /* CoachView.swift in Sources */,
 			);

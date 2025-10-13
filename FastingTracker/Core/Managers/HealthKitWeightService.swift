@@ -3,9 +3,16 @@ import HealthKit
 
 /// Specialized service for HealthKit weight data operations
 /// Following Apple HealthKit Best Practices for efficient data sync
+/// CRITICAL FIX: Uses dependency injection for shared HKHealthStore to prevent authorization conflicts
 class HealthKitWeightService {
-    private let healthStore = HKHealthStore()
+    private let healthStore: HKHealthStore
     private let userDefaults = UserDefaults.standard
+
+    /// Industry standard: Dependency injection constructor for shared store
+    /// Prevents multiple HKHealthStore instances that cause SHARING DENIED issues
+    init(healthStore: HKHealthStore) {
+        self.healthStore = healthStore
+    }
 
     private enum AnchorKeys {
         static let weight = "HealthKitAnchor_Weight"

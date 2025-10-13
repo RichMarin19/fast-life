@@ -15,12 +15,17 @@ class HealthKitManager: ObservableObject {
     static let shared = HealthKitManager()
 
     // MARK: - Specialized Services
-    let authManager = HealthKitAuthManager()
-    let weightService = HealthKitWeightService()
+    let authManager: HealthKitAuthManager
+    let weightService: HealthKitWeightService
 
     @Published var isAuthorized = false
 
     private init() {
+        // CRITICAL FIX: Initialize all services with shared store to prevent authorization conflicts
+        // This ensures all HealthKit operations use the same HKHealthStore instance
+        self.authManager = HealthKitAuthManager(healthStore: healthStore)
+        self.weightService = HealthKitWeightService(healthStore: healthStore)
+
         // Delegate authorization status to auth manager
         authManager.$isAuthorized.assign(to: &$isAuthorized)
     }
@@ -62,6 +67,14 @@ class HealthKitManager: ObservableObject {
 
     func requestFastingAuthorization() async throws {
         try await authManager.requestFastingAuthorization()
+    }
+
+    func requestHeartRateAuthorization() async throws {
+        try await authManager.requestHeartRateAuthorization()
+    }
+
+    func isHeartRateAuthorized() -> Bool {
+        return authManager.isHeartRateAuthorized()
     }
 
     /// API compatibility: requestWeightAuthorization with completion handler

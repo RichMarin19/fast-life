@@ -3,9 +3,16 @@ import HealthKit
 
 /// Manages HealthKit authorization requests and status checking
 /// Following Apple HealthKit Programming Guide for proper authorization patterns
+/// CRITICAL FIX: Uses dependency injection for shared HKHealthStore to prevent authorization conflicts
 class HealthKitAuthManager: ObservableObject {
-    private let healthStore = HKHealthStore()
+    private let healthStore: HKHealthStore
     @Published var isAuthorized = false
+
+    /// Industry standard: Dependency injection constructor for shared store
+    /// Prevents multiple HKHealthStore instances that cause SHARING DENIED issues
+    init(healthStore: HKHealthStore) {
+        self.healthStore = healthStore
+    }
 
     // MARK: - Domain-Specific Authorization Checks
 
@@ -32,6 +39,19 @@ class HealthKitAuthManager: ObservableObject {
         }
 
         let status = healthStore.authorizationStatus(for: waterType)
+        return status == .sharingAuthorized
+    }
+
+    func isHeartRateAuthorized() -> Bool {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            return false
+        }
+
+        guard let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate) else {
+            return false
+        }
+
+        let status = healthStore.authorizationStatus(for: heartRateType)
         return status == .sharingAuthorized
     }
 
@@ -158,6 +178,25 @@ class HealthKitAuthManager: ObservableObject {
 
         let typesToRead: Set<HKObjectType> = [waterType]
         let typesToWrite: Set<HKSampleType> = [waterType]
+
+        try await healthStore.requestAuthorization(toShare: typesToWrite, read: typesToRead)
+
+        await MainActor.run {
+            checkAuthorizationStatus()
+        }
+    }
+
+    func requestHeartRateAuthorization() async throws {
+        guard HKHealthStore.isHealthDataAvailable() else {
+            throw HealthKitError.notAvailable
+        }
+
+        guard let heartRateType = HKObjectType.quantityType(forIdentifier: .heartRate) else {
+            throw HealthKitError.invalidType
+        }
+
+        let typesToRead: Set<HKObjectType> = [heartRateType]
+        let typesToWrite: Set<HKSampleType> = [] // Heart rate is read-only
 
         try await healthStore.requestAuthorization(toShare: typesToWrite, read: typesToRead)
 
