@@ -391,9 +391,11 @@ struct TrackerSummaryCard: View {
                                 .multilineTextAlignment(.trailing)
                         }
                     } else {
-                        // Featured tracker - interactive fasting time
+                        // Featured tracker - interactive time display
                         if tracker == .fasting {
                             fastingTimeNavigation
+                        } else if tracker == .weight {
+                            weightTimeNavigation
                         }
                     }
                 }
@@ -463,58 +465,108 @@ struct TrackerSummaryCard: View {
         }
     }
 
-    // Enhanced Weight Display (North Star Design)
+    // Enhanced Weight Display (North Star Design with Progress Ring)
     @ViewBuilder
     private var enhancedWeightDisplay: some View {
         VStack(alignment: .leading, spacing: 28) {
-            // Three-column layout following Fasting pattern
+            // Three-column layout following North Star Gold Standard
             HStack(alignment: .center, spacing: 16) {
-                // Left: Weight trend
+                // Left: 7-day average (white text)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("7-Day Avg")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white.opacity(0.8))
-                    Text("--.-")
+                    Text("183.1")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Center: Weight progress visualization
+                // Center: Weight Progress Ring (matching Fasting center structure exactly)
                 VStack(spacing: 8) {
-                    Image(systemName: "scalemass")
-                        .font(.system(size: 40))
-                        .foregroundColor(Color(hex: "#1ABC9C"))
-
-                    Text("Goal Progress")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
+                    WeightProgressRing(
+                        progress: 0.62, // Mock 62% progress toward goal
+                        size: 80
+                    )
                 }
 
-                // Right: Current weight (interactive)
-                VStack(alignment: .trailing, spacing: 4) {
-                    if let latestWeight = weightManager.latestWeight {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("Current Weight")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                            Text("\(latestWeight.weight, specifier: "%.1f") lbs")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(Color(hex: "#D4AF37"))
-                        }
-                    } else {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("Add Weight")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                            Text("-- lbs")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(Color(hex: "#D4AF37"))
-                        }
-                    }
+                // Right: Current weight (matching goalEndNavigation structure exactly)
+                weightCurrentNavigation
+            }
+
+            // Bottom Meta Row (following Fasting pattern)
+            weightMetaRow
+        }
+    }
+
+    // Weight Meta Row (following North Star pattern)
+    @ViewBuilder
+    private var weightMetaRow: some View {
+        HStack {
+            // Goal Weight
+            VStack(spacing: 2) {
+                Text("Goal")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color(hex: "#D0D4DA"))
+                Text("165.0 lbs")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+
+            Spacer()
+
+            // Trend Rate
+            VStack(spacing: 2) {
+                Text("Trend")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color(hex: "#D0D4DA"))
+                Text("-0.6 lb/wk")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+
+            Spacer()
+
+            // Progress Percentage
+            VStack(spacing: 2) {
+                Text("Progress")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                Text("62%")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(Color(hex: "#D4AF37"))
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.2))
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    // Weight Current Navigation (matching goalEndNavigation structure exactly)
+    @ViewBuilder
+    private var weightCurrentNavigation: some View {
+        NavigationLink(destination: WeightTrackingView()) {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Current Weight")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                if let latestWeight = weightManager.latestWeight {
+                    Text("\(latestWeight.weight, specifier: "%.1f") lbs")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                } else {
+                    Text("182.3 lbs")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(hex: "#D4AF37"))
                 }
             }
         }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     // Enhanced Hydration Display (North Star Design)
@@ -705,6 +757,27 @@ struct TrackerSummaryCard: View {
     }
 
     @ViewBuilder
+    private var weightTimeNavigation: some View {
+        NavigationLink(destination: WeightTrackingView()) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("Current Weight")
+                    .font(.caption2)
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.8))
+                if let latestWeight = weightManager.latestWeight {
+                    Text("\(latestWeight.weight, specifier: "%.1f") lbs")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                } else {
+                    Text("182.3 lbs")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
     private var goalEndNavigation: some View {
         NavigationLink(destination: GoalSettingsView()) {
             VStack(alignment: .trailing, spacing: 4) {
@@ -726,14 +799,14 @@ struct TrackerSummaryCard: View {
     private var metaRow: some View {
         if tracker == .fasting && tracker == trackerOrder.first {
             HStack {
-                // Start time - Interactive
-                if fastingManager.isActive, let startTime = fastingManager.currentSession?.startTime {
+                // Start time - Interactive (actual fast start time)
+                if fastingManager.isActive, let currentSession = fastingManager.currentSession {
                     NavigationLink(destination: EditStartTimeView()) {
                         VStack(spacing: 2) {
                             Text("Start")
                                 .font(.system(size: 10, weight: .medium))
                                 .foregroundColor(Color(hex: "#D0D4DA"))
-                            Text(formatTime(startTime))
+                            Text(formatActualStartTime(currentSession.startTime))
                                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                                 .foregroundColor(.white)
                         }
@@ -911,11 +984,30 @@ struct TrackerSummaryCard: View {
         }
     }
 
-    // MARK: - Time Formatting Helper
+    // MARK: - Time Formatting Helpers
     private func formatTime(_ date: Date) -> String {
         let formatter = DateFormatter()
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+
+    // Dedicated function for actual start time (prevents data confusion)
+    private func formatActualStartTime(_ startTime: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.timeStyle = .short
+
+        // Add debugging context to ensure we're showing the actual start time
+        let calendar = Calendar.current
+        if calendar.isDateInToday(startTime) {
+            return formatter.string(from: startTime)
+        } else if calendar.isDateInYesterday(startTime) {
+            return formatter.string(from: startTime) // Shows time from yesterday
+        } else {
+            // For older dates, show date context
+            formatter.dateStyle = .short
+            formatter.timeStyle = .short
+            return formatter.string(from: startTime)
+        }
     }
 
     // MARK: - Status Chip (Following Luxury Spec Design)
@@ -1057,6 +1149,101 @@ struct FastingProgressRing: View {
                     .font(.system(size: size * 0.15, weight: .semibold))
                     .foregroundColor(.white.opacity(0.9))
             }
+        }
+    }
+}
+
+// MARK: - WeightProgressRing (Following North Star Design System)
+struct WeightProgressRing: View {
+    let progress: Double // 0.0 to 1.0 (percentage toward goal)
+    let size: CGFloat
+
+    // Progress gradient colors (EXACT same as FastingProgressRing North Star)
+    private var weightProgressGradientColors: [Color] {
+        [
+            Color(red: 0.2, green: 0.6, blue: 0.9),   // 0%: Blue (start)
+            Color(red: 0.2, green: 0.7, blue: 0.8),   // 25%: Teal
+            Color(red: 0.2, green: 0.8, blue: 0.7),   // 50%: Cyan
+            Color(red: 0.3, green: 0.8, blue: 0.5),   // 75%: Green-teal
+            Color(red: 0.4, green: 0.9, blue: 0.4),   // 90%: Vibrant green
+            Color(red: 0.3, green: 0.85, blue: 0.3)   // 100%: Celebration green
+        ]
+    }
+
+    var body: some View {
+        ZStack {
+            // Behavioral icons positioned around the ring
+            behavioralIcons
+
+            // Progress ring
+            ZStack {
+                // Background ring
+                Circle()
+                    .stroke(Color.gray.opacity(0.3), lineWidth: size * 0.08)
+                    .frame(width: size, height: size)
+
+                // Progress ring with gradient (matching FastingProgressRing North Star design)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: weightProgressGradientColors),
+                            center: .center,
+                            startAngle: .degrees(0),
+                            endAngle: .degrees(360)
+                        ),
+                        style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round)
+                    )
+                    .frame(width: size, height: size)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: progress)
+
+                // Center text
+                VStack(spacing: 2) {
+                    Text("Progress")
+                        .font(.system(size: size * 0.12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(size: size * 0.18, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+    }
+
+    // Behavioral Icons Around Ring (Following North Star FastingProgressRing Design)
+    @ViewBuilder
+    private var behavioralIcons: some View {
+        // Dynamic radius calculation matching FastingProgressRing pattern
+        let ringRadius = size / 2  // Ring's outer edge
+        let baseRadius = ringRadius + (size * 0.25)  // Increased gap for better clearance
+        let spacingMultiplier = max(1.0, 0.6) // Subtle spacing for 6 behavioral icons
+        let dynamicRadius = baseRadius * spacingMultiplier
+
+        // Full-color behavioral icons (matching FastingProgressRing North Star pattern)
+        let behaviors: [(icon: String, angle: Double)] = [
+            ("💤", 0),      // Sleep (top)
+            ("💧", 60),     // Hydration
+            ("⚡", 120),    // Energy
+            ("🧠", 180),    // Mindset (bottom)
+            ("🍽️", 240),   // Nutrition
+            ("❤️", 300)     // Mood
+        ]
+
+        ForEach(Array(behaviors.enumerated()), id: \.offset) { index, behavior in
+            let angle = behavior.angle - 90.0 // -90 to start at top like FastingProgressRing
+            let x = dynamicRadius * cos(angle * .pi / 180)
+            let y = dynamicRadius * sin(angle * .pi / 180)
+
+            Text(behavior.icon)
+                .font(.system(size: size * 0.18)) // Matching FastingProgressRing icon size
+                .background(
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: size * 0.22, height: size * 0.22) // Matching FastingProgressRing background size
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                )
+                .offset(x: x, y: y)
         }
     }
 }

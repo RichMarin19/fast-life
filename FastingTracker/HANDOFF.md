@@ -336,6 +336,103 @@ VStack(alignment: .leading, spacing: 28) {
 
 **This specification is MANDATORY for all Main Focus card implementations.**
 
+### Circular Progress Ring Visual Standard - MANDATORY
+
+#### Universal Design Requirements for ALL Progress Rings
+**Established Pattern:** All circular progress rings MUST follow the FastingProgressRing North Star design unless explicitly told otherwise.
+
+**Color System (MANDATORY):**
+```swift
+// Standard gradient colors for ALL progress rings
+private var progressGradientColors: [Color] {
+    [
+        Color(red: 0.2, green: 0.6, blue: 0.9),   // 0%: Blue (start)
+        Color(red: 0.2, green: 0.7, blue: 0.8),   // 25%: Teal
+        Color(red: 0.2, green: 0.8, blue: 0.7),   // 50%: Cyan
+        Color(red: 0.3, green: 0.8, blue: 0.5),   // 75%: Green-teal
+        Color(red: 0.4, green: 0.9, blue: 0.4),   // 90%: Vibrant green
+        Color(red: 0.3, green: 0.85, blue: 0.3)   // 100%: Celebration green
+    ]
+}
+```
+
+**Icon Standards (MANDATORY):**
+- **Full-color emoji/unicode icons** (💤, 💧, ⚡, 🧠, etc.)
+- **Icon sizing**: `size * 0.18`
+- **Background sizing**: `size * 0.22`
+- **White circular backgrounds** with subtle shadows
+- **Dynamic radius positioning** for collision avoidance
+
+**Stroke Pattern (MANDATORY):**
+```swift
+// AngularGradient stroke for all progress rings
+.stroke(
+    AngularGradient(
+        gradient: Gradient(colors: progressGradientColors),
+        center: .center,
+        startAngle: .degrees(0),
+        endAngle: .degrees(360)
+    ),
+    style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round)
+)
+```
+
+**Industry Standards Applied:**
+- **Apple Health App Pattern**: Rich gradient visualization
+- **SwiftUI Best Practices**: AngularGradient for smooth transitions
+- **Visual Consistency**: All progress rings share identical visual language
+
+**Exception Policy:**
+Only deviate from this standard when explicitly instructed. All progress rings should feel like part of the same cohesive design system.
+
+### Weight Main Focus Card - Completed Implementation Reference
+
+#### Key Achievements and Patterns Established
+**Completion Date:** 2025-01-14
+
+**✅ Successfully Implemented:**
+1. **North Star Positioning** - "Current Weight" positioned in top-right header matching "Fasting Time"
+2. **WeightProgressRing Component** - Full North Star visual compliance with behavioral icons
+3. **Three-Column Layout** - 7-Day Avg | Progress Ring | Current Weight (enhanced display)
+4. **Behavioral Psychology Integration** - Vision document requirements met with 6 behavioral icons
+5. **Component Structure** - `weightTimeNavigation` + `enhancedWeightDisplay` + `weightCurrentNavigation`
+
+**🎯 Design Patterns Established for Future Cards:**
+- **Header-Level Navigation** - `[tracker]TimeNavigation` components for top-right positioning
+- **Enhanced Display Structure** - Three-column with 28pt spacing, progress visualization center
+- **Progress Ring Standardization** - Universal blue-to-green gradient with full-color emoji icons
+- **Meta Row Pattern** - Bottom data display with Goal | Trend | Progress structure
+
+**📋 Technical Components Created:**
+```
+- weightTimeNavigation: NavigationLink in card header
+- enhancedWeightDisplay: Main three-column layout
+- WeightProgressRing: Behavioral psychology progress visualization
+- weightCurrentNavigation: Enhanced display right column
+- weightMetaRow: Bottom meta data display
+```
+
+**🔧 Code Patterns for Replication:**
+- Header navigation: `tracker == .weight { weightTimeNavigation }`
+- Enhanced switch: `case .weight: enhancedWeightDisplay`
+- Progress ring: Universal gradient + behavioral emoji icons
+- Layout spacing: 20pt margins, 28pt section spacing, 16pt column spacing
+
+**📖 Lessons for Sleep/Hydration/Mood Cards:**
+1. Start with `[tracker]TimeNavigation` for header positioning
+2. Create `enhanced[Tracker]Display` following three-column pattern
+3. Design tracker-specific progress visualization (ring, chart, or indicator)
+4. Apply universal circular progress ring standards where applicable
+5. Test positioning against North Star Fasting card for consistency
+
+**🎨 Visual Standards Locked:**
+- Progress rings use universal blue-to-green gradient
+- Behavioral icons use full-color emoji (💤💧⚡🧠🍽️❤️)
+- Gold (#D4AF37) for current/interactive values
+- White for historical/average data
+- Teal (#1ABC9C) for primary accent elements
+
 ---
 *Last Updated: 2025-01-14*
+*Weight Main Focus Card: Complete & Ready for Commit*
 *Main Focus Gold Standard: Official Design System Specification*
