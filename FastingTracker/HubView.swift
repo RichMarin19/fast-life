@@ -12,6 +12,11 @@ struct HubView: View {
     @StateObject private var moodManager = MoodManager()
     // Note: Mood tracker handles both mood and energy data
 
+    // MARK: - Navigation State Management (Following AdvancedView pattern)
+    // Industry Standard: Tab-driven navigation reset for "home" functionality
+    @Binding var shouldPopToRoot: Bool
+    @State private var navigationPath = NavigationPath()
+
     // MARK: - State Management (Apple SwiftUI Guidelines)
     @AppStorage("hubTrackerOrder") private var trackerOrderData: Data = Data()
     @State private var trackerOrder: [TrackerType] = [.weight, .fasting, .sleep, .hydration, .mood]
@@ -122,7 +127,7 @@ struct HubView: View {
     }
 
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $navigationPath) {
             mainContentView
                 .background(luxuryBackgroundGradient)
                 .navigationBarHidden(true)
@@ -136,6 +141,14 @@ struct HubView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
             // Following Apple reactive UI patterns - refresh data when app becomes active
             // This ensures real-time updates when returning from other apps
+        }
+        .onChange(of: shouldPopToRoot) { _, newValue in
+            // Industry Standard: Tab-driven navigation reset following AdvancedView pattern
+            // Reference: Apple HIG - "Tapping a currently selected tab should return to the top-level view"
+            if newValue {
+                navigationPath = NavigationPath()
+                shouldPopToRoot = false
+            }
         }
     }
 
@@ -247,6 +260,46 @@ struct TrackerSummaryCard: View {
         }
     }
 
+    // Computed property for 7-day average fasting time
+    private var averageFastingTime: String {
+        let last7Days = fastingManager.fastingHistory.prefix(7)
+        let completedFasts = last7Days.filter { $0.endTime != nil }
+
+        guard !completedFasts.isEmpty else {
+            return "-- hrs"
+        }
+
+        let totalDuration = completedFasts.reduce(0) { result, session in
+            guard let endTime = session.endTime else { return result }
+            return result + endTime.timeIntervalSince(session.startTime)
+        }
+
+        let averageDuration = totalDuration / Double(completedFasts.count)
+        let hours = Int(averageDuration) / 3600
+        let minutes = Int(averageDuration) / 60 % 60
+
+        return String(format: "%02d:%02d", hours, minutes)
+    }
+
+    // Computed property for goal end time
+    private var goalEndTime: String {
+        if fastingManager.isActive, let startTime = fastingManager.currentSession?.startTime {
+            let goalDuration = fastingManager.fastingGoalHours * 3600
+            let endTime = startTime.addingTimeInterval(goalDuration)
+
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return formatter.string(from: endTime)
+        } else if let lastFast = fastingManager.fastingHistory.first,
+                  let lastEndTime = lastFast.endTime {
+            let formatter = DateFormatter()
+            formatter.timeStyle = .short
+            return formatter.string(from: lastEndTime)
+        } else {
+            return "-- --"
+        }
+    }
+
     @ViewBuilder
     private var destinationView: some View {
         switch tracker {
@@ -265,161 +318,407 @@ struct TrackerSummaryCard: View {
     }
 
     var body: some View {
-        NavigationLink(destination: destinationView) {
-            HStack(spacing: 16) {
-                // Luxury SF Symbol icon with emerald accent (following spec)
-                Image(systemName: tracker.icon)
-                    .font(.system(size: tracker == trackerOrder.first ? 32 : 24, weight: .medium))
-                    .foregroundColor(tracker == trackerOrder.first ? Color(hex: "#1ABC9C") : .white)
-                    .shadow(color: tracker == trackerOrder.first ? Color(hex: "#1ABC9C").opacity(0.3) : Color.clear, radius: 4, x: 0, y: 0)
+        // Conditional navigation: Fasting tracker has individual interactive elements
+        Group {
+            if tracker == .fasting {
+                // Fasting tracker: Background navigation + individual interactive elements
+                NavigationLink(destination: destinationView) {
+                    cardContent
+                }
+                .buttonStyle(.plain)
+            } else {
+                // Other trackers: Whole card is clickable
+                NavigationLink(destination: destinationView) {
+                    cardContent
+                }
+            }
+        }
+    }
 
-                // Tracker info section
-                VStack(alignment: .leading, spacing: 6) {
-                    // Tracker name with dynamic sizing based on position
-                    HStack(spacing: 12) {
-                        Text(tracker.displayName)
-                            .font(.system(tracker == trackerOrder.first ? .title3 : .title2, design: .rounded, weight: .semibold))
-                            .foregroundColor(.white)
+    @ViewBuilder
+    private var cardContent: some View {
+        HStack(spacing: 20) {
+            // Tracker info section
+            VStack(alignment: .leading, spacing: 6) {
+                // Tracker title and values
+                HStack(spacing: 12) {
+                    // Icon positioned next to title
+                    Image(systemName: tracker.icon)
+                        .font(.system(size: 24, weight: .medium))
+                        .foregroundColor(.white)
 
-                        // Status chip for featured tracker
-                        if tracker == trackerOrder.first && tracker == .fasting {
-                            statusChip(isActive: fastingManager.isActive)
-                        }
+                    Text(tracker.displayName)
+                        .font(.system(.title2, design: .rounded, weight: .semibold))
+                        .foregroundColor(.white)
 
-                        // For non-featured trackers, add the value on the right side
-                        if tracker != trackerOrder.first {
-                            Spacer()
+                    Spacer()
 
-                            if tracker == .fasting {
-                                // Fasting with context label above value
-                                VStack(alignment: .trailing, spacing: 2) {
-                                    Text(fastingManager.isActive ? "Time Since Fast Started" : "Time Since Last Fast")
-                                        .font(.caption2)
-                                        .foregroundColor(.white.opacity(0.7))
-
-                                    Text(simpleDisplayValue(for: tracker))
-                                        .font(.system(.title3, design: .rounded, weight: .semibold))
-                                        .foregroundColor(Color("FLWarning"))
-                                }
-                            } else {
+                    // Values positioned on right side within HStack
+                    if tracker != trackerOrder.first {
+                        // Non-featured tracker values
+                        if tracker == .fasting {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                Text(fastingManager.isActive ? "Time Since Fast Started" : "Time Since Last Fast")
+                                    .font(.caption2)
+                                    .foregroundColor(.white.opacity(0.7))
                                 Text(simpleDisplayValue(for: tracker))
                                     .font(.system(.title3, design: .rounded, weight: .semibold))
                                     .foregroundColor(Color("FLWarning"))
-                                    .multilineTextAlignment(.center)
+                            }
+                        } else if tracker == .mood {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                if let avgMood = moodManager.todayAverageMood,
+                                   let avgEnergy = moodManager.todayAverageEnergy {
+                                    Text("\(String(format: "%.1f", avgMood)) m")
+                                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                                        .foregroundColor(Color("FLWarning"))
+                                    Text("\(String(format: "%.1f", avgEnergy)) e")
+                                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                                        .foregroundColor(Color("FLWarning"))
+                                } else {
+                                    Text("-- m")
+                                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                                        .foregroundColor(Color("FLWarning"))
+                                    Text("-- e")
+                                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                                        .foregroundColor(Color("FLWarning"))
+                                }
                             }
                         } else {
-                            Spacer()
+                            Text(simpleDisplayValue(for: tracker))
+                                .font(.system(.title3, design: .rounded, weight: .semibold))
+                                .foregroundColor(Color("FLWarning"))
+                                .multilineTextAlignment(.trailing)
                         }
-                    }
-
-                    // Dynamic enhanced display for featured tracker (first in order)
-                    if tracker == trackerOrder.first {
-                        // Enhanced display for featured tracker (4pt grid alignment system)
-                        VStack(alignment: .leading, spacing: 12) {
-                            // Enhanced display for fasting tracker
-                            if tracker == .fasting {
-                                // Enhanced time label with better visibility
-                                Text(fastingManager.isActive ? "Fasting Time" : "Time Since Last Fast")
-                                    .font(.caption2)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 8)
-                                    .padding(.vertical, 3)
-                                    .background(
-                                        Capsule()
-                                            .fill(Color.black.opacity(0.3))
-                                            .background(
-                                                Capsule()
-                                                    .fill(.ultraThinMaterial)
-                                            )
-                                    )
-
-                                // Restructured layout with progress ring and percentage
-                                HStack(alignment: .top, spacing: 20) {
-                                    // Left side - Time display
-                                    Text(fastingDisplayValue)
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(fastingManager.isActive ? .white : Color("FLWarning"))
-
-                                    Spacer()
-
-                                    // Right side - Progress ring with percentage underneath
-                                    VStack(spacing: 6) {
-                                        MiniProgressRing(
-                                            progress: fastingManager.progress,
-                                            isActive: fastingManager.isActive,
-                                            size: 44
-                                        )
-
-                                        // Progress percentage underneath ring
-                                        if fastingManager.isActive {
-                                            Text("\(Int(fastingManager.progress * 100))%")
-                                                .font(.caption)
-                                                .fontWeight(.semibold)
-                                                .foregroundColor(.white.opacity(0.9))
-                                        }
-                                    }
-                                }
-
-                                // Meta row with start time • target • % (luxury spec requirement)
-                                metaRow
-
-                                // Streak display (bottom row)
-                                if fastingManager.currentStreak > 0 {
-                                    HStack {
-                                        HStack(spacing: 4) {
-                                            Image(systemName: "flame.fill")
-                                                .font(.caption2)
-                                                .foregroundColor(.orange)
-                                            Text("\(fastingManager.currentStreak) day\(fastingManager.currentStreak == 1 ? "" : "s") streak")
-                                                .font(.caption2)
-                                                .foregroundColor(.orange.opacity(0.9))
-                                        }
-
-                                        Spacer()
-                                    }
-                                }
-                            } else {
-                                // Enhanced display for other featured trackers
-                                enhancedTrackerView(for: tracker)
-                            }
+                    } else {
+                        // Featured tracker - interactive fasting time
+                        if tracker == .fasting {
+                            fastingTimeNavigation
                         }
                     }
                 }
 
-                Spacer()
-
-                // Navigation chevron
-                Image(systemName: "chevron.right.circle.fill")
-                    .font(.title2)
-                    .foregroundColor(Color("FLSecondary"))
-                    .opacity(0.8)
+                // Enhanced display for featured tracker (North Star design for any Main Focus)
+                if tracker == trackerOrder.first {
+                    enhancedMainFocusDisplay(for: tracker)
+                }
             }
-            .padding(20)
-            .frame(maxWidth: .infinity)
-            .frame(minHeight: tracker == trackerOrder.first ? 200 : 80)
-            .background(
-                // Luxury glass-morphism cards (following spec)
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .strokeBorder(
-                                LinearGradient(
-                                    colors: [
-                                        Color(hex: "#1ABC9C").opacity(0.4),    // accent.primary
-                                        Color(hex: "#D4AF37").opacity(0.2)     // accent.gold
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1.5
-                            )
-                    )
-                    .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)  // Elevation from spec
-            )
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 20)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: tracker == trackerOrder.first ? 200 : 80)
+        .background(trackerBackground)
+    }
+
+    // MARK: - Enhanced Main Focus Display (North Star Design for Any Tracker)
+    @ViewBuilder
+    private func enhancedMainFocusDisplay(for tracker: TrackerType) -> some View {
+        switch tracker {
+        case .fasting:
+            enhancedFastingDisplay
+        case .weight:
+            enhancedWeightDisplay
+        case .hydration:
+            enhancedHydrationDisplay
+        case .sleep:
+            enhancedSleepDisplay
+        case .mood:
+            enhancedMoodDisplay
+        }
+    }
+
+    @ViewBuilder
+    private var enhancedFastingDisplay: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Three-column layout with interactive elements
+            HStack(alignment: .center, spacing: 16) {
+                // Left: 7-day average
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("7-Day Avg")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text(averageFastingTime)
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Center: Progress ring (using exact same component as main tracker)
+                VStack(spacing: 8) {
+                    FastingProgressRing(
+                        progress: fastingManager.progress,
+                        isActive: fastingManager.isActive,
+                        fastingGoalHours: fastingManager.fastingGoalHours,
+                        size: 80
+                    )
+                }
+
+                // Right: Goal end time (interactive)
+                goalEndNavigation
+            }
+
+            // Meta row (interactive)
+            metaRow
+        }
+    }
+
+    // Enhanced Weight Display (North Star Design)
+    @ViewBuilder
+    private var enhancedWeightDisplay: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Three-column layout following Fasting pattern
+            HStack(alignment: .center, spacing: 16) {
+                // Left: Weight trend
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("7-Day Avg")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("--.-")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Center: Weight progress visualization
+                VStack(spacing: 8) {
+                    Image(systemName: "scalemass")
+                        .font(.system(size: 40))
+                        .foregroundColor(Color(hex: "#1ABC9C"))
+
+                    Text("Goal Progress")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                // Right: Current weight (interactive)
+                VStack(alignment: .trailing, spacing: 4) {
+                    if let latestWeight = weightManager.latestWeight {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Current Weight")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                            Text("\(latestWeight.weight, specifier: "%.1f") lbs")
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(hex: "#D4AF37"))
+                        }
+                    } else {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("Add Weight")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                            Text("-- lbs")
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(hex: "#D4AF37"))
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Enhanced Hydration Display (North Star Design)
+    @ViewBuilder
+    private var enhancedHydrationDisplay: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Three-column layout following Fasting pattern
+            HStack(alignment: .center, spacing: 16) {
+                // Left: Daily average
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("7-Day Avg")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("--.-")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Center: Hydration progress ring
+                VStack(spacing: 8) {
+                    Image(systemName: "drop.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(Color(hex: "#1ABC9C"))
+
+                    let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
+                    let unit = hydrationManager.currentUnitAbbreviationComputed
+                    Text("\(Int((dailyIntake / 64.0) * 100))%")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                // Right: Today's intake (interactive)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Today's Intake")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                    let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
+                    let unit = hydrationManager.currentUnitAbbreviationComputed
+                    Text(String(format: "%.1f %@", dailyIntake, unit))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                }
+            }
+        }
+    }
+
+    // Enhanced Sleep Display (North Star Design)
+    @ViewBuilder
+    private var enhancedSleepDisplay: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Three-column layout following Fasting pattern
+            HStack(alignment: .center, spacing: 16) {
+                // Left: Sleep average
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("7-Day Avg")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("--:--")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Center: Sleep quality indicator
+                VStack(spacing: 8) {
+                    Image(systemName: "moon.fill")
+                        .font(.system(size: 40))
+                        .foregroundColor(Color(hex: "#1ABC9C"))
+
+                    Text("Quality")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                // Right: Last night sleep (interactive)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Last Night")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                    if let lastNight = sleepManager.lastNightSleep {
+                        Text(lastNight.formattedDuration)
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(hex: "#D4AF37"))
+                    } else {
+                        Text("-- hrs")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(hex: "#D4AF37"))
+                    }
+                }
+            }
+        }
+    }
+
+    // Enhanced Mood Display (North Star Design)
+    @ViewBuilder
+    private var enhancedMoodDisplay: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Three-column layout following Fasting pattern
+            HStack(alignment: .center, spacing: 16) {
+                // Left: Weekly trend
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("7-Day Avg")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("-- m")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Center: Mood indicator
+                VStack(spacing: 8) {
+                    Image(systemName: "brain.head.profile")
+                        .font(.system(size: 40))
+                        .foregroundColor(Color(hex: "#1ABC9C"))
+
+                    Text("Balance")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.7))
+                }
+
+                // Right: Today's mood (interactive)
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Today's Mood")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                    if let avgMood = moodManager.todayAverageMood {
+                        Text(String(format: "%.1f m", avgMood))
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(hex: "#D4AF37"))
+                    } else {
+                        Text("-- m")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(Color(hex: "#D4AF37"))
+                    }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var trackerBackground: some View {
+        // Industry Standard: Featured card with distinctive background for visual hierarchy
+        // Reference: Apple Health app featured sections, Fitbit primary stats
+        RoundedRectangle(cornerRadius: 16)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                // Hero card treatment with distinctive teal background
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(tracker == trackerOrder.first ?
+                          Color(hex: "#1ABC9C").opacity(0.25) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: tracker == trackerOrder.first ? [
+                                // Enhanced border for featured tracker
+                                Color(hex: "#1ABC9C").opacity(0.6),
+                                Color(hex: "#D4AF37").opacity(0.4)
+                            ] : [
+                                // Subtle border for regular trackers
+                                Color(hex: "#1ABC9C").opacity(0.4),
+                                Color(hex: "#D4AF37").opacity(0.2)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: tracker == trackerOrder.first ? 2.0 : 1.5
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)  // Elevation from spec
+    }
+
+    @ViewBuilder
+    private var fastingTimeNavigation: some View {
+        NavigationLink(destination: EditFastTimesView()) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(fastingManager.isActive ? "Fasting Time" : "Time Since Last Fast")
+                    .font(.caption2)
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.8))
+                Text(fastingDisplayValue)
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .foregroundColor(Color(hex: "#D4AF37"))
+            }
+        }
+        .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private var goalEndNavigation: some View {
+        NavigationLink(destination: GoalSettingsView()) {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(fastingManager.isActive ? "End Goal" : "Last Fast")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                Text(goalEndTime)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(hex: "#D4AF37"))
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     // MARK: - Meta Row (Following Luxury Spec Layout)
@@ -428,30 +727,36 @@ struct TrackerSummaryCard: View {
     private var metaRow: some View {
         if tracker == .fasting && tracker == trackerOrder.first {
             HStack {
-                // Start time
+                // Start time - Interactive
                 if fastingManager.isActive, let startTime = fastingManager.currentSession?.startTime {
-                    VStack(spacing: 2) {
-                        Text("Start")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(Color(hex: "#D0D4DA"))
-                        Text(formatTime(startTime))
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                    NavigationLink(destination: EditStartTimeView()) {
+                        VStack(spacing: 2) {
+                            Text("Start")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(Color(hex: "#D0D4DA"))
+                            Text(formatTime(startTime))
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
 
                 Spacer()
 
-                // Target time
+                // Target time - Interactive (connects to goal setting)
                 if fastingManager.isActive {
-                    VStack(spacing: 2) {
-                        Text("Target")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(Color(hex: "#D0D4DA"))
-                        Text("\(Int(fastingManager.fastingGoalHours))h")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white)
+                    NavigationLink(destination: GoalSettingsView()) {
+                        VStack(spacing: 2) {
+                            Text("Target")
+                                .font(.system(size: 10, weight: .medium))
+                                .foregroundColor(Color(hex: "#D0D4DA"))
+                            Text("\(Int(fastingManager.fastingGoalHours))h")
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
 
                 Spacer()
@@ -460,10 +765,10 @@ struct TrackerSummaryCard: View {
                 VStack(spacing: 2) {
                     Text("Progress")
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color(hex: "#D0D4DA"))
+                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
                     Text("\(Int(fastingManager.progress * 100))%")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundColor(Color(hex: "#1ABC9C"))
+                        .foregroundColor(Color(hex: "#D4AF37"))
                 }
             }
             .padding(.horizontal, 8)
@@ -506,7 +811,7 @@ struct TrackerSummaryCard: View {
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.7))
                         }
-                    } else {
+                                            } else {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("-- lbs")
                                 .font(.title)
@@ -516,7 +821,7 @@ struct TrackerSummaryCard: View {
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.7))
                         }
-                    }
+                                            }
                 }
             }
 
@@ -539,7 +844,7 @@ struct TrackerSummaryCard: View {
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.7))
                     }
-                }
+                                    }
             }
 
         case .hydration:
@@ -561,7 +866,7 @@ struct TrackerSummaryCard: View {
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.7))
                     }
-                }
+                                    }
             }
 
         case .mood:
@@ -574,15 +879,30 @@ struct TrackerSummaryCard: View {
 
                     Spacer()
 
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("--/10")
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(hex: "#1ABC9C"))
-                        Text("Not rated")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
-                    }
+                    if let avgMood = moodManager.todayAverageMood,
+                       let avgEnergy = moodManager.todayAverageEnergy {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(String(format: "%.1f", avgMood)) m")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#1ABC9C"))
+                            Text("\(String(format: "%.1f", avgEnergy)) e")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#1ABC9C"))
+                        }
+                                            } else {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("-- m")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#1ABC9C"))
+                            Text("-- e")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#1ABC9C"))
+                        }
+                                            }
                 }
             }
 
@@ -642,16 +962,16 @@ struct TrackerSummaryCard: View {
         case .mood:
             if let avgMood = moodManager.todayAverageMood,
                let avgEnergy = moodManager.todayAverageEnergy {
-                return String(format: "%.1f mood %.1f energy", avgMood, avgEnergy)
+                return String(format: "%.1f m %.1f e", avgMood, avgEnergy)
             }
 
             // Fallback to individual values if only one is available
             if let avgMood = moodManager.todayAverageMood {
-                return String(format: "%.1f mood", avgMood)
+                return String(format: "%.1f m", avgMood)
             }
 
             if let avgEnergy = moodManager.todayAverageEnergy {
-                return String(format: "%.1f energy", avgEnergy)
+                return String(format: "%.1f e", avgEnergy)
             }
 
             return "No data"
@@ -659,12 +979,15 @@ struct TrackerSummaryCard: View {
     }
 }
 
-// MARK: - MiniProgressRing (Reusable component for Hub cards)
-struct MiniProgressRing: View {
+
+// MARK: - FastingProgressRing (Extracted from ContentView for consistency)
+struct FastingProgressRing: View {
     let progress: Double
     let isActive: Bool
+    let fastingGoalHours: Double
     let size: CGFloat
 
+    // Gradient colors for progress ring - transitions through stages (matching ContentView)
     private var progressGradientColors: [Color] {
         [
             Color(red: 0.2, green: 0.6, blue: 0.9),   // 0%: Blue (start)
@@ -678,45 +1001,55 @@ struct MiniProgressRing: View {
 
     var body: some View {
         ZStack {
-            // Luxury background with enhanced depth
-            Circle()
-                .fill(Color.white)
-                .frame(width: size + 8, height: size + 8)
-                .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
-                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
+            // Educational stage icons positioned around the circle (matching ContentView)
+            ForEach(FastingStage.relevantStages(for: fastingGoalHours)) { stage in
+                let midpointHour = Double(stage.startHour + stage.endHour) / 2.0
+                let angle = (midpointHour / 24.0) * 360.0 - 90.0 // -90 to start at top
+                let radius: CGFloat = size * 0.8 // Scale radius to component size
+                let x = radius * cos(angle * .pi / 180)
+                let y = radius * sin(angle * .pi / 180)
 
-            // Refined background ring with premium styling
-            Circle()
-                .stroke(
-                    LinearGradient(
-                        colors: [Color.gray.opacity(0.3), Color.gray.opacity(0.5)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 3
-                )
-                .frame(width: size, height: size)
+                Text(stage.icon)
+                    .font(.system(size: size * 0.2)) // Scale icon size
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: size * 0.25, height: size * 0.25)
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    )
+                    .offset(x: x, y: y)
+            }
 
-            // Enhanced progress ring with luxury gradient and glow
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(
-                    isActive ?
-                    AngularGradient(
-                        gradient: Gradient(colors: progressGradientColors),
-                        center: .center,
-                        startAngle: .degrees(0),
-                        endAngle: .degrees(360)
-                    ) : AngularGradient(
-                        gradient: Gradient(colors: [Color.gray.opacity(0.6), Color.gray.opacity(0.8)]),
-                        center: .center
-                    ),
-                    style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                )
-                .frame(width: size, height: size)
-                .rotationEffect(.degrees(-90))
-                .shadow(color: isActive ? Color.blue.opacity(0.3) : Color.clear, radius: 2, x: 0, y: 0)
-                .animation(.linear(duration: 1), value: progress)
+            // Timer Circle (exact same as ContentView, scaled)
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.3), lineWidth: size * 0.08) // Scale line width
+                    .frame(width: size, height: size)
+
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        isActive ?
+                        AngularGradient(
+                            gradient: Gradient(colors: progressGradientColors),
+                            center: .center,
+                            startAngle: .degrees(0),
+                            endAngle: .degrees(360)
+                        ) : AngularGradient(
+                            gradient: Gradient(colors: [Color.gray, Color.gray]),
+                            center: .center
+                        ),
+                        style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round)
+                    )
+                    .frame(width: size, height: size)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: progress)
+
+                // Progress Percentage (centered)
+                Text("\(Int(progress * 100))%")
+                    .font(.system(size: size * 0.15, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+            }
         }
     }
 }
@@ -751,6 +1084,7 @@ extension Color {
 }
 
 #Preview {
-    HubView()
+    HubView(shouldPopToRoot: .constant(false))
         .environmentObject(FastingManager())
+        .environmentObject(HydrationManager())
 }

@@ -45,11 +45,19 @@ struct FastLifeApp: App {
         )
     }
 
-    // Custom binding to reset More tab navigation to root when switching tabs
+    // Custom binding to reset navigation to root when switching tabs
+    // Following Apple HIG: "Tapping a currently selected tab should return to the top-level view"
+    // Reference: https://developer.apple.com/design/human-interface-guidelines/tab-bars
     private var tabBinding: Binding<Int> {
         Binding(
             get: { selectedTab },
             set: { newValue in
+                // Reset Hub tab to root view whenever selected (from any tab)
+                // Industry Standard: Hub acts as "home" - always returns to main dashboard
+                if newValue == 2 {
+                    shouldPopToRoot = true
+                }
+
                 // Reset Me tab to root view whenever switching TO it
                 // This ensures Me tab is always shown first
                 if newValue == 4 {
@@ -90,7 +98,7 @@ struct MainTabView: View {
                 .tag(1)
 
             // Hub tab - Central dashboard
-            HubView()
+            HubView(shouldPopToRoot: $shouldPopToRoot)
                 .environmentObject(fastingManager)
                 .environmentObject(hydrationManager)
                 .tabItem {

@@ -103,10 +103,10 @@ struct TopStatusBar: View {
     @ViewBuilder
     private var heartRateSection: some View {
         HStack(spacing: 8) {
-            // Heart icon with realistic BPM-matched pulse animation
+            // Heart icon with realistic BPM-matched pulse animation (50% larger, teal color)
             Image(systemName: "heart.fill")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(accentPrimary)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundColor(Color(hex: "#1ABC9C"))
                 .scaleEffect(isPulsing ? 1.15 : 1.0)
                 .animation(
                     heartRatePulseAnimation,
@@ -120,33 +120,33 @@ struct TopStatusBar: View {
                     HStack(spacing: 4) {
                         Text("—")
                             .font(.system(size: 24, weight: .semibold, design: .rounded))
-                            .foregroundColor(textPrimary)
+                            .foregroundColor(Color(hex: "#1ABC9C"))
 
                         Text("bpm")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(textSecondary)
+                            .foregroundColor(Color(hex: "#1ABC9C").opacity(0.8))
                     }
                 } else if let currentHR = heartRateViewModel.currentHeartRate {
                     // Current heart rate value
                     HStack(spacing: 4) {
                         Text("\(Int(currentHR))")
                             .font(.system(size: 24, weight: .semibold, design: .rounded))
-                            .foregroundColor(textPrimary)
+                            .foregroundColor(Color(hex: "#1ABC9C"))
 
                         Text("bpm")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(textSecondary)
+                            .foregroundColor(Color(hex: "#1ABC9C").opacity(0.8))
                     }
                 } else {
                     // No data available
                     HStack(spacing: 4) {
                         Text("—")
                             .font(.system(size: 24, weight: .semibold, design: .rounded))
-                            .foregroundColor(textSecondary)
+                            .foregroundColor(Color(hex: "#1ABC9C"))
 
                         Text("bpm")
                             .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(textSecondary)
+                            .foregroundColor(Color(hex: "#1ABC9C").opacity(0.8))
                     }
                 }
             }
@@ -173,21 +173,21 @@ struct TopStatusBar: View {
         VStack(alignment: .trailing, spacing: 2) {
             Text("Avg Today")
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(textSecondary)
+                .foregroundColor(Color(hex: "#D4AF37").opacity(0.8))
 
             if let avgHR = heartRateViewModel.dailyAverageHeartRate {
                 HStack(spacing: 2) {
                     Text("\(Int(avgHR))")
-                        .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundColor(textPrimary.opacity(0.8))
+                        .font(.system(size: 24, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color(hex: "#D4AF37"))
 
                     Text("bpm")
                         .font(.system(size: 12, weight: .regular))
-                        .foregroundColor(textSecondary)
+                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.8))
                 }
             } else {
                 Text("—")
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
                     .foregroundColor(textSecondary)
             }
         }

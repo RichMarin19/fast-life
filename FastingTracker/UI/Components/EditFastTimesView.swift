@@ -28,26 +28,6 @@ struct EditFastTimesView: View {
             .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Header
-                HStack {
-                    Button(action: { dismiss() }) {
-                        Image(systemName: "chevron.left")
-                            .font(.title2)
-                            .foregroundColor(Color("FLPrimary"))
-                    }
-                    Spacer()
-                    Text("Edit Fast")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    Spacer()
-                    // Invisible spacer for centering
-                    Image(systemName: "chevron.left")
-                        .font(.title2)
-                        .opacity(0)
-                }
-                .padding()
-                .background(Color.white.opacity(0.9))
-
                 ScrollView {
                     VStack(spacing: 24) {
                         // Total Duration Card
