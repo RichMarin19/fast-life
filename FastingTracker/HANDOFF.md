@@ -254,6 +254,88 @@ NavigationLink(destination: FastingTimeEditView()) {
 3. **Educational Value**: Users learn from visual feedback and data representation
 4. **Navigation Coherence**: Consistent interaction patterns across all trackers
 
+### Main Focus Card Gold Standard - Official Specification
+
+#### Design System Perfected
+**Established Pattern:** This represents the **GOLD STANDARD** for all Main Focus cards (first position trackers) across the entire application.
+
+**Official Spacing Specifications:**
+- **Card Margins**: 20pt on all sides (top, left, right, bottom)
+- **Section Spacing**: 28pt between major content sections
+- **Icon Clearance**: 25% of ring size + dynamic spacing for collision avoidance
+- **Typography**: Bold, rounded system fonts with clear hierarchy
+- **Color Scheme**: Teal (#1ABC9C) and Gold (#D4AF37) luxury palette
+
+#### Mandatory Layout Structure for ALL Main Focus Cards
+
+**Three-Column Layout Pattern:**
+1. **Left Column**: 7-Day average data with white text
+2. **Center Column**: Primary visualization (progress ring, chart, or indicator)
+3. **Right Column**: Current/today's data with gold accent colors
+
+**Bottom Meta Row:**
+- Start/current state on left
+- Target/goal in center
+- Progress percentage on right
+- All with consistent 28pt spacing above
+
+#### Technical Implementation Standards
+
+**SwiftUI Structure Requirements:**
+```swift
+VStack(alignment: .leading, spacing: 28) {
+    // Main content HStack with three columns
+    HStack(alignment: .center, spacing: 16) {
+        // Left: Historical data
+        // Center: Primary visualization
+        // Right: Current data (interactive)
+    }
+    // Meta row with contextual data
+}
+```
+
+**Card Container Standards:**
+- `.padding(.horizontal, 20)` - consistent side margins
+- `.padding(.vertical, 20)` - consistent top/bottom margins
+- `minHeight: 200` for Main Focus cards
+- Luxury background with teal/gold gradient borders
+
+#### Progress Ring Standards (Where Applicable)
+
+**Icon Positioning:**
+- **Base radius**: `ringRadius + (size * 0.25)` for proper clearance
+- **Dynamic spacing**: Collision avoidance with `spacingMultiplier`
+- **Icon sizing**: 18% of ring size with 22% background circles
+- **Educational context**: Stage-based icons relevant to tracker type
+
+#### Tracker-Specific Nuances
+
+**Fasting**: Progress ring with metabolic stage icons, time-based data
+**Weight**: Scale visualization with goal progress, weight trending
+**Hydration**: Intake tracking with percentage goals, volume display
+**Sleep**: Quality indicators with duration tracking, sleep stages
+**Mood**: Emotional state visualization with energy level tracking
+
+#### Quality Assurance Checklist
+
+- [ ] 20pt margins consistent on all sides
+- [ ] 28pt spacing between major sections
+- [ ] Teal/gold color scheme applied consistently
+- [ ] Three-column layout structure implemented
+- [ ] Interactive elements have contextual navigation
+- [ ] Typography follows bold, rounded system font hierarchy
+- [ ] Visual elements don't overlap (cardinal rule)
+- [ ] Progress indicators scale appropriately
+- [ ] Background navigation preserved for card-level actions
+
+#### Success Metrics
+1. **Visual Harmony**: All Main Focus cards feel cohesive and premium
+2. **Functional Excellence**: Rich, contextual data presentation
+3. **User Experience**: Intuitive navigation and clear information hierarchy
+4. **Technical Quality**: Clean, maintainable SwiftUI implementation
+
+**This specification is MANDATORY for all Main Focus card implementations.**
+
 ---
 *Last Updated: 2025-01-14*
-*North Star Design System: Fasting Main Focus Card - Luxury Consistency Standard*
+*Main Focus Gold Standard: Official Design System Specification*

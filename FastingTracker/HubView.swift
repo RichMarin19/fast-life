@@ -430,7 +430,7 @@ struct TrackerSummaryCard: View {
 
     @ViewBuilder
     private var enhancedFastingDisplay: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 28) {
             // Three-column layout with interactive elements
             HStack(alignment: .center, spacing: 16) {
                 // Left: 7-day average
@@ -466,7 +466,7 @@ struct TrackerSummaryCard: View {
     // Enhanced Weight Display (North Star Design)
     @ViewBuilder
     private var enhancedWeightDisplay: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 28) {
             // Three-column layout following Fasting pattern
             HStack(alignment: .center, spacing: 16) {
                 // Left: Weight trend
@@ -520,7 +520,7 @@ struct TrackerSummaryCard: View {
     // Enhanced Hydration Display (North Star Design)
     @ViewBuilder
     private var enhancedHydrationDisplay: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 28) {
             // Three-column layout following Fasting pattern
             HStack(alignment: .center, spacing: 16) {
                 // Left: Daily average
@@ -564,7 +564,7 @@ struct TrackerSummaryCard: View {
     // Enhanced Sleep Display (North Star Design)
     @ViewBuilder
     private var enhancedSleepDisplay: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 28) {
             // Three-column layout following Fasting pattern
             HStack(alignment: .center, spacing: 16) {
                 // Left: Sleep average
@@ -611,7 +611,7 @@ struct TrackerSummaryCard: View {
     // Enhanced Mood Display (North Star Design)
     @ViewBuilder
     private var enhancedMoodDisplay: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 28) {
             // Three-column layout following Fasting pattern
             HStack(alignment: .center, spacing: 16) {
                 // Left: Weekly trend
@@ -1004,16 +1004,24 @@ struct FastingProgressRing: View {
             ForEach(FastingStage.relevantStages(for: fastingGoalHours)) { stage in
                 let midpointHour = Double(stage.startHour + stage.endHour) / 2.0
                 let angle = (midpointHour / 24.0) * 360.0 - 90.0 // -90 to start at top
-                let radius: CGFloat = size * 0.8 // Scale radius to component size
-                let x = radius * cos(angle * .pi / 180)
-                let y = radius * sin(angle * .pi / 180)
+
+                // Dynamic radius calculation to prevent icon overlap
+                // Following Apple Watch Activity Ring spacing patterns - icons OUTSIDE ring
+                let relevantStages = FastingStage.relevantStages(for: fastingGoalHours)
+                let ringRadius = size / 2  // Ring's outer edge
+                let baseRadius = ringRadius + (size * 0.25)  // Increased gap for better clearance
+                let spacingMultiplier = max(1.0, Double(relevantStages.count) * 0.1) // Subtle spacing increase
+                let dynamicRadius = baseRadius * spacingMultiplier
+
+                let x = dynamicRadius * cos(angle * .pi / 180)
+                let y = dynamicRadius * sin(angle * .pi / 180)
 
                 Text(stage.icon)
-                    .font(.system(size: size * 0.2)) // Scale icon size
+                    .font(.system(size: size * 0.18)) // Restored icon size for visibility
                     .background(
                         Circle()
                             .fill(Color.white)
-                            .frame(width: size * 0.25, height: size * 0.25)
+                            .frame(width: size * 0.22, height: size * 0.22) // Restored background size
                             .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                     )
                     .offset(x: x, y: y)
