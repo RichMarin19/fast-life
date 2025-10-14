@@ -541,7 +541,6 @@ struct TrackerSummaryCard: View {
                         .foregroundColor(Color(hex: "#1ABC9C"))
 
                     let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
-                    let unit = hydrationManager.currentUnitAbbreviationComputed
                     Text("\(Int((dailyIntake / 64.0) * 100))%")
                         .font(.caption)
                         .foregroundColor(.white.opacity(0.7))
