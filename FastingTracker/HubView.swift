@@ -90,7 +90,6 @@ struct HubView: View {
         }
         .frame(minHeight: geometry.size.height - 150) // Reduced to move content up
         .frame(maxWidth: .infinity)
-        .clipped()
     }
 
     // MARK: - Luxury Navigation Title Component
@@ -396,6 +395,10 @@ struct TrackerSummaryCard: View {
                             fastingTimeNavigation
                         } else if tracker == .weight {
                             weightTimeNavigation
+                        } else if tracker == .sleep {
+                            sleepTimeNavigation
+                        } else if tracker == .hydration {
+                            hydrationTimeNavigation
                         }
                     }
                 }
@@ -408,9 +411,9 @@ struct TrackerSummaryCard: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 20)
-        .frame(maxWidth: .infinity)
-        .frame(minHeight: tracker == trackerOrder.first ? 200 : 80)
         .background(trackerBackground)
+        .frame(maxWidth: .infinity)
+        .frame(minHeight: tracker == trackerOrder.first ? 200 : 80, alignment: .top)
     }
 
     // MARK: - Enhanced Main Focus Display (North Star Design for Any Tracker)
@@ -569,94 +572,77 @@ struct TrackerSummaryCard: View {
         .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
-    // Enhanced Hydration Display (North Star Design)
+    // Enhanced Hydration Display (North Star Design following Fasting pattern exactly)
     @ViewBuilder
     private var enhancedHydrationDisplay: some View {
         VStack(alignment: .leading, spacing: 28) {
-            // Three-column layout following Fasting pattern
+            // Three-column layout with interactive elements (matching Fasting)
             HStack(alignment: .center, spacing: 16) {
-                // Left: Daily average
+                // Left: 7-day average (matching Fasting pattern exactly)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("7-Day Avg")
-                        .font(.system(size: 14, weight: .medium))
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.8))
-                    Text("--.-")
+                    let unit = hydrationManager.currentUnitAbbreviationComputed
+                    // Placeholder for 7-day average (future implementation)
+                    Text("-- \(unit)")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Center: Hydration progress ring
+                // Center: Progress ring (using North Star component exactly like Fasting)
                 VStack(spacing: 8) {
-                    Image(systemName: "drop.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(Color(hex: "#1ABC9C"))
-
                     let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
-                    Text("\(Int((dailyIntake / 64.0) * 100))%")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
+                    let dailyGoal = hydrationManager.dailyGoalInPreferredUnitComputed
+                    let progress = dailyGoal > 0 ? min(dailyIntake / dailyGoal, 1.0) : 0.0
+
+                    HydrationProgressRing(
+                        progress: progress,
+                        size: 80
+                    )
                 }
 
-                // Right: Today's intake (interactive)
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Today's Intake")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                    let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
-                    let unit = hydrationManager.currentUnitAbbreviationComputed
-                    Text(String(format: "%.1f %@", dailyIntake, unit))
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundColor(Color(hex: "#D4AF37"))
-                }
+                // Right: Daily goal (interactive, matching goalEndNavigation structure)
+                hydrationGoalNavigation
             }
+
+            // Meta row (interactive, following North Star pattern)
+            hydrationMetaRow
         }
     }
 
-    // Enhanced Sleep Display (North Star Design)
+    // Enhanced Sleep Display (North Star Design with Sleep Regularity Ring)
     @ViewBuilder
     private var enhancedSleepDisplay: some View {
         VStack(alignment: .leading, spacing: 28) {
-            // Three-column layout following Fasting pattern
+            // Three-column layout following North Star Gold Standard
             HStack(alignment: .center, spacing: 16) {
-                // Left: Sleep average
+                // Left: 7-day average sleep duration (white text)
                 VStack(alignment: .leading, spacing: 4) {
                     Text("7-Day Avg")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white.opacity(0.8))
-                    Text("--:--")
+                    Text("7h 42m")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Center: Sleep quality indicator
+                // Center: Sleep Regularity Ring (following North Star spacing exactly)
                 VStack(spacing: 8) {
-                    Image(systemName: "moon.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(Color(hex: "#1ABC9C"))
-
-                    Text("Quality")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
+                    SleepRegularityRing(
+                        regularity: 0.78, // Mock 78% sleep regularity
+                        size: 80
+                    )
                 }
 
-                // Right: Last night sleep (interactive)
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Last Night")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                    if let lastNight = sleepManager.lastNightSleep {
-                        Text(lastNight.formattedDuration)
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(hex: "#D4AF37"))
-                    } else {
-                        Text("-- hrs")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(hex: "#D4AF37"))
-                    }
-                }
+                // Right: Last night sleep (matching structure exactly)
+                sleepLastNightNavigation
             }
+
+            // Bottom Meta Row (following North Star pattern)
+            sleepMetaRow
         }
     }
 
@@ -754,6 +740,7 @@ struct TrackerSummaryCard: View {
             }
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     @ViewBuilder
@@ -775,6 +762,317 @@ struct TrackerSummaryCard: View {
             }
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    @ViewBuilder
+    private var sleepTimeNavigation: some View {
+        NavigationLink(destination: SleepTrackingView()) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("Last Night")
+                    .font(.caption2)
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.8))
+                if let lastNight = sleepManager.lastNightSleep {
+                    Text(lastNight.formattedDuration)
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                } else {
+                    Text("0h 25m")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    // Sleep Last Night Navigation (matching North Star structure)
+    @ViewBuilder
+    private var sleepLastNightNavigation: some View {
+        NavigationLink(destination: SleepTrackingView()) {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Sleep Quality")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                if let lastNight = sleepManager.lastNightSleep {
+                    Text("\(Int((lastNight.duration / 28800) * 100))/100") // Mock quality score
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                } else {
+                    Text("82/100")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    // Sleep Meta Row (following North Star pattern)
+    @ViewBuilder
+    private var sleepMetaRow: some View {
+        HStack(spacing: 0) {
+            // Bedtime Consistency
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Consistency")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                Text("±34 min")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            // Sleep Duration
+            VStack(spacing: 4) {
+                Text("Duration")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+                Text("7h 42m")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            .frame(maxWidth: .infinity)
+
+            // Sleep Regularity %
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Regularity")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                Text("78%")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(Color(hex: "#D4AF37"))
+            }
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.2))
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
+    }
+
+    // MARK: - Hydration Main Focus Components (Following North Star Fasting Pattern)
+
+    // Hydration Time Navigation (matching North Star header pattern)
+    @ViewBuilder
+    private var hydrationTimeNavigation: some View {
+        NavigationLink(destination: HydrationTrackingView()) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("Today's Intake")
+                    .font(.caption2)
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.8))
+                let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
+                let unit = hydrationManager.currentUnitAbbreviationComputed
+                Text("\(String(format: "%.1f", dailyIntake)) \(unit)")
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .foregroundColor(Color(hex: "#D4AF37"))
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    // Hydration Progress Ring (following North Star design standards)
+    struct HydrationProgressRing: View {
+        let progress: Double // 0.0 to 1.0 (percentage of daily goal)
+        let size: CGFloat
+
+        // Progress gradient colors (EXACT same as FastingProgressRing North Star)
+        private var hydrationProgressGradientColors: [Color] {
+            [
+                Color(red: 0.2, green: 0.6, blue: 0.9),   // 0%: Blue (start)
+                Color(red: 0.2, green: 0.7, blue: 0.8),   // 25%: Teal
+                Color(red: 0.2, green: 0.8, blue: 0.7),   // 50%: Cyan
+                Color(red: 0.3, green: 0.8, blue: 0.5),   // 75%: Green-teal
+                Color(red: 0.4, green: 0.9, blue: 0.4),   // 90%: Vibrant green
+                Color(red: 0.3, green: 0.85, blue: 0.3)   // 100%: Celebration green
+            ]
+        }
+
+        var body: some View {
+            ZStack {
+                // Hydration behavioral icons positioned around the ring
+                hydrationBehavioralIcons
+
+                // Hydration progress ring
+                ZStack {
+                    // Background ring
+                    Circle()
+                        .stroke(Color.gray.opacity(0.3), lineWidth: size * 0.08)
+                        .frame(width: size, height: size)
+
+                    // Progress ring with gradient
+                    Circle()
+                        .trim(from: 0, to: progress)
+                        .stroke(
+                            AngularGradient(
+                                gradient: Gradient(colors: hydrationProgressGradientColors),
+                                center: .center,
+                                startAngle: .degrees(0),
+                                endAngle: .degrees(360)
+                            ),
+                            style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round)
+                        )
+                        .frame(width: size, height: size)
+                        .rotationEffect(.degrees(-90))
+                        .animation(.linear(duration: 1), value: progress)
+
+                    // Center text
+                    VStack(spacing: 2) {
+                        Text("Intake")
+                            .font(.system(size: size * 0.12, weight: .medium))
+                            .foregroundColor(.white.opacity(0.8))
+                        Text("\(Int(progress * 100))%")
+                            .font(.system(size: size * 0.18, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+        }
+
+        // Hydration Behavioral Icons Around Ring (Following Vision Document)
+        @ViewBuilder
+        private var hydrationBehavioralIcons: some View {
+            // Dynamic radius calculation matching North Star pattern
+            let ringRadius = size / 2
+            let baseRadius = ringRadius + (size * 0.25)  // Standard gap for clearance
+            let spacingMultiplier = max(1.0, 6 * 0.1) // Spacing calculation matching North Star
+            let dynamicRadius = baseRadius * spacingMultiplier
+
+            // Hydration behavioral icons (6 icons for visual balance)
+            let hydrationBehaviors: [(icon: String, angle: Double)] = [
+                ("💧", 0),      // Hydration (top) - primary focus
+                ("⚡", 60),     // Energy - hydration affects energy levels
+                ("🧠", 120),    // Mental clarity - hydration affects cognition
+                ("❤️", 180),    // Heart health (bottom) - hydration affects circulation
+                ("🏃‍♂️", 240),    // Exercise - hydration for performance
+                ("☀️", 300)     // Daily habit - consistent hydration
+            ]
+
+            ForEach(Array(hydrationBehaviors.enumerated()), id: \.offset) { index, behavior in
+                let angle = behavior.angle - 90.0 // Start at top like North Star
+                let x = dynamicRadius * cos(angle * .pi / 180)
+                let y = dynamicRadius * sin(angle * .pi / 180)
+
+                Text(behavior.icon)
+                    .font(.system(size: size * 0.18)) // Matching North Star icon size
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: size * 0.22, height: size * 0.22) // Matching North Star background size
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    )
+                    .offset(x: x, y: y)
+            }
+        }
+    }
+
+    // Hydration Goal Navigation (matching goalEndNavigation structure exactly)
+    @ViewBuilder
+    private var hydrationGoalNavigation: some View {
+        NavigationLink(destination: HydrationTrackingView()) {
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("Daily Goal")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                let dailyGoal = hydrationManager.dailyGoalInPreferredUnitComputed
+                let unit = hydrationManager.currentUnitAbbreviationComputed
+                Text(String(format: "%.0f %@", dailyGoal, unit))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundColor(Color(hex: "#D4AF37"))
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
+    }
+
+    // Hydration Meta Row (following North Star Fasting pattern)
+    @ViewBuilder
+    private var hydrationMetaRow: some View {
+        HStack {
+            // Current intake - Interactive
+            NavigationLink(destination: HydrationTrackingView()) {
+                VStack(spacing: 2) {
+                    Text("Current")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color(hex: "#D0D4DA"))
+                    let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
+                    let unit = hydrationManager.currentUnitAbbreviationComputed
+                    Text(String(format: "%.1f %@", dailyIntake, unit))
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.black.opacity(0.2))
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            // Daily goal - Interactive
+            NavigationLink(destination: HydrationTrackingView()) {
+                VStack(spacing: 2) {
+                    Text("Goal")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color(hex: "#D0D4DA"))
+                    let dailyGoal = hydrationManager.dailyGoalInPreferredUnitComputed
+                    let unit = hydrationManager.currentUnitAbbreviationComputed
+                    Text(String(format: "%.0f %@", dailyGoal, unit))
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.black.opacity(0.2))
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+
+            Spacer()
+
+            // Progress percentage - Interactive
+            NavigationLink(destination: HydrationTrackingView()) {
+                VStack(spacing: 2) {
+                    Text("Progress")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                    let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
+                    let dailyGoal = hydrationManager.dailyGoalInPreferredUnitComputed
+                    let progress = dailyGoal > 0 ? min(dailyIntake / dailyGoal, 1.0) : 0.0
+                    Text("\(Int(progress * 100))%")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(
+                    RoundedRectangle(cornerRadius: 6)
+                        .fill(Color.black.opacity(0.2))
+                        .stroke(Color(hex: "#D4AF37").opacity(0.1), lineWidth: 1)
+                )
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.2))
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
     }
 
     @ViewBuilder
@@ -1241,6 +1539,114 @@ struct WeightProgressRing: View {
                     Circle()
                         .fill(Color.white)
                         .frame(width: size * 0.22, height: size * 0.22) // Matching FastingProgressRing background size
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                )
+                .offset(x: x, y: y)
+        }
+    }
+}
+
+// MARK: - SleepRegularityRing (Following Vision Document Sleep Design)
+struct SleepRegularityRing: View {
+    let regularity: Double // 0.0 to 1.0 (sleep regularity percentage)
+    let size: CGFloat
+
+    // Sleep regularity gradient colors (following vision document specifications)
+    private var sleepRegularityGradientColors: [Color] {
+        if regularity >= 0.75 {
+            // Blue-Purple gradient for consistent sleep (vision document: Blue #3498DB → Purple #8E44AD)
+            return [
+                Color(hex: "#3498DB"),        // Blue (consistent base)
+                Color(hex: "#5DADE2"),        // Light blue
+                Color(hex: "#7FB3D3"),        // Blue-purple blend
+                Color(hex: "#9B59B6"),        // Purple transition
+                Color(hex: "#8E44AD"),        // Deep purple
+                Color(hex: "#BB8FCE")         // Soft purple
+            ]
+        } else {
+            // Amber gradient for irregular sleep (vision document: Amber #F39C12)
+            return [
+                Color(hex: "#F39C12"),        // Amber (irregular base)
+                Color(hex: "#F7DC6F"),        // Light amber
+                Color(hex: "#FAD7A0"),        // Softer amber
+                Color(hex: "#FDEAA7"),        // Pale amber
+                Color(hex: "#FCF3CF"),        // Very light amber
+                Color(hex: "#FFFBEA")         // Cream
+            ]
+        }
+    }
+
+    var body: some View {
+        ZStack {
+            // Sleep behavioral icons positioned around the ring
+            sleepBehavioralIcons
+
+            // Sleep regularity progress ring
+            ZStack {
+                // Background ring
+                Circle()
+                    .stroke(Color.gray.opacity(0.3), lineWidth: size * 0.08)
+                    .frame(width: size, height: size)
+
+                // Sleep regularity ring with gradient
+                Circle()
+                    .trim(from: 0, to: regularity)
+                    .stroke(
+                        AngularGradient(
+                            gradient: Gradient(colors: sleepRegularityGradientColors),
+                            center: .center,
+                            startAngle: .degrees(0),
+                            endAngle: .degrees(360)
+                        ),
+                        style: StrokeStyle(lineWidth: size * 0.08, lineCap: .round)
+                    )
+                    .frame(width: size, height: size)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: regularity)
+
+                // Center text
+                VStack(spacing: 2) {
+                    Text("Regularity")
+                        .font(.system(size: size * 0.12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("\(Int(regularity * 100))%")
+                        .font(.system(size: size * 0.18, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+    }
+
+    // Sleep Behavioral Icons Around Ring (Following Vision Document)
+    @ViewBuilder
+    private var sleepBehavioralIcons: some View {
+        // Dynamic radius calculation matching North Star pattern
+        let ringRadius = size / 2  // Ring's outer edge
+        let baseRadius = ringRadius + (size * 0.30)  // Enhanced gap for optimal visual separation from meta row
+        let spacingMultiplier = max(1.0, 6 * 0.1) // Spacing calculation matching North Star Fasting pattern
+        let dynamicRadius = baseRadius * spacingMultiplier
+
+        // Sleep behavioral icons (6 icons for visual symmetry like Weight)
+        let sleepBehaviors: [(icon: String, angle: Double)] = [
+            ("💧", 0),      // Hydration (top) - affects nighttime thirst
+            ("⚡", 60),     // Energy - next day energy level
+            ("🧠", 120),    // Mindset - reflection/journaling
+            ("🍽️", 180),   // Fasting (bottom) - fasting end time before bed
+            ("❤️", 240),    // Mood - morning positivity check-in
+            ("🌙", 300)     // Sleep quality - new 6th icon for symmetry
+        ]
+
+        ForEach(Array(sleepBehaviors.enumerated()), id: \.offset) { index, behavior in
+            let angle = behavior.angle - 90.0 // -90 to start at top like North Star
+            let x = dynamicRadius * cos(angle * .pi / 180)
+            let y = dynamicRadius * sin(angle * .pi / 180)
+
+            Text(behavior.icon)
+                .font(.system(size: size * 0.18)) // Matching North Star icon size
+                .background(
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: size * 0.22, height: size * 0.22) // Matching North Star background size
                         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
                 )
                 .offset(x: x, y: y)
