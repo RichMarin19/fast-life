@@ -399,6 +399,8 @@ struct TrackerSummaryCard: View {
                             sleepTimeNavigation
                         } else if tracker == .hydration {
                             hydrationTimeNavigation
+                        } else if tracker == .mood {
+                            moodTimeNavigation
                         }
                     }
                 }
@@ -650,46 +652,50 @@ struct TrackerSummaryCard: View {
     @ViewBuilder
     private var enhancedMoodDisplay: some View {
         VStack(alignment: .leading, spacing: 28) {
-            // Three-column layout following Fasting pattern
+            // Three-column layout following North Star Fasting pattern
             HStack(alignment: .center, spacing: 16) {
-                // Left: Weekly trend
+                // Left: 7-Day Stability
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("7-Day Avg")
-                        .font(.system(size: 14, weight: .medium))
+                    Text("7-Day Stability")
+                        .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.8))
-                    Text("-- m")
+                    Text("76%")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                // Center: Mood indicator
-                VStack(spacing: 8) {
-                    Image(systemName: "brain.head.profile")
-                        .font(.system(size: 40))
-                        .foregroundColor(Color(hex: "#1ABC9C"))
+                // Center: Mood & Energy Stability Ring with Behavioral Icons
+                MoodEnergyProgressRing(
+                    stabilityPercentage: 76,
+                    avgMood: moodManager.averageMoodLevel ?? 0.0,
+                    avgEnergy: moodManager.averageEnergyLevel ?? 0.0
+                )
 
-                    Text("Balance")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.7))
-                }
-
-                // Right: Today's mood (interactive)
-                VStack(alignment: .trailing, spacing: 4) {
-                    Text("Today's Mood")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                    if let avgMood = moodManager.todayAverageMood {
-                        Text(String(format: "%.1f m", avgMood))
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(hex: "#D4AF37"))
-                    } else {
-                        Text("-- m")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
-                            .foregroundColor(Color(hex: "#D4AF37"))
+                // Right: Current Status (interactive)
+                NavigationLink(destination: MoodTrackingView()) {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("Today's Balance")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                        if let todayMood = moodManager.todayAverageMood,
+                           let todayEnergy = moodManager.todayAverageEnergy {
+                            Text(String(format: "%.1f/%.1f", todayMood, todayEnergy))
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(hex: "#D4AF37"))
+                        } else {
+                            Text("-- / --")
+                                .font(.system(size: 20, weight: .bold, design: .rounded))
+                                .foregroundColor(Color(hex: "#D4AF37"))
+                        }
                     }
                 }
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .trailing)
             }
+
+            // Meta row with reflection and behavioral insights
+            moodMetaRow
         }
     }
 
@@ -725,6 +731,147 @@ struct TrackerSummaryCard: View {
                     )
             )
             .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)  // Elevation from spec
+    }
+
+    // MARK: - Mood & Energy Stability Progress Ring with Behavioral Icons
+    // Following North Star pattern with 6 lifestyle factor icons positioned around ring
+    @ViewBuilder
+    private func MoodEnergyProgressRing(stabilityPercentage: Int, avgMood: Double, avgEnergy: Double) -> some View {
+        ZStack {
+            // Progress ring following universal design system
+            Circle()
+                .stroke(
+                    AngularGradient(
+                        colors: [
+                            Color(hex: "#3498DB"), // Blue for reflective periods
+                            Color(hex: "#1ABC9C"), // Teal for balanced states
+                            Color(hex: "#27AE60")  // Green for stable periods
+                        ],
+                        startAngle: .degrees(-90),
+                        endAngle: .degrees(270 * Double(stabilityPercentage) / 100.0 - 90)
+                    ),
+                    lineWidth: 6
+                )
+                .rotationEffect(.degrees(-90))
+
+            // Background ring
+            Circle()
+                .stroke(Color.white.opacity(0.2), lineWidth: 6)
+
+            // Behavioral lifestyle icons positioned around ring
+            ZStack {
+                // Sleep (top-left)
+                Image(systemName: "moon.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#9B59B6").opacity(0.8))
+                    .offset(x: -25, y: -25)
+
+                // Hydration (top-right)
+                Image(systemName: "drop.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#3498DB").opacity(0.8))
+                    .offset(x: 25, y: -25)
+
+                // Fasting (right)
+                Image(systemName: "clock.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#F39C12").opacity(0.8))
+                    .offset(x: 35, y: 0)
+
+                // Movement (bottom-right)
+                Image(systemName: "figure.run")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#E67E22").opacity(0.8))
+                    .offset(x: 25, y: 25)
+
+                // Mindfulness (bottom-left)
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#1ABC9C").opacity(0.8))
+                    .offset(x: -25, y: 25)
+
+                // Sunlight (left)
+                Image(systemName: "sun.max.fill")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#F1C40F").opacity(0.8))
+                    .offset(x: -35, y: 0)
+            }
+
+            // Center stability percentage
+            VStack(spacing: 2) {
+                Text("\(stabilityPercentage)%")
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+                Text("Stability")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.white.opacity(0.7))
+            }
+        }
+        .frame(width: 100, height: 100)
+    }
+
+    // MARK: - Mood Meta Row with Reflection Insights
+    @ViewBuilder
+    private var moodMetaRow: some View {
+        HStack(spacing: 20) {
+            // Reflection Status
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Daily Reflection")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+                HStack(spacing: 4) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundColor(Color(hex: "#27AE60"))
+                    Text("Logged")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Color(hex: "#27AE60"))
+                }
+            }
+
+            Spacer()
+
+            // Weekly Trends
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("7-Day Range")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.white.opacity(0.6))
+                if let avgMood = moodManager.averageMoodLevel,
+                   let avgEnergy = moodManager.averageEnergyLevel {
+                    Text(String(format: "%.1f-%.1f", avgMood, avgEnergy))
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                } else {
+                    Text("-- / --")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
+                }
+            }
+        }
+    }
+
+    // MARK: - Mood Time Navigation Header Component
+    @ViewBuilder
+    private var moodTimeNavigation: some View {
+        NavigationLink(destination: MoodTrackingView()) {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text("Today's Balance")
+                    .font(.caption2)
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.8))
+                if let todayMood = moodManager.todayAverageMood,
+                   let todayEnergy = moodManager.todayAverageEnergy {
+                    Text(String(format: "%.1f/%.1f", todayMood, todayEnergy))
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                } else {
+                    Text("-- / --")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color(hex: "#D4AF37"))
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity, alignment: .trailing)
     }
 
     @ViewBuilder
