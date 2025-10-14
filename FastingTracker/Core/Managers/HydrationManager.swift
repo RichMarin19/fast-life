@@ -191,6 +191,27 @@ class HydrationManager: ObservableObject {
         return appSettings.hydrationUnit.fromOunces(dailyGoalOunces)
     }
 
+    // MARK: - Computed Properties for SwiftUI Reactivity (Following Weight Pattern)
+    // Industry Standard: Computed properties automatically trigger SwiftUI view updates
+    // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
+
+    /// Today's total hydration in preferred unit - computed property for SwiftUI reactivity
+    /// Following WeightManager.latestWeight pattern for automatic UI updates
+    var todaysTotalInPreferredUnitComputed: Double {
+        let totalOunces = todaysTotalOunces()
+        return appSettings.hydrationUnit.fromOunces(totalOunces)
+    }
+
+    /// Daily goal in preferred unit - computed property for SwiftUI reactivity
+    var dailyGoalInPreferredUnitComputed: Double {
+        return appSettings.hydrationUnit.fromOunces(dailyGoalOunces)
+    }
+
+    /// Current unit abbreviation - computed property for SwiftUI reactivity
+    var currentUnitAbbreviationComputed: String {
+        return appSettings.hydrationUnit.abbreviation
+    }
+
     /// Convert user input from preferred unit to internal ounces
     /// Ensures data consistency in storage format
     func convertToInternalUnit(_ value: Double) -> Double {

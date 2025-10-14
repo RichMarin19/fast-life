@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct HydrationTrackingView: View {
-    @StateObject private var hydrationManager = HydrationManager()
+    @EnvironmentObject var hydrationManager: HydrationManager
     @StateObject private var nudgeManager = HealthKitNudgeManager.shared
 
     // PHASE 1: Unit preferences integration

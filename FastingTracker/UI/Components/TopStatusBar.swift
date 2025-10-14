@@ -9,11 +9,34 @@ struct TopStatusBar: View {
     @State private var showingPermissionSheet = false
 
     // MARK: - Luxury Design Tokens (From Spec)
-    private let maxHeight: CGFloat = 56
+    private let maxHeight: CGFloat = 88
     private let backgroundColor = Color(hex: "#0D1B2A") // background.dark from spec
     private let textPrimary = Color(hex: "#FFFFFF")     // text.primary
     private let textSecondary = Color(hex: "#D0D4DA")   // text.secondary
     private let accentPrimary = Color(hex: "#1ABC9C")   // accent.primary
+
+    // MARK: - Heart Rate Animation (Industry Standard BPM-Matched Pulse)
+    // Following Fitbit/Garmin pattern: Animation duration = 60 seconds ÷ BPM
+    private var heartRatePulseAnimation: Animation {
+        if heartRateViewModel.isLoading {
+            // Loading state: Slower, gentle pulse while fetching data
+            return .easeInOut(duration: 1.2).repeatForever(autoreverses: true)
+        }
+
+        guard let currentHR = heartRateViewModel.currentHeartRate, currentHR > 0 else {
+            // No data: Resting heart rate animation (60 BPM = 1 second per beat)
+            return .easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+        }
+
+        // Calculate realistic cardiac timing: 60 seconds ÷ BPM
+        let beatsPerSecond = currentHR / 60.0
+        let durationPerBeat = 1.0 / beatsPerSecond
+
+        // Realistic cardiac cycle: Quick systole + longer diastole
+        // Using easeOut for authentic heart contraction pattern
+        return .easeOut(duration: durationPerBeat * 0.7)
+               .repeatForever(autoreverses: true)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -80,14 +103,13 @@ struct TopStatusBar: View {
     @ViewBuilder
     private var heartRateSection: some View {
         HStack(spacing: 8) {
-            // Heart icon with subtle pulse
+            // Heart icon with realistic BPM-matched pulse animation
             Image(systemName: "heart.fill")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(accentPrimary)
-                .scaleEffect(isPulsing ? 1.1 : 1.0)
+                .scaleEffect(isPulsing ? 1.15 : 1.0)
                 .animation(
-                    .easeInOut(duration: 0.8)
-                    .repeatForever(autoreverses: true),
+                    heartRatePulseAnimation,
                     value: isPulsing
                 )
 
@@ -97,33 +119,33 @@ struct TopStatusBar: View {
                     // Loading state
                     HStack(spacing: 4) {
                         Text("—")
-                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
                             .foregroundColor(textPrimary)
 
                         Text("bpm")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(textSecondary)
                     }
                 } else if let currentHR = heartRateViewModel.currentHeartRate {
                     // Current heart rate value
                     HStack(spacing: 4) {
                         Text("\(Int(currentHR))")
-                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
                             .foregroundColor(textPrimary)
 
                         Text("bpm")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(textSecondary)
                     }
                 } else {
                     // No data available
                     HStack(spacing: 4) {
                         Text("—")
-                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .font(.system(size: 24, weight: .semibold, design: .rounded))
                             .foregroundColor(textSecondary)
 
                         Text("bpm")
-                            .font(.system(size: 12, weight: .medium))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(textSecondary)
                     }
                 }
@@ -136,7 +158,11 @@ struct TopStatusBar: View {
             }
         }
         .onChange(of: heartRateViewModel.currentHeartRate) { _, newValue in
-            isPulsing = newValue != nil
+            // Restart animation with new heart rate for perfect synchronization
+            isPulsing = false
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPulsing = newValue != nil
+            }
         }
     }
 
@@ -152,16 +178,16 @@ struct TopStatusBar: View {
             if let avgHR = heartRateViewModel.dailyAverageHeartRate {
                 HStack(spacing: 2) {
                     Text("\(Int(avgHR))")
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
                         .foregroundColor(textPrimary.opacity(0.8))
 
                     Text("bpm")
-                        .font(.system(size: 10, weight: .regular))
+                        .font(.system(size: 12, weight: .regular))
                         .foregroundColor(textSecondary)
                 }
             } else {
                 Text("—")
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundColor(textSecondary)
             }
         }

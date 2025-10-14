@@ -65,6 +65,7 @@ struct FastLifeApp: App {
 
 struct MainTabView: View {
     @StateObject private var fastingManager = FastingManager()
+    @StateObject private var hydrationManager = HydrationManager()
 
     @Binding var shouldPopToRoot: Bool
     @Binding var shouldResetToOnboarding: Bool
@@ -88,11 +89,12 @@ struct MainTabView: View {
                 }
                 .tag(1)
 
-            // Hub tab - Central dashboard (NEW DEFAULT - Always loaded)
+            // Hub tab - Central dashboard
             HubView()
                 .environmentObject(fastingManager)
+                .environmentObject(hydrationManager)
                 .tabItem {
-                    Label("Hub", systemImage: "house.circle.fill")
+                    Label("Hub", systemImage: "waveform.path.ecg")
                 }
                 .tag(2)
 
@@ -126,6 +128,7 @@ struct MainTabView: View {
         }
     }
 }
+
 
 // MARK: - LazyView Wrapper for Tab Content Optimization
 

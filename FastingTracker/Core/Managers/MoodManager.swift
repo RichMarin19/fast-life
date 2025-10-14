@@ -168,6 +168,37 @@ class MoodManager: ObservableObject {
         return Double(totalEnergy) / Double(recentEntries.count)
     }
 
+    /// Today's average mood level
+    /// Following Apple HealthKit patterns for daily aggregations
+    var todayAverageMood: Double? {
+        let todayEntries = todayEntries()
+        guard !todayEntries.isEmpty else { return nil }
+
+        let totalMood = todayEntries.reduce(0) { $0 + $1.moodLevel }
+        return Double(totalMood) / Double(todayEntries.count)
+    }
+
+    /// Today's average energy level
+    /// Following Apple HealthKit patterns for daily aggregations
+    var todayAverageEnergy: Double? {
+        let todayEntries = todayEntries()
+        guard !todayEntries.isEmpty else { return nil }
+
+        let totalEnergy = todayEntries.reduce(0) { $0 + $1.energyLevel }
+        return Double(totalEnergy) / Double(todayEntries.count)
+    }
+
+    /// Get today's mood entries
+    /// Following existing HydrationManager.todaysDrinks() pattern for consistency
+    private func todayEntries() -> [MoodEntry] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        return moodEntries.filter { entry in
+            calendar.isDate(entry.date, inSameDayAs: today)
+        }
+    }
+
     /// Get entries for a specific date range
     func entriesForRange(days: Int) -> [MoodEntry] {
         let calendar = Calendar.current

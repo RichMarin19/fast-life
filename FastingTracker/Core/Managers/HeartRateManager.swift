@@ -10,6 +10,10 @@ actor HeartRateManager {
     private let logger = Logger(subsystem: "com.fastlife.tracker", category: "HeartRate")
     private let healthStore: HKHealthStore
     private let heartRateType: HKQuantityType
+    private var observerQuery: HKObserverQuery?
+
+    // Industry standard: Callback for automatic UI updates when new data arrives
+    private var onDataUpdated: (@Sendable () -> Void)?
 
     init() {
         // CRITICAL FIX: Use shared HKHealthStore to avoid authorization conflicts
@@ -18,6 +22,58 @@ actor HeartRateManager {
         self.healthStore = HealthKitManager.shared.getHealthStore()
         self.heartRateType = HKQuantityType.quantityType(forIdentifier: .heartRate)!
         logger.info("HeartRateManager actor initialized with shared HKHealthStore")
+
+        // Set up automatic background sync following Apple HealthKit best practices
+        Task {
+            await setupBackgroundSync()
+        }
+    }
+
+    // MARK: - Automatic Background Sync (Industry Standard)
+    // Following Apple HealthKit Programming Guide and existing app patterns
+
+    func setupBackgroundSync() async {
+        logger.info("🔄 Setting up automatic heart rate background sync...")
+
+        // Enable background delivery for heart rate updates
+        do {
+            try await healthStore.enableBackgroundDelivery(
+                for: heartRateType,
+                frequency: .immediate
+            )
+            logger.info("✅ Background delivery enabled for heart rate")
+        } catch {
+            logger.error("❌ Failed to enable background delivery: \(error.localizedDescription)")
+        }
+
+        // Create observer query for automatic updates
+        observerQuery = HKObserverQuery(sampleType: heartRateType, predicate: nil) { [weak self] query, completionHandler, error in
+            Task { @Sendable [weak self] in
+                await self?.handleBackgroundUpdate(error: error)
+                completionHandler()
+            }
+        }
+
+        if let observerQuery = observerQuery {
+            healthStore.execute(observerQuery)
+            logger.info("✅ Heart rate observer query started - automatic sync active")
+        }
+    }
+
+    private func handleBackgroundUpdate(error: Error?) async {
+        if let error = error {
+            logger.error("❌ Background heart rate update error: \(error.localizedDescription)")
+            return
+        }
+
+        logger.info("📱 New heart rate data detected - triggering automatic update")
+
+        // Notify UI to refresh data
+        onDataUpdated?()
+    }
+
+    func setUpdateCallback(_ callback: @escaping @Sendable () -> Void) {
+        onDataUpdated = callback
     }
 
     // MARK: - Authorization (Industry Standard - Delegated to Central System)
@@ -187,10 +243,50 @@ final class HeartRateViewModel: ObservableObject {
 
     private let manager: HeartRateManager
     private let logger = Logger(subsystem: "com.fastlife.tracker", category: "HeartRateViewModel")
+    private var refreshTimer: Timer?
 
     init(manager: HeartRateManager = HeartRateManager()) {
         self.manager = manager
         logger.info("HeartRateViewModel initialized")
+
+        // Set up automatic background sync callback
+        // This enables real-time UI updates when new heart rate data arrives
+        Task { [weak self] in
+            await manager.setUpdateCallback { [weak self] in
+                DispatchQueue.main.async { [weak self] in
+                    self?.logger.info("🔄 Auto-sync triggered - refreshing heart rate UI")
+                    self?.refresh()
+                }
+            }
+        }
+
+        // Set up periodic refresh timer as fallback (industry standard)
+        // Updates every 30 seconds to ensure data freshness
+        setupPeriodicRefresh()
+    }
+
+    deinit {
+        refreshTimer?.invalidate()
+        logger.info("HeartRateViewModel deinitialized - timers cleaned up")
+    }
+
+    // MARK: - Automatic Refresh Timer (Industry Standard Fallback)
+    // Following Apple Health, Fitbit, MyFitnessPal patterns for periodic sync
+
+    private func setupPeriodicRefresh() {
+        // 30-second interval - balance between freshness and battery life
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            // Execute on main thread to access @MainActor properties safely
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+
+                // Only auto-refresh if we have read access and aren't already loading
+                if self.hasReadAccess && !self.isLoading {
+                    self.logger.info("⏰ Periodic refresh - checking for new heart rate data")
+                    self.refresh()
+                }
+            }
+        }
     }
 
     /// Apple's recommended pattern: Check actual read access, not authorization status

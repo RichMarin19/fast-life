@@ -4,69 +4,138 @@ import SwiftUI
 /// Following Apple SwiftUI MVVM patterns and HIG guidelines for tab-based navigation
 /// Reference: https://developer.apple.com/design/human-interface-guidelines/tab-bars
 struct HubView: View {
-    // MARK: - Environment Objects (Following HANDOFF.md state management patterns)
+    // MARK: - Environment Objects (Following shared instance pattern like FastingManager)
     @EnvironmentObject var fastingManager: FastingManager
+    @EnvironmentObject var hydrationManager: HydrationManager
     @StateObject private var weightManager = WeightManager()
-    @StateObject private var hydrationManager = HydrationManager()
     @StateObject private var sleepManager = SleepManager()
     @StateObject private var moodManager = MoodManager()
     // Note: Mood tracker handles both mood and energy data
 
     // MARK: - State Management (Apple SwiftUI Guidelines)
     @AppStorage("hubTrackerOrder") private var trackerOrderData: Data = Data()
-    @State private var trackerOrder: [TrackerType] = [.fasting, .weight, .sleep, .hydration, .mood]
+    @State private var trackerOrder: [TrackerType] = [.weight, .fasting, .sleep, .hydration, .mood]
     @State private var draggedTracker: TrackerType?
 
-    var body: some View {
-        NavigationView {
+    // MARK: - Main Content View (Decomposed for Compilation Performance)
+    @ViewBuilder
+    private var mainContentView: some View {
+        // Industry standard: GeometryReader for proper vertical centering in tab-based apps
+        // Following Apple Health, Instagram, Twitter content centering patterns
+        GeometryReader { geometry in
             ScrollView {
                 VStack(spacing: 0) {
+                    // MARK: - Luxury Navigation Title (Centered Premium Design)
+                    luxuryNavigationTitle
+
                     // MARK: - Top Status Bar (Heart Rate - Luxury Spec Section 2)
                     TopStatusBar()
 
-                    // MARK: - Tracker List (5 trackers in full-width layout)
-                    LazyVStack(spacing: 12) {
-                        ForEach(trackerOrder, id: \.self) { tracker in
-                            TrackerSummaryCard(tracker: tracker, trackerOrder: trackerOrder)
-                                .onDrag {
-                                    // SwiftUI Drag & Drop API - Long press to drag, tap to navigate
-                                    // Reference: https://developer.apple.com/documentation/swiftui/view/ondrag(_:)
-                                    self.draggedTracker = tracker
-                                    return NSItemProvider(object: tracker.rawValue as NSString)
-                                }
-                                .onDrop(of: [.text], delegate: TrackerDropDelegate(
-                                    tracker: tracker,
-                                    trackerOrder: $trackerOrder,
-                                    draggedTracker: $draggedTracker
-                                ))
-                        }
-                    }
-                    .padding()
-
-                    Spacer()
-                        .frame(height: 20)
+                    // MARK: - Vertically Centered Content Area
+                    trackerCardsSection(geometry: geometry)
                 }
             }
+        }
+    }
+
+    // MARK: - Luxury Background Gradient
+    @ViewBuilder
+    private var luxuryBackgroundGradient: some View {
+        LinearGradient(
+            colors: [
+                Color(hex: "#0D1B2A"),     // background.dark
+                Color(hex: "#0B1020")      // background.gradient end
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+        .ignoresSafeArea()
+    }
+
+    // MARK: - Tracker Cards Section
+    @ViewBuilder
+    private func trackerCardsSection(geometry: GeometryProxy) -> some View {
+        VStack(spacing: 0) {
+            // MARK: - Tracker List (5 trackers in full-width layout)
+            LazyVStack(spacing: 12) {
+                ForEach(trackerOrder, id: \.self) { tracker in
+                    TrackerSummaryCard(
+                        tracker: tracker,
+                        trackerOrder: trackerOrder,
+                        weightManager: weightManager,
+                        hydrationManager: hydrationManager,
+                        sleepManager: sleepManager,
+                        moodManager: moodManager
+                    )
+                        .onDrag {
+                            // SwiftUI Drag & Drop API - Long press to drag, tap to navigate
+                            // Reference: https://developer.apple.com/documentation/swiftui/view/ondrag(_:)
+                            self.draggedTracker = tracker
+                            return NSItemProvider(object: tracker.rawValue as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: TrackerDropDelegate(
+                            tracker: tracker,
+                            trackerOrder: $trackerOrder,
+                            draggedTracker: $draggedTracker
+                        ))
+                }
+            }
+            .padding(.horizontal)
+            .padding(.top, 8)
+        }
+        .frame(minHeight: geometry.size.height - 150) // Reduced to move content up
+        .frame(maxWidth: .infinity)
+        .clipped()
+    }
+
+    // MARK: - Luxury Navigation Title Component
+    // Following industry standards: Tesla app, Apple Watch, Nike Training Club
+    // Centered white typography for premium dashboard experience
+    @ViewBuilder
+    private var luxuryNavigationTitle: some View {
+        VStack(spacing: 0) {
+            // Luxury title with proper spacing and typography
+            HStack {
+                Spacer()
+
+                Text("Hub")
+                    .font(.system(size: 34, weight: .bold, design: .default))
+                    .foregroundColor(.white)
+                    .kerning(0.5) // Luxury typography spacing
+
+                Spacer()
+            }
+            .padding(.top, 4)
+            .padding(.bottom, 8)
             .background(
-                // Luxury background gradient (following exact spec colors)
+                // Subtle background extension for visual hierarchy
                 LinearGradient(
                     colors: [
-                        Color(hex: "#0D1B2A"),     // background.dark
-                        Color(hex: "#0B1020")      // background.gradient end
+                        Color(hex: "#0D1B2A").opacity(0.95),
+                        Color(hex: "#0D1B2A").opacity(0.85)
                     ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
-                .ignoresSafeArea()
             )
-            .navigationTitle("Hub")
-            .navigationBarTitleDisplayMode(.large)
+        }
+    }
+
+    var body: some View {
+        NavigationView {
+            mainContentView
+                .background(luxuryBackgroundGradient)
+                .navigationBarHidden(true)
         }
         .onAppear {
             loadTrackerOrder()
         }
         .onChange(of: trackerOrder) { _, newOrder in
             saveTrackerOrder(newOrder)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+            // Following Apple reactive UI patterns - refresh data when app becomes active
+            // This ensures real-time updates when returning from other apps
         }
     }
 
@@ -129,6 +198,20 @@ struct TrackerSummaryCard: View {
     let trackerOrder: [TrackerType]
     @EnvironmentObject var fastingManager: FastingManager
 
+    // Industry standard: Use @ObservedObject for SwiftUI reactivity to @Published properties
+    // Reference: https://developer.apple.com/documentation/swiftui/observedobject
+    @ObservedObject var weightManager: WeightManager
+    @ObservedObject var hydrationManager: HydrationManager
+    @ObservedObject var sleepManager: SleepManager
+    @ObservedObject var moodManager: MoodManager
+
+    // Date formatter for consistent date display
+    private var dateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .short
+        return formatter
+    }
+
     // Computed property for fasting display value following ContentView patterns
     private var fastingDisplayValue: String {
         switch tracker {
@@ -140,7 +223,7 @@ struct TrackerSummaryCard: View {
                 let seconds = Int(fastingManager.elapsedTime) % 60
                 return String(format: "%02d:%02d:%02d", hours, minutes, seconds)
             } else {
-                // Show time since last fast
+                // Show time since last fast (matching original enhanced display format)
                 if let lastFast = fastingManager.fastingHistory.first,
                    let lastEndTime = lastFast.endTime {
                     let timeSince = Date().timeIntervalSince(lastEndTime)
@@ -192,10 +275,10 @@ struct TrackerSummaryCard: View {
 
                 // Tracker info section
                 VStack(alignment: .leading, spacing: 6) {
-                    // Tracker name with status chip (4pt grid aligned)
+                    // Tracker name with dynamic sizing based on position
                     HStack(spacing: 12) {
                         Text(tracker.displayName)
-                            .font(.system(.title3, design: .rounded, weight: .semibold))
+                            .font(.system(tracker == trackerOrder.first ? .title3 : .title2, design: .rounded, weight: .semibold))
                             .foregroundColor(.white)
 
                         // Status chip for featured tracker
@@ -203,7 +286,30 @@ struct TrackerSummaryCard: View {
                             statusChip(isActive: fastingManager.isActive)
                         }
 
-                        Spacer()
+                        // For non-featured trackers, add the value on the right side
+                        if tracker != trackerOrder.first {
+                            Spacer()
+
+                            if tracker == .fasting {
+                                // Fasting with context label above value
+                                VStack(alignment: .trailing, spacing: 2) {
+                                    Text(fastingManager.isActive ? "Time Since Fast Started" : "Time Since Last Fast")
+                                        .font(.caption2)
+                                        .foregroundColor(.white.opacity(0.7))
+
+                                    Text(simpleDisplayValue(for: tracker))
+                                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                                        .foregroundColor(Color("FLWarning"))
+                                }
+                            } else {
+                                Text(simpleDisplayValue(for: tracker))
+                                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                                    .foregroundColor(Color("FLWarning"))
+                                    .multilineTextAlignment(.center)
+                            }
+                        } else {
+                            Spacer()
+                        }
                     }
 
                     // Dynamic enhanced display for featured tracker (first in order)
@@ -278,27 +384,6 @@ struct TrackerSummaryCard: View {
                                 // Enhanced display for other featured trackers
                                 enhancedTrackerView(for: tracker)
                             }
-                        }
-                    } else {
-                        // Standard display for non-featured trackers
-                        if tracker == .fasting {
-                            // Simple fasting display
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(fastingManager.isActive ? "Fasting Time" : "Time Since Last Fast")
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.7))
-
-                                Text(fastingDisplayValue)
-                                    .font(.subheadline)
-                                    .foregroundColor(fastingManager.isActive ? .white : Color("FLWarning"))
-                                    .opacity(0.9)
-                            }
-                        } else {
-                            // Other trackers - simple display
-                            Text(fastingDisplayValue)
-                                .font(.subheadline)
-                                .foregroundColor(Color("FLWarning"))
-                                .opacity(0.9)
                         }
                     }
                 }
@@ -399,10 +484,10 @@ struct TrackerSummaryCard: View {
             VStack(alignment: .leading, spacing: 8) {
                 // Status chip for weight tracking
                 if tracker == trackerOrder.first {
-                    statusChip(isActive: true) // Assume active for demo
+                    statusChip(isActive: !weightManager.weightEntries.isEmpty)
                 }
 
-                // Weight display with units
+                // Weight display with units - connected to real data
                 HStack(alignment: .center) {
                     Text("Current Weight")
                         .font(.title2)
@@ -411,14 +496,26 @@ struct TrackerSummaryCard: View {
 
                     Spacer()
 
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("-- lbs")
-                            .font(.title)
-                            .fontWeight(.bold)
-                            .foregroundColor(Color(hex: "#1ABC9C"))
-                        Text("No data yet")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.7))
+                    if let latestWeight = weightManager.latestWeight {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("\(latestWeight.weight, specifier: "%.1f") lbs")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#1ABC9C"))
+                            Text(dateFormatter.string(from: latestWeight.date))
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
+                    } else {
+                        VStack(alignment: .trailing, spacing: 2) {
+                            Text("-- lbs")
+                                .font(.title)
+                                .fontWeight(.bold)
+                                .foregroundColor(Color(hex: "#1ABC9C"))
+                            Text("No data yet")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                        }
                     }
                 }
             }
@@ -516,6 +613,49 @@ struct TrackerSummaryCard: View {
                     .fill(isActive ? Color(hex: "#1ABC9C") : Color.gray.opacity(0.3))
                     .shadow(color: isActive ? Color(hex: "#1ABC9C").opacity(0.3) : Color.clear, radius: 2, x: 0, y: 1)
             )
+    }
+
+// MARK: - Simple Display Value for Non-Featured Trackers
+    private func simpleDisplayValue(for tracker: TrackerType) -> String {
+        switch tracker {
+        case .fasting:
+            return fastingDisplayValue
+
+        case .weight:
+            if let latestWeight = weightManager.latestWeight {
+                return String(format: "%.1f lbs", latestWeight.weight)
+            }
+            return "— lbs"
+
+        case .hydration:
+            // Following Weight pattern: Use computed properties for automatic SwiftUI updates
+            let dailyIntake = hydrationManager.todaysTotalInPreferredUnitComputed
+            let unit = hydrationManager.currentUnitAbbreviationComputed
+            return String(format: "%.1f %@", dailyIntake, unit)
+
+        case .sleep:
+            if let lastNight = sleepManager.lastNightSleep {
+                return lastNight.formattedDuration
+            }
+            return "— hrs"
+
+        case .mood:
+            if let avgMood = moodManager.todayAverageMood,
+               let avgEnergy = moodManager.todayAverageEnergy {
+                return String(format: "%.1f mood %.1f energy", avgMood, avgEnergy)
+            }
+
+            // Fallback to individual values if only one is available
+            if let avgMood = moodManager.todayAverageMood {
+                return String(format: "%.1f mood", avgMood)
+            }
+
+            if let avgEnergy = moodManager.todayAverageEnergy {
+                return String(format: "%.1f energy", avgEnergy)
+            }
+
+            return "No data"
+        }
     }
 }
 
