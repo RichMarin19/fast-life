@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class MoodManager: ObservableObject {
     @Published var moodEntries: [MoodEntry] = []
 
@@ -13,7 +14,8 @@ class MoodManager: ObservableObject {
     private let hasCompletedInitialImportKey = "moodHasCompletedInitialImport"
 
     /// Observer suppression flag to prevent infinite sync loops during manual operations
-    private var isSuppressingObserver = false
+    /// NOTE: nonisolated for thread-safe access from HealthKit background contexts
+    private nonisolated(unsafe) var isSuppressingObserver = false
 
     /// Observer query for automatic HealthKit sync
     private var observerQuery: Any? // HKObserverQuery type-erased

@@ -11,6 +11,7 @@ extension Notification.Name {
 
 /// Main HealthKit coordinator that manages specialized services
 /// Refactored from monolithic 2045-line class into focused service architecture
+/// NOTE: Not @MainActor - this is a shared service accessed from background contexts
 class HealthKitManager: ObservableObject {
     static let shared = HealthKitManager()
 
@@ -73,7 +74,7 @@ class HealthKitManager: ObservableObject {
         try await authManager.requestHeartRateAuthorization()
     }
 
-    func isHeartRateAuthorized() -> Bool {
+    nonisolated func isHeartRateAuthorized() -> Bool {
         return authManager.isHeartRateAuthorized()
     }
 
@@ -130,21 +131,21 @@ class HealthKitManager: ObservableObject {
 
     // MARK: - Additional Authorization Methods for Complete API Coverage
 
-    func isHydrationAuthorized() -> Bool {
+    nonisolated func isHydrationAuthorized() -> Bool {
         authManager.isHydrationAuthorized()
     }
 
     /// API compatibility: isWaterAuthorized delegates to isHydrationAuthorized
     /// Following established naming convention compatibility pattern
-    func isWaterAuthorized() -> Bool {
+    nonisolated func isWaterAuthorized() -> Bool {
         authManager.isHydrationAuthorized()
     }
 
-    func isFastingAuthorized() -> Bool {
+    nonisolated func isFastingAuthorized() -> Bool {
         authManager.isFastingAuthorized()
     }
 
-    func isWeightAuthorized() -> Bool {
+    nonisolated func isWeightAuthorized() -> Bool {
         authManager.isWeightAuthorized()
     }
 
@@ -164,7 +165,7 @@ class HealthKitManager: ObservableObject {
 
     // MARK: - Mindfulness API (API Compatibility for MoodManager)
 
-    func isMindfulnessAuthorized() -> Bool {
+    nonisolated func isMindfulnessAuthorized() -> Bool {
         // Simplified - would delegate to auth manager
         return true
     }
@@ -272,7 +273,7 @@ class HealthKitManager: ObservableObject {
     private let healthStore = HKHealthStore()
     private let userDefaults = UserDefaults.standard
 
-    func isSleepAuthorized() -> Bool {
+    nonisolated func isSleepAuthorized() -> Bool {
         authManager.isSleepAuthorized()
     }
 

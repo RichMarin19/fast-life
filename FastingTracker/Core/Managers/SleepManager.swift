@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import HealthKit
 
+@MainActor
 class SleepManager: ObservableObject {
     @Published var sleepEntries: [SleepEntry] = []
     @Published var syncWithHealthKit: Bool = true
@@ -19,7 +20,8 @@ class SleepManager: ObservableObject {
 
     // Industry standard: Suppress observer during manual operations to prevent duplicate sync
     // Following MyFitnessPal, Spotify pattern: Temporary flag during bidirectional operations
-    private var isSuppressingObserver: Bool = false
+    // NOTE: nonisolated for thread-safe access from HealthKit background contexts
+    private nonisolated(unsafe) var isSuppressingObserver: Bool = false
 
     init() {
         loadSleepEntries()

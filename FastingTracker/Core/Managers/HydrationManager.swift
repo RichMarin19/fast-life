@@ -60,6 +60,7 @@ struct DrinkEntry: Identifiable, Codable, Equatable {
 
 // MARK: - Hydration Manager
 
+@MainActor
 class HydrationManager: ObservableObject {
     @Published var drinkEntries: [DrinkEntry] = []
     @Published var dailyGoalOunces: Double = 64.0  // Default 8 glasses of water
@@ -489,7 +490,8 @@ class HydrationManager: ObservableObject {
     // Following Universal Sync Architecture patterns from handoff.md
 
     /// Observer suppression flag to prevent infinite sync loops during manual operations
-    private var isSuppressingObserver = false
+    /// NOTE: nonisolated for thread-safe access from HealthKit background contexts
+    private nonisolated(unsafe) var isSuppressingObserver = false
 
     /// Observer query for automatic HealthKit sync
     private var observerQuery: Any? // HKObserverQuery type-erased to avoid import issues

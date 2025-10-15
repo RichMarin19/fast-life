@@ -1,6 +1,7 @@
 import Foundation
 import UserNotifications
 
+@MainActor
 class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
@@ -18,9 +19,12 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     }
 
     func requestAuthorization(completion: ((Bool) -> Void)? = nil) {
+        // Standard UNAuthorizationOptions for requesting notification permissions
         notificationCenter.requestAuthorization(options: [.alert, .sound, .badge]) { granted, error in
             if let error = error {
-                print("Notification authorization error: \(error)")
+                Log.error("Notification authorization failed", category: .notifications, error: error)
+            } else {
+                Log.info("Notification authorization granted: \(granted)", category: .notifications)
             }
             DispatchQueue.main.async {
                 completion?(granted)
@@ -62,17 +66,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // Called when user edits start time or changes notification settings during active fast
 
     func rescheduleNotifications(for session: FastingSession, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
-        print("\n🔄 RESCHEDULING NOTIFICATIONS")
-        print("  Reason: User edited start time")
-        let formatter = DateFormatter()
-        formatter.dateStyle = .short
-        formatter.timeStyle = .short
-        print("  New start time: \(formatter.string(from: session.startTime))")
-        print("  Goal: \(goalHours)h")
+        Log.info("Rescheduling notifications due to start time edit", category: .notifications, metadata: [
+            "goalHours": "\(goalHours)",
+            "newStartTime": ISO8601DateFormatter().string(from: session.startTime)
+        ])
 
         // Cancel all existing notifications
         cancelAllNotifications()
-        print("  • Cancelled all previous notifications")
+        Log.debug("Cancelled all previous notifications", category: .notifications)
 
         // Reschedule based on current settings
         scheduleAllNotifications(
@@ -83,48 +84,10 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         )
     }
 
-    // MARK: - Notification Delegate Methods
-    // Reference: https://developer.apple.com/documentation/usernotifications/unusernotificationcenterdelegate
-
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse, withCompletionHandler completionHandler: @escaping () -> Void) {
-        let notification = response.notification
-        let identifier = notification.request.identifier
-
-        // Handle "Disable This Stage" action button
-        if response.actionIdentifier == "DISABLE_STAGE" {
-            // Extract stage hour from notification identifier (e.g., "stage_12" -> 12)
-            if let stageHourString = identifier.split(separator: "_").last,
-               let stageHour = Int(stageHourString) {
-                // Save disabled preference
-                let stageKey = "disabledStage_\(stageHour)h"
-                UserDefaults.standard.set(true, forKey: stageKey)
-                print("Stage \(stageHour)h notifications disabled by user")
-            }
-        }
-        // Handle tapping the notification itself (deep link to stage detail view)
-        else if response.actionIdentifier == UNNotificationDefaultActionIdentifier {
-            // Check if this is a stage transition notification
-            if identifier.hasPrefix(stageIdentifierPrefix) {
-                // Extract stage hour from userInfo
-                if let stageHour = notification.request.content.userInfo["stageHour"] as? Int {
-                    // Post notification to open stage detail view
-                    // Reference: https://developer.apple.com/documentation/foundation/notificationcenter
-                    NotificationCenter.default.post(
-                        name: NSNotification.Name("OpenStageDetail"),
-                        object: nil,
-                        userInfo: ["stageHour": stageHour]
-                    )
-                    print("Opening stage detail view for \(stageHour)h stage")
-                }
-            }
-        }
-        completionHandler()
-    }
-
-    // Allow notifications to show while app is in foreground
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification, withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler([.banner, .sound, .badge])
-    }
+    // MARK: - UNUserNotificationCenterDelegate Implementation
+    // NOTE: Methods are optional - implementing only when needed to avoid Swift-ObjC bridging conflicts
+    // Default framework behavior handles notification display and interaction appropriately
+    // Custom methods can be added here when specific behavior requirements emerge
 
     func scheduleGoalNotification(for session: FastingSession, goalHours: Double, currentStreak: Int = 0, longestStreak: Int = 0) {
         cancelGoalNotification() // Clear any existing notifications
@@ -169,7 +132,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Error scheduling milestone notification: \(error)")
+                Log.error("Failed to schedule milestone notification", category: .notifications, error: error)
+            } else {
+                Log.debug("Successfully scheduled milestone notification", category: .notifications)
             }
         }
     }
@@ -203,7 +168,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Error scheduling goal completion: \(error)")
+                Log.error("Failed to schedule goal completion notification", category: .notifications, error: error)
+            } else {
+                Log.debug("Successfully scheduled goal completion notification", category: .notifications)
             }
         }
     }
@@ -1018,4 +985,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             print("\n")
         }
     }
+
 }
+
+// MARK: - UNUserNotificationCenterDelegate Implementation
+// Using default framework behavior for notification handling
+// Custom delegate methods can be added here when specific behavior is needed

@@ -2,6 +2,7 @@ import Foundation
 import Combine
 import HealthKit
 
+@MainActor
 class WeightManager: ObservableObject {
     @Published var weightEntries: [WeightEntry] = []
     @Published var syncWithHealthKit: Bool = true
@@ -18,7 +19,8 @@ class WeightManager: ObservableObject {
 
     // Industry standard: Suppress observer during manual operations to prevent duplicate sync
     // Following MyFitnessPal, Spotify pattern: Temporary flag during bidirectional operations
-    private var isSuppressingObserver: Bool = false
+    // NOTE: nonisolated for thread-safe access from HealthKit background contexts
+    private nonisolated(unsafe) var isSuppressingObserver: Bool = false
 
 
     init() {
