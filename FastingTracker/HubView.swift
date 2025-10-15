@@ -217,6 +217,12 @@ struct TrackerSummaryCard: View {
     @ObservedObject var sleepManager: SleepManager
     @ObservedObject var moodManager: MoodManager
 
+    // MARK: - Expanded Card State Management
+    @State private var isExpanded: Bool = false
+    @State private var tapCount: Int = 0
+    @State private var tapTimer: Timer?
+    @State private var shouldNavigate: Bool = false
+
     // Date formatter for consistent date display
     private var dateFormatter: DateFormatter {
         let formatter = DateFormatter()
@@ -317,109 +323,237 @@ struct TrackerSummaryCard: View {
     }
 
     var body: some View {
-        // Conditional navigation: Fasting tracker has individual interactive elements
-        Group {
-            if tracker == .fasting {
-                // Fasting tracker: Background navigation + individual interactive elements
-                NavigationLink(destination: destinationView) {
-                    cardContent
+        // MARK: - Advanced Gesture System: Tap/Double-tap/Long-press
+        ZStack {
+            cardContent
+                .onTapGesture {
+                    handleSingleTap()
                 }
-                .buttonStyle(.plain)
-            } else {
-                // Other trackers: Whole card is clickable
-                NavigationLink(destination: destinationView) {
-                    cardContent
+
+            // Hidden NavigationLink triggered programmatically
+            NavigationLink(
+                destination: destinationView,
+                isActive: $shouldNavigate
+            ) {
+                EmptyView()
+            }
+            .hidden()
+        }
+    }
+
+    // MARK: - Gesture Handling Logic
+    private func handleSingleTap() {
+        if tracker == trackerOrder.first {
+            // Main Focus card: Single tap opens tracker directly (existing behavior)
+            shouldNavigate = true
+        } else {
+            // Regular cards: Implement tap/double-tap system
+            tapCount += 1
+
+            if tapCount == 1 {
+                // Start timer for single tap detection
+                tapTimer = Timer.scheduledTimer(withTimeInterval: 0.3, repeats: false) { _ in
+                    if tapCount == 1 {
+                        // Single tap confirmed - expand/collapse
+                        withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                            isExpanded.toggle()
+                        }
+                    }
+                    tapCount = 0
                 }
+            } else if tapCount == 2 {
+                // Double tap detected - navigate to tracker
+                tapTimer?.invalidate()
+                tapCount = 0
+                shouldNavigate = true
             }
         }
     }
 
     @ViewBuilder
     private var cardContent: some View {
-        HStack(spacing: 20) {
-            // Tracker info section
-            VStack(alignment: .leading, spacing: 6) {
-                // Tracker title and values (20pt from top via card padding, proper baseline alignment)
-                HStack(alignment: .center, spacing: 12) {
-                    // Icon positioned next to title
-                    Image(systemName: tracker.icon)
-                        .font(.system(size: 24, weight: .medium))
-                        .foregroundColor(.white)
+        VStack(alignment: .leading, spacing: 6) {
+            // MARK: - Header Row (Always Visible)
+            HStack(alignment: .center, spacing: 12) {
+                // Icon positioned next to title
+                Image(systemName: tracker.icon)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(.white)
 
-                    Text(tracker.displayName)
-                        .font(.system(.title2, design: .rounded, weight: .semibold))
-                        .foregroundColor(.white)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.8)
+                Text(tracker.displayName)
+                    .font(.system(.title2, design: .rounded, weight: .semibold))
+                    .foregroundColor(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
 
-                    Spacer()
+                Spacer()
 
-                    // Values positioned on right side within HStack
-                    if tracker != trackerOrder.first {
-                        // Non-featured tracker values
-                        if tracker == .fasting {
-                            VStack(alignment: .trailing, spacing: 2) {
-                                Text(fastingManager.isActive ? "Time Since Fast Started" : "Time Since Last Fast")
-                                    .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.7))
-                                Text(simpleDisplayValue(for: tracker))
-                                    .font(.system(.title3, design: .rounded, weight: .semibold))
-                                    .foregroundColor(Color("FLWarning"))
-                            }
-                        } else if tracker == .mood {
-                            VStack(alignment: .trailing, spacing: 2) {
-                                if let avgMood = moodManager.todayAverageMood,
-                                   let avgEnergy = moodManager.todayAverageEnergy {
-                                    Text("\(String(format: "%.1f", avgMood)) m")
-                                        .font(.system(.title3, design: .rounded, weight: .semibold))
-                                        .foregroundColor(Color("FLWarning"))
-                                    Text("\(String(format: "%.1f", avgEnergy)) e")
-                                        .font(.system(.title3, design: .rounded, weight: .semibold))
-                                        .foregroundColor(Color("FLWarning"))
-                                } else {
-                                    Text("-- m")
-                                        .font(.system(.title3, design: .rounded, weight: .semibold))
-                                        .foregroundColor(Color("FLWarning"))
-                                    Text("-- e")
-                                        .font(.system(.title3, design: .rounded, weight: .semibold))
-                                        .foregroundColor(Color("FLWarning"))
-                                }
-                            }
-                        } else {
-                            Text(simpleDisplayValue(for: tracker))
-                                .font(.system(.title3, design: .rounded, weight: .semibold))
-                                .foregroundColor(Color("FLWarning"))
-                                .multilineTextAlignment(.trailing)
-                        }
-                    } else {
-                        // Featured tracker - interactive time display
-                        if tracker == .fasting {
-                            fastingTimeNavigation
-                        } else if tracker == .weight {
-                            weightTimeNavigation
-                        } else if tracker == .sleep {
-                            sleepTimeNavigation
-                        } else if tracker == .hydration {
-                            hydrationTimeNavigation
-                        } else if tracker == .mood {
-                            moodTimeNavigation
-                        }
-                    }
-                }
+                // Right-side values based on state
+                headerRightContent
+            }
 
-                // Enhanced display for featured tracker (North Star design for any Main Focus)
-                if tracker == trackerOrder.first {
-                    enhancedMainFocusDisplay(for: tracker)
-                }
+            // MARK: - Expandable Content Section
+            if isExpanded || tracker == trackerOrder.first {
+                expandedContent
+                    .transition(.asymmetric(
+                        insertion: .scale(scale: 0.95).combined(with: .opacity),
+                        removal: .scale(scale: 0.95).combined(with: .opacity)
+                    ))
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, tracker == trackerOrder.first ? 20 :
-                 (tracker == .hydration || tracker == .weight) ? 25 :
-                 tracker == .mood ? 15 : 20)
-        .background(trackerBackground)
+        .padding(.vertical, dynamicVerticalPadding)
+        .background(expandedTrackerBackground)
         .frame(maxWidth: .infinity)
-        .frame(minHeight: tracker == trackerOrder.first ? 200 : 80, alignment: .top)
+        .frame(minHeight: dynamicMinHeight, alignment: .top)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isExpanded)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: dynamicVerticalPadding)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: dynamicMinHeight)
+        .onDisappear {
+            // Cleanup timer to prevent memory leaks
+            tapTimer?.invalidate()
+            tapTimer = nil
+        }
+        .onChange(of: trackerOrder) { _, _ in
+            // Reset expanded state if tracker order changes (during drag reordering)
+            if isExpanded && tracker != trackerOrder.first {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
+                    isExpanded = false
+                }
+            }
+            // Cleanup any pending timers
+            tapTimer?.invalidate()
+            tapCount = 0
+        }
+    }
+
+    // MARK: - Dynamic Layout Properties
+    private var dynamicVerticalPadding: CGFloat {
+        if tracker == trackerOrder.first {
+            return 20 // Main Focus
+        } else if isExpanded {
+            return 20 // Expanded regular card
+        } else {
+            // Compact regular card - content-compensated padding
+            return (tracker == .hydration || tracker == .weight) ? 25 :
+                   tracker == .mood ? 15 : 20
+        }
+    }
+
+    private var dynamicMinHeight: CGFloat {
+        if tracker == trackerOrder.first || isExpanded {
+            return 200 // Main Focus or expanded
+        } else {
+            return 80 // Compact regular
+        }
+    }
+
+    // MARK: - Header Right Content
+    @ViewBuilder
+    private var headerRightContent: some View {
+        if tracker == trackerOrder.first {
+            // Main Focus - navigation components
+            headerTimeNavigation
+        } else if isExpanded {
+            // Expanded state - show navigation components
+            headerTimeNavigation
+        } else {
+            // Compact state - simple values
+            compactRightValues
+        }
+    }
+
+    @ViewBuilder
+    private var headerTimeNavigation: some View {
+        switch tracker {
+        case .fasting:
+            fastingTimeNavigation
+        case .weight:
+            weightTimeNavigation
+        case .sleep:
+            sleepTimeNavigation
+        case .hydration:
+            hydrationTimeNavigation
+        case .mood:
+            moodTimeNavigation
+        }
+    }
+
+    @ViewBuilder
+    private var compactRightValues: some View {
+        if tracker == .fasting {
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(fastingManager.isActive ? "Active" : "Last Fast")
+                    .font(.caption2)
+                    .foregroundColor(.white.opacity(0.7))
+                Text(simpleDisplayValue(for: tracker))
+                    .font(.system(.title3, design: .rounded, weight: .semibold))
+                    .foregroundColor(Color("FLWarning"))
+            }
+        } else if tracker == .mood {
+            VStack(alignment: .trailing, spacing: 2) {
+                if let avgMood = moodManager.todayAverageMood,
+                   let avgEnergy = moodManager.todayAverageEnergy {
+                    Text("\(String(format: "%.1f", avgMood)) m")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color("FLWarning"))
+                    Text("\(String(format: "%.1f", avgEnergy)) e")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color("FLWarning"))
+                } else {
+                    Text("-- m")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color("FLWarning"))
+                    Text("-- e")
+                        .font(.system(.title3, design: .rounded, weight: .semibold))
+                        .foregroundColor(Color("FLWarning"))
+                }
+            }
+        } else {
+            Text(simpleDisplayValue(for: tracker))
+                .font(.system(.title3, design: .rounded, weight: .semibold))
+                .foregroundColor(Color("FLWarning"))
+                .multilineTextAlignment(.trailing)
+        }
+    }
+
+    // MARK: - Expandable Content
+    @ViewBuilder
+    private var expandedContent: some View {
+        enhancedMainFocusDisplay(for: tracker)
+    }
+
+    // MARK: - Dynamic Background (Regular cards lose teal overlay when expanded)
+    @ViewBuilder
+    private var expandedTrackerBackground: some View {
+        // Industry Standard: Featured card with distinctive background for visual hierarchy
+        // Reference: Apple Health app featured sections, Fitbit primary stats
+        RoundedRectangle(cornerRadius: 16)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                // Hero card treatment - only Main Focus gets teal overlay
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(tracker == trackerOrder.first ?
+                          Color(hex: "#1ABC9C").opacity(0.25) : Color.clear)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: (tracker == trackerOrder.first || isExpanded) ? [
+                                Color.white.opacity(0.3),
+                                Color.white.opacity(0.1)
+                            ] : [
+                                Color.white.opacity(0.2),
+                                Color.white.opacity(0.05)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        lineWidth: 1
+                    )
+            )
+            .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)
     }
 
     // MARK: - Enhanced Main Focus Display (North Star Design for Any Tracker)
@@ -715,39 +849,6 @@ struct TrackerSummaryCard: View {
         }
     }
 
-    @ViewBuilder
-    private var trackerBackground: some View {
-        // Industry Standard: Featured card with distinctive background for visual hierarchy
-        // Reference: Apple Health app featured sections, Fitbit primary stats
-        RoundedRectangle(cornerRadius: 16)
-            .fill(.ultraThinMaterial)
-            .overlay(
-                // Hero card treatment with distinctive teal background
-                RoundedRectangle(cornerRadius: 16)
-                    .fill(tracker == trackerOrder.first ?
-                          Color(hex: "#1ABC9C").opacity(0.25) : Color.clear)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: tracker == trackerOrder.first ? [
-                                // Enhanced border for featured tracker
-                                Color(hex: "#1ABC9C").opacity(0.6),
-                                Color(hex: "#D4AF37").opacity(0.4)
-                            ] : [
-                                // Subtle border for regular trackers
-                                Color(hex: "#1ABC9C").opacity(0.4),
-                                Color(hex: "#D4AF37").opacity(0.2)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        lineWidth: tracker == trackerOrder.first ? 2.0 : 1.5
-                    )
-            )
-            .shadow(color: Color.black.opacity(0.12), radius: 8, x: 0, y: 4)  // Elevation from spec
-    }
 
     // MARK: - Mood & Energy Stability Progress Ring with Behavioral Icons
     // Following North Star pattern with 6 lifestyle factor icons positioned around ring
