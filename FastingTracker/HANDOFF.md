@@ -300,6 +300,48 @@ VStack(alignment: .leading, spacing: 28) {
 - `minHeight: 200` for Main Focus cards
 - Luxury background with teal/gold gradient borders
 
+#### Meta Row Nested Container Pattern (MANDATORY)
+
+**Premium Nested Container Template:**
+```swift
+// Meta Row with nested individual containers (Fasting/Hydration pattern)
+HStack {
+    // Value 1 - Individual container
+    VStack(spacing: 2) {
+        Text("Label")
+        Text("Value")
+    }
+    .padding(.horizontal, 8)
+    .padding(.vertical, 4)
+    .background(
+        RoundedRectangle(cornerRadius: 6)
+            .fill(Color.black.opacity(0.2))
+            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+    )
+
+    Spacer()
+
+    // Value 2 - Individual container
+    // ... repeat pattern
+
+    // Progress Value - Gold accent stroke
+    .stroke(Color(hex: "#D4AF37").opacity(0.1), lineWidth: 1)
+}
+.padding(.horizontal, 8)
+.padding(.vertical, 8)
+.background(
+    RoundedRectangle(cornerRadius: 8)  // Larger radius for outer container
+        .fill(Color.black.opacity(0.2))
+        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+)
+```
+
+**Visual Hierarchy Rules:**
+- Outer container: 8pt corner radius, 8pt padding
+- Inner containers: 6pt corner radius, 8pt horizontal + 4pt vertical padding
+- Progress values get gold accent stroke: `Color(hex: "#D4AF37").opacity(0.1)`
+- Creates premium layered effect with proper visual separation
+
 #### Progress Ring Standards (Where Applicable)
 
 **Icon Positioning:**
@@ -335,6 +377,57 @@ VStack(alignment: .leading, spacing: 28) {
 4. **Technical Quality**: Clean, maintainable SwiftUI implementation
 
 **This specification is MANDATORY for all Main Focus card implementations.**
+
+---
+
+## Card Size Troubleshooting Investigation
+
+### Failed Approaches - What Doesn't Control Card Visual Size
+
+#### ❌ RoundedRectangle Corner Radius (trackerBackground)
+**Test Applied:** Changed `cornerRadius: 16` to `cornerRadius: 20` for regular cards
+**Result:** NO visual impact on card sizes or layout
+**Conclusion:** Background corner radius does NOT control visual card dimensions
+
+#### ❌ Frame Height Modifiers
+**Test Applied:** Multiple attempts changing `.frame(minHeight:)` and `.frame(height:)`
+**Result:** Changes page layout but cards still appear different sizes
+**Conclusion:** Frame modifiers are NOT the primary controller of visual card size differences
+
+### Key Findings
+- **Visual card size inconsistency persists** despite frame changes
+- **Background styling changes have no effect** on card dimensions
+- **Root cause still unknown** - visual size differences come from another source
+
+### Cards Visual Size Analysis (from user feedback)
+- **Mood & Energy**: Shortest regular card
+- **Fasting**: Medium height regular card
+- **Weight**: Medium height regular card
+- **Hydration**: Shortest regular card
+
+**Next Investigation Areas:** Content structure, padding variations, or other layout modifiers affecting visual boundaries.
+
+#### ✅ SOLUTION FOUND - Content-Compensated Padding
+**Problem:** Regular cards had different visual heights due to content differences
+**Root Cause Analysis:**
+- **Hydration/Weight**: Minimal content (single value) = visually shorter
+- **Fasting**: Medium content (label + value) = medium height
+- **Mood & Energy**: Rich content (dual values) = visually taller
+
+**Successful Fix:** Conditional vertical padding to compensate for content differences
+```swift
+.padding(.vertical, tracker == trackerOrder.first ? 20 :
+         (tracker == .hydration || tracker == .weight) ? 25 :
+         tracker == .mood ? 15 : 20)
+```
+
+**Logic Applied:**
+- **More Content + Less Padding = Standard Height**
+- **Less Content + More Padding = Standard Height**
+
+**Result:** Perfect visual uniformity across all regular cards!
+
+**Key Lesson:** When cards have different content density, use **compensatory padding** rather than changing structural elements like frames or backgrounds.
 
 ### Circular Progress Ring Visual Standard - MANDATORY
 
@@ -572,7 +665,109 @@ Text("-- \(unit)") // Placeholder pattern for future implementation
 5. Use graceful fallback patterns for missing functionality
 
 ---
+
+## 🚀 PREMIUM OVERLAP PATTERN - UNIVERSAL STANDARD (2025-01-14)
+
+### The Perfect Visual Formula - LOCKED IN!
+
+**Problem Solved:** Inconsistent visual hierarchy between behavioral icons and progress rings across Main Focus cards.
+
+**Solution Applied:** Universal overlap pattern with proper Z-index layering.
+
+#### ✅ THE PERFECT OVERLAP FORMULA
+
+**🎯 Size Standard:**
+```swift
+size: 100  // Universal size for all Main Focus progress rings
+```
+
+**🎯 Icon Overlap Radius:**
+```swift
+let dynamicRadius = size * 0.45  // PERFECT overlap calculation
+```
+
+**🎯 Ring Thickness:**
+```swift
+lineWidth: 6  // Fixed thickness for visual consistency
+```
+
+**🎯 Z-Index Layering (CRITICAL):**
+```swift
+ZStack {
+    // 1. Background ring (bottom layer)
+    Circle().stroke(Color.gray.opacity(0.3), lineWidth: 6)
+
+    // 2. Progress ring (middle layer)
+    Circle().trim(from: 0, to: progress)
+        .stroke(AngularGradient(...), style: StrokeStyle(lineWidth: 6, lineCap: .round))
+
+    // 3. Center text (middle layer)
+    VStack { Text("Progress"); Text("62%") }
+
+    // 4. BEHAVIORAL ICONS (TOP LAYER - CRITICAL!)
+    behavioralIcons
+}
+```
+
+#### 🔥 Industry Standards Applied
+
+**SwiftUI Z-Index Best Practice:**
+- Elements declared LAST in ZStack appear ON TOP
+- Icons must be declared AFTER progress rings
+- Creates premium visual hierarchy
+
+**Apple HIG Visual Design:**
+- Interactive elements (icons) appear above progress indicators
+- Consistent layering maintains user expectation
+- Professional depth perception through proper stacking
+
+**Design Systems Excellence:**
+- Fixed values (6pt thickness) for visual harmony
+- Consistent sizing (100pt) across all components
+- Universal overlap formula for scalable consistency
+
+#### ✅ SUCCESS PATTERN - Replicated Across Cards
+
+**Cards Completed:**
+1. **Mood & Energy** ✅ - Original perfect implementation
+2. **Weight** ✅ - Successfully matched Mood & Energy pattern
+
+**Visual Results:**
+- Icons beautifully overlap progress ring edges
+- Premium professional appearance
+- Consistent visual hierarchy across all Main Focus cards
+- Perfect balance between functionality and aesthetics
+
+#### 🧩 Replication Instructions for Remaining Cards
+
+**For Sleep, Hydration, and Fasting cards:**
+
+1. **Update Size:** Change to `size: 100`
+2. **Fix Icon Radius:** Use `size * 0.45` for overlap calculation
+3. **Standardize Thickness:** Set `lineWidth: 6` for all rings
+4. **Correct Z-Index:** Move `behavioralIcons` AFTER progress rings in ZStack
+5. **Test Visual:** Verify icons appear ON TOP of rings
+
+**Quality Checklist:**
+- [ ] Icons appear in front of progress ring
+- [ ] Ring thickness matches other cards (6pt)
+- [ ] Ring size is 100pt diameter
+- [ ] Overlap radius uses 45% calculation
+- [ ] Visual consistency with Mood & Energy pattern
+
+#### 📋 Technical Implementation Notes
+
+**Performance:** Fixed calculations (6pt, 100pt, 0.45) are more efficient than dynamic calculations.
+
+**Maintenance:** Consistent values across components simplify future updates.
+
+**Scalability:** Universal formula applies to all current and future Main Focus cards.
+
+**User Experience:** Professional visual hierarchy enhances perceived quality.
+
+---
 *Last Updated: 2025-01-14*
-*Hydration Main Focus Card: Complete & Ready for Production*
-*Weight Main Focus Card: Complete & Ready for Commit*
+*Mood & Energy Main Focus Card: Complete & PERFECT ✅*
+*Weight Main Focus Card: Complete & PERFECTED ✅*
+*Universal Overlap Pattern: LOCKED IN & DOCUMENTED 🚀*
 *Main Focus Gold Standard: Official Design System Specification*

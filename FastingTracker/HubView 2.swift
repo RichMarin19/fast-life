@@ -414,9 +414,7 @@ struct TrackerSummaryCard: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, tracker == trackerOrder.first ? 20 :
-                 (tracker == .hydration || tracker == .weight) ? 25 :
-                 tracker == .mood ? 15 : 20)
+        .padding(.vertical, 20)
         .background(trackerBackground)
         .frame(maxWidth: .infinity)
         .frame(minHeight: tracker == trackerOrder.first ? 200 : 80, alignment: .top)
@@ -530,9 +528,8 @@ struct TrackerSummaryCard: View {
             )
 
             Spacer()
-                .frame(maxWidth: 60)
 
-            // Trend Rate - Centered to page/ring
+            // Trend Rate
             VStack(spacing: 2) {
                 Text("Trend")
                     .font(.system(size: 10, weight: .medium))
@@ -550,7 +547,6 @@ struct TrackerSummaryCard: View {
             )
 
             Spacer()
-                .frame(maxWidth: 60)
 
             // Progress Percentage
             VStack(spacing: 2) {
@@ -823,8 +819,8 @@ struct TrackerSummaryCard: View {
     // MARK: - Mood Meta Row (Following Weight Card Pattern EXACTLY)
     @ViewBuilder
     private var moodMetaRow: some View {
-        ZStack {
-            // Trend Pattern - Centered to page/ring
+        VStack(spacing: 8) {
+            // Trend Pattern - Centered above Goal/Progress row
             VStack(spacing: 2) {
                 Text("Trend")
                     .font(.system(size: 10, weight: .medium))
@@ -841,7 +837,7 @@ struct TrackerSummaryCard: View {
                     .stroke(Color.white.opacity(0.1), lineWidth: 1)
             )
 
-            // Goal and Progress positioned on sides
+            // Goal and Progress row
             HStack {
                 // Mood & Energy Goals
                 VStack(spacing: 2) {
