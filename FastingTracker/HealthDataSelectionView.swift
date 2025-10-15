@@ -150,7 +150,7 @@ private struct HealthDataRow: View {
 struct HealthDataSelectionView_Previews: PreviewProvider {
     static var previews: some View {
         HealthDataSelectionView { selectedTypes in
-            print("Selected: \(selectedTypes)")
+            AppLogger.debug("HealthDataSelectionView Preview: Selected \(selectedTypes)", category: AppLogger.ui)
         }
     }
 }

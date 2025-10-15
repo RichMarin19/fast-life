@@ -28,17 +28,17 @@ struct HydrationTrackingView: View {
                         onConnect: {
                             // DIRECT AUTHORIZATION: Same pattern as existing hydration sync
                             // Request hydration permissions immediately when user wants to connect
-                            print("📱 HydrationTrackingView: HealthKit nudge - requesting hydration authorization")
+                            AppLogger.info("HealthKit nudge - requesting hydration authorization", category: AppLogger.healthKit)
                             HealthKitManager.shared.requestHydrationAuthorization { success, error in
                                 DispatchQueue.main.async {
                                     if success {
-                                        print("✅ HydrationTrackingView: Hydration authorization granted from nudge")
+                                        AppLogger.info("Hydration authorization granted from nudge", category: AppLogger.healthKit)
                                         // Enable sync automatically when granted from nudge
                                         // Note: HydrationManager doesn't have enableSync() method yet
                                         // For now, we'll just hide the nudge
                                         showHealthKitNudge = false
                                     } else {
-                                        print("❌ HydrationTrackingView: Hydration authorization denied from nudge")
+                                        AppLogger.info("Hydration authorization denied from nudge", category: AppLogger.healthKit)
                                         // Still hide nudge if user denied (don't keep asking)
                                         nudgeManager.dismissNudge(for: .hydration)
                                         showHealthKitNudge = false
@@ -219,7 +219,7 @@ struct HydrationTrackingView: View {
             // Following Lose It pattern - contextual reminder on first tracker access
             showHealthKitNudge = nudgeManager.shouldShowNudge(for: .hydration)
             if showHealthKitNudge {
-                print("📱 HydrationTrackingView: Showing HealthKit nudge for first-time user")
+                AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
             }
         }
         .toolbar {
@@ -227,7 +227,7 @@ struct HydrationTrackingView: View {
                 Button(action: {
                     // DIRECT AUTHORIZATION: Unified experience - same pattern as WeightTrackingView
                     // Request hydration permissions immediately when user wants to sync
-                    print("📱 HydrationTrackingView: Requesting hydration authorization directly")
+                    AppLogger.info("Requesting hydration authorization directly", category: AppLogger.healthKit)
                     // Following Weight tracker successful pattern - show user choice dialog
                     showHydrationSyncDialog = true
                 }) {
@@ -261,10 +261,10 @@ struct HydrationTrackingView: View {
                 HealthKitManager.shared.requestHydrationAuthorization { success, error in
                     DispatchQueue.main.async {
                         if success {
-                            print("✅ HydrationTrackingView: Hydration authorization granted - syncing all data")
+                            AppLogger.info("Hydration authorization granted - syncing all data", category: AppLogger.healthKit)
                             hydrationManager.syncFromHealthKit()
                         } else {
-                            print("❌ HydrationTrackingView: Hydration authorization denied")
+                            AppLogger.info("Hydration authorization denied", category: AppLogger.healthKit)
                         }
                     }
                 }
@@ -274,10 +274,10 @@ struct HydrationTrackingView: View {
                 HealthKitManager.shared.requestHydrationAuthorization { success, error in
                     DispatchQueue.main.async {
                         if success {
-                            print("✅ HydrationTrackingView: Hydration authorization granted - future only sync")
+                            AppLogger.info("Hydration authorization granted - future only sync", category: AppLogger.healthKit)
                             hydrationManager.syncToHealthKit()
                         } else {
-                            print("❌ HydrationTrackingView: Hydration authorization denied")
+                            AppLogger.info("Hydration authorization denied", category: AppLogger.healthKit)
                         }
                     }
                 }

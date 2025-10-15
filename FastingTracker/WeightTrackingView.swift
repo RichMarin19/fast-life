@@ -30,21 +30,21 @@ struct WeightTrackingView: View {
                 HealthKitNudgeView(
                     dataType: .weight,
                     onConnect: {
-                        print("📱 WeightTrackingView: HealthKit nudge - requesting weight authorization")
+                        AppLogger.info("HealthKit nudge - requesting weight authorization", category: AppLogger.healthKit)
                         HealthKitManager.shared.requestWeightAuthorization { success, error in
                             DispatchQueue.main.async {
                                 if success {
-                                    print("✅ WeightTrackingView: Weight authorization granted from nudge")
+                                    AppLogger.info("Weight authorization granted from nudge", category: AppLogger.healthKit)
                                     weightManager.syncWithHealthKit = true
                                     showHealthKitNudge = false
                                 } else {
-                                    print("❌ WeightTrackingView: Weight authorization denied from nudge")
+                                    AppLogger.info("Weight authorization denied from nudge", category: AppLogger.healthKit)
                                 }
                             }
                         }
                     },
                     onDismiss: {
-                        print("📱 WeightTrackingView: HealthKit nudge dismissed")
+                        AppLogger.info("HealthKit nudge dismissed", category: AppLogger.ui)
                         showHealthKitNudge = false
                         nudgeManager.dismissNudge(for: .weight)
                     }
@@ -138,7 +138,7 @@ struct WeightTrackingView: View {
             // Following Lose It pattern - contextual reminder on first tracker access
             showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
             if showHealthKitNudge {
-                print("📱 WeightTrackingView: Showing HealthKit nudge for first-time user")
+                AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
             }
 
             // Note: Removed auto-authorization logic - now uses nudge banner pattern like HydrationTrackingView
@@ -211,15 +211,15 @@ struct EmptyWeightStateView: View {
                 Button(action: {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                     // Request weight permissions immediately when user wants to sync weight data
-                    print("📱 WeightTrackingView (EmptyState): Sync button tapped - requesting weight authorization directly")
+                    AppLogger.info("EmptyState: Sync button tapped - requesting weight authorization", category: AppLogger.healthKit)
                     HealthKitManager.shared.requestWeightAuthorization { success, error in
                         if success {
-                            print("✅ WeightTrackingView (EmptyState): Weight authorization granted - starting sync")
+                            AppLogger.info("EmptyState: Weight authorization granted - starting sync", category: AppLogger.healthKit)
                             DispatchQueue.main.async {
                                 weightManager.syncFromHealthKit()
                             }
                         } else {
-                            print("❌ WeightTrackingView (EmptyState): Weight authorization denied")
+                            AppLogger.info("EmptyState: Weight authorization denied", category: AppLogger.healthKit)
                         }
                     }
                 }) {

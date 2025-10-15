@@ -235,14 +235,14 @@ class HealthKitNudgeManager: ObservableObject {
     VStack(spacing: 16) {
         HealthKitNudgeView(
             dataType: .weight,
-            onConnect: { print("Connect tapped") },
-            onDismiss: { print("Dismiss tapped") }
+            onConnect: { AppLogger.debug("HealthKitNudgeView: Connect tapped", category: AppLogger.ui) },
+            onDismiss: { AppLogger.debug("HealthKitNudgeView: Dismiss tapped", category: AppLogger.ui) }
         )
 
         HealthKitNudgeView(
             dataType: .hydration,
-            onConnect: { print("Connect tapped") },
-            onDismiss: { print("Dismiss tapped") }
+            onConnect: { AppLogger.debug("HealthKitNudgeView: Connect tapped", category: AppLogger.ui) },
+            onDismiss: { AppLogger.debug("HealthKitNudgeView: Dismiss tapped", category: AppLogger.ui) }
         )
     }
     .padding()

@@ -197,11 +197,11 @@ class WeightManager: ObservableObject {
         })
 
         guard !isDuplicate else {
-            AppLogger.warning("Prevented duplicate weight entry: \(weight) \(appSettings.weightUnit.abbreviation) within 30 minutes", category: AppLogger.weightTracking)
+            AppLogger.warning("Prevented duplicate weight entry within 30 minutes", category: AppLogger.weightTracking)
             return
         }
 
-        AppLogger.info("Adding weight: \(weight) \(appSettings.weightUnit.abbreviation) (\(weightInPounds) lbs internal)", category: AppLogger.weightTracking)
+        AppLogger.info("Adding weight entry", category: AppLogger.weightTracking)
 
         let entry = WeightEntry(
             date: date,

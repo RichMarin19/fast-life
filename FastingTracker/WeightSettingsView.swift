@@ -251,20 +251,20 @@ struct WeightSettingsView: View {
     }
 
     private func syncWithHealthKit() {
-        print("\n🔄 WeightSettingsView: Sync with HealthKit button tapped")
+        AppLogger.debug("Sync with HealthKit button tapped", category: AppLogger.ui)
         isSyncing = true
 
         // BLOCKER 5 FIX: Check WEIGHT authorization specifically (granular)
         // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
         let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
-        print("Weight Authorization Status: \(isAuthorized ? "✅ Authorized" : "❌ Not Authorized")")
+        AppLogger.debug("Weight authorization status: \(isAuthorized ? "Authorized" : "Not authorized")", category: AppLogger.healthKit)
 
         if !isAuthorized {
             // Request WEIGHT authorization only (not all permissions)
-            print("📱 WeightSettingsView: Requesting WEIGHT authorization (granular)...")
+            AppLogger.debug("Requesting weight authorization", category: AppLogger.healthKit)
             HealthKitManager.shared.requestWeightAuthorization { success, error in
                 if success {
-                    print("✅ WeightSettingsView: Weight authorization granted")
+                    AppLogger.info("Weight authorization granted", category: AppLogger.healthKit)
                     // Check if initial import choice was already made
                     DispatchQueue.main.async {
                         self.isSyncing = false
@@ -277,21 +277,21 @@ struct WeightSettingsView: View {
                         }
                     }
                 } else {
-                    print("❌ WeightSettingsView: Weight authorization denied")
+                    AppLogger.info("Weight authorization denied", category: AppLogger.healthKit)
                     isSyncing = false
                     syncMessage = error?.localizedDescription ?? "HealthKit authorization required. Enable weight access in: Settings → Privacy & Security → Health → Data Access & Devices → Fast LIFe → Turn on Weight."
                     showingSyncAlert = true
                 }
             }
         } else {
-            print("✅ WeightSettingsView: Already authorized")
+            AppLogger.debug("Weight already authorized", category: AppLogger.healthKit)
             // Already authorized - check if initial import choice was made
             if hasCompletedInitialImport() {
-                print("✅ Initial import completed - proceeding with regular sync")
+                AppLogger.debug("Initial import completed - proceeding with regular sync", category: AppLogger.healthKit)
                 // User already made choice - proceed with regular sync
                 performSync()
             } else {
-                print("📋 First time - showing historical import choice dialog")
+                AppLogger.debug("First time - showing historical import choice dialog", category: AppLogger.ui)
                 // First time - show historical import choice dialog
                 // Following industry standards: One-time choice, then seamless sync
                 isSyncing = false
@@ -415,7 +415,7 @@ struct WeightSettingsView: View {
     // MARK: - Sync Preference Dialog Actions
 
     private func performHistoricalSync() {
-        print("🔄 WeightSettingsView: User chose to import all historical weight data")
+        AppLogger.info("User chose to import all historical weight data", category: AppLogger.ui)
         // Mark initial import as completed - no more dialogs needed
         markInitialImportCompleted()
         isSyncing = true
@@ -455,7 +455,7 @@ struct WeightSettingsView: View {
     }
 
     private func performFutureOnlySync() {
-        print("🔄 WeightSettingsView: User chose to sync only future weight data")
+        AppLogger.info("User chose to sync only future weight data", category: AppLogger.ui)
         // Mark initial import as completed - no more dialogs needed
         markInitialImportCompleted()
 

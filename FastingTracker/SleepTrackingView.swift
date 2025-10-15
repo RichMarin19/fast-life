@@ -44,15 +44,15 @@ struct SleepTrackingView: View {
                 HealthKitNudgeView(
                     dataType: .sleep,
                     onConnect: {
-                        print("📱 SleepTrackingView: HealthKit nudge - requesting sleep authorization")
+                        AppLogger.info("HealthKit nudge - requesting sleep authorization", category: AppLogger.healthKit)
                         HealthKitManager.shared.requestSleepAuthorization { success, error in
                             DispatchQueue.main.async {
                                 if success {
-                                    print("✅ SleepTrackingView: Sleep authorization granted from nudge")
+                                    AppLogger.info("Sleep authorization granted from nudge", category: AppLogger.healthKit)
                                     sleepManager.setSyncPreference(true)
                                     showHealthKitNudge = false
                                 } else {
-                                    print("❌ SleepTrackingView: Sleep authorization denied from nudge")
+                                    AppLogger.info("Sleep authorization denied from nudge", category: AppLogger.healthKit)
                                     nudgeManager.dismissNudge(for: .sleep)
                                     showHealthKitNudge = false
                                 }
@@ -290,7 +290,7 @@ struct SleepTrackingView: View {
         .onAppear {
             showHealthKitNudge = nudgeManager.shouldShowNudge(for: .sleep)
             if showHealthKitNudge {
-                print("📱 SleepTrackingView: Showing HealthKit nudge for first-time user")
+                AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
             }
         }
     }

@@ -140,7 +140,7 @@ struct FastingStageDetailView: View {
                             doNotShowAgain = newValue
                             let stageKey = "disabledStage_\(stage.startHour)h"
                             UserDefaults.standard.set(newValue, forKey: stageKey)
-                            print("Stage \(stage.startHour)h notifications \(newValue ? "disabled" : "enabled") from detail view")
+                            AppLogger.debug("Stage \(stage.startHour)h notifications \(newValue ? "disabled" : "enabled")", category: AppLogger.notifications)
                         }
                     )) {
                         HStack(spacing: 8) {

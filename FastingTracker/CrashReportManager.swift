@@ -143,9 +143,9 @@ public class CrashReportManager {
 
         #if DEBUG
         // In debug mode, just log the error
-        print("🚨 CrashReport[\(category.rawValue)]: \(error.localizedDescription)")
+        AppLogger.debug("🚨 CrashReport[\(category.rawValue)]: \(error.localizedDescription)", category: AppLogger.safety)
         if !context.isEmpty {
-            print("   Context: \(contextString)")
+            AppLogger.debug("   Context: \(contextString)", category: AppLogger.safety)
         }
         #else
         // In production, this would record to Firebase Crashlytics

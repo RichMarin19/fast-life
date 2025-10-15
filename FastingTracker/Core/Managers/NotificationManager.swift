@@ -279,7 +279,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         // Reference: https://developer.apple.com/documentation/foundation/userdefaults/1408805-bool
         let notificationsEnabled = UserDefaults.standard.object(forKey: "notificationsEnabled") as? Bool ?? true
         guard notificationsEnabled else {
-            print("Notifications disabled by user - skipping schedule")
+            AppLogger.info("Notifications disabled by user - skipping schedule", category: AppLogger.notifications)
             return
         }
 
@@ -308,7 +308,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let stagesEnabled = UserDefaults.standard.object(forKey: "notif_stages") as? Bool ?? true
         if stagesEnabled {
             scheduleStageTransitions(for: session, mode: mode, goalHours: goalHours)
-            print("Stage transitions scheduled for goal: \(goalHours)h")
+            AppLogger.debug("Stage transitions scheduled for goal: \(goalHours)h", category: AppLogger.notifications)
         }
 
         let goalReminderEnabled = UserDefaults.standard.object(forKey: "notif_goalreminder") as? Bool ?? true
@@ -316,7 +316,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             scheduleGoalReminders(for: session, goalHours: goalHours)
         }
 
-        print("✅ All notifications scheduled successfully")
+        AppLogger.info("All notifications scheduled successfully", category: AppLogger.notifications)
 
         // Debug: Print what's actually pending in the system
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -379,7 +379,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Error scheduling hydration reminder: \(error)")
+                AppLogger.error("Error scheduling hydration reminder", category: AppLogger.notifications, error: error)
             }
         }
     }
@@ -435,7 +435,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Error scheduling did you know fact: \(error)")
+                AppLogger.error("Error scheduling did you know fact", category: AppLogger.notifications, error: error)
             }
         }
     }
@@ -457,10 +457,9 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     // MARK: - Milestone Notifications (Enhanced)
 
     private func scheduleMilestoneNotifications(for session: FastingSession, goalHours: Double, currentStreak: Int, longestStreak: Int) {
-        print("\n🎯 === MILESTONE NOTIFICATION SCHEDULING ===")
-        print("Goal: \(goalHours)h | Trigger offset: \(UserDefaults.standard.string(forKey: "trigger_milestones") ?? "whenreached")")
-
+        AppLogger.debug("Milestone notification scheduling started", category: AppLogger.notifications)
         let triggerSetting = UserDefaults.standard.string(forKey: "trigger_milestones") ?? "whenreached"
+        AppLogger.debug("Goal: \(goalHours)h | Trigger offset: \(triggerSetting)", category: AppLogger.notifications)
         let startTime = session.startTime
 
         // Get max per day limit from user settings
@@ -489,12 +488,15 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         let keyMilestones: [Double] = [4, 8, 12, 16, 18, 20, 24]
         let reachableMilestones = keyMilestones.filter { $0 <= goalHours }
 
-        print("📋 Key milestones: \(keyMilestones.map { "\($0)h" }.joined(separator: ", "))")
-        print("✅ Reachable milestones (≤ goal): \(reachableMilestones.map { "\($0)h" }.joined(separator: ", "))")
+        let keyMilestonesText = keyMilestones.map { "\($0)h" }.joined(separator: ", ")
+        AppLogger.debug("Key milestones: \(keyMilestonesText)", category: AppLogger.notifications)
+        let reachableMilestonesText = reachableMilestones.map { "\($0)h" }.joined(separator: ", ")
+        AppLogger.debug("Reachable milestones (≤ goal): \(reachableMilestonesText)", category: AppLogger.notifications)
 
         let skippedMilestones = keyMilestones.filter { $0 > goalHours }
         if !skippedMilestones.isEmpty {
-            print("⏭️  Skipped milestones (> goal): \(skippedMilestones.map { "\($0)h" }.joined(separator: ", "))")
+            let skippedMilestonesText = skippedMilestones.map { "\($0)h" }.joined(separator: ", ")
+            AppLogger.debug("Skipped milestones (> goal): \(skippedMilestonesText)", category: AppLogger.notifications)
         }
 
         // Add hourly milestones after 24h for extended fasts
@@ -526,7 +528,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             }
         }
 
-        print("\n📍 Scheduling \(selectedMilestones.count) milestone notifications:")
+        AppLogger.debug("Scheduling \(selectedMilestones.count) milestone notifications", category: AppLogger.notifications)
 
         var scheduledCount = 0
         var skippedPast = 0
@@ -542,7 +544,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             }
 
             if isQuietHours(date: notificationTime) {
-                print("🔕 Skipped \(Int(milestone))h milestone (quiet hours)")
+                AppLogger.debug("Skipped \(Int(milestone))h milestone (quiet hours)", category: AppLogger.notifications)
                 skippedQuiet += 1
                 continue
             }
@@ -560,24 +562,25 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
             notificationCenter.add(request) { error in
                 if let error = error {
-                    print("❌ Error scheduling \(Int(milestone))h milestone: \(error)")
+                    AppLogger.error("Error scheduling \(Int(milestone))h milestone", category: AppLogger.notifications, error: error)
                 } else {
                     let hoursUntil = timeInterval / 3600
-                    print("✅ Scheduled \(Int(milestone))h milestone - fires in \(String(format: "%.1f", hoursUntil))h")
+                    let formattedHours = String(format: "%.1f", hoursUntil)
+                    AppLogger.debug("Scheduled \(Int(milestone))h milestone - fires in \(formattedHours)h", category: AppLogger.notifications)
                 }
             }
             scheduledCount += 1
         }
 
-        print("\n📊 Milestone Scheduling Summary:")
-        print("   • Total scheduled: \(scheduledCount)")
+        AppLogger.debug("Milestone Scheduling Summary", category: AppLogger.notifications)
+        AppLogger.debug("Total scheduled: \(scheduledCount)", category: AppLogger.notifications)
         if skippedPast > 0 {
-            print("   • Skipped (in past): \(skippedPast)")
+            AppLogger.debug("Skipped (in past): \(skippedPast)", category: AppLogger.notifications)
         }
         if skippedQuiet > 0 {
-            print("   • Skipped (quiet hours): \(skippedQuiet)")
+            AppLogger.debug("Skipped (quiet hours): \(skippedQuiet)", category: AppLogger.notifications)
         }
-        print("===========================================\n")
+        AppLogger.debug("Milestone scheduling completed", category: AppLogger.notifications)
     }
 
     // MARK: - Stage Transitions
@@ -623,11 +626,12 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
         // Use smart selection algorithm to rotate stages daily
         let selectedStages = selectStagesToSchedule(allStages: allStages, maxPerDay: maxStages, goalHours: goalHours)
 
-        print("📊 Stage Notifications Setup:")
-        print("  • Max per day: \(maxStages)")
-        print("  • Goal hours: \(goalHours)h")
-        print("  • Trigger offset: \(offsetMinutes) min")
-        print("  • Selected stages: \(selectedStages.map { "\(Int($0.hours))h" }.joined(separator: ", "))")
+        AppLogger.debug("Stage Notifications Setup", category: AppLogger.notifications)
+        AppLogger.debug("Max per day: \(maxStages)", category: AppLogger.notifications)
+        AppLogger.debug("Goal hours: \(goalHours)h", category: AppLogger.notifications)
+        AppLogger.debug("Trigger offset: \(offsetMinutes) min", category: AppLogger.notifications)
+        let selectedStagesText = selectedStages.map { "\(Int($0.hours))h" }.joined(separator: ", ")
+        AppLogger.debug("Selected stages: \(selectedStagesText)", category: AppLogger.notifications)
 
         // Schedule only the selected stages
         var scheduledCount = 0
@@ -636,14 +640,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let timeInterval = notificationTime.timeIntervalSinceNow
 
             if timeInterval <= 0 {
-                print("  ⏭️  Skipped \(Int(stage.hours))h stage - already passed (was \(Int(-timeInterval/60)) min ago)")
+                AppLogger.debug("Skipped \(Int(stage.hours))h stage - already passed (was \(Int(-timeInterval/60)) min ago)", category: AppLogger.notifications)
                 continue
             }
 
             if isQuietHours(date: notificationTime) {
                 let formatter = DateFormatter()
                 formatter.timeStyle = .short
-                print("  🌙 Skipped \(Int(stage.hours))h stage - quiet hours (\(formatter.string(from: notificationTime)))")
+                AppLogger.debug("Skipped \(Int(stage.hours))h stage - quiet hours (\(formatter.string(from: notificationTime)))", category: AppLogger.notifications)
                 continue
             }
 
@@ -671,16 +675,17 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
             notificationCenter.add(request) { error in
                 if let error = error {
-                    print("  ❌ Error scheduling \(Int(stage.hours))h stage: \(error)")
+                    AppLogger.error("Error scheduling \(Int(stage.hours))h stage", category: AppLogger.notifications, error: error)
                 } else {
                     let hoursUntil = timeInterval / 3600
-                    print("  ✅ Scheduled \(Int(stage.hours))h stage - fires in \(String(format: "%.1f", hoursUntil))h")
+                    let formattedHours = String(format: "%.1f", hoursUntil)
+                    AppLogger.debug("Scheduled \(Int(stage.hours))h stage - fires in \(formattedHours)h", category: AppLogger.notifications)
                 }
             }
             scheduledCount += 1
         }
 
-        print("📊 Stage Notifications Summary: \(scheduledCount)/\(selectedStages.count) scheduled successfully")
+        AppLogger.debug("Stage Notifications Summary: \(scheduledCount)/\(selectedStages.count) scheduled successfully", category: AppLogger.notifications)
     }
 
     // MARK: - Goal Reminders
@@ -733,7 +738,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
 
         notificationCenter.add(request) { error in
             if let error = error {
-                print("Error scheduling goal reminder: \(error)")
+                AppLogger.error("Error scheduling goal reminder", category: AppLogger.notifications, error: error)
             }
         }
     }
@@ -754,7 +759,7 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
                 UserDefaults.standard.removeObject(forKey: "sentStageIndicesToday")
                 UserDefaults.standard.removeObject(forKey: "sentHydrationIndicesToday")
                 UserDefaults.standard.removeObject(forKey: "sentMilestoneIndicesToday")
-                print("New day detected - reset daily notification tracking")
+                AppLogger.debug("New day detected - reset daily notification tracking", category: AppLogger.notifications)
             }
         }
 
@@ -919,33 +924,33 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     func debugPrintPendingNotifications() {
         // First check authorization status
         notificationCenter.getNotificationSettings { settings in
-            print("\n🔔 NOTIFICATION PERMISSIONS DEBUG:")
-            print("  Authorization Status: \(settings.authorizationStatus.rawValue)")
+            AppLogger.debug("Notification Permissions Debug", category: AppLogger.notifications)
+            AppLogger.debug("Authorization Status: \(settings.authorizationStatus.rawValue)", category: AppLogger.notifications)
             switch settings.authorizationStatus {
             case .notDetermined:
-                print("  ⚠️  NOT DETERMINED - User hasn't been asked yet")
+                AppLogger.debug("NOT DETERMINED - User hasn't been asked yet", category: AppLogger.notifications)
             case .denied:
-                print("  ❌ DENIED - User blocked notifications in Settings")
+                AppLogger.debug("DENIED - User blocked notifications in Settings", category: AppLogger.notifications)
             case .authorized:
-                print("  ✅ AUTHORIZED - Notifications allowed")
+                AppLogger.debug("AUTHORIZED - Notifications allowed", category: AppLogger.notifications)
             case .provisional:
-                print("  ⚠️  PROVISIONAL - Quiet notifications only")
+                AppLogger.debug("PROVISIONAL - Quiet notifications only", category: AppLogger.notifications)
             case .ephemeral:
-                print("  ⚠️  EPHEMERAL - App Clip temporary access")
+                AppLogger.debug("EPHEMERAL - App Clip temporary access", category: AppLogger.notifications)
             @unknown default:
-                print("  ❓ UNKNOWN STATUS")
+                AppLogger.debug("UNKNOWN STATUS", category: AppLogger.notifications)
             }
-            print("  Alert Style: \(settings.alertStyle.rawValue)")
-            print("  Badge Enabled: \(settings.badgeSetting == .enabled)")
-            print("  Sound Enabled: \(settings.soundSetting == .enabled)")
+            AppLogger.debug("Alert Style: \(settings.alertStyle.rawValue)", category: AppLogger.notifications)
+            AppLogger.debug("Badge Enabled: \(settings.badgeSetting == .enabled)", category: AppLogger.notifications)
+            AppLogger.debug("Sound Enabled: \(settings.soundSetting == .enabled)", category: AppLogger.notifications)
         }
 
         notificationCenter.getPendingNotificationRequests { requests in
-            print("\n🔔 PENDING NOTIFICATIONS DEBUG:")
-            print("  Total pending: \(requests.count)")
+            AppLogger.debug("Pending Notifications Debug", category: AppLogger.notifications)
+            AppLogger.debug("Total pending: \(requests.count)", category: AppLogger.notifications)
 
             if requests.isEmpty {
-                print("  ⚠️  NO NOTIFICATIONS SCHEDULED!")
+                AppLogger.debug("NO NOTIFICATIONS SCHEDULED!", category: AppLogger.notifications)
                 return
             }
 
@@ -955,14 +960,14 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             let didYouKnowNotifications = requests.filter { $0.identifier.hasPrefix(self.didYouKnowIdentifierPrefix) }
             let goalReminderNotifications = requests.filter { $0.identifier.hasPrefix(self.goalReminderIdentifierPrefix) }
 
-            print("\n  📊 Breakdown:")
-            print("    Stage Transitions: \(stageNotifications.count)")
-            print("    Milestones: \(milestoneNotifications.count)")
-            print("    Hydration: \(hydrationNotifications.count)")
-            print("    Did You Know: \(didYouKnowNotifications.count)")
-            print("    Goal Reminders: \(goalReminderNotifications.count)")
+            AppLogger.debug("Breakdown", category: AppLogger.notifications)
+            AppLogger.debug("Stage Transitions: \(stageNotifications.count)", category: AppLogger.notifications)
+            AppLogger.debug("Milestones: \(milestoneNotifications.count)", category: AppLogger.notifications)
+            AppLogger.debug("Hydration: \(hydrationNotifications.count)", category: AppLogger.notifications)
+            AppLogger.debug("Did You Know: \(didYouKnowNotifications.count)", category: AppLogger.notifications)
+            AppLogger.debug("Goal Reminders: \(goalReminderNotifications.count)", category: AppLogger.notifications)
 
-            print("\n  ⏰ Next 5 Notifications:")
+            AppLogger.debug("Next 5 Notifications", category: AppLogger.notifications)
             let sortedRequests = requests
                 .compactMap { request -> (String, Date)? in
                     guard let trigger = request.trigger as? UNTimeIntervalNotificationTrigger else { return nil }
@@ -979,10 +984,11 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             for (identifier, fireDate) in sortedRequests {
                 let timeUntil = fireDate.timeIntervalSinceNow
                 let hoursUntil = timeUntil / 3600
-                print("    • \(identifier) → \(formatter.string(from: fireDate)) (in \(String(format: "%.1f", hoursUntil))h)")
+                let formattedHours = String(format: "%.1f", hoursUntil)
+                AppLogger.debug("\(identifier) → \(formatter.string(from: fireDate)) (in \(formattedHours)h)", category: AppLogger.notifications)
             }
 
-            print("\n")
+            AppLogger.debug("Notification debug completed", category: AppLogger.notifications)
         }
     }
 
