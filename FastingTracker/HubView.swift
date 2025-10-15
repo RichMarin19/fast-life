@@ -4,12 +4,12 @@ import SwiftUI
 /// Following Apple SwiftUI MVVM patterns and HIG guidelines for tab-based navigation
 /// Reference: https://developer.apple.com/design/human-interface-guidelines/tab-bars
 struct HubView: View {
-    // MARK: - Environment Objects (Following shared instance pattern like FastingManager)
+    // MARK: - Environment Objects (Following shared instance pattern for all managers)
     @EnvironmentObject var fastingManager: FastingManager
     @EnvironmentObject var hydrationManager: HydrationManager
-    @StateObject private var weightManager = WeightManager()
-    @StateObject private var sleepManager = SleepManager()
-    @StateObject private var moodManager = MoodManager()
+    @EnvironmentObject var weightManager: WeightManager
+    @EnvironmentObject var sleepManager: SleepManager
+    @EnvironmentObject var moodManager: MoodManager
     // Note: Mood tracker handles both mood and energy data
 
     // MARK: - Navigation State Management (Following AdvancedView pattern)
@@ -313,12 +313,15 @@ struct TrackerSummaryCard: View {
             ContentView()
         case .weight:
             WeightTrackingView()
+                .environmentObject(weightManager)
         case .hydration:
             HydrationTrackingView()
         case .sleep:
             SleepTrackingView()
+                .environmentObject(sleepManager)
         case .mood:
             MoodTrackingView()
+                .environmentObject(moodManager)
         }
     }
 
@@ -759,7 +762,7 @@ struct TrackerSummaryCard: View {
     // Weight Current Navigation (matching goalEndNavigation structure exactly)
     @ViewBuilder
     private var weightCurrentNavigation: some View {
-        NavigationLink(destination: WeightTrackingView()) {
+        NavigationLink(destination: WeightTrackingView().environmentObject(weightManager)) {
             VStack(alignment: .trailing, spacing: 4) {
                 Text("Current Weight")
                     .font(.system(size: 14, weight: .semibold))
@@ -1116,7 +1119,7 @@ struct TrackerSummaryCard: View {
     // MARK: - Mood Time Navigation Header Component
     @ViewBuilder
     private var moodTimeNavigation: some View {
-        NavigationLink(destination: MoodTrackingView()) {
+        NavigationLink(destination: MoodTrackingView().environmentObject(moodManager)) {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("Today's Balance")
                     .font(.caption2)
@@ -1155,7 +1158,7 @@ struct TrackerSummaryCard: View {
 
     @ViewBuilder
     private var weightTimeNavigation: some View {
-        NavigationLink(destination: WeightTrackingView()) {
+        NavigationLink(destination: WeightTrackingView().environmentObject(weightManager)) {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("Current Weight")
                     .font(.caption2)
@@ -1177,7 +1180,7 @@ struct TrackerSummaryCard: View {
 
     @ViewBuilder
     private var sleepTimeNavigation: some View {
-        NavigationLink(destination: SleepTrackingView()) {
+        NavigationLink(destination: SleepTrackingView().environmentObject(sleepManager)) {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("Last Night")
                     .font(.caption2)
@@ -1200,7 +1203,7 @@ struct TrackerSummaryCard: View {
     // Sleep Last Night Navigation (matching North Star structure)
     @ViewBuilder
     private var sleepLastNightNavigation: some View {
-        NavigationLink(destination: SleepTrackingView()) {
+        NavigationLink(destination: SleepTrackingView().environmentObject(sleepManager)) {
             VStack(alignment: .trailing, spacing: 4) {
                 Text("Sleep Quality")
                     .font(.system(size: 14, weight: .semibold))

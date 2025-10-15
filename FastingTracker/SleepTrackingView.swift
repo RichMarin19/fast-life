@@ -28,7 +28,7 @@ enum SleepTimeRange: String, CaseIterable {
 // Following Apple MVVM patterns and Phase 3a/3b/3c component extraction lessons
 
 struct SleepTrackingView: View {
-    @StateObject private var sleepManager = SleepManager()
+    @EnvironmentObject var sleepManager: SleepManager
     @StateObject private var nudgeManager = HealthKitNudgeManager.shared
     @State private var showingAddSleep = false
     @State private var showingSyncSettings = false

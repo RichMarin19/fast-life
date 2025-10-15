@@ -6,7 +6,7 @@ import Charts
 // Following Apple MVVM patterns and Phase 3a/3b component extraction lessons
 
 struct MoodTrackingView: View {
-    @StateObject private var moodManager = MoodManager()
+    @EnvironmentObject var moodManager: MoodManager
     @State private var showingAddEntry = false
     @State private var selectedTimeRange = 7
 

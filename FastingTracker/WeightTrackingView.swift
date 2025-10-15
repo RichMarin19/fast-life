@@ -2,7 +2,7 @@ import SwiftUI
 import Charts
 
 struct WeightTrackingView: View {
-    @StateObject private var weightManager = WeightManager()
+    @EnvironmentObject var weightManager: WeightManager
     @ObservedObject private var healthKitManager = HealthKitManager.shared
     @ObservedObject private var nudgeManager = HealthKitNudgeManager.shared
 

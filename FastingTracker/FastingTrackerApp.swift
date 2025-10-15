@@ -74,6 +74,9 @@ struct FastLifeApp: App {
 struct MainTabView: View {
     @StateObject private var fastingManager = FastingManager()
     @StateObject private var hydrationManager = HydrationManager()
+    @StateObject private var weightManager = WeightManager()
+    @StateObject private var sleepManager = SleepManager()
+    @StateObject private var moodManager = MoodManager()
 
     @Binding var shouldPopToRoot: Bool
     @Binding var shouldResetToOnboarding: Bool
@@ -101,6 +104,9 @@ struct MainTabView: View {
             HubView(shouldPopToRoot: $shouldPopToRoot)
                 .environmentObject(fastingManager)
                 .environmentObject(hydrationManager)
+                .environmentObject(weightManager)
+                .environmentObject(sleepManager)
+                .environmentObject(moodManager)
                 .tabItem {
                     Label("Hub", systemImage: "waveform.path.ecg")
                 }
