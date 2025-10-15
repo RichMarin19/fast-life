@@ -339,8 +339,8 @@ struct TrackerSummaryCard: View {
         HStack(spacing: 20) {
             // Tracker info section
             VStack(alignment: .leading, spacing: 6) {
-                // Tracker title and values
-                HStack(spacing: 12) {
+                // Tracker title and values (20pt from top via card padding, proper baseline alignment)
+                HStack(alignment: .center, spacing: 12) {
                     // Icon positioned next to title
                     Image(systemName: tracker.icon)
                         .font(.system(size: 24, weight: .medium))
@@ -349,6 +349,8 @@ struct TrackerSummaryCard: View {
                     Text(tracker.displayName)
                         .font(.system(.title2, design: .rounded, weight: .semibold))
                         .foregroundColor(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
 
                     Spacer()
 
@@ -672,29 +674,12 @@ struct TrackerSummaryCard: View {
                     avgEnergy: moodManager.averageEnergyLevel ?? 0.0
                 )
 
-                // Right: Current Status (interactive)
-                NavigationLink(destination: MoodTrackingView()) {
-                    VStack(alignment: .trailing, spacing: 4) {
-                        Text("Today's Balance")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                        if let todayMood = moodManager.todayAverageMood,
-                           let todayEnergy = moodManager.todayAverageEnergy {
-                            Text(String(format: "%.1f/%.1f", todayMood, todayEnergy))
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(Color(hex: "#D4AF37"))
-                        } else {
-                            Text("-- / --")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(Color(hex: "#D4AF37"))
-                        }
-                    }
-                }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .trailing)
+                // Right: Empty space for visual balance (following Weight card pattern)
+                Spacer()
+                    .frame(maxWidth: .infinity, alignment: .trailing)
             }
 
-            // Meta row with reflection and behavioral insights
+            // Meta row with mood insights following Weight card pattern
             moodMetaRow
         }
     }
@@ -738,19 +723,21 @@ struct TrackerSummaryCard: View {
     @ViewBuilder
     private func MoodEnergyProgressRing(stabilityPercentage: Int, avgMood: Double, avgEnergy: Double) -> some View {
         ZStack {
-            // Progress ring following universal design system
+            // Progress ring following universal design system and HANDOFF.md pattern
             Circle()
+                .trim(from: 0, to: CGFloat(stabilityPercentage) / 100.0)
                 .stroke(
                     AngularGradient(
-                        colors: [
+                        gradient: Gradient(colors: [
                             Color(hex: "#3498DB"), // Blue for reflective periods
                             Color(hex: "#1ABC9C"), // Teal for balanced states
                             Color(hex: "#27AE60")  // Green for stable periods
-                        ],
+                        ]),
+                        center: .center,
                         startAngle: .degrees(-90),
-                        endAngle: .degrees(270 * Double(stabilityPercentage) / 100.0 - 90)
+                        endAngle: .degrees(270)
                     ),
-                    lineWidth: 6
+                    style: StrokeStyle(lineWidth: 6, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
 
@@ -758,44 +745,8 @@ struct TrackerSummaryCard: View {
             Circle()
                 .stroke(Color.white.opacity(0.2), lineWidth: 6)
 
-            // Behavioral lifestyle icons positioned around ring
-            ZStack {
-                // Sleep (top-left)
-                Image(systemName: "moon.fill")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#9B59B6").opacity(0.8))
-                    .offset(x: -25, y: -25)
-
-                // Hydration (top-right)
-                Image(systemName: "drop.fill")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#3498DB").opacity(0.8))
-                    .offset(x: 25, y: -25)
-
-                // Fasting (right)
-                Image(systemName: "clock.fill")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#F39C12").opacity(0.8))
-                    .offset(x: 35, y: 0)
-
-                // Movement (bottom-right)
-                Image(systemName: "figure.run")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#E67E22").opacity(0.8))
-                    .offset(x: 25, y: 25)
-
-                // Mindfulness (bottom-left)
-                Image(systemName: "brain.head.profile")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#1ABC9C").opacity(0.8))
-                    .offset(x: -25, y: 25)
-
-                // Sunlight (left)
-                Image(systemName: "sun.max.fill")
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#F1C40F").opacity(0.8))
-                    .offset(x: -35, y: 0)
-            }
+            // Behavioral lifestyle icons positioned around ring (following Weight card pattern)
+            moodBehavioralIcons
 
             // Center stability percentage
             VStack(spacing: 2) {
@@ -810,44 +761,89 @@ struct TrackerSummaryCard: View {
         .frame(width: 100, height: 100)
     }
 
-    // MARK: - Mood Meta Row with Reflection Insights
+    // MARK: - Mood Behavioral Icons (Following Weight Card Pattern EXACTLY)
+    @ViewBuilder
+    private var moodBehavioralIcons: some View {
+        let size: CGFloat = 100
+        let dynamicRadius = size * 0.45 // Same radius calculation as Weight card
+
+        // Lifestyle behaviors with exact Weight card styling
+        let behaviors = [
+            (icon: "💤", angle: -45.0),  // Sleep (top-left)
+            (icon: "💧", angle: 45.0),   // Hydration (top-right)
+            (icon: "🍽️", angle: 90.0),   // Fasting (right)
+            (icon: "🏃‍♂️", angle: 135.0),  // Movement (bottom-right)
+            (icon: "🧠", angle: 225.0),  // Mindfulness (bottom-left)
+            (icon: "☀️", angle: 270.0)   // Sunlight (left)
+        ]
+
+        ForEach(Array(behaviors.enumerated()), id: \.offset) { index, behavior in
+            let angle = behavior.angle - 90.0 // -90 to start at top like Weight card
+            let x = dynamicRadius * cos(angle * .pi / 180)
+            let y = dynamicRadius * sin(angle * .pi / 180)
+
+            Text(behavior.icon)
+                .font(.system(size: size * 0.18)) // Matching Weight card icon size
+                .background(
+                    Circle()
+                        .fill(Color.white)
+                        .frame(width: size * 0.22, height: size * 0.22) // Matching Weight card background size
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                )
+                .offset(x: x, y: y)
+        }
+    }
+
+    // MARK: - Mood Meta Row (Following Weight Card Pattern EXACTLY)
     @ViewBuilder
     private var moodMetaRow: some View {
-        HStack(spacing: 20) {
-            // Reflection Status
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Daily Reflection")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
+        HStack {
+            // Mood & Energy Goals
+            VStack(spacing: 2) {
+                Text("Goal")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color(hex: "#D0D4DA"))
                 HStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(hex: "#27AE60"))
-                    Text("Logged")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Color(hex: "#27AE60"))
+                    Text("8.0 m")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
+                    Text("8.0 e")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(.white)
                 }
             }
 
             Spacer()
 
-            // Weekly Trends
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("7-Day Range")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.white.opacity(0.6))
-                if let avgMood = moodManager.averageMoodLevel,
-                   let avgEnergy = moodManager.averageEnergyLevel {
-                    Text(String(format: "%.1f-%.1f", avgMood, avgEnergy))
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                } else {
-                    Text("-- / --")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(.white)
-                }
+            // Trend Pattern
+            VStack(spacing: 2) {
+                Text("Trend")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color(hex: "#D0D4DA"))
+                Text("Stable")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+
+            Spacer()
+
+            // Stability Progress
+            VStack(spacing: 2) {
+                Text("Progress")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
+                Text("76%")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundColor(Color(hex: "#D4AF37"))
             }
         }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color.black.opacity(0.2))
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+        )
     }
 
     // MARK: - Mood Time Navigation Header Component
