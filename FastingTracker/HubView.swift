@@ -679,6 +679,8 @@ struct TrackerSummaryCard: View {
     // Enhanced Mood Display (North Star Design)
     @ViewBuilder
     private var enhancedMoodDisplay: some View {
+        let stabilityPercentage = calculateMoodStabilityPercentage()
+
         VStack(alignment: .leading, spacing: 28) {
             // Three-column layout following North Star Fasting pattern
             HStack(alignment: .center, spacing: 16) {
@@ -687,7 +689,7 @@ struct TrackerSummaryCard: View {
                     Text("7-Day Stability")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.8))
-                    Text("76%")
+                    Text("\(stabilityPercentage)%")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -695,7 +697,7 @@ struct TrackerSummaryCard: View {
 
                 // Center: Mood & Energy Stability Ring with Behavioral Icons
                 MoodEnergyProgressRing(
-                    stabilityPercentage: 76,
+                    stabilityPercentage: stabilityPercentage,
                     avgMood: moodManager.averageMoodLevel ?? 0.0,
                     avgEnergy: moodManager.averageEnergyLevel ?? 0.0
                 )
@@ -706,7 +708,10 @@ struct TrackerSummaryCard: View {
             }
 
             // Meta row with mood insights following Weight card pattern
-            moodMetaRow
+            moodMetaRow(stabilityPercentage: stabilityPercentage)
+
+            // Contextual messaging system based on stability
+            moodContextualMessage
         }
     }
 
@@ -822,7 +827,7 @@ struct TrackerSummaryCard: View {
 
     // MARK: - Mood Meta Row (Following Weight Card Pattern EXACTLY)
     @ViewBuilder
-    private var moodMetaRow: some View {
+    private func moodMetaRow(stabilityPercentage: Int) -> some View {
         ZStack {
             // Trend Pattern - Centered to page/ring
             VStack(spacing: 2) {
@@ -872,7 +877,7 @@ struct TrackerSummaryCard: View {
                     Text("Progress")
                         .font(.system(size: 10, weight: .medium))
                         .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                    Text("76%")
+                    Text("\(stabilityPercentage)%")
                         .font(.system(size: 12, weight: .semibold, design: .rounded))
                         .foregroundColor(Color(hex: "#D4AF37"))
                 }
@@ -892,6 +897,76 @@ struct TrackerSummaryCard: View {
                 .fill(Color.black.opacity(0.2))
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
+    }
+
+    // MARK: - Mood Contextual Messaging System
+    @ViewBuilder
+    private var moodContextualMessage: some View {
+        let stabilityPercentage = calculateMoodStabilityPercentage()
+        let message = moodContextualMessageText(for: stabilityPercentage)
+
+        Text(message)
+            .font(.system(size: 13, weight: .medium))
+            .foregroundColor(.white.opacity(0.8))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.black.opacity(0.3))
+                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+            )
+            .padding(.top, 8)
+    }
+
+    // MARK: - Mood Contextual Message Logic
+    private func moodContextualMessageText(for stabilityPercentage: Int) -> String {
+        switch stabilityPercentage {
+        case 80...100:
+            // Positive / Balanced messages
+            return ["Your balance shows in how steady you feel.",
+                    "Consistency creates calm.",
+                    "Energy's flowing because you're aligned."].randomElement() ?? "Your balance shows in how steady you feel."
+        case 50...79:
+            // Slightly Irregular messages
+            return ["Energy dips are feedback, not failure.",
+                    "One mindful pause resets the day.",
+                    "Patterns speak louder than perfection."].randomElement() ?? "Energy dips are feedback, not failure."
+        default:
+            // Low / Reflective messages
+            return ["Tough days count too — they reveal what matters.",
+                    "You're showing up, and that's the win.",
+                    "Use today as a signal, not a setback."].randomElement() ?? "Tough days count too — they reveal what matters."
+        }
+    }
+
+    // MARK: - Stability Calculation
+    private func calculateMoodStabilityPercentage() -> Int {
+        // Use real data if available, fallback to 76% for consistency with design
+        let recentEntries = moodManager.moodEntries.prefix(7) // Last 7 days
+
+        if recentEntries.count < 2 {
+            return 76 // Default from design spec
+        }
+
+        // Calculate stability based on variance in mood and energy levels
+        let moodLevels = recentEntries.map { Double($0.moodLevel) }
+        let energyLevels = recentEntries.map { Double($0.energyLevel) }
+
+        let moodVariance = calculateVariance(moodLevels)
+        let energyVariance = calculateVariance(energyLevels)
+        let avgVariance = (moodVariance + energyVariance) / 2
+
+        // Convert variance to stability percentage (lower variance = higher stability)
+        let stability = max(0, min(100, Int((10 - avgVariance) * 10)))
+        return stability
+    }
+
+    private func calculateVariance(_ values: [Double]) -> Double {
+        guard values.count > 1 else { return 0 }
+        let mean = values.reduce(0, +) / Double(values.count)
+        let squaredDifferences = values.map { pow($0 - mean, 2) }
+        return squaredDifferences.reduce(0, +) / Double(values.count)
     }
 
     // MARK: - Mood Time Navigation Header Component
