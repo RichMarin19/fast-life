@@ -324,21 +324,13 @@ struct TrackerSummaryCard: View {
 
     var body: some View {
         // MARK: - Advanced Gesture System: Tap/Double-tap/Long-press
-        ZStack {
-            cardContent
-                .onTapGesture {
-                    handleSingleTap()
-                }
-
-            // Hidden NavigationLink triggered programmatically
-            NavigationLink(
-                destination: destinationView,
-                isActive: $shouldNavigate
-            ) {
-                EmptyView()
+        cardContent
+            .onTapGesture {
+                handleSingleTap()
             }
-            .hidden()
-        }
+            .navigationDestination(isPresented: $shouldNavigate) {
+                destinationView
+            }
     }
 
     // MARK: - Gesture Handling Logic
@@ -414,9 +406,13 @@ struct TrackerSummaryCard: View {
             tapTimer?.invalidate()
             tapTimer = nil
         }
-        .onChange(of: trackerOrder) { _, _ in
-            // Reset expanded state if tracker order changes (during drag reordering)
-            if isExpanded && tracker != trackerOrder.first {
+        .onChange(of: trackerOrder) { oldOrder, newOrder in
+            // Only reset expanded state if this tracker became Main Focus (first position)
+            let wasFirst = oldOrder.first == tracker
+            let isNowFirst = newOrder.first == tracker
+
+            if !wasFirst && isNowFirst && isExpanded {
+                // Card moved to Main Focus position - collapse expanded state
                 withAnimation(.spring(response: 0.4, dampingFraction: 0.9)) {
                     isExpanded = false
                 }
@@ -435,7 +431,7 @@ struct TrackerSummaryCard: View {
             return 20 // Expanded regular card
         } else {
             // Compact regular card - content-compensated padding
-            return (tracker == .hydration || tracker == .weight) ? 25 :
+            return (tracker == .hydration || tracker == .weight || tracker == .sleep) ? 25 :
                    tracker == .mood ? 15 : 20
         }
     }
@@ -517,10 +513,59 @@ struct TrackerSummaryCard: View {
         }
     }
 
-    // MARK: - Expandable Content
+    // MARK: - Expandable Content (Main Focus content without motivational messages)
     @ViewBuilder
     private var expandedContent: some View {
-        enhancedMainFocusDisplay(for: tracker)
+        switch tracker {
+        case .fasting:
+            enhancedFastingDisplay
+        case .weight:
+            enhancedWeightDisplay
+        case .hydration:
+            enhancedHydrationDisplay
+        case .sleep:
+            enhancedSleepDisplay
+        case .mood:
+            enhancedMoodDisplayWithoutMessages
+        }
+    }
+
+    // MARK: - Enhanced Mood Display Without Contextual Messages (For Expanded State)
+    @ViewBuilder
+    private var enhancedMoodDisplayWithoutMessages: some View {
+        let stabilityPercentage = calculateMoodStabilityPercentage()
+
+        VStack(alignment: .leading, spacing: 28) {
+            // Three-column layout following North Star Fasting pattern
+            HStack(alignment: .center, spacing: 16) {
+                // Left: 7-Day Stability
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("7-Day Stability")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.8))
+                    Text("\(stabilityPercentage)%")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+                // Center: Mood & Energy Stability Ring with Behavioral Icons
+                MoodEnergyProgressRing(
+                    stabilityPercentage: stabilityPercentage,
+                    avgMood: moodManager.averageMoodLevel ?? 0.0,
+                    avgEnergy: moodManager.averageEnergyLevel ?? 0.0
+                )
+
+                // Right: Empty space for visual balance (following Weight card pattern)
+                Spacer()
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+
+            // Meta row with mood insights following Weight card pattern
+            moodMetaRow(stabilityPercentage: stabilityPercentage)
+
+            // NOTE: Contextual messaging excluded for expanded state consistency
+        }
     }
 
     // MARK: - Dynamic Background (Regular cards lose teal overlay when expanded)
@@ -655,8 +700,8 @@ struct TrackerSummaryCard: View {
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.black.opacity(0.2))
@@ -664,7 +709,6 @@ struct TrackerSummaryCard: View {
             )
 
             Spacer()
-                .frame(maxWidth: 60)
 
             // Trend Rate - Centered to page/ring
             VStack(spacing: 2) {
@@ -684,7 +728,6 @@ struct TrackerSummaryCard: View {
             )
 
             Spacer()
-                .frame(maxWidth: 60)
 
             // Progress Percentage
             VStack(spacing: 2) {
@@ -695,14 +738,15 @@ struct TrackerSummaryCard: View {
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(Color(hex: "#D4AF37"))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.black.opacity(0.2))
                     .stroke(Color(hex: "#D4AF37").opacity(0.1), lineWidth: 1)
             )
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
         .padding(.vertical, 8)
         .background(
@@ -710,7 +754,6 @@ struct TrackerSummaryCard: View {
                 .fill(Color.black.opacity(0.2))
                 .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
-        .padding(.horizontal, 8)
     }
 
     // Weight Current Navigation (matching goalEndNavigation structure exactly)
@@ -939,8 +982,8 @@ struct TrackerSummaryCard: View {
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.black.opacity(0.2))
@@ -1190,8 +1233,8 @@ struct TrackerSummaryCard: View {
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.black.opacity(0.2))
@@ -1208,8 +1251,8 @@ struct TrackerSummaryCard: View {
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.black.opacity(0.2))
@@ -1226,8 +1269,8 @@ struct TrackerSummaryCard: View {
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(Color(hex: "#D4AF37"))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
                 RoundedRectangle(cornerRadius: 6)
                     .fill(Color.black.opacity(0.2))
@@ -1480,7 +1523,7 @@ struct TrackerSummaryCard: View {
     /// Meta row with start time • target • % complete (equal spacing, center aligned)
     @ViewBuilder
     private var metaRow: some View {
-        if tracker == .fasting && tracker == trackerOrder.first {
+        if tracker == .fasting && (tracker == trackerOrder.first || isExpanded) {
             HStack {
                 // Start time - Interactive (actual fast start time)
                 if fastingManager.isActive, let currentSession = fastingManager.currentSession {
@@ -1721,8 +1764,8 @@ struct TrackerSummaryCard: View {
         Text(isActive ? "Active" : "Paused")
             .font(.system(size: 11, weight: .semibold))
             .foregroundColor(isActive ? .white : Color(hex: "#D0D4DA"))
-            .padding(.horizontal, 8)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
             .background(
                 Capsule()
                     .fill(isActive ? Color(hex: "#1ABC9C") : Color.gray.opacity(0.3))
@@ -1796,28 +1839,6 @@ struct FastingProgressRing: View {
 
     var body: some View {
         ZStack {
-            // Educational stage icons positioned around the circle (matching ContentView)
-            ForEach(FastingStage.relevantStages(for: fastingGoalHours)) { stage in
-                let midpointHour = Double(stage.startHour + stage.endHour) / 2.0
-                let angle = (midpointHour / 24.0) * 360.0 - 90.0 // -90 to start at top
-
-                // PERFECT overlap radius matching all other cards
-                let dynamicRadius = size * 0.45  // Universal overlap formula
-
-                let x = dynamicRadius * cos(angle * .pi / 180)
-                let y = dynamicRadius * sin(angle * .pi / 180)
-
-                Text(stage.icon)
-                    .font(.system(size: size * 0.18)) // Restored icon size for visibility
-                    .background(
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: size * 0.22, height: size * 0.22) // Restored background size
-                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
-                    )
-                    .offset(x: x, y: y)
-            }
-
             // Timer Circle (exact same as ContentView, scaled)
             ZStack {
                 Circle()
@@ -1847,6 +1868,28 @@ struct FastingProgressRing: View {
                 Text("\(Int(progress * 100))%")
                     .font(.system(size: size * 0.15, weight: .semibold))
                     .foregroundColor(.white.opacity(0.9))
+            }
+
+            // Educational stage icons positioned around the circle (ON TOP of progress ring)
+            ForEach(FastingStage.relevantStages(for: fastingGoalHours)) { stage in
+                let midpointHour = Double(stage.startHour + stage.endHour) / 2.0
+                let angle = (midpointHour / 24.0) * 360.0 - 90.0 // -90 to start at top
+
+                // PERFECT overlap radius matching all other cards
+                let dynamicRadius = size * 0.45  // Universal overlap formula
+
+                let x = dynamicRadius * cos(angle * .pi / 180)
+                let y = dynamicRadius * sin(angle * .pi / 180)
+
+                Text(stage.icon)
+                    .font(.system(size: size * 0.18)) // Restored icon size for visibility
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            .frame(width: size * 0.22, height: size * 0.22) // Restored background size
+                            .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                    )
+                    .offset(x: x, y: y)
             }
         }
     }
