@@ -1,8 +1,28 @@
 import SwiftUI
 
+// Test frequency options for Phase B engine validation
+enum TestFrequency: String, CaseIterable, Identifiable {
+    case immediate = "immediate"
+    case thirtySeconds = "thirty_seconds"
+    case daily = "daily"
+    case testMode = "test_mode"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .immediate: return "Send Now"
+        case .thirtySeconds: return "Every 30 Seconds"
+        case .daily: return "Daily"
+        case .testMode: return "Test Mode (2 min)"
+        }
+    }
+}
+
 struct WeightSettingsView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var weightManager: WeightManager
+    @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
 
@@ -18,6 +38,12 @@ struct WeightSettingsView: View {
     @State private var lastSyncStatus: String = ""
     @State private var showingWeightSyncDetails: Bool = false
     @State private var showingSyncPreferenceDialog: Bool = false
+
+    // Phase B Engine Test Variables
+    @State private var testNotificationsEnabled: Bool = false
+    @State private var testFrequency: TestFrequency = .immediate
+    @State private var testToneStyle: NotificationToneStyle = .supportive
+    @State private var notificationPermissionStatus: String = "Not requested"
 
     // Industry standard: One-time historical import choice tracking
     // Following Apple iCloud, MyFitnessPal patterns - ask once, then auto-sync forever
@@ -98,6 +124,64 @@ struct WeightSettingsView: View {
                     }
                 }
 
+                // PHASE B ENGINE TEST - TEMPORARY VALIDATION SECTION
+                Section(header: Text("PHASE B ENGINE TEST")) {
+                    Toggle("Test Weight Reminders", isOn: $testNotificationsEnabled)
+
+                    if testNotificationsEnabled {
+                        VStack(spacing: 12) {
+                            // Tone Style Picker
+                            HStack {
+                                Text("Message Tone")
+                                Spacer()
+                                Picker("Tone", selection: $testToneStyle) {
+                                    ForEach(NotificationToneStyle.allCases, id: \.rawValue) { tone in
+                                        Text(tone.rawValue.capitalized).tag(tone)
+                                    }
+                                }
+                                .pickerStyle(MenuPickerStyle())
+                            }
+
+                            // Test Frequency
+                            HStack {
+                                Text("Test Frequency")
+                                Spacer()
+                                Picker("Frequency", selection: $testFrequency) {
+                                    ForEach(TestFrequency.allCases) { frequency in
+                                        Text(frequency.displayName).tag(frequency)
+                                    }
+                                }
+                                .pickerStyle(MenuPickerStyle())
+                            }
+
+                            // Permission Status
+                            HStack {
+                                Text("Permissions")
+                                Spacer()
+                                Text(notificationPermissionStatus)
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+
+                            // Test Actions
+                            VStack(spacing: 8) {
+                                Button("Request Notification Permissions") {
+                                    self.requestNotificationPermissions()
+                                }
+                                .buttonStyle(.bordered)
+                                .foregroundColor(.blue)
+
+                                Button("Send Test Notification") {
+                                    self.sendTestNotification()
+                                }
+                                .buttonStyle(.bordered)
+                                .foregroundColor(.orange)
+                                .disabled(notificationPermissionStatus != "Granted")
+                            }
+                        }
+                    }
+                }
+
                 Section(header: Text("About")) {
                     HStack {
                         Text("Total Entries")
@@ -134,6 +218,8 @@ struct WeightSettingsView: View {
             updatePermissionStatus()
             loadLastSyncStatus()
             updateToggleState()
+            // Phase B Engine Test: Update notification permission status
+            updateNotificationPermissionStatus()
         }
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
             // Following iOS best practices: Update permission status when returning from Settings
@@ -492,6 +578,138 @@ struct WeightSettingsView: View {
         // Following Apple UserDefaults best practices for critical flags
         userDefaults.synchronize()
         AppLogger.info("Initial import marked as completed and synchronized", category: AppLogger.weightTracking)
+    }
+
+    // MARK: - Phase B Engine Test Functions
+
+    /// Request notification permissions using our Phase B behavioral scheduler
+    private func requestNotificationPermissions() {
+        AppLogger.info("Requesting notification permissions for Phase B engine test", category: AppLogger.notifications)
+
+        Task {
+            let granted = await behavioralScheduler.requestPermissions()
+
+            await MainActor.run {
+                if granted {
+                    notificationPermissionStatus = "Granted"
+                    AppLogger.info("Phase B engine test: Notification permissions granted", category: AppLogger.notifications)
+                } else {
+                    notificationPermissionStatus = "Denied"
+                    AppLogger.warning("Phase B engine test: Notification permissions denied", category: AppLogger.notifications)
+                    // Follow Apple standard: Guide user to Settings app when permissions denied
+                    openNotificationSettings()
+                }
+            }
+        }
+    }
+
+    /// Open iOS Settings app to notification settings (Apple standard approach)
+    private func openNotificationSettings() {
+        if #available(iOS 16.0, *) {
+            // Direct to notification settings (iOS 16+)
+            if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                UIApplication.shared.open(url)
+                AppLogger.info("Opened notification settings directly (iOS 16+)", category: AppLogger.notifications)
+            }
+        } else {
+            // Fall back to app settings where notifications option is visible
+            if let url = URL(string: UIApplication.openSettingsURLString) {
+                UIApplication.shared.open(url)
+                AppLogger.info("Opened app settings for notification access", category: AppLogger.notifications)
+            }
+        }
+    }
+
+    /// Send test notification using Phase B behavioral intelligence
+    private func sendTestNotification() {
+        AppLogger.info("Sending Phase B engine test notification", category: AppLogger.notifications)
+
+        // Create test context for weight reminders - FORCE testing conditions
+        let testLastActivity = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+        let context = BehavioralContext(
+            currentStreak: weightManager.weightEntries.count > 0 ? 5 : 0,
+            recentPattern: "consistent",
+            timeOfDay: Date(),
+            dataValue: weightManager.weightEntries.first?.weight ?? 150.0,
+            goalProgress: 0.8,
+            lastActivity: testLastActivity
+        )
+
+        AppLogger.info("TEST CONTEXT - lastActivity: \(testLastActivity), days ago: 2", category: AppLogger.notifications)
+
+        Task {
+            let trigger: BehavioralTrigger
+            switch testFrequency {
+            case .immediate:
+                trigger = .immediate
+            case .thirtySeconds:
+                trigger = .timeInterval(30)
+            case .testMode:
+                trigger = .timeInterval(120) // 2 minutes
+            case .daily:
+                trigger = .timeInterval(86400) // 24 hours
+            }
+
+            // Update the rule with current test tone style and FORCE test mode
+            if let weightRule = behavioralScheduler.getRule(for: .weight) as? WeightNotificationRule {
+                await MainActor.run {
+                    weightRule.toneStyle = testToneStyle
+                    // FORCE enable for testing - bypass behavioral filtering
+                    weightRule.isEnabled = true
+                    // FORCE allow during quiet hours for testing
+                    weightRule.allowDuringQuietHours = true
+                    // FORCE enable sound for visibility during testing
+                    weightRule.soundEnabled = true
+                }
+                AppLogger.info("Updated weight rule: enabled=\(weightRule.isEnabled), tone=\(weightRule.toneStyle.rawValue), allowDuringQuiet=\(weightRule.allowDuringQuietHours)", category: AppLogger.notifications)
+            }
+
+            await behavioralScheduler.scheduleGuidance(
+                for: .weight,
+                trigger: trigger,
+                context: context
+            )
+
+            // VERIFY the notification was actually added to iOS notification center
+            let pendingNotifications = await UNUserNotificationCenter.current().pendingNotificationRequests()
+            let ourNotifications = pendingNotifications.filter { $0.identifier.contains("behavioral_weight") }
+
+            // SHOW SUCCESS MESSAGE - Phase B engine working perfectly!
+            if let testNotification = ourNotifications.first {
+                await MainActor.run {
+                    AppLogger.info("✅ PHASE B SUCCESS: '\(testNotification.content.title)' - '\(testNotification.content.body)'", category: AppLogger.notifications)
+                }
+            }
+
+            await MainActor.run {
+                AppLogger.info("Phase B engine test notification scheduled", category: AppLogger.notifications)
+                AppLogger.info("VERIFICATION: \(ourNotifications.count) weight notifications in iOS pending queue", category: AppLogger.notifications)
+                AppLogger.info("FORCED DELIVERY: Showing notification content as alert for testing", category: AppLogger.notifications)
+                for notification in ourNotifications.prefix(3) {
+                    AppLogger.info("PENDING: ID=\(notification.identifier), Title=\(notification.content.title)", category: AppLogger.notifications)
+                }
+            }
+        }
+    }
+
+    /// Update notification permission status on view appear
+    private func updateNotificationPermissionStatus() {
+        Task {
+            let status = await behavioralScheduler.getAuthorizationStatus()
+
+            await MainActor.run {
+                switch status {
+                case .authorized, .provisional, .ephemeral:
+                    notificationPermissionStatus = "Granted"
+                case .denied:
+                    notificationPermissionStatus = "Denied"
+                case .notDetermined:
+                    notificationPermissionStatus = "Not requested"
+                @unknown default:
+                    notificationPermissionStatus = "Unknown"
+                }
+            }
+        }
     }
 }
 

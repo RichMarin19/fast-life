@@ -3,6 +3,7 @@ import Charts
 
 struct WeightTrackingView: View {
     @EnvironmentObject var weightManager: WeightManager
+    @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
     @ObservedObject private var healthKitManager = HealthKitManager.shared
     @ObservedObject private var nudgeManager = HealthKitNudgeManager.shared
 
@@ -105,6 +106,7 @@ struct WeightTrackingView: View {
                 showGoalLine: $showGoalLine,
                 weightGoal: $weightGoal
             )
+            .environmentObject(behavioralScheduler)
         }
         .sheet(isPresented: $showingGoalEditor) {
             FirstTimeWeightSetupView(

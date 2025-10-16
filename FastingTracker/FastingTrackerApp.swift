@@ -77,6 +77,7 @@ struct MainTabView: View {
     @StateObject private var weightManager = WeightManager()
     @StateObject private var sleepManager = SleepManager()
     @StateObject private var moodManager = MoodManager()
+    @StateObject private var behavioralScheduler = BehavioralNotificationScheduler()
 
     @Binding var shouldPopToRoot: Bool
     @Binding var shouldResetToOnboarding: Bool
@@ -107,6 +108,7 @@ struct MainTabView: View {
                 .environmentObject(weightManager)
                 .environmentObject(sleepManager)
                 .environmentObject(moodManager)
+                .environmentObject(behavioralScheduler)
                 .tabItem {
                     Label("Hub", systemImage: "waveform.path.ecg")
                 }
@@ -128,6 +130,7 @@ struct MainTabView: View {
                     selectedTab: $selectedTab
                 )
                 .environmentObject(fastingManager)
+                .environmentObject(behavioralScheduler)
             )
             .tabItem {
                 Label("Me", systemImage: "person.circle")
