@@ -1,0 +1,89 @@
+# SwiftLint Configuration for Fast LIFe
+# Enforces code quality standards and LOC limits
+
+# Paths to exclude from linting
+excluded:
+  - Pods
+  - fastlane
+  - .build
+  - DerivedData
+  - .swiftpm
+  - FastingTrackerTests/Fixtures
+
+# Opt-in rules (additional checks beyond defaults)
+opt_in_rules:
+  - empty_count
+  - empty_string
+  - explicit_init
+  - first_where
+  - force_unwrapping
+  - implicit_return
+  - literal_expression_end_indentation
+  - overridden_super_call
+  - redundant_nil_coalescing
+  - sorted_first_last
+  - unneeded_parentheses_in_closure_argument
+  - vertical_whitespace_closing_braces
+
+# Disabled rules (we don't need these)
+disabled_rules:
+  - todo
+  - trailing_whitespace
+
+# File length limits (LOC policy enforcement)
+file_length:
+  warning: 300
+  error: 400
+  ignore_comment_only_lines: true
+
+# Type body length limits
+type_body_length:
+  warning: 250
+  error: 350
+
+# Function body length limits
+function_body_length:
+  warning: 50
+  error: 100
+
+# Line length limits
+line_length:
+  warning: 120
+  error: 150
+  ignores_comments: true
+  ignores_urls: true
+
+# Force unwrapping (zero tolerance outside tests)
+force_unwrapping:
+  severity: error
+
+# Force try (zero tolerance outside tests)
+force_try:
+  severity: error
+
+# Cyclomatic complexity (keep functions simple)
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+
+# Identifier naming rules
+identifier_name:
+  min_length:
+    warning: 2
+  max_length:
+    warning: 50
+    error: 60
+  excluded:
+    - id
+    - i
+    - j
+    - x
+    - y
+
+# Number of function parameters
+function_parameter_count:
+  warning: 5
+  error: 7
+
+# Reporter output format
+reporter: "xcode"
