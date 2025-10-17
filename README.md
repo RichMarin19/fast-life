@@ -1,355 +1,173 @@
-# Fast LIFe - Fasting & Hydration Tracker
+# Fast LIFe - iOS Health Tracking App
 
-> Intermittent fasting timer with hydration tracking, weight management, and HealthKit integration
+> **"Track Your Life, Fast." - Intermittent Fasting • Hydration • Sleep • Mood • Weight**
 
-## 📱 Current Version
-**2.0.0** (Build 13) - October 6, 2025
+**Version:** 2.3.0 (Build 12) | **Status:** Production Ready | **Phase:** C - UI/UX Enhancement
 
-## ✨ Features
+---
 
-- ⏱️ **Intermittent Fasting Timer**
-  - Customizable fasting goals (12h, 16h, 18h, 20h, 24h+)
-  - Real-time countdown with visual progress
-  - Goal completion notifications
-  - Streak tracking with flame icons
+## 🚀 Quick Start (30 Minutes to Productivity)
 
-- 💧 **Hydration Tracking**
-  - Track water, coffee, and tea intake
-  - Visual progress ring with daily goal
-  - Historical calendar view with flame/X indicators
-  - Detailed charts and statistics
+**New Developer? Start here:**
 
-- ⚖️ **Weight Tracking**
-  - Manual weight entry
-  - HealthKit bidirectional sync
-  - BMI and body fat percentage
-  - Visual charts and trend analysis
+1. **Project Overview** (5 min) - Read sections below
+2. **[HANDOFF.md](./HANDOFF.md)** (10 min) - Current status & navigation
+3. **[HANDOFF-PHASE-C.md](./HANDOFF-PHASE-C.md)** (10 min) - Current work details
+4. **[WeightTrackingView.swift](./FastingTracker/WeightTrackingView.swift)** (5 min) - Gold standard code (257 LOC)
 
-- 📊 **Insights & History**
-  - Calendar views for fasting and hydration
-  - Performance charts and statistics
-  - Lifetime totals and averages
-  - Goal achievement tracking
+**✅ You're ready to contribute!**
 
-## 🛠 Tech Stack
+---
 
-- **Language:** Swift 5.x
-- **Framework:** SwiftUI (100% native)
-- **Minimum iOS:** 16.0
-- **Target:** iPhone & iPad
-- **Dependencies:** None (zero external libraries)
-- **Backend:** Local storage with UserDefaults + HealthKit
+## 📚 Documentation Map (10 Files)
 
-## 📂 Project Structure
+### Start Here
+- **README.md** ← You are here (onboarding)
+- **[HANDOFF.md](./HANDOFF.md)** - Main index, current status
+
+### Active Work
+- **[HANDOFF-PHASE-C.md](./HANDOFF-PHASE-C.md)** - Phase C details (UI/UX + Code refactoring)
+- **[NORTH-STAR-STRATEGY.md](./NORTH-STAR-STRATEGY.md)** - Weight Tracker as UI/UX template
+- **[TRACKER-AUDIT.md](./TRACKER-AUDIT.md)** - Current assessment (7.2/10 overall)
+
+### Standards & Guides
+- **[CODE-QUALITY-STANDARDS.md](./CODE-QUALITY-STANDARDS.md)** - LOC policy (400 trigger, 250-300 target)
+- **[SCORING-CRITERIA.md](./SCORING-CRITERIA.md)** - Evaluation framework (1-10 scale)
+- **[HANDOFF-REFERENCE.md](./HANDOFF-REFERENCE.md)** - Best practices & patterns
+
+### History & Process
+- **[HANDOFF-HISTORICAL.md](./HANDOFF-HISTORICAL.md)** - Completed phases archive
+- **[GITHUB-SYNC-STRATEGY.md](./GITHUB-SYNC-STRATEGY.md)** - Repository sync procedures
+
+**Reading Order:** README → HANDOFF → HANDOFF-PHASE-C (25 minutes total)
+
+---
+
+## 🎯 Current Status
+
+**Overall Score:** 7.2/10 (Very Good - Production Ready)
+
+| Dimension | Score | Status |
+|-----------|-------|--------|
+| Code Quality | 8.5/10 | ✅ Excellent |
+| Documentation | 9.0/10 | ✅ Exceptional |
+| UI/UX | 6.5/10 | ⚠️ Needs Polish |
+| Customer Experience | 7.5/10 | ✅ Very Good |
+| CI/TestFlight | 4.0/10 | ⚠️ Needs Setup |
+
+**Current Focus:** Phase C - UI/UX Enhancement (Week 1-3)
+
+---
+
+## 🏗️ Architecture
+
+**Pattern:** MVVM (Model-View-ViewModel)
 
 ```
-FastingTracker/
-├── Models/
-│   ├── FastingSession.swift       # Fasting session data model
-│   ├── DrinkEntry.swift           # Hydration entry model
-│   └── WeightEntry.swift          # Weight data model
-├── Managers/
-│   ├── FastingManager.swift       # Fasting logic & state
-│   ├── HydrationManager.swift     # Hydration tracking logic
-│   ├── WeightManager.swift        # Weight tracking logic
-│   ├── HealthKitManager.swift     # HealthKit integration
-│   └── NotificationManager.swift  # Local notifications
-├── Views/
-│   ├── ContentView.swift          # Main tab view
-│   ├── HistoryView.swift          # Fasting history & calendar
-│   ├── HydrationHistoryView.swift # Hydration history & calendar
-│   ├── HydrationTrackingView.swift# Hydration main view
-│   ├── WeightTrackingView.swift   # Weight tracking view
-│   ├── InsightsView.swift         # Analytics dashboard
-│   └── AdvancedView.swift         # Settings & preferences
-├── Extensions/
-│   └── ArrayExtensions.swift      # Shared utilities
-├── Assets.xcassets/               # App icons & images
-├── Info.plist                     # App configuration
-└── FastingTracker.entitlements    # HealthKit permissions
+Views (SwiftUI)          → WeightTrackingView, ContentView (≤300 LOC)
+    ↓ @ObservedObject
+Managers (Business)      → WeightManager, FastingManager (@Published)
+    ↓ Codable
+Models (Data)            → WeightEntry, FastingSession (structs)
 ```
 
-## ⚠️ Known Issues & Pitfalls
+**Key Patterns:**
+- Component extraction (90% LOC reduction achieved on Weight tracker)
+- TrackerScreenShell (reusable header/settings pattern)
+- HealthKit bidirectional sync (deletion sync - exceeds industry standards)
+- Behavioral notifications (Phase B complete)
 
-### 🔥 CRITICAL: Array.chunked Extension
+---
 
-**Problem:** HydrationHistoryView requires `Array.chunked(into:)` extension for calendar grid layout
+## 📊 Tracker Status
 
-**Location:** `HydrationHistoryView.swift` lines 937-943
+| Tracker | LOC | Target | Status | Phase C Priority |
+|---------|-----|--------|--------|------------------|
+| Weight | 257 | 300 | ✅ GOLD STANDARD | Use as North Star |
+| Mood | 97 | 300 | ✅ OPTIMAL | Maintain excellence |
+| Sleep | 304 | 300 | ⚠️ +4 LOC | C.1 - LOW RISK |
+| Hydration | 584 | 300 | ❌ -284 LOC | C.2 - MEDIUM RISK |
+| Fasting | 652 | 300 | ❌ -352 LOC | C.3 - HIGH RISK |
 
-**History:**
-- Originally embedded in HydrationHistoryView.swift
-- Removed in commit `e7af659` causing ViewBuilder error
-- Restored in commit `cc322ec` (v1.1.1)
+**Policy:** 400 LOC = mandatory refactor | 250-300 LOC = optimal
 
-**⚠️ DO NOT REMOVE THIS EXTENSION** - It will break the calendar rendering!
+---
 
-```swift
-extension Array {
-    func chunked(into size: Int) -> [[Element]] {
-        return stride(from: 0, to: count, by: size).map {
-            Array(self[$0 ..< Swift.min($0 + size, count)])
-        }
-    }
-}
-```
+## 🛠️ Development Setup
 
-### 🚨 SwiftUI ViewBuilder Limitations
-
-**Issue:** `@ViewBuilder` cannot contain statement-level code
-
-**Symptoms:**
-- Error: "Closure containing control flow statement cannot be used with result builder"
-- Happens with `let` declarations at function scope
-
-**Solutions:**
-1. Remove `@ViewBuilder` and add explicit `return`
-2. Move `let` statements inline
-3. Use computed properties without `@ViewBuilder`
-
-**Example:**
-```swift
-// ❌ BROKEN
-@ViewBuilder
-private var myView: some View {
-    let data = processData()  // Error!
-    ForEach(data) { ... }
-}
-
-// ✅ FIXED
-private var myView: some View {
-    let data = processData()
-    return ForEach(data) { ... }
-}
-```
-
-### 🩺 HealthKit Requirements
+**Prerequisites:**
+- Xcode 16.2+
+- macOS 14.0+ (Sonoma)
+- iOS 17.0+ deployment target
 
 **Setup:**
-1. Add capabilities in Xcode: Signing & Capabilities → HealthKit
-2. Required Info.plist keys:
-   - `NSHealthShareUsageDescription` - Read access explanation
-   - `NSHealthUpdateUsageDescription` - Write access explanation
-3. User must grant permissions on first launch
-4. **Physical device required** - HealthKit doesn't work on simulator
-
-**Data Types Used:**
-- Weight (HKQuantityType.bodyMass)
-- BMI (HKQuantityType.bodyMassIndex)
-- Body Fat Percentage (HKQuantityType.bodyFatPercentage)
-
-### 📅 Calendar Date Truncation Bug
-
-**Issue:** Day numbers showing "..." instead of full number (e.g., "20" → "...")
-
-**Cause:** Font size mismatch - using `.subheadline` was too large for cell
-
-**Fix:** Changed to `.system(size: 12, weight: .medium)`
-
-**Location:** `HydrationDayView` line 751, `CalendarDayView` line 1194
-
-## 🚀 Development Setup
-
-### Prerequisites
 ```bash
-- Xcode 15.0 or later
-- macOS Sonoma or later
-- iOS 16.0+ device/simulator
-- Apple Developer account (for HealthKit testing)
-```
-
-### Build & Run
-```bash
-# Clone repository
-git clone https://github.com/RichMarin19/fast-life.git
-cd fast-life
-
-# Open in Xcode
 open FastingTracker.xcodeproj
-
-# Or use CLI
-./run.sh  # Builds and launches in simulator
+# Build: Cmd+B (Expected: ✅ 0 errors, 0 warnings)
+# Run: Cmd+R (App launches with onboarding)
 ```
 
-### Testing HealthKit Features
-- **Requires physical iOS device**
-- Go to Settings → Health → Data Access & Devices → Fast LIFe
-- Grant read/write permissions for Weight, BMI, Body Fat
+**Dependencies:** None (SwiftUI Charts, HealthKit built-in)
 
-## 🐛 Bug Fix Log
+---
 
-### v2.0.1 (October 7, 2025) - **CRITICAL SAFETY UPDATE COMPLETED**
-- 🛡️ **COMPLETED:** 11 critical force-unwraps eliminated preventing production crashes
-  - **WeightTrackingView.swift**: 4 force-unwraps → safe guard let patterns
-    * Daily weight averaging safety → graceful fallback for empty arrays
-    * Chart X-axis date calculations → nil return on Calendar operation failure
-    * Statistics date calculations → safe unwrapping for 7/30-day periods
-  - **NotificationManager.swift**: 2 force-unwraps → safe guard let patterns
-    * Stage selection randomization → early return on randomElement() failure
-  - **SleepManager.swift**: 5 force-unwraps → safe guard let patterns
-    * HealthKit sync date calculation → early return on Calendar operation failure
-    * Sleep statistics date calculations → nil return for averageSleepHours/sleepTrend
-    * Calendar date arithmetic operations → graceful handling of edge cases
+## 🎯 Phase C: Current Work
 
-- 📊 **IMPLEMENTED:** Production logging system (AppLogger.swift)
-  - **OSLog integration** following Apple Unified Logging guidelines
-  - **Structured categories** for different app components (Safety, WeightTracking, etc.)
-  - **Console.app visibility** - logs appear during beta testing and TestFlight crashes
-  - **Enhanced debugging** for production monitoring with automatic file/line tracking
-  - **Performance optimized** with minimal runtime overhead
+### Phase C.1 - UI/UX North Star (Week 1-2)
+**Goal:** Consistent visual design across all trackers
 
-- 🧪 **VERIFIED:** Edge case testing completed
-  - **Extreme date scenarios** tested (year 1970, 2050) - no crashes
-  - **Empty data conditions** handled gracefully with logging
-  - **Notification stress testing** - clean operation under rapid scheduling
-  - **Console.app integration** confirmed working for production monitoring
+**North Star:** Weight Tracker (best current state)
 
-- 📚 **References:**
-  - [Apple Swift Optional Unwrapping Guidelines](https://docs.swift.org/swift-book/LanguageGuide/TheBasics.html#ID333)
-  - [Apple Unified Logging Documentation](https://developer.apple.com/documentation/os/logging)
+**Tasks:**
+- Polish Weight tracker visual design
+- Document patterns (colors, spacing, typography)
+- Apply TrackerScreenShell to all trackers
+- Standardize settings gear icon
+- Add empty states
 
-**Result:** Zero production crashes possible from force-unwrapping operations. Logging infrastructure ready for TestFlight beta monitoring.
+**Result:** All trackers look like one cohesive app
 
-### v1.1.2 (October 2, 2025)
-- ✨ **Enhanced:** Custom goal input UX
-  - Added keyboard toolbar with "Done" button to dismiss keyboard
-  - User can now access "Save" button after entering custom goal
-  - Added `@FocusState` for proper keyboard management
+### Phase C.2 - Code Refactoring (Week 2-3)
+**Goal:** All trackers ≤300 LOC
 
-- 🎨 **Improved:** Goal button visual styling
-  - Increased goal display font size (36pt) for better readability
-  - Added subtle borders to unselected buttons (30% opacity)
-  - Improved spacing and modern corner radius (8px)
-  - Enhanced TextField with proper padding and background
+**Rollout:** Sleep (304→300) → Hydration (584→300) → Fasting (652→300)
 
-- 🐛 **Fixed:** Custom goal default value bug
-  - Custom goal now defaults to "0" instead of showing previous preset value
-  - Big display properly resets when entering custom mode
-  - Preset buttons clear custom text to prevent stale data
-  - Files: `HistoryView.swift`, `HydrationHistoryView.swift`
+**Result:** Clean code + beautiful UI
 
-### v1.1.1 (October 2, 2025)
-- 🐛 **Fixed:** Calendar date truncation (HydrationHistoryView)
-  - Changed font from `.subheadline` to `.system(size: 12)`
-  - Dates now display correctly without "..." truncation
-
-- 🎨 **Fixed:** Visual consistency between Fasting and Hydration calendars
-  - Goal Met: Orange flame 🔥 (was cyan circle)
-  - Partial/Incomplete: Red X ❌ (was orange circle)
-  - Updated legend to match
-
-- 🔧 **Fixed:** ViewBuilder error in HydrationHistoryView
-  - Restored `Array.chunked` extension
-  - Removed obsolete backgroundColor/indicatorColor properties
-
-### v1.1.0 (October 1, 2025)
-- ✨ Added Hydration History with calendar view
-- ✨ Added Weight Tracking with HealthKit sync
-- ✨ Added Insights tab with analytics
-- 🔧 Fixed timer display issues
-- 🔧 Fixed Insights tab layout
-
-### v1.0.0 (September 30, 2025)
-- 🎉 Initial release
-- ⏱️ Fasting timer with customizable goals
-- 📊 Basic history view
-- 🔔 Notifications
-
-## 📋 Version History
-
-| Version | Date | Changes |
-|---------|------|---------|
-| 1.1.2 | Oct 2, 2025 | Custom goal UX improvements, keyboard toolbar, visual styling enhancements |
-| 1.1.1 | Oct 2, 2025 | Calendar visual fixes, date truncation bug fix |
-| 1.1.0 | Oct 1, 2025 | Hydration History, Weight Tracking, Insights |
-| 1.0.0 | Sep 30, 2025 | Initial release with fasting timer |
-
-## 🎨 Design Decisions
-
-### Calendar Visual Language
-- **Orange Flame** 🔥 = Goal achieved/met
-- **Red X** ❌ = Incomplete/partial progress
-- **Gray circle** ⚪ = No data
-- **Blue border** = Today's date
-
-### Color Palette
-- Primary: Blue (#007AFF)
-- Success: Orange (#FF9500)
-- Warning: Red (#FF3B30)
-- Neutral: Gray system colors
-- Hydration: Cyan/Blue tones
-
-### Data Persistence
-- **UserDefaults** for app settings and preferences
-- **JSON encoding** for fasting sessions, drinks, weight entries
-- **HealthKit** as source of truth for health data
-
-## 🔒 Privacy & Data
-
-- All data stored locally on device
-- HealthKit data synced with user's Health app
-- No analytics or tracking
-- No external servers or APIs
-- No personal data collected
-
-## 📝 Code Conventions
-
-### Swift Style
-- **SwiftUI** over UIKit (100% SwiftUI)
-- **ObservableObject** + **@Published** for state management
-- **MARK:** comments for code organization
-- **Explicit types** where clarity needed
-- **Guard statements** for early returns and **force-unwrap safety**
-
-### File Organization
-```swift
-// MARK: - Main View
-// MARK: - Subviews
-// MARK: - Helper Methods
-// MARK: - Data Models
-```
-
-### Naming
-- **Views:** `*View.swift` (e.g., ContentView, HistoryView)
-- **Managers:** `*Manager.swift` (e.g., FastingManager)
-- **Models:** Descriptive nouns (e.g., FastingSession, DrinkEntry)
+---
 
 ## 🤝 Contributing
 
-This is a personal project, but if you're extending it:
+**Before Changes:**
+1. Read [HANDOFF.md](./HANDOFF.md)
+2. Read [HANDOFF-REFERENCE.md](./HANDOFF-REFERENCE.md) (patterns & pitfalls)
+3. Review [CODE-QUALITY-STANDARDS.md](./CODE-QUALITY-STANDARDS.md)
 
-1. **Branch naming:** `feature/your-feature` or `bugfix/issue-description`
-2. **Test on device** before committing
-3. **Update version** in Info.plist (follow semantic versioning)
-4. **Document changes** in this README
-5. **Commit messages:** Use conventional commits format
+**Code Standards:**
+- Files ≤400 LOC (preferably ≤300)
+- MVVM architecture
+- 0 errors, 0 warnings
+- Test all screen sizes
 
-## 📄 License
+**Commit Format:**
+```
+<type>(<scope>): <subject>
 
-**Private - All Rights Reserved**
-
-© 2025 Rich Marin
-
-## 👤 Author
-
-**Rich Marin**
-- GitHub: [@RichMarin19](https://github.com/RichMarin19)
-- Repository: [fast-life](https://github.com/RichMarin19/fast-life)
-
----
-
-## 🤖 Development Notes
-
-This project is developed with AI assistance (Claude Code). Key learnings:
-
-1. **SwiftUI Result Builders** - @ViewBuilder has strict limitations on statements
-2. **HealthKit Integration** - Requires entitlements, physical device, user permissions
-3. **Calendar Layout** - Grid layout needs careful sizing to prevent truncation
-4. **State Management** - ObservableObject pattern works well for this scale
-
-**Last Updated:** October 2, 2025
-**Maintained By:** Rich Marin with AI-Assisted Development
+🤖 Generated with Claude Code
+Co-Authored-By: Claude <noreply@anthropic.com>
+```
 
 ---
 
-💡 **For Developers/AI:** Read the "Known Issues & Pitfalls" section carefully before making changes!
+## 🏆 Achievements
+
+- ✅ Weight: 90% LOC reduction (2,561→257)
+- ✅ Mood: 80% LOC reduction (488→97)
+- ✅ Documentation: 9.0/10 (Industry-leading)
+- ✅ HealthKit: Bidirectional sync with deletion
+- ✅ Build: 0 errors, 0 warnings
+
+---
+
+**Last Updated:** October 16, 2025
+**Next Milestone:** Phase C.1 completion (UI/UX polish)

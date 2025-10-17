@@ -19,6 +19,9 @@ final class BehavioralNotificationScheduler: ObservableObject {
     private let maxDailyNotifications = 8 // Prevent notification fatigue
     private let quietHoursDefault = QuietHours(start: 22, end: 6) // 10 PM - 6 AM
 
+    // MARK: - Throttle State Management
+    private let lastNotificationKey = "lastNotificationTimes" // UserDefaults key for persistence
+
     init() {
         AppLogger.info("BehavioralNotificationScheduler initialized", category: AppLogger.notifications)
         setupDefaultRules()
@@ -47,9 +50,9 @@ final class BehavioralNotificationScheduler: ObservableObject {
         // Generate behaviorally intelligent message
         let message = rule.generateMessage(context: context)
 
-        // Schedule with Apple UserNotifications framework
+        // Schedule with Apple UserNotifications framework (Expert Panel Task #6: Use IdentifierBuilder)
         await scheduleNotification(
-            identifier: self.generateIdentifier(tracker: trackerType, trigger: trigger),
+            identifier: NotificationIdentifierBuilder.buildBehavioralIdentifier(tracker: trackerType, trigger: trigger),
             content: message,
             trigger: trigger,
             rule: rule
@@ -75,12 +78,13 @@ final class BehavioralNotificationScheduler: ObservableObject {
     // MARK: - Behavioral Intelligence Engine
 
     /// Determines if notification should be delivered based on behavioral context
+    /// Expert Panel Task #3: QuietHours-then-Throttle precedence implementation
     private func shouldDeliverNotification(
         for rule: any BehavioralNotificationRule,
         context: BehavioralContext
     ) async -> Bool {
 
-        // Check if rule allows this notification
+        // FILTER 1: Check if rule allows this notification
         let shouldTrigger = rule.shouldTrigger(context: context)
         AppLogger.notifications.debug("FILTER 1 - shouldTrigger: \(shouldTrigger)")
         guard shouldTrigger else {
@@ -88,24 +92,32 @@ final class BehavioralNotificationScheduler: ObservableObject {
             return false
         }
 
-        // Check quiet hours
+        // FILTER 2: Check quiet hours (FIRST PRECEDENCE - Expert Panel requirement)
         let inQuietHours = self.isInQuietHours()
         let allowDuringQuiet = rule.allowDuringQuietHours
         AppLogger.notifications.debug("FILTER 2 - inQuietHours: \(inQuietHours), allowDuringQuiet: \(allowDuringQuiet)")
         if inQuietHours && !allowDuringQuiet {
-            AppLogger.notifications.debug("BLOCKED BY: Quiet hours (current time in quiet period)")
+            AppLogger.notifications.debug("BLOCKED BY: Quiet hours (PRECEDENCE: Quiet hours override throttle)")
             return false
         }
 
-        // Check daily notification limit
+        // FILTER 3: Check throttle (SECOND PRECEDENCE - only if not blocked by quiet hours)
+        let isThrottled = await self.isThrottled(for: rule.trackerType, throttleMinutes: rule.throttleMinutes)
+        AppLogger.notifications.debug("FILTER 3 - isThrottled: \(isThrottled), throttleMinutes: \(rule.throttleMinutes)")
+        if isThrottled {
+            AppLogger.notifications.debug("BLOCKED BY: Throttle (too soon since last notification)")
+            return false
+        }
+
+        // FILTER 4: Check daily notification limit
         let todaysCount = await self.getTodaysNotificationCount()
-        AppLogger.notifications.debug("FILTER 3 - todaysCount: \(todaysCount), maxDaily: \(self.maxDailyNotifications)")
+        AppLogger.notifications.debug("FILTER 4 - todaysCount: \(todaysCount), maxDaily: \(self.maxDailyNotifications)")
         if todaysCount >= self.maxDailyNotifications {
             AppLogger.notifications.debug("BLOCKED BY: Daily notification limit exceeded")
             return false
         }
 
-        AppLogger.notifications.debug("ALL FILTERS PASSED - notification should be delivered")
+        AppLogger.notifications.debug("ALL FILTERS PASSED - notification should be delivered (QuietHours->Throttle precedence respected)")
         return true
     }
 
@@ -146,7 +158,12 @@ final class BehavioralNotificationScheduler: ObservableObject {
         do {
             try await self.notificationCenter.add(request)
 
-            AppLogger.notifications.info("Scheduled behavioral notification - ID: \(identifier), Title: \(content.title), Tracker: \(self.extractTrackerType(from: identifier).rawValue))")
+            // Record delivery time for throttling (Expert Panel Task #3 & #6: Use IdentifierBuilder)
+            if let trackerType = NotificationIdentifierBuilder.extractTrackerType(from: identifier) {
+                self.recordNotificationDelivery(for: trackerType)
+            }
+
+            AppLogger.notifications.info("Scheduled behavioral notification - ID: \(identifier), Title: \(content.title), Tracker: \(NotificationIdentifierBuilder.extractTrackerType(from: identifier)?.rawValue ?? "unknown")")
 
         } catch {
             AppLogger.notifications.error("Failed to schedule notification: \(error.localizedDescription))")
@@ -182,24 +199,14 @@ final class BehavioralNotificationScheduler: ObservableObject {
         }
     }
 
-    private func generateIdentifier(tracker: TrackerType, trigger: BehavioralTrigger) -> String {
-        let timestamp = Date().timeIntervalSince1970
-        return "behavioral_\(tracker.rawValue)_\(trigger.identifier())_\(Int(timestamp))"
-    }
-
-    private func extractTrackerType(from identifier: String) -> TrackerType {
-        let components = identifier.split(separator: "_")
-        guard components.count >= 2,
-              let trackerType = TrackerType(rawValue: String(components[1])) else {
-            return .fasting // Default fallback
-        }
-        return trackerType
-    }
+    // MARK: - Legacy Methods Removed (Expert Panel Task #6)
+    // generateIdentifier() -> Use NotificationIdentifierBuilder.buildBehavioralIdentifier()
+    // extractTrackerType() -> Use NotificationIdentifierBuilder.extractTrackerType()
 
     private func rescheduleNotifications(for trackerType: TrackerType) async {
-        // Cancel existing notifications for this tracker
+        // Cancel existing notifications for this tracker (Expert Panel Task #6: Use IdentifierBuilder)
         let pendingRequests = await self.notificationCenter.pendingNotificationRequests()
-        let trackerPrefix = "behavioral_\(trackerType.rawValue)_"
+        let trackerPrefix = NotificationIdentifierBuilder.buildTrackerIdentifierPrefix(for: trackerType)
 
         let identifiersToCancel = pendingRequests
             .filter { request in request.identifier.hasPrefix(trackerPrefix) }
@@ -208,6 +215,51 @@ final class BehavioralNotificationScheduler: ObservableObject {
         self.notificationCenter.removePendingNotificationRequests(withIdentifiers: identifiersToCancel)
 
         AppLogger.notifications.debug("Cancelled \(identifiersToCancel.count) notifications for \(trackerType.rawValue))")
+    }
+
+    // MARK: - Throttle Management Methods (Expert Panel Task #3)
+
+    /// Check if a tracker type is throttled based on last notification time
+    /// Expert Panel requirement: Defer to Quiet Hours first, then throttle
+    private func isThrottled(for trackerType: TrackerType, throttleMinutes: Int) async -> Bool {
+        guard throttleMinutes > 0 else { return false } // No throttling if set to 0
+
+        let lastNotificationTimes = getLastNotificationTimes()
+        guard let lastTime = lastNotificationTimes[trackerType.rawValue] else {
+            return false // No previous notification, not throttled
+        }
+
+        let minutesSinceLastNotification = Date().timeIntervalSince(lastTime) / 60
+        let isThrottled = minutesSinceLastNotification < Double(throttleMinutes)
+
+        AppLogger.notifications.debug("THROTTLE CHECK - \(trackerType.rawValue): \(String(format: "%.1f", minutesSinceLastNotification)) min since last, throttle: \(throttleMinutes) min, blocked: \(isThrottled)")
+
+        return isThrottled
+    }
+
+    /// Record successful notification delivery for throttling
+    private func recordNotificationDelivery(for trackerType: TrackerType) {
+        var lastNotificationTimes = getLastNotificationTimes()
+        lastNotificationTimes[trackerType.rawValue] = Date()
+        saveLastNotificationTimes(lastNotificationTimes)
+
+        AppLogger.notifications.debug("THROTTLE RECORD - \(trackerType.rawValue): Updated last notification time")
+    }
+
+    /// Get last notification times from persistent storage
+    private func getLastNotificationTimes() -> [String: Date] {
+        guard let data = UserDefaults.standard.data(forKey: lastNotificationKey),
+              let times = try? JSONDecoder().decode([String: Date].self, from: data) else {
+            return [:]
+        }
+        return times
+    }
+
+    /// Save last notification times to persistent storage
+    private func saveLastNotificationTimes(_ times: [String: Date]) {
+        if let data = try? JSONEncoder().encode(times) {
+            UserDefaults.standard.set(data, forKey: lastNotificationKey)
+        }
     }
 
     // MARK: - Analytics Support Methods (Simplified)
@@ -224,6 +276,7 @@ final class BehavioralNotificationScheduler: ObservableObject {
     // MARK: - Public Testing Interface
 
     /// Send immediate test notification (for development/testing)
+    /// Expert Panel Task #6: Uses IdentifierBuilder for consistent test notification IDs
     func sendTestNotification(for trackerType: TrackerType) async {
         let context = BehavioralContext(
             currentStreak: 3,
@@ -275,19 +328,5 @@ final class BehavioralNotificationScheduler: ObservableObject {
 }
 
 // MARK: - Supporting Types
-
-/// Different types of notification triggers following Apple UserNotifications patterns
-enum BehavioralTrigger {
-    case timeInterval(TimeInterval)
-    case calendar(DateComponents)
-    case immediate
-
-    func identifier() -> String {
-        switch self {
-        case .timeInterval(let interval): return "time_\(Int(interval))"
-        case .calendar: return "calendar"
-        case .immediate: return "immediate"
-        }
-    }
-}
+// BehavioralTrigger moved to BehavioralNotificationRule.swift to avoid circular dependency
 

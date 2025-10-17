@@ -586,7 +586,7 @@ struct WeightSettingsView: View {
     private func requestNotificationPermissions() {
         AppLogger.info("Requesting notification permissions for Phase B engine test", category: AppLogger.notifications)
 
-        Task {
+        Task { [self] in
             let granted = await behavioralScheduler.requestPermissions()
 
             await MainActor.run {
@@ -637,7 +637,7 @@ struct WeightSettingsView: View {
 
         AppLogger.info("TEST CONTEXT - lastActivity: \(testLastActivity), days ago: 2", category: AppLogger.notifications)
 
-        Task {
+        Task { [self] in
             let trigger: BehavioralTrigger
             switch testFrequency {
             case .immediate:
@@ -694,7 +694,7 @@ struct WeightSettingsView: View {
 
     /// Update notification permission status on view appear
     private func updateNotificationPermissionStatus() {
-        Task {
+        Task { [self] in
             let status = await behavioralScheduler.getAuthorizationStatus()
 
             await MainActor.run {

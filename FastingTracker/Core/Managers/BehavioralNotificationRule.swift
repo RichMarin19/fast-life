@@ -20,6 +20,7 @@ protocol BehavioralNotificationRule: ObservableObject, Codable {
     var toneStyle: NotificationToneStyle { get set }
     var adaptiveFrequency: Bool { get set }
     var allowDuringQuietHours: Bool { get set }
+    var throttleMinutes: Int { get set } // Minimum minutes between notifications
 
     // MARK: - iOS Framework Integration
     var soundEnabled: Bool { get set }
@@ -153,6 +154,7 @@ class FastingNotificationRule: BehavioralNotificationRule, ObservableObject {
     @Published var toneStyle: NotificationToneStyle = .motivational
     @Published var adaptiveFrequency: Bool = true
     @Published var allowDuringQuietHours: Bool = false
+    @Published var throttleMinutes: Int = 60 // 1 hour between fasting notifications
 
     @Published var soundEnabled: Bool = true
     @Published var interruptionLevel: NotificationInterruptionLevel = .active
@@ -215,7 +217,7 @@ class FastingNotificationRule: BehavioralNotificationRule, ObservableObject {
 
     // MARK: - Codable Implementation
     enum CodingKeys: String, CodingKey {
-        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, soundEnabled, interruptionLevel
+        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, throttleMinutes, soundEnabled, interruptionLevel
     }
 
     required init(from decoder: Decoder) throws {
@@ -227,6 +229,7 @@ class FastingNotificationRule: BehavioralNotificationRule, ObservableObject {
         toneStyle = try container.decode(NotificationToneStyle.self, forKey: .toneStyle)
         adaptiveFrequency = try container.decode(Bool.self, forKey: .adaptiveFrequency)
         allowDuringQuietHours = try container.decode(Bool.self, forKey: .allowDuringQuietHours)
+        throttleMinutes = try container.decodeIfPresent(Int.self, forKey: .throttleMinutes) ?? 60 // Default for migration
         soundEnabled = try container.decode(Bool.self, forKey: .soundEnabled)
         interruptionLevel = try container.decode(NotificationInterruptionLevel.self, forKey: .interruptionLevel)
     }
@@ -240,6 +243,7 @@ class FastingNotificationRule: BehavioralNotificationRule, ObservableObject {
         try container.encode(toneStyle, forKey: .toneStyle)
         try container.encode(adaptiveFrequency, forKey: .adaptiveFrequency)
         try container.encode(allowDuringQuietHours, forKey: .allowDuringQuietHours)
+        try container.encode(throttleMinutes, forKey: .throttleMinutes)
         try container.encode(soundEnabled, forKey: .soundEnabled)
         try container.encode(interruptionLevel, forKey: .interruptionLevel)
     }
@@ -257,6 +261,7 @@ class HydrationNotificationRule: BehavioralNotificationRule, ObservableObject {
     @Published var toneStyle: NotificationToneStyle = .supportive
     @Published var adaptiveFrequency: Bool = true
     @Published var allowDuringQuietHours: Bool = false
+    @Published var throttleMinutes: Int = 180 // 3 hours between hydration reminders
 
     @Published var soundEnabled: Bool = false // Less intrusive for hydration
     @Published var interruptionLevel: NotificationInterruptionLevel = .passive
@@ -309,7 +314,7 @@ class HydrationNotificationRule: BehavioralNotificationRule, ObservableObject {
 
     // MARK: - Codable Implementation
     enum CodingKeys: String, CodingKey {
-        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, soundEnabled, interruptionLevel
+        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, throttleMinutes, soundEnabled, interruptionLevel
     }
 
     required init(from decoder: Decoder) throws {
@@ -321,6 +326,7 @@ class HydrationNotificationRule: BehavioralNotificationRule, ObservableObject {
         toneStyle = try container.decode(NotificationToneStyle.self, forKey: .toneStyle)
         adaptiveFrequency = try container.decode(Bool.self, forKey: .adaptiveFrequency)
         allowDuringQuietHours = try container.decode(Bool.self, forKey: .allowDuringQuietHours)
+        throttleMinutes = try container.decodeIfPresent(Int.self, forKey: .throttleMinutes) ?? 60 // Default for migration
         soundEnabled = try container.decode(Bool.self, forKey: .soundEnabled)
         interruptionLevel = try container.decode(NotificationInterruptionLevel.self, forKey: .interruptionLevel)
     }
@@ -334,6 +340,7 @@ class HydrationNotificationRule: BehavioralNotificationRule, ObservableObject {
         try container.encode(toneStyle, forKey: .toneStyle)
         try container.encode(adaptiveFrequency, forKey: .adaptiveFrequency)
         try container.encode(allowDuringQuietHours, forKey: .allowDuringQuietHours)
+        try container.encode(throttleMinutes, forKey: .throttleMinutes)
         try container.encode(soundEnabled, forKey: .soundEnabled)
         try container.encode(interruptionLevel, forKey: .interruptionLevel)
     }
@@ -354,6 +361,7 @@ class SleepNotificationRule: BehavioralNotificationRule, ObservableObject {
     @Published var toneStyle: NotificationToneStyle = .supportive
     @Published var adaptiveFrequency: Bool = true
     @Published var allowDuringQuietHours: Bool = true // Sleep prep is important
+    @Published var throttleMinutes: Int = 1440 // 24 hours between sleep reminders
 
     @Published var soundEnabled: Bool = true
     @Published var interruptionLevel: NotificationInterruptionLevel = .active
@@ -411,7 +419,7 @@ class SleepNotificationRule: BehavioralNotificationRule, ObservableObject {
 
     // MARK: - Codable Implementation
     enum CodingKeys: String, CodingKey {
-        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, soundEnabled, interruptionLevel
+        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, throttleMinutes, soundEnabled, interruptionLevel
     }
 
     required init(from decoder: Decoder) throws {
@@ -423,6 +431,7 @@ class SleepNotificationRule: BehavioralNotificationRule, ObservableObject {
         toneStyle = try container.decode(NotificationToneStyle.self, forKey: .toneStyle)
         adaptiveFrequency = try container.decode(Bool.self, forKey: .adaptiveFrequency)
         allowDuringQuietHours = try container.decode(Bool.self, forKey: .allowDuringQuietHours)
+        throttleMinutes = try container.decodeIfPresent(Int.self, forKey: .throttleMinutes) ?? 60 // Default for migration
         soundEnabled = try container.decode(Bool.self, forKey: .soundEnabled)
         interruptionLevel = try container.decode(NotificationInterruptionLevel.self, forKey: .interruptionLevel)
     }
@@ -436,6 +445,7 @@ class SleepNotificationRule: BehavioralNotificationRule, ObservableObject {
         try container.encode(toneStyle, forKey: .toneStyle)
         try container.encode(adaptiveFrequency, forKey: .adaptiveFrequency)
         try container.encode(allowDuringQuietHours, forKey: .allowDuringQuietHours)
+        try container.encode(throttleMinutes, forKey: .throttleMinutes)
         try container.encode(soundEnabled, forKey: .soundEnabled)
         try container.encode(interruptionLevel, forKey: .interruptionLevel)
     }
@@ -455,6 +465,7 @@ class WeightNotificationRule: BehavioralNotificationRule, ObservableObject {
     @Published var toneStyle: NotificationToneStyle = .educational
     @Published var adaptiveFrequency: Bool = true
     @Published var allowDuringQuietHours: Bool = false
+    @Published var throttleMinutes: Int = 1440 // 24 hours between weight reminders
 
     @Published var soundEnabled: Bool = false // Less intrusive for daily habits
     @Published var interruptionLevel: NotificationInterruptionLevel = .passive
@@ -510,7 +521,7 @@ class WeightNotificationRule: BehavioralNotificationRule, ObservableObject {
 
     // MARK: - Codable Implementation
     enum CodingKeys: String, CodingKey {
-        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, soundEnabled, interruptionLevel
+        case isEnabled, frequency, timing, quietHours, toneStyle, adaptiveFrequency, allowDuringQuietHours, throttleMinutes, soundEnabled, interruptionLevel
     }
 
     required init(from decoder: Decoder) throws {
@@ -522,6 +533,7 @@ class WeightNotificationRule: BehavioralNotificationRule, ObservableObject {
         toneStyle = try container.decode(NotificationToneStyle.self, forKey: .toneStyle)
         adaptiveFrequency = try container.decode(Bool.self, forKey: .adaptiveFrequency)
         allowDuringQuietHours = try container.decode(Bool.self, forKey: .allowDuringQuietHours)
+        throttleMinutes = try container.decodeIfPresent(Int.self, forKey: .throttleMinutes) ?? 60 // Default for migration
         soundEnabled = try container.decode(Bool.self, forKey: .soundEnabled)
         interruptionLevel = try container.decode(NotificationInterruptionLevel.self, forKey: .interruptionLevel)
     }
@@ -535,7 +547,27 @@ class WeightNotificationRule: BehavioralNotificationRule, ObservableObject {
         try container.encode(toneStyle, forKey: .toneStyle)
         try container.encode(adaptiveFrequency, forKey: .adaptiveFrequency)
         try container.encode(allowDuringQuietHours, forKey: .allowDuringQuietHours)
+        try container.encode(throttleMinutes, forKey: .throttleMinutes)
         try container.encode(soundEnabled, forKey: .soundEnabled)
         try container.encode(interruptionLevel, forKey: .interruptionLevel)
+    }
+}
+
+
+// MARK: - Behavioral Trigger Types
+
+/// Different types of notification triggers following Apple UserNotifications patterns
+/// Moved here to avoid circular dependency with NotificationIdentifierBuilder
+enum BehavioralTrigger {
+    case timeInterval(TimeInterval)
+    case calendar(DateComponents)
+    case immediate
+
+    func identifier() -> String {
+        switch self {
+        case .timeInterval(let interval): return "time_\(Int(interval))"
+        case .calendar: return "calendar"
+        case .immediate: return "immediate"
+        }
     }
 }

@@ -5,7 +5,7 @@ import UserNotifications
 class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
     static let shared = NotificationManager()
 
-    private let notificationCenter = UNUserNotificationCenter.current()
+    nonisolated private let notificationCenter = UNUserNotificationCenter.current()
     private let milestoneIdentifierPrefix = "fastingMilestone_"
     private let hydrationIdentifierPrefix = "hydration_"
     private let didYouKnowIdentifierPrefix = "didyouknow_"
