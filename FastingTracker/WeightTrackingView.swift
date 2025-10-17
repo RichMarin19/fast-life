@@ -55,11 +55,28 @@ struct WeightTrackingView: View {
         return nil
     }
 
+    /// Milestone Ring Card with computed data from weight manager
+    /// TODO: Replace placeholder data with actual milestone calculations
+    private var milestoneRingCard: some View {
+        MilestoneRingCard(
+            progress: 0.65,  // TODO: Calculate actual progress to next milestone
+            milestoneIndex: 6,  // TODO: Calculate current milestone number
+            centerValue: weightManager.latestWeight.map { String(format: "%.1f", weightManager.displayWeight(for: $0)) } ?? "---",
+            dateText: weightManager.latestWeight.map { $0.date.formatted(date: .abbreviated, time: .omitted) } ?? "",
+            leftStat: "Start weight",  // TODO: Get actual start weight
+            midStat: "Progress",  // TODO: Calculate % complete
+            rightStat: weightGoal > 0 ? "\(String(format: "%.1f", max(0, (weightManager.latestWeight?.weight ?? weightGoal) - weightGoal))) to go" : "Set goal",
+            totalMilestones: 10,
+            completedMilestones: 6  // TODO: Calculate actual milestones completed
+        )
+    }
+
     var body: some View {
         TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),
             hasData: !weightManager.weightEntries.isEmpty,
             nudge: healthKitNudgeView,
+            gradientStyle: .luxury,  // 🔥 LUXURY UI ACTIVATED
             settingsAction: { showingSettings = true }
         ) {
             if weightManager.weightEntries.isEmpty {
@@ -78,6 +95,12 @@ struct WeightTrackingView: View {
                     showingTrends: $showingTrends
                 )
                 .padding(.horizontal)
+
+                // Milestone Ring Card - NEW per North Star spec
+                // Placed directly beneath hero area
+                // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §6
+                milestoneRingCard
+                    .padding(.horizontal)
 
                 // Weight Chart
                 WeightChartView(
@@ -101,7 +124,7 @@ struct WeightTrackingView: View {
             AddWeightView(weightManager: weightManager)
         }
         .sheet(isPresented: $showingSettings) {
-            WeightSettingsView(
+            WeightControlCenterView(
                 weightManager: weightManager,
                 showGoalLine: $showGoalLine,
                 weightGoal: $weightGoal

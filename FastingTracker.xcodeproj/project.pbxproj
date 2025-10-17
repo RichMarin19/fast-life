@@ -15,6 +15,8 @@
 		5243F24A2E9029970051A731 /* MoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2472E9029970051A731 /* MoodEntry.swift */; };
 		5243F24B2E9029970051A731 /* Core/Managers/MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2482E9029970051A731 /* Core/Managers/MoodManager.swift */; };
 		5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2492E9029970051A731 /* MoodTrackingView.swift */; };
+		524976152EA20A2900632E28 /* MilestoneRingCard 2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524976142EA20A2900632E28 /* MilestoneRingCard 2.swift */; };
+		524976192EA2133E00632E28 /* WeightControlCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524976182EA2133E00632E28 /* WeightControlCenterView.swift */; };
 		5289E06D2E8D0DAD00254E70 /* UI/InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06C2E8D0DAD00254E70 /* UI/InsightsView.swift */; };
 		5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06F2E8D5F6500254E70 /* AdvancedView.swift */; };
 		5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0712E8D5F6500254E70 /* WeightEntry.swift */; };
@@ -99,6 +101,8 @@
 		5243F2472E9029970051A731 /* MoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodEntry.swift; sourceTree = "<group>"; };
 		5243F2482E9029970051A731 /* Core/Managers/MoodManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/MoodManager.swift; sourceTree = "<group>"; };
 		5243F2492E9029970051A731 /* MoodTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrackingView.swift; sourceTree = "<group>"; };
+		524976142EA20A2900632E28 /* MilestoneRingCard 2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MilestoneRingCard 2.swift"; sourceTree = "<group>"; };
+		524976182EA2133E00632E28 /* WeightControlCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightControlCenterView.swift; sourceTree = "<group>"; };
 		5289E06C2E8D0DAD00254E70 /* UI/InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/InsightsView.swift; sourceTree = "<group>"; };
 		5289E06E2E8D5F6500254E70 /* AddWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddWeightView.swift; sourceTree = "<group>"; };
 		5289E06F2E8D5F6500254E70 /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedView.swift; sourceTree = "<group>"; };
@@ -197,6 +201,7 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				524976182EA2133E00632E28 /* WeightControlCenterView.swift */,
 				521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */,
 				52D6841D2EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift */,
 				52D684172EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift */,
@@ -279,6 +284,7 @@
 				HRM01002000000000000001 /* Core/Managers/HeartRateManager.swift */,
 				HV001002000000000000001 /* HubView.swift */,
 				CV001002000000000000001 /* CoachView.swift */,
+				524976142EA20A2900632E28 /* MilestoneRingCard 2.swift */,
 			);
 			path = FastingTracker;
 			sourceTree = "<group>";
@@ -390,6 +396,7 @@
 				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
 				52D684202EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift in Sources */,
 				A62491EA2BAB48DCB3C21552 /* Core/Managers/NotificationIdentifierBuilder.swift in Sources */,
+				524976192EA2133E00632E28 /* WeightControlCenterView.swift in Sources */,
 				52B2CFEF2E988CB90061FCFF /* HealthKitService.swift in Sources */,
 				52B2CFBF2E94B3290061FCFF /* DataExportManager.swift in Sources */,
 				5289E07B2E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift in Sources */,
@@ -404,6 +411,7 @@
 				A1000003000000000000001 /* ContentView.swift in Sources */,
 				A1000005000000000000001 /* HistoryView.swift in Sources */,
 				52D684182EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift in Sources */,
+				524976152EA20A2900632E28 /* MilestoneRingCard 2.swift in Sources */,
 				A1000007000000000000001 /* FastingSession.swift in Sources */,
 				A1000009000000000000001 /* Core/Managers/FastingManager.swift in Sources */,
 				5289E06D2E8D0DAD00254E70 /* UI/InsightsView.swift in Sources */,
