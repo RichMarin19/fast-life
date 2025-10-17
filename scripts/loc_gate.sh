@@ -8,6 +8,7 @@ set -e
 WARN_THRESHOLD=300
 ERROR_THRESHOLD=400
 EXIT_CODE=0
+TREND_LOG_FILE="scripts/.loc_trends.csv"
 
 # Colors for output
 RED='\033[0;31m'
@@ -39,6 +40,7 @@ WARNINGS=()
 ERRORS=()
 TOTAL_FILES=0
 CLEAN_FILES=0
+FILE_LOC_MAP=()  # Store file:LOC pairs for trend tracking
 
 # Check each file
 while IFS= read -r file; do
@@ -50,6 +52,9 @@ while IFS= read -r file; do
 
   # Count lines (excluding blank lines and comments)
   LOC=$(grep -cvE '^\s*$|^\s*//' "$file" 2>/dev/null || echo "0")
+
+  # Store for trend tracking
+  FILE_LOC_MAP+=("$file:$LOC")
 
   # Check thresholds
   if [ "$LOC" -gt "$ERROR_THRESHOLD" ]; then
@@ -98,5 +103,43 @@ else
 fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Log trends (CSV format: timestamp,total_files,clean_files,warnings,errors)
+if [ -n "$CI" ]; then
+  # Running in CI - log trends
+  TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M:%S")
+  mkdir -p "$(dirname "$TREND_LOG_FILE")"
+
+  # Create header if file doesn't exist
+  if [ ! -f "$TREND_LOG_FILE" ]; then
+    echo "timestamp,total_files,clean_files,warnings,errors" > "$TREND_LOG_FILE"
+  fi
+
+  echo "$TIMESTAMP,$TOTAL_FILES,$CLEAN_FILES,${#WARNINGS[@]},${#ERRORS[@]}" >> "$TREND_LOG_FILE"
+fi
+
+# Show top 10 violators (sorted by LOC descending)
+if [ ${#ERRORS[@]} -gt 0 ] || [ ${#WARNINGS[@]} -gt 0 ]; then
+  echo ""
+  echo "📈 Top 10 Largest Files:"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+  # Sort all files by LOC and show top 10
+  for entry in "${FILE_LOC_MAP[@]}"; do
+    file="${entry%:*}"
+    loc="${entry##*:}"
+    echo "$loc $file"
+  done | sort -rn | head -10 | while read -r loc file; do
+    # Color code by threshold
+    if [ "$loc" -gt "$ERROR_THRESHOLD" ]; then
+      echo -e "${RED}  ❌ $file: $loc LOC${NC}"
+    elif [ "$loc" -gt "$WARN_THRESHOLD" ]; then
+      echo -e "${YELLOW}  ⚠️  $file: $loc LOC${NC}"
+    else
+      echo -e "${GREEN}  ✅ $file: $loc LOC${NC}"
+    fi
+  done
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+fi
 
 exit $EXIT_CODE

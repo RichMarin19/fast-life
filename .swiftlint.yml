@@ -24,6 +24,12 @@ opt_in_rules:
   - sorted_first_last
   - unneeded_parentheses_in_closure_argument
   - vertical_whitespace_closing_braces
+  # Modern Swift 5.9+ rules
+  - multiline_function_chains
+  - multiline_parameters
+  - multiline_arguments
+  - prefer_self_in_static_references
+  - strict_fileprivate
 
 # Disabled rules (we don't need these)
 disabled_rules:
@@ -87,3 +93,50 @@ function_parameter_count:
 
 # Reporter output format
 reporter: "xcode"
+
+# Analyzer rules (require 'swiftlint analyze')
+analyzer_rules:
+  - unused_import
+
+# Custom rules for North Star design system
+custom_rules:
+  # Rule: No raw hex color values - must use Theme.ColorToken
+  no_raw_hex_colors:
+    name: "No Raw Hex Colors"
+    message: "Use Theme.ColorToken instead of raw hex values (e.g., Theme.ColorToken.bgDeepStart)"
+    regex: 'Color\(hex:\s*"#[0-9A-Fa-f]{6}"'
+    severity: error
+
+  # Rule: Buttons should have accessibility labels
+  button_accessibility_hint:
+    name: "Button Accessibility Consideration"
+    message: "Consider adding .accessibilityLabel() for VoiceOver support"
+    regex: 'Button\s*\([^)]*\)\s*\{[^\}]+\}\s*(?!.*\.accessibilityLabel)'
+    severity: warning
+    excluded:
+      - ".*Preview\\.swift"
+
+  # Rule: Enforce ViewModel suffix
+  viewmodel_naming:
+    name: "ViewModel Naming Convention"
+    message: "View model classes should end with 'ViewModel' suffix"
+    regex: 'class\s+\w+(?<!ViewModel)\s*:\s*ObservableObject'
+    severity: warning
+    excluded:
+      - ".*Manager\\.swift"
+
+  # Rule: Prefer isEmpty over count comparison
+  prefer_is_empty:
+    name: "Prefer isEmpty"
+    message: "Use .isEmpty instead of .count == 0 or .count > 0"
+    regex: '\.count\s*[=><!]=\s*0'
+    severity: warning
+
+  # Rule: TODO/FIXME must have context
+  todo_with_context:
+    name: "TODO/FIXME Must Have Context"
+    message: "TODO/FIXME must include ticket number (FL-XXX) or date (YYYY-MM-DD)"
+    regex: '(TODO|FIXME)(?!.*(?:FL-\d+|\d{4}-\d{2}-\d{2}))'
+    severity: warning
+    excluded:
+      - ".*Tests\\.swift"
