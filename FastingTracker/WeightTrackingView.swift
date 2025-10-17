@@ -140,6 +140,12 @@ struct WeightTrackingView: View {
         }
         .sheet(isPresented: $showingTrends) {
             WeightTrendsView(weightManager: weightManager)
+                .onAppear {
+                    AppLogger.info("🎯 Progress Story sheet appeared", category: AppLogger.ui)
+                }
+        }
+        .onChange(of: showingTrends) { oldValue, newValue in
+            AppLogger.info("🎯 showingTrends changed from \(oldValue) to \(newValue)", category: AppLogger.ui)
         }
         // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
         .sheet(isPresented: $showingFirstTimeSetup) {
@@ -164,6 +170,21 @@ struct WeightTrackingView: View {
             showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
             if showHealthKitNudge {
                 AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
+            }
+
+            // Auto-show Progress Story if user has data AND hasn't opted out
+            // Industry pattern: Immediate engagement with progress visualization
+            // Respects user's opt-out preference (user control = trust)
+            if !weightManager.weightEntries.isEmpty {
+                let contentID = "progress_story_trends_v1"
+                let isOptedOut = ContentOptOutManager.shared.isContentOptedOut(id: contentID)
+
+                if !isOptedOut {
+                    AppLogger.info("🎯 Auto-showing Progress Story on Weight Tracker open", category: AppLogger.ui)
+                    showingTrends = true
+                } else {
+                    AppLogger.info("🎯 Progress Story opted out - skipping auto-show", category: AppLogger.ui)
+                }
             }
 
             // Note: Removed auto-authorization logic - now uses nudge banner pattern like HydrationTrackingView

@@ -158,7 +158,9 @@ struct CurrentWeightCard: View {
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {
+                        AppLogger.info("🎯 Motivation Banner tapped - opening Progress Story", category: AppLogger.ui)
                         showingTrends = true
+                        AppLogger.info("🎯 showingTrends set to true", category: AppLogger.ui)
                     }
                     .padding(.top, 8)
                 }

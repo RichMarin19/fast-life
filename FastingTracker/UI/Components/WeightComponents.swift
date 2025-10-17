@@ -3,6 +3,77 @@ import SwiftUI
 // MARK: - Weight Components
 // Additional weight tracker components extracted for better modularity
 
+/*
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📝 OPT-OUT FEATURE TEMPLATE (Standardized Pattern)
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ WHEN TO USE:
+ Add this pattern to ANY content view that shows:
+   • Educational tips
+   • Behavioral nudges
+   • Motivational messages
+   • Progress summaries
+   • Insights or smart coaching
+
+ INDUSTRY STANDARD:
+ Follows Spotify, Instagram, Netflix, Apple Health pattern:
+   • Granular opt-out (per item, not per category)
+   • Centralized hub to restore content (Manage My Experience)
+   • User control = trust + engagement
+
+ HOW TO IMPLEMENT:
+
+ 1️⃣ IMPORT MANAGER (at top of your view):
+    @ObservedObject private var optOutManager = ContentOptOutManager.shared
+
+ 2️⃣ UNIQUE CONTENT ID (constant in your view):
+    private let contentID = "unique_content_id_v1"
+    // Example IDs:
+    //   - "progress_story_trends_v1"
+    //   - "tip_water_intake_v1"
+    //   - "nudge_log_weight_streak_v1"
+    //   - "motivation_milestone_5lb_v1"
+
+ 3️⃣ CHECK OPT-OUT STATUS (before showing content):
+    if !optOutManager.isContentOptedOut(id: contentID) {
+        // Show your content here
+    }
+
+ 4️⃣ ADD OPT-OUT BUTTON (in toolbar or inline):
+    .toolbar {
+        ToolbarItem(placement: .navigationBarLeading) {
+            Button {
+                optOutManager.optOutContent(
+                    id: contentID,
+                    category: .progressSummaries,  // Choose: .educationalInsights, .behavioralNudges, .motivationalMessages, .progressSummaries
+                    text: "Your Progress Story"   // Display name shown in Manage My Experience
+                )
+                dismiss()
+            } label: {
+                HStack(spacing: 4) {
+                    Image(systemName: "eye.slash")
+                        .font(.system(size: 14))
+                    Text("Don't show again")
+                        .font(.system(size: 14))
+                }
+                .foregroundColor(.secondary)
+            }
+        }
+    }
+
+ RESULT:
+   ✅ User opts out → Content no longer appears
+   ✅ Item shows up in "Manage My Experience" card
+   ✅ User can restore individual items or all at once
+   ✅ Auto-syncs via @AppStorage (iCloud compatible)
+
+ REFERENCE IMPLEMENTATION:
+   See WeightTrendsView struct below (lines 349-460)
+
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
 struct WeightStatsView: View {
     @ObservedObject var weightManager: WeightManager
 
@@ -350,6 +421,12 @@ struct WeightTrendsView: View {
     @ObservedObject var weightManager: WeightManager
     @Environment(\.dismiss) private var dismiss
 
+    // Opt-out system: Shared manager accessible from anywhere
+    @ObservedObject private var optOutManager = ContentOptOutManager.shared
+
+    // Unique ID for this content
+    private let contentID = "progress_story_trends_v1"
+
     /// Calculate weight change over a specific number of days
     /// Returns (amount: Double, isLoss: Bool) or nil if insufficient data
     private func calculateTrend(days: Int?) -> (amount: Double, isLoss: Bool)? {
@@ -426,6 +503,55 @@ struct WeightTrendsView: View {
             .navigationTitle("Weight Trends")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    // LUXURY OPT-OUT BUTTON (v1.0 - Refined Design)
+                    // Per UI/UX Design Note: FastLIFe_UIUX_DontShowAgain_DesignNote.md
+                    // Layers: Gradient border + Fade animation + Haptic feedback
+                    Button {
+                        // Layer 3: Haptic feedback (light tap) = premium responsiveness
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+                        // Opt out content
+                        optOutManager.optOutContent(id: contentID, category: .progressSummaries, text: "Your Progress Story")
+
+                        // Layer 2: Smooth fade-out animation (0.25s)
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            dismiss()
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "eye.slash")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Don't show again")
+                                .font(.system(size: 14, weight: .medium))
+                        }
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            // Layer 1: Subtle gradient border (10-15% opacity) = luxury feel
+                            Capsule()
+                                .fill(Color.white.opacity(0.1))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [
+                                                    Theme.ColorToken.accentPrimary.opacity(0.15),
+                                                    Theme.ColorToken.accentPrimary.opacity(0.10)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                )
+                                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)  // Removes default button press effect
+                }
+
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()

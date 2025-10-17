@@ -1,5 +1,91 @@
 import SwiftUI
 
+// MARK: - Content Opt-Out System
+
+/// Individual content item that can be opted out
+/// Used for granular control over tips, nudges, messages, and summaries
+struct ContentItem: Identifiable, Codable, Equatable {
+    let id: String
+    let category: ContentCategory
+    let displayText: String
+    var isOptedOut: Bool
+    let timestamp: Date
+
+    init(id: String, category: ContentCategory, displayText: String) {
+        self.id = id
+        self.category = category
+        self.displayText = displayText
+        self.isOptedOut = true  // Opted out by default when created
+        self.timestamp = Date()
+    }
+}
+
+/// Content categories for organization
+enum ContentCategory: String, Codable, CaseIterable {
+    case educationalInsights = "educational_insights"
+    case behavioralNudges = "behavioral_nudges"
+    case motivationalMessages = "motivational_messages"
+    case progressSummaries = "progress_summaries"
+
+    var displayName: String {
+        switch self {
+        case .educationalInsights: return "Educational Insights"
+        case .behavioralNudges: return "Behavioral Nudges"
+        case .motivationalMessages: return "Motivational Messages"
+        case .progressSummaries: return "Progress Summaries"
+        }
+    }
+}
+
+/// Shared opt-out manager accessible from anywhere in the app
+/// Industry pattern: Singleton manager for app-wide state (like UserDefaults)
+class ContentOptOutManager: ObservableObject {
+    static let shared = ContentOptOutManager()
+
+    @AppStorage("optedOutContentItems") private var optedOutContentData: Data = Data()
+    @Published var optedOutContentItems: [ContentItem] = []
+
+    private init() {
+        loadOptedOutContent()
+    }
+
+    /// Load opted-out content items from @AppStorage
+    private func loadOptedOutContent() {
+        if let decoded = try? JSONDecoder().decode([ContentItem].self, from: optedOutContentData) {
+            optedOutContentItems = decoded
+        }
+    }
+
+    /// Save opted-out content items to @AppStorage
+    private func saveOptedOutContent() {
+        if let encoded = try? JSONEncoder().encode(optedOutContentItems) {
+            optedOutContentData = encoded
+        }
+    }
+
+    /// Opt out of specific content item
+    func optOutContent(id: String, category: ContentCategory, text: String) {
+        let newItem = ContentItem(id: id, category: category, displayText: text)
+
+        // Check if already opted out
+        if !optedOutContentItems.contains(where: { $0.id == id }) {
+            optedOutContentItems.append(newItem)
+            saveOptedOutContent()
+        }
+    }
+
+    /// Opt back in to specific content item
+    func optInContent(id: String) {
+        optedOutContentItems.removeAll { $0.id == id }
+        saveOptedOutContent()
+    }
+
+    /// Check if specific content is opted out
+    func isContentOptedOut(id: String) -> Bool {
+        return optedOutContentItems.contains(where: { $0.id == id })
+    }
+}
+
 // MARK: - Control Center Card Types
 
 /// Card types for Weight Tracker Control Center
@@ -9,6 +95,7 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
     case notifications = "notifications"
     case insights = "insights"
     case sync = "sync"
+    case experience = "experience"
 
     var id: String { rawValue }
 
@@ -18,6 +105,7 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
         case .notifications: return "Notifications"
         case .insights: return "Insights & Education"
         case .sync: return "Apple Health Sync"
+        case .experience: return "Manage My Experience"
         }
     }
 
@@ -27,6 +115,7 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
         case .notifications: return "bell.fill"
         case .insights: return "lightbulb.fill"
         case .sync: return "arrow.triangle.2.circlepath"
+        case .experience: return "slider.horizontal.3"
         }
     }
 }
@@ -43,9 +132,12 @@ struct WeightControlCenterView: View {
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
 
-    // Card order persistence - default: Goals → Notifications → Insights → Sync
+    // Observe ContentOptOutManager for reactive UI updates
+    @ObservedObject private var optOutManager = ContentOptOutManager.shared
+
+    // Card order persistence - default: Goals → Notifications → Insights → Sync → Experience
     @AppStorage("weightControlCenterCardOrder") private var cardOrderData: Data = Data()
-    @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync]
+    @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .experience]
 
     // Drag and drop state (Hub pattern)
     @State private var draggedCard: ControlCenterCardType?
@@ -65,6 +157,18 @@ struct WeightControlCenterView: View {
     @State private var lastSyncStatus: String = ""
     @State private var showingWeightSyncDetails: Bool = false
     @State private var showingSyncPreferenceDialog: Bool = false
+
+    // User experience opt-out preferences (Manage My Experience card)
+    // Reference: Fast_LIFe_Control_Center_Gameplan.md §3
+    @AppStorage("experienceOptOut_educationalInsights") private var optOutEducationalInsights: Bool = false
+    @AppStorage("experienceOptOut_behavioralNudges") private var optOutBehavioralNudges: Bool = false
+    @AppStorage("experienceOptOut_motivationalMessages") private var optOutMotivationalMessages: Bool = false
+    @AppStorage("experienceOptOut_progressSummaries") private var optOutProgressSummaries: Bool = false
+
+    // Granular opt-out system: Individual content items
+    // Stores list of ContentItem objects that user has opted out of
+    @AppStorage("optedOutContentItems") private var optedOutContentData: Data = Data()
+    @State private var optedOutContentItems: [ContentItem] = []
 
     // UserDefaults keys
     private let userDefaults = UserDefaults.standard
@@ -86,22 +190,34 @@ struct WeightControlCenterView: View {
             VStack(spacing: 0) {
                 // Header section (fixed at top)
                 VStack(spacing: 4) {
+                    // UX/UI Fix #3: Match Weight Tracker title size (34pt)
+                    // Issue #1: Center title + apply Weight Tracker cyan gradient styling
                     Text("Control Center")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(Theme.ColorToken.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .font(.system(size: 34, weight: .bold))
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.4, green: 0.8, blue: 0.9),  // Cyan
+                                    Color(red: 0.3, green: 0.7, blue: 1.0)   // Light blue
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(maxWidth: .infinity, alignment: .center)  // Centered
                         .padding(.horizontal, 20)
                         .padding(.top, 8)
 
                     // REFINEMENT #1: Split instructions into 2 lines
                     // Behavioral Science: Chunking for cognitive fluency
+                    // UX/UI Fix #4: Increased subtitle font sizes for accessibility
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Customize your Weight Tracker experience.")
-                            .font(.system(size: 15, weight: .medium))
+                            .font(.system(size: 18, weight: .medium))  // Increased from 17
                             .foregroundColor(Theme.ColorToken.textSecondary)
 
                         Text("Drag cards to reorder.")
-                            .font(.system(size: 14, weight: .regular))
+                            .font(.system(size: 17, weight: .regular))  // Increased from 16
                             .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -166,6 +282,7 @@ struct WeightControlCenterView: View {
         }
         .onAppear {
             loadCardOrder()
+            loadOptedOutContent()  // Load opted-out content items
             weightGoalString = String(format: "%.1f", weightGoal)
             userSyncPreference = weightManager.syncWithHealthKit
             updatePermissionStatus()
@@ -225,6 +342,25 @@ struct WeightControlCenterView: View {
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
 
                 Spacer()
+
+                // Badge for Manage My Experience card showing count of opted-out categories + items
+                if cardType == .experience {
+                    let categoryOptOutCount = [optOutEducationalInsights, optOutBehavioralNudges, optOutMotivationalMessages, optOutProgressSummaries].filter({ $0 }).count
+                    let individualOptOutCount = optOutManager.optedOutContentItems.count
+                    let totalOptOutCount = categoryOptOutCount + individualOptOutCount
+
+                    if totalOptOutCount > 0 {
+                        Text("\(totalOptOutCount)")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                            .frame(minWidth: 24, minHeight: 24)
+                            .background(
+                                Circle()
+                                    .fill(Theme.ColorToken.stateWarning)
+                            )
+                            .accessibilityLabel("\(totalOptOutCount) \(totalOptOutCount == 1 ? "item" : "items") opted out")
+                    }
+                }
             }
             .padding(16)
             .background(Theme.ColorToken.cardHeaderOnDark)
@@ -252,6 +388,8 @@ struct WeightControlCenterView: View {
             insightsCardContent
         case .sync:
             syncCardContent
+        case .experience:
+            experienceCardContent
         }
     }
 
@@ -259,6 +397,15 @@ struct WeightControlCenterView: View {
 
     private var goalsCardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
+            // Benefit micro-explainer (Sprint 1)
+            Text("Tracking your weight helps you see progress from the inside out — long before it shows in the mirror.")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
             // Show goal line toggle
             Toggle(isOn: $showGoalLine) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -276,31 +423,47 @@ struct WeightControlCenterView: View {
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
 
-                // Goal weight editor - HANDOFF.md pattern (lines 132-141)
-                VStack(alignment: .leading, spacing: 8) {
+                // Goal weight editor - Centered design with grouped value+unit
+                // UX/UI Fix #1: Value and unit grouped and centered together
+                VStack(alignment: .center, spacing: 8) {
+                    // "Goal Weight" label - natural width
                     Text("Goal Weight")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
-                    // Single HStack with Spacer() to push TextField container to edges
-                    HStack(spacing: 8) {
+                    // Compact teal container - matches gold pill size
+                    // "150.0" perfectly centered under "Goal Weight" label
+                    HStack(spacing: 4) {
                         TextField("Enter goal", text: $weightGoalString)
                             .keyboardType(.decimalPad)
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                            .multilineTextAlignment(.center)
+                            .monospacedDigit()  // Sprint 1: Prevents jitter when digits change
+                            .fixedSize()  // Shrink to content width
+                            .onChange(of: weightGoalString) { _, newValue in
+                                // UX/UI Fix #2: Restrict to one decimal place, max 999.9
+                                formatWeightGoalInput(newValue)
+                            }
 
                         Text("lbs")
                             .font(.system(size: 18, weight: .semibold))
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                            .accessibilityHidden(true)  // Sprint 1: Avoid redundant "lbs" announcement
                     }
-                    .padding(12)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Goal weight \(weightGoalString) pounds")
+                    .accessibilityHint("Double tap to edit")
+                    .padding(.leading, 28)  // Shift entire HStack right to center "150.0"
+                    .padding(.trailing, 16)
+                    .padding(.vertical, 12)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
                     )
-
                     // REFINEMENT #3: Enhanced progress metric with pill background
                     // Behavioral Science: Goal gradient effect + visual reward
+                    // Issue #3: Centered horizontally
                     if let goal = Double(weightGoalString),
                        goal > 0,
                        let currentWeight = weightManager.latestWeight?.weight {
@@ -325,10 +488,12 @@ struct WeightControlCenterView: View {
                                     )
                             )
                             .shadow(color: Theme.ColorToken.accentGold.opacity(0.2), radius: 8, x: 0, y: 4)
+                            .frame(maxWidth: .infinity)  // Center horizontally
                             .padding(.top, 12)
                         }
                     }
                 }
+                .frame(maxWidth: .infinity)  // Center the entire VStack horizontally
             }
         }
     }
@@ -337,7 +502,8 @@ struct WeightControlCenterView: View {
 
     private var notificationsCardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Smart reminders coming soon")
+            // Sprint 1: Remove "coming soon" vaporware feel
+            Text("Personalized nudges to build daily streaks.")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
@@ -350,7 +516,8 @@ struct WeightControlCenterView: View {
 
     private var insightsCardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Educational insights coming soon")
+            // Sprint 1: Remove "coming soon" vaporware feel
+            Text("Smart tips based on your trends.")
                 .font(.system(size: 16, weight: .medium))
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
@@ -369,8 +536,15 @@ struct WeightControlCenterView: View {
                     Text("Sync with Apple Health")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                    Text(hasHealthKitPermission ? "Ready to sync" : "Not synced")
+                    // Sprint 1: Benefit copy - multi-line format (1 sentence per line)
+                    Text("Auto-import your weight from Apple Health.")
                         .font(.system(size: 13))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                    Text("No manual entry.")
+                        .font(.system(size: 13))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                    Text(hasHealthKitPermission ? "Ready to sync" : "Not synced")
+                        .font(.system(size: 12))
                         .foregroundColor(hasHealthKitPermission ? Theme.ColorToken.accentPrimary : Theme.ColorToken.textSecondaryOnDark)
                 }
             }
@@ -438,6 +612,7 @@ struct WeightControlCenterView: View {
             }
 
             // Behavioral insight: Trust badge
+            // Issue #4: Centered horizontally
             if hasHealthKitPermission && localSyncEnabled {
                 HStack(spacing: 8) {
                     Image(systemName: "lock.shield.fill")
@@ -452,6 +627,171 @@ struct WeightControlCenterView: View {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(Theme.ColorToken.accentInfo.opacity(0.15))
                 )
+                .frame(maxWidth: .infinity)  // Center horizontally
+            }
+        }
+    }
+
+    // MARK: - Manage My Experience Card
+
+    private var experienceCardContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Subtitle: Purpose of this card
+            Text("Control which tips, nudges, and summaries you see (Opt-outs live here).")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // Educational Insights Toggle (Category-level control)
+            categoryToggle(
+                isOn: Binding(
+                    get: { !self.optOutEducationalInsights },
+                    set: { self.optOutEducationalInsights = !$0 }
+                ),
+                title: "Educational Insights",
+                description: "Learn about weight tracking science and best practices",
+                category: .educationalInsights
+            )
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // Behavioral Nudges Toggle (Category-level control)
+            categoryToggle(
+                isOn: Binding(
+                    get: { !self.optOutBehavioralNudges },
+                    set: { self.optOutBehavioralNudges = !$0 }
+                ),
+                title: "Behavioral Nudges",
+                description: "Gentle reminders to log weight and build streaks",
+                category: .behavioralNudges
+            )
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // Motivational Messages Toggle (Category-level control)
+            categoryToggle(
+                isOn: Binding(
+                    get: { !self.optOutMotivationalMessages },
+                    set: { self.optOutMotivationalMessages = !$0 }
+                ),
+                title: "Motivational Messages",
+                description: "Encouragement when you hit milestones or new lows",
+                category: .motivationalMessages
+            )
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // Progress Summaries Toggle (Category-level control)
+            categoryToggle(
+                isOn: Binding(
+                    get: { !self.optOutProgressSummaries },
+                    set: { self.optOutProgressSummaries = !$0 }
+                ),
+                title: "Progress Summaries",
+                description: "Weekly recaps showing trends and wins",
+                category: .progressSummaries
+            )
+
+            // Restore All button (only show if at least one category is paused)
+            if optOutEducationalInsights || optOutBehavioralNudges || optOutMotivationalMessages || optOutProgressSummaries {
+                Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
+
+                Button(action: {
+                    // Restore all categories (turn all back on by setting all opt-outs to false)
+                    optOutEducationalInsights = false
+                    optOutBehavioralNudges = false
+                    optOutMotivationalMessages = false
+                    optOutProgressSummaries = false
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise")
+                            .font(.system(size: 16, weight: .semibold))
+                        Text("Restore All")
+                            .font(.system(size: 16, weight: .semibold))
+                    }
+                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    .frame(maxWidth: .infinity)
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Theme.ColorToken.accentGold.opacity(0.3))
+                    )
+                }
+            }
+        }
+    }
+
+    // Helper view for category toggles with individual opt-out items
+    @ViewBuilder
+    private func categoryToggle(isOn: Binding<Bool>, title: String, description: String, category: ContentCategory) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Category-level toggle
+            Toggle(isOn: isOn) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    Text(description)
+                        .font(.system(size: 13))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+            .tint(Theme.ColorToken.accentPrimary)
+
+            // Show individual opted-out items for this category (if any)
+            let optedOutItems = optOutManager.optedOutContentItems.filter { $0.category == category }
+            if !optedOutItems.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    // "Individual opt-outs" header
+                    Text("Individual opt-outs:")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
+                        .padding(.leading, 16)
+                        .padding(.top, 4)
+
+                    // List of opted-out items
+                    ForEach(optedOutItems) { item in
+                        HStack(spacing: 8) {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Theme.ColorToken.stateWarning)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(item.displayText)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                                Text("Opted out \(item.timestamp.formatted(date: .abbreviated, time: .omitted))")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.6))
+                            }
+
+                            Spacer()
+
+                            // Restore button for individual item
+                            Button(action: {
+                                optOutManager.optInContent(id: item.id)
+                            }) {
+                                Text("Restore")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(Theme.ColorToken.accentPrimary)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Theme.ColorToken.textSecondaryOnDark.opacity(0.1))
+                        )
+                        .padding(.horizontal, 8)
+                    }
+                }
             }
         }
     }
@@ -530,10 +870,18 @@ struct WeightControlCenterView: View {
 
     private func loadCardOrder() {
         if let decoded = try? JSONDecoder().decode([ControlCenterCardType].self, from: cardOrderData) {
-            cardOrder = decoded
+            // Migration: Add .experience card if it's missing from saved order
+            if !decoded.contains(.experience) {
+                // Append Experience card to end of existing order
+                cardOrder = decoded + [.experience]
+                // Save the migrated order
+                saveCardOrder()
+            } else {
+                cardOrder = decoded
+            }
         } else {
-            // Default order: Goals → Notifications → Insights → Sync
-            cardOrder = [.goals, .notifications, .insights, .sync]
+            // Default order: Goals → Notifications → Insights → Sync → Experience
+            cardOrder = [.goals, .notifications, .insights, .sync, .experience]
         }
     }
 
@@ -715,6 +1063,98 @@ struct WeightControlCenterView: View {
     private func markInitialImportCompleted() {
         userDefaults.set(true, forKey: hasCompletedInitialImportKey)
         userDefaults.synchronize()
+    }
+
+    // MARK: - Weight Goal Input Formatting
+
+    /// Format weight goal input to one decimal place, max 999.9
+    /// UX/UI Fix #2: Industry standard for health apps
+    private func formatWeightGoalInput(_ input: String) {
+        var formatted = input
+
+        // Remove any non-numeric characters except decimal point
+        formatted = formatted.filter { $0.isNumber || $0 == "." }
+
+        // Ensure only one decimal point
+        let components = formatted.components(separatedBy: ".")
+        if components.count > 2 {
+            formatted = components[0] + "." + components[1...].joined()
+        }
+
+        // Limit to one decimal place
+        if let dotIndex = formatted.firstIndex(of: ".") {
+            let afterDot = formatted.suffix(from: formatted.index(after: dotIndex))
+            if afterDot.count > 1 {
+                formatted = String(formatted.prefix(upTo: formatted.index(dotIndex, offsetBy: 2)))
+            }
+        }
+
+        // Enforce max value 999.9
+        if let value = Double(formatted), value > 999.9 {
+            formatted = "999.9"
+        }
+
+        // Limit integer part to 3 digits
+        if let dotIndex = formatted.firstIndex(of: ".") {
+            let beforeDot = formatted.prefix(upTo: dotIndex)
+            if beforeDot.count > 3 {
+                formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
+            }
+        } else {
+            if formatted.count > 3 {
+                formatted = String(formatted.prefix(3))
+            }
+        }
+
+        // Update if changed
+        if formatted != input {
+            weightGoalString = formatted
+        }
+    }
+
+    // MARK: - Opt-Out System Helper Functions
+
+    /// Load opted-out content items from @AppStorage
+    private func loadOptedOutContent() {
+        if let decoded = try? JSONDecoder().decode([ContentItem].self, from: optedOutContentData) {
+            optedOutContentItems = decoded
+        }
+    }
+
+    /// Save opted-out content items to @AppStorage
+    private func saveOptedOutContent() {
+        if let encoded = try? JSONEncoder().encode(optedOutContentItems) {
+            optedOutContentData = encoded
+        }
+    }
+
+    /// Opt out of specific content item
+    /// - Parameters:
+    ///   - id: Unique identifier for the content
+    ///   - category: Content category (educational, behavioral, motivational, progress)
+    ///   - text: Display text shown in Manage My Experience
+    func optOutContent(id: String, category: ContentCategory, text: String) {
+        let newItem = ContentItem(id: id, category: category, displayText: text)
+
+        // Check if already opted out
+        if !optedOutContentItems.contains(where: { $0.id == id }) {
+            optedOutContentItems.append(newItem)
+            saveOptedOutContent()
+        }
+    }
+
+    /// Opt back in to specific content item
+    /// - Parameter id: Unique identifier for the content
+    func optInContent(id: String) {
+        optedOutContentItems.removeAll { $0.id == id }
+        saveOptedOutContent()
+    }
+
+    /// Check if specific content is opted out
+    /// - Parameter id: Unique identifier for the content
+    /// - Returns: True if user has opted out of this content
+    func isContentOptedOut(id: String) -> Bool {
+        return optedOutContentItems.contains(where: { $0.id == id })
     }
 }
 
