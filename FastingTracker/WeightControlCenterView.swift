@@ -47,6 +47,9 @@ struct WeightControlCenterView: View {
     @AppStorage("weightControlCenterCardOrder") private var cardOrderData: Data = Data()
     @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync]
 
+    // Drag and drop state (Hub pattern)
+    @State private var draggedCard: ControlCenterCardType?
+
     // Weight goal editing
     @State private var weightGoalString: String = ""
 
@@ -106,29 +109,32 @@ struct WeightControlCenterView: View {
                     .padding(.bottom, 12)
                 }
 
-                // List with reorderable cards
-                // REFINEMENT #2: Consistent padding for perfect right-edge alignment
-                List {
-                    ForEach(cardOrder) { cardType in
-                        cardView(for: cardType)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
-                            .listRowBackground(Color.clear)
-                            .listRowSeparator(.hidden)
-                    }
-                    .onMove { from, to in
-                        cardOrder.move(fromOffsets: from, toOffset: to)
-                        saveCardOrder()
-                    }
+                // ScrollView with reorderable cards (Hub pattern - perfect alignment)
+                // Using .onDrag/.onDrop instead of List+.onMove to avoid layout issues
+                // Reference: HubView.swift lines 65-88
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(cardOrder) { cardType in
+                            cardView(for: cardType)
+                                .onDrag {
+                                    // Hub pattern: NSItemProvider for drag/drop
+                                    self.draggedCard = cardType
+                                    return NSItemProvider(object: cardType.rawValue as NSString)
+                                }
+                                .onDrop(of: [.text], delegate: CardDropDelegate(
+                                    card: cardType,
+                                    cardOrder: $cardOrder,
+                                    draggedCard: $draggedCard,
+                                    saveAction: saveCardOrder
+                                ))
+                        }
 
-                    // About section (fixed at bottom)
-                    aboutCard
-                        .listRowInsets(EdgeInsets(top: 8, leading: 20, bottom: 8, trailing: 20))
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
+                        // About section (fixed at bottom)
+                        aboutCard
+                    }
+                    .padding(.horizontal, 20)  // Single container padding (Hub pattern)
+                    .padding(.top, 8)
                 }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .environment(\.editMode, .constant(.active))
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -206,13 +212,8 @@ struct WeightControlCenterView: View {
     @ViewBuilder
     private func cardView(for cardType: ControlCenterCardType) -> some View {
         VStack(spacing: 0) {
-            // Card Header with drag handle
+            // Card Header (Hub pattern - no visible drag handle, long-press to drag)
             HStack(spacing: 12) {
-                // Drag handle (always visible)
-                Image(systemName: "line.3.horizontal")
-                    .foregroundColor(Theme.ColorToken.dragHandle)
-                    .font(.system(size: 18, weight: .semibold))
-
                 // Card icon
                 Image(systemName: cardType.icon)
                     .foregroundColor(Theme.ColorToken.accentPrimary)
@@ -275,27 +276,28 @@ struct WeightControlCenterView: View {
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
 
-                // Goal weight editor
+                // Goal weight editor - HANDOFF.md pattern (lines 132-141)
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Goal Weight")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
-                    HStack {
+                    // Single HStack with Spacer() to push TextField container to edges
+                    HStack(spacing: 8) {
                         TextField("Enter goal", text: $weightGoalString)
                             .keyboardType(.decimalPad)
                             .font(.system(size: 24, weight: .bold))
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                            .padding(12)
-                            .background(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
-                            )
 
                         Text("lbs")
                             .font(.system(size: 18, weight: .semibold))
-                            .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     }
+                    .padding(12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
+                    )
 
                     // REFINEMENT #3: Enhanced progress metric with pill background
                     // Behavioral Science: Goal gradient effect + visual reward
@@ -713,6 +715,43 @@ struct WeightControlCenterView: View {
     private func markInitialImportCompleted() {
         userDefaults.set(true, forKey: hasCompletedInitialImportKey)
         userDefaults.synchronize()
+    }
+}
+
+// MARK: - Drag & Drop Delegate (Hub pattern)
+// Reference: HubView.swift lines 177-205
+
+struct CardDropDelegate: DropDelegate {
+    let card: ControlCenterCardType
+    @Binding var cardOrder: [ControlCenterCardType]
+    @Binding var draggedCard: ControlCenterCardType?
+    let saveAction: () -> Void
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let draggedCard = draggedCard else { return false }
+
+        // Reorder logic following Hub's drag/drop pattern
+        if let fromIndex = cardOrder.firstIndex(of: draggedCard),
+           let toIndex = cardOrder.firstIndex(of: card) {
+
+            withAnimation(.spring()) {
+                cardOrder.move(fromOffsets: IndexSet(integer: fromIndex), toOffset: toIndex > fromIndex ? toIndex + 1 : toIndex)
+            }
+
+            // Save the new order
+            saveAction()
+        }
+
+        self.draggedCard = nil
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        // Optional: Add visual feedback during drag
+    }
+
+    func dropExited(info: DropInfo) {
+        // Optional: Remove visual feedback
     }
 }
 

@@ -400,8 +400,9 @@ struct WeightTrendsView: View {
                     }
                     .padding(.top, 8)
 
-                    // Trends Grid - Centered for visual balance
-                    // Per Apple HIG: Use alignment to improve scannability
+                    // Trends Grid - HANDOFF.md pattern: Container padding ONLY
+                    // CRITICAL: Equal spacing on both sides (20pt each)
+                    // ScrollView adds default contentInset - must be explicitly zeroed
                     VStack(spacing: 16) {
                         // Row 1: 7 days and 30 days
                         HStack(spacing: 16) {
@@ -415,11 +416,13 @@ struct WeightTrendsView: View {
                             TrendCard( title: "ALL TIME", trend: calculateTrend(days: nil))
                         }
                     }
-                    .padding(.horizontal)
+                    .padding(.horizontal, 20)
+                    .frame(maxWidth: .infinity, alignment: .leading)  // Force full width alignment
                 }
-                .frame(maxWidth: .infinity)
                 .padding(.vertical)
+                .frame(maxWidth: .infinity)  // Ensure VStack fills entire ScrollView width
             }
+            .contentMargins(.horizontal, 0, for: .scrollContent)  // iOS 17+ removes ScrollView default margins
             .navigationTitle("Weight Trends")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -498,7 +501,7 @@ struct TrendCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 16)  // Internal padding for content breathing room
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(cardGradient)
@@ -506,8 +509,10 @@ struct TrendCard: View {
         .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
     }
 
-    /// Vibrant gradient background - EXCITING!
-    /// Different gradient per time period for visual distinction
+    /// Luxury gradient background per Theme.ColorToken design system
+    /// Loss: Emerald green gradient (success)
+    /// Gain: Orange/red gradient (caution/warning)
+    /// Per UI/UX spec: Deep navy background, gold highlights, green for success
     private var cardGradient: LinearGradient {
         guard let trend = trend else {
             // No data: Gray gradient
@@ -519,75 +524,36 @@ struct TrendCard: View {
         }
 
         if trend.isLoss {
-            // Loss: Use time-period specific gradients for visual distinction
-            switch title {
-            case "7 DAYS":
-                // Recent: Blue gradient
-                return LinearGradient(
-                    colors: [Color("FLPrimary"), Color("FLPrimary").opacity(0.7)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            case "30 DAYS":
-                // Medium: Cyan gradient
-                return LinearGradient(
-                    colors: [Color.cyan, Color.cyan.opacity(0.7)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            case "90 DAYS":
-                // Long-term: Green gradient
-                return LinearGradient(
-                    colors: [Color("FLSuccess"), Color("FLSuccess").opacity(0.7)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            case "ALL TIME":
-                // Lifetime: Gold/yellow gradient (achievement!)
-                return LinearGradient(
-                    colors: [Color.orange, Color.yellow.opacity(0.7)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            default:
-                // Fallback: Green
-                return LinearGradient(
-                    colors: [Color("FLSuccess"), Color("FLSuccess").opacity(0.7)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            }
-        } else {
-            // Gain: Red gradient (but gentle)
+            // Loss: Emerald gradient per luxury UI spec
+            // Using accentPrimary (emerald #1ABC9C) for success states
             return LinearGradient(
-                colors: [Color.red.opacity(0.8), Color.red.opacity(0.6)],
+                colors: [Theme.ColorToken.accentPrimary, Theme.ColorToken.accentPrimary.opacity(0.7)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            // Gain: Warning/Error gradient per luxury UI spec
+            // Using stateWarning (amber) for gentle caution
+            return LinearGradient(
+                colors: [Theme.ColorToken.stateWarning, Theme.ColorToken.stateWarning.opacity(0.7)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         }
     }
 
-    /// Shadow color matches card gradient
+    /// Shadow color matches card gradient per luxury UI spec
     private var shadowColor: Color {
         guard let trend = trend else {
             return Color.gray.opacity(0.3)
         }
 
         if trend.isLoss {
-            switch title {
-            case "7 DAYS":
-                return Color("FLPrimary").opacity(0.3)
-            case "30 DAYS":
-                return Color.cyan.opacity(0.3)
-            case "90 DAYS":
-                return Color("FLSuccess").opacity(0.3)
-            case "ALL TIME":
-                return Color.orange.opacity(0.3)
-            default:
-                return Color("FLSuccess").opacity(0.3)
-            }
+            // Loss: Emerald shadow for success
+            return Theme.ColorToken.accentPrimary.opacity(0.3)
         } else {
-            return Color.red.opacity(0.3)
+            // Gain: Amber shadow for caution
+            return Theme.ColorToken.stateWarning.opacity(0.3)
         }
     }
 
