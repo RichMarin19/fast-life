@@ -1071,6 +1071,177 @@ ZStack {
 
 ---
 
+## 🚨 MANDATORY WORKFLOW - TEST BEFORE COMMIT
+
+### CRITICAL RULE: Always Test in Xcode Before Any Git Operations
+
+**Date Added:** 2025-10-17
+**Priority:** HIGHEST - Non-negotiable workflow rule
+
+#### ❌ WRONG WORKFLOW (NEVER DO THIS):
+```bash
+# DON'T: Commit without testing
+1. Write code
+2. Build succeeds (xcodebuild)
+3. git add .
+4. git commit -m "..."
+5. git push
+6. THEN discover issues in live testing
+```
+
+#### ✅ CORRECT WORKFLOW (MANDATORY):
+```bash
+# ALWAYS: Test first, commit second
+1. Write code
+2. Build succeeds (xcodebuild)
+3. ⚠️  OPEN XCODE AND TEST LIVE ⚠️
+   - Launch on simulator/device (⌘R)
+   - Navigate to changed features
+   - Verify visual appearance
+   - Test all interaction states
+   - Check edge cases
+4. ONLY AFTER SUCCESSFUL TESTING:
+   - git add .
+   - git commit -m "..."
+   - git push
+```
+
+#### Why This Matters:
+
+**Build Success ≠ Working Feature**
+- xcodebuild catches compilation errors only
+- Live testing reveals:
+  - Layout issues
+  - Visual glitches
+  - Interaction bugs
+  - State management issues
+  - Performance problems
+  - Accessibility issues
+
+**Industry Standard:**
+> "Measure twice, cut once" - Apple Engineering
+
+**Real-World Example:**
+- Phase C.1 (2025-10-17): Committed code with 13 build errors
+- User feedback: "Remember we don't commit until we do a live test"
+- Result: Wasted time fixing committed broken code
+
+#### Quality Gates Before Commit:
+
+**Mandatory Checks:**
+- [ ] ✅ Build succeeds (xcodebuild)
+- [ ] ✅ Xcode opens without errors
+- [ ] ✅ App launches on simulator/device
+- [ ] ✅ Navigate to changed feature
+- [ ] ✅ Visual appearance matches design
+- [ ] ✅ All interactions work correctly
+- [ ] ✅ No console errors in Debug
+- [ ] ✅ Test edge cases (empty state, error state, etc.)
+
+**Only Then:**
+- [ ] ✅ git add + commit + push
+
+#### Exception Policy:
+
+**NO EXCEPTIONS.** Even for:
+- "Small changes"
+- "Just formatting"
+- "Quick fixes"
+- "Documentation updates"
+
+**Always test live before committing.**
+
+---
+
+## 🎨 LUXURY TITLE COLOR PALETTE - MANDATORY STANDARD
+
+### Universal Title Gradient System
+
+**Date Added:** 2025-10-17
+**Priority:** HIGH - Brand consistency requirement
+
+#### The Standard: Cyan → Light Blue Gradient
+
+**ALL TITLES** in the app must use this gradient unless explicitly specified otherwise:
+
+```swift
+Text("Your Title Here")
+    .font(.system(size: 34, weight: .bold))
+    .foregroundStyle(
+        LinearGradient(
+            colors: [
+                Color(red: 0.4, green: 0.8, blue: 0.9),  // Cyan
+                Color(red: 0.3, green: 0.7, blue: 1.0)   // Light blue
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+    )
+    .frame(maxWidth: .infinity, alignment: .center)  // Centered horizontally
+```
+
+#### Where This Applies:
+
+**✅ Use Cyan-Blue Gradient for ALL:**
+- Main screen titles (Weight Tracker, Hydration Tracker, etc.)
+- Control Center title
+- Progress Story title
+- Settings panel titles
+- Any 34pt bold heading
+
+**Design Rationale:**
+- Luxury brand consistency
+- Visual cohesion across all screens
+- Premium feel matching iOS design language
+- User expectation: "This is a title" = cyan-blue gradient
+
+#### Implementation Examples:
+
+**Weight Tracker (via TrackerScreenShell):**
+```swift
+TrackerScreenShell(
+    title: ("Weight Tr", "ac", "ker"),  // Split for 3-color effect
+    gradientStyle: .luxury
+)
+```
+
+**Control Center:**
+```swift
+Text("Control Center")
+    .font(.system(size: 34, weight: .bold))
+    .foregroundStyle(/* cyan-blue gradient */)
+    .frame(maxWidth: .infinity, alignment: .center)
+```
+
+**Progress Story:**
+```swift
+Text("Your Progress Story")
+    .font(.system(size: 34, weight: .bold))
+    .foregroundStyle(/* cyan-blue gradient */)
+    .frame(maxWidth: .infinity, alignment: .center)
+```
+
+#### Exception Policy:
+
+**When to DEVIATE from this standard:**
+- User explicitly requests different color scheme
+- Specific design document specifies alternative
+- A/B testing variant requires different styling
+
+**Default behavior:** Always use cyan-blue gradient unless told otherwise.
+
+#### Quality Checklist:
+
+When adding a new title/heading:
+- [ ] Is it 34pt bold font?
+- [ ] Does it use cyan-blue gradient?
+- [ ] Is it centered horizontally?
+- [ ] Does it have 8pt top/bottom padding?
+
+**Consistency = Premium Brand Perception**
+
+---
+
 ## 🚨 CRITICAL LESSONS LEARNED - Phase A Implementation
 
 ### AppLogger API Assumption Error - MAJOR PITFALL

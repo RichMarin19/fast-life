@@ -12,15 +12,8 @@ enum Theme {
     /// Color tokens following luxury design system
     /// All hex values defined here - NEVER use raw hex in UI code
     enum ColorToken {
-        // MARK: Background Colors
-
-        /// Deep gradient start - Deep navy (#101827)
-        /// Usage: Primary gradient background (top/leading)
-        static let bgDeepStart = Color(flHex: "#101827")
-
-        /// Deep gradient end - Midnight blue (#0B1220)
-        /// Usage: Primary gradient background (bottom/trailing)
-        static let bgDeepEnd = Color(flHex: "#0B1220")
+        // MARK: Background Colors (Stacked v1.2 - Authoritative)
+        // NOTE: bgDeepStart/Mid/End defined below in Global Background Palette section
 
         // MARK: Surface Colors
 
@@ -44,20 +37,21 @@ enum Theme {
         /// Subtle differentiation from card body
         static let cardHeaderOnDark = Color.white.opacity(0.08)
 
-        // MARK: Text Colors
+        // MARK: Text Colors (Optimized for Light Surfaces - Stacked v1.2)
 
-        /// Primary text - Light blue-gray (#E8EEF5)
-        /// Usage: Primary text on deep gradient background
+        /// Primary text - Deep navy (#0E1B2A)
+        /// Usage: Primary text on light card surfaces
+        /// Contrast: ≥4.5:1 on light surfaces (WCAG AA compliant)
+        static let textPrimary = Color(flHex: "#0E1B2A")
+
+        /// Secondary text - Slate gray (#475569)
+        /// Usage: Supporting text, metadata on light surfaces
+        static let textSecondary = Color(flHex: "#475569")
+
+        /// Text on dark backgrounds - Light blue-gray (#E8EEF5)
+        /// Usage: Text on deep gradient backgrounds (when needed)
         /// Contrast: ≥4.5:1 on bgDeepStart (WCAG AA compliant)
-        static let textPrimary = Color(flHex: "#E8EEF5")
-
-        /// Secondary text - Medium blue-gray (#B4C0CF)
-        /// Usage: Supporting text, metadata on dark backgrounds
-        static let textSecondary = Color(flHex: "#B4C0CF")
-
-        /// Inverse text - Deep navy (#0D1B2A)
-        /// Usage: Text on light card backgrounds
-        static let textInverse = Color(flHex: "#0D1B2A")
+        static let textOnDark = Color(flHex: "#E8EEF5")
 
         // MARK: Dark Mode Text Colors (Control Center)
 
@@ -83,6 +77,47 @@ enum Theme {
         /// Info accent - Royal blue (#2E86DE)
         /// Usage: Goal lines, informational elements, links
         static let accentInfo = Color(flHex: "#2E86DE")
+
+        // MARK: Global Background Palette (Stacked v1.2)
+        // Reference: FastLIFe_ProgressStory_Stacked_v1.2_Light_OptOut.md
+        // Authoritative palette for entire app (all trackers)
+
+        /// Background gradient start - Deep navy (#0C1A2B)
+        /// Usage: Primary gradient background (top)
+        /// Emotion: Calm, trust, depth
+        static let bgDeepStart = Color(flHex: "#0C1A2B")
+
+        /// Background gradient mid - Medium navy (#0F2438)
+        /// Usage: Primary gradient background (middle)
+        /// Creates visual breathing effect
+        static let bgDeepMid = Color(flHex: "#0F2438")
+
+        /// Background gradient end - Rich navy (#123449)
+        /// Usage: Primary gradient background (bottom)
+        /// Adds depth to scrolling background
+        static let bgDeepEnd = Color(flHex: "#123449")
+
+        // MARK: Light Card Surfaces (Stacked v1.2)
+        // Light, airy surfaces for luxury + optimism contrast
+
+        /// Ice surface - Cool light (#F4FAFD)
+        /// Usage: 7-day trend cards, primary light cards
+        /// Emotion: Fresh, clarity, focus
+        static let surfaceIce = Color(flHex: "#F4FAFD")
+
+        /// Ivory surface - Warm light (#FEF9F3)
+        /// Usage: 30-day trend cards, secondary light cards
+        /// Emotion: Warmth, achievement, growth
+        static let surfaceIvory = Color(flHex: "#FEF9F3")
+
+        /// Mint surface - Soft green-tinted light (#F8FFF6)
+        /// Usage: Tips, insights, educational content
+        /// Emotion: Health, knowledge, calm
+        static let surfaceMint = Color(flHex: "#F8FFF6")
+
+        /// Light stroke - Subtle border (rgba(0,0,0,0.06))
+        /// Usage: Card borders on light surfaces
+        static let strokeLight = Color.black.opacity(0.06)
 
         // MARK: System State Colors
 
