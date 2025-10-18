@@ -142,6 +142,12 @@ struct WeightControlCenterView: View {
     // Drag and drop state (Hub pattern)
     @State private var draggedCard: ControlCenterCardType?
 
+    // Badge interaction: Track current highlighted item for cycling through opted-out content
+    @State private var currentHighlightedItemIndex: Int = 0
+    @State private var highlightedItemID: String? = nil  // Track which item to highlight by ID
+    @State private var scrollViewProxy: ScrollViewProxy?
+    @State private var badgeScale: CGFloat = 1.0  // Layer 6: Badge bounce animation
+
     // Weight goal editing
     @State private var weightGoalString: String = ""
 
@@ -228,28 +234,35 @@ struct WeightControlCenterView: View {
                 // ScrollView with reorderable cards (Hub pattern - perfect alignment)
                 // Using .onDrag/.onDrop instead of List+.onMove to avoid layout issues
                 // Reference: HubView.swift lines 65-88
+                // Layer 3: Wrapped in ScrollViewReader for smooth scroll-to-item functionality
                 ScrollView {
-                    LazyVStack(spacing: 12) {
-                        ForEach(cardOrder) { cardType in
-                            cardView(for: cardType)
-                                .onDrag {
-                                    // Hub pattern: NSItemProvider for drag/drop
-                                    self.draggedCard = cardType
-                                    return NSItemProvider(object: cardType.rawValue as NSString)
-                                }
-                                .onDrop(of: [.text], delegate: CardDropDelegate(
-                                    card: cardType,
-                                    cardOrder: $cardOrder,
-                                    draggedCard: $draggedCard,
-                                    saveAction: saveCardOrder
-                                ))
-                        }
+                    ScrollViewReader { proxy in
+                        LazyVStack(spacing: 12) {
+                            ForEach(cardOrder) { cardType in
+                                cardView(for: cardType)
+                                    .onDrag {
+                                        // Hub pattern: NSItemProvider for drag/drop
+                                        self.draggedCard = cardType
+                                        return NSItemProvider(object: cardType.rawValue as NSString)
+                                    }
+                                    .onDrop(of: [.text], delegate: CardDropDelegate(
+                                        card: cardType,
+                                        cardOrder: $cardOrder,
+                                        draggedCard: $draggedCard,
+                                        saveAction: saveCardOrder
+                                    ))
+                            }
 
-                        // About section (fixed at bottom)
-                        aboutCard
+                            // About section (fixed at bottom)
+                            aboutCard
+                        }
+                        .padding(.horizontal, 20)  // Single container padding (Hub pattern)
+                        .padding(.top, 8)
+                        .onAppear {
+                            // Capture ScrollViewProxy for badge interaction
+                            scrollViewProxy = proxy
+                        }
                     }
-                    .padding(.horizontal, 20)  // Single container padding (Hub pattern)
-                    .padding(.top, 8)
                 }
             }
         }
@@ -344,21 +357,31 @@ struct WeightControlCenterView: View {
                 Spacer()
 
                 // Badge for Manage My Experience card showing count of opted-out categories + items
+                // Interactive: Tapping cycles through opted-out items with smooth scroll
                 if cardType == .experience {
                     let categoryOptOutCount = [optOutEducationalInsights, optOutBehavioralNudges, optOutMotivationalMessages, optOutProgressSummaries].filter({ $0 }).count
                     let individualOptOutCount = optOutManager.optedOutContentItems.count
                     let totalOptOutCount = categoryOptOutCount + individualOptOutCount
 
                     if totalOptOutCount > 0 {
-                        Text("\(totalOptOutCount)")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                            .frame(minWidth: 24, minHeight: 24)
-                            .background(
-                                Circle()
-                                    .fill(Theme.ColorToken.stateWarning)
-                            )
-                            .accessibilityLabel("\(totalOptOutCount) \(totalOptOutCount == 1 ? "item" : "items") opted out")
+                        Button(action: {
+                            // Layer 2: Badge tap cycles through opted-out items
+                            cycleToNextOptedOutItem()
+                        }) {
+                            Text("\(totalOptOutCount)")
+                                .font(.system(size: 14, weight: .bold))
+                                .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                                .frame(minWidth: 24, minHeight: 24)
+                                .background(
+                                    Circle()
+                                        .fill(Theme.ColorToken.stateWarning)
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .scaleEffect(badgeScale)  // Layer 6: Bounce animation
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: badgeScale)
+                        .accessibilityLabel("\(totalOptOutCount) \(totalOptOutCount == 1 ? "item" : "items") opted out")
+                        .accessibilityHint("Tap to scroll through opted-out items")
                     }
                 }
             }
@@ -757,7 +780,10 @@ struct WeightControlCenterView: View {
                         .padding(.top, 4)
 
                     // List of opted-out items
-                    ForEach(optedOutItems) { item in
+                    // Layer 3: Each item has .id() for ScrollViewReader targeting
+                    ForEach(Array(optedOutItems.enumerated()), id: \.element.id) { index, item in
+                        let isHighlighted = highlightedItemID == item.id
+
                         HStack(spacing: 8) {
                             Image(systemName: "minus.circle.fill")
                                 .font(.system(size: 14))
@@ -789,7 +815,20 @@ struct WeightControlCenterView: View {
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Theme.ColorToken.textSecondaryOnDark.opacity(0.1))
                         )
+                        .overlay(
+                            // Layer 4: Gold border pulse when highlighted
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(Theme.ColorToken.accentGold, lineWidth: isHighlighted ? 2 : 0)
+                                .opacity(isHighlighted ? 1 : 0)
+                        )
+                        .shadow(
+                            color: isHighlighted ? Theme.ColorToken.accentGold.opacity(0.3) : .clear,
+                            radius: isHighlighted ? 8 : 0,
+                            x: 0,
+                            y: 0
+                        )
                         .padding(.horizontal, 8)
+                        .id(item.id)  // Layer 3: Enable ScrollViewReader targeting
                     }
                 }
             }
@@ -1110,6 +1149,74 @@ struct WeightControlCenterView: View {
         if formatted != input {
             weightGoalString = formatted
         }
+    }
+
+    // MARK: - Badge Interaction: Cycle Through Opted-Out Items
+
+    /// Get opted-out items in visual top-to-bottom display order
+    /// Matches the exact order items appear on screen in category sections
+    private var visuallyOrderedOptedOutItems: [ContentItem] {
+        // Define category display order (matches UI layout top-to-bottom)
+        let categoryOrder: [ContentCategory] = [
+            .educationalInsights,
+            .behavioralNudges,
+            .motivationalMessages,
+            .progressSummaries
+        ]
+
+        // Build array in visual order by iterating through categories
+        var orderedItems: [ContentItem] = []
+        for category in categoryOrder {
+            let itemsInCategory = optOutManager.optedOutContentItems.filter { $0.category == category }
+            orderedItems.append(contentsOf: itemsInCategory)
+        }
+
+        return orderedItems
+    }
+
+    /// Cycle to next opted-out item when badge is tapped
+    /// Industry pattern: Instagram stories badge, Spotify playlist scroll
+    private func cycleToNextOptedOutItem() {
+        // Get all opted-out items in visual top-to-bottom order
+        let allOptedOutItems = visuallyOrderedOptedOutItems
+
+        guard !allOptedOutItems.isEmpty else { return }
+
+        // Get the target item to scroll to (use CURRENT index, don't increment yet)
+        let targetItem = allOptedOutItems[currentHighlightedItemIndex]
+
+        // Layer 3: Smooth scroll to target item with animation
+        guard let proxy = scrollViewProxy else { return }
+
+        withAnimation(.easeInOut(duration: 0.35)) {
+            proxy.scrollTo(targetItem.id, anchor: .center)
+        }
+
+        // Layer 4: Set highlighted item ID for gold border
+        highlightedItemID = targetItem.id
+
+        // Auto-reset highlight after 1 second
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation {
+                highlightedItemID = nil
+            }
+        }
+
+        // Layer 5: Haptic feedback - Light tap for premium feel
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+        // Layer 6: Badge bounce animation (1.0 → 1.15 → 1.0)
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            badgeScale = 1.15
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                badgeScale = 1.0
+            }
+        }
+
+        // Increment index for NEXT tap (after scrolling to current item)
+        currentHighlightedItemIndex = (currentHighlightedItemIndex + 1) % allOptedOutItems.count
     }
 
     // MARK: - Opt-Out System Helper Functions
