@@ -60,6 +60,7 @@ struct DrinkEntry: Identifiable, Codable, Equatable {
 
 // MARK: - Hydration Manager
 
+@MainActor
 class HydrationManager: ObservableObject {
     @Published var drinkEntries: [DrinkEntry] = []
     @Published var dailyGoalOunces: Double = 64.0  // Default 8 glasses of water
@@ -189,6 +190,27 @@ class HydrationManager: ObservableObject {
     /// Get daily goal in user's preferred unit
     func dailyGoalInPreferredUnit() -> Double {
         return appSettings.hydrationUnit.fromOunces(dailyGoalOunces)
+    }
+
+    // MARK: - Computed Properties for SwiftUI Reactivity (Following Weight Pattern)
+    // Industry Standard: Computed properties automatically trigger SwiftUI view updates
+    // Reference: https://developer.apple.com/documentation/swiftui/managing-model-data-in-your-app
+
+    /// Today's total hydration in preferred unit - computed property for SwiftUI reactivity
+    /// Following WeightManager.latestWeight pattern for automatic UI updates
+    var todaysTotalInPreferredUnitComputed: Double {
+        let totalOunces = todaysTotalOunces()
+        return appSettings.hydrationUnit.fromOunces(totalOunces)
+    }
+
+    /// Daily goal in preferred unit - computed property for SwiftUI reactivity
+    var dailyGoalInPreferredUnitComputed: Double {
+        return appSettings.hydrationUnit.fromOunces(dailyGoalOunces)
+    }
+
+    /// Current unit abbreviation - computed property for SwiftUI reactivity
+    var currentUnitAbbreviationComputed: String {
+        return appSettings.hydrationUnit.abbreviation
     }
 
     /// Convert user input from preferred unit to internal ounces
@@ -468,7 +490,8 @@ class HydrationManager: ObservableObject {
     // Following Universal Sync Architecture patterns from handoff.md
 
     /// Observer suppression flag to prevent infinite sync loops during manual operations
-    private var isSuppressingObserver = false
+    /// NOTE: nonisolated for thread-safe access from HealthKit background contexts
+    private nonisolated(unsafe) var isSuppressingObserver = false
 
     /// Observer query for automatic HealthKit sync
     private var observerQuery: Any? // HKObserverQuery type-erased to avoid import issues

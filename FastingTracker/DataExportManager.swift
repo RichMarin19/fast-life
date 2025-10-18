@@ -10,7 +10,7 @@ class DataExportManager {
     /// Exports all app data to a CSV file and returns the file URL
     /// Returns nil if export fails
     func exportAllDataToCSV() -> URL? {
-        print("\n📤 === EXPORT ALL DATA TO CSV ===")
+        AppLogger.info("📤 Starting CSV export of all user data", category: AppLogger.csvOperations)
 
         // Create temporary directory for export
         let tempDir = FileManager.default.temporaryDirectory
@@ -18,7 +18,7 @@ class DataExportManager {
         let fileName = "FastLIFe_Export_\(timestamp).csv"
         let fileURL = tempDir.appendingPathComponent(fileName)
 
-        print("Export file: \(fileURL.path)")
+        AppLogger.info("CSV export file path: \(fileURL.lastPathComponent)", category: AppLogger.csvOperations)
 
         // Build CSV content
         var csvContent = ""
@@ -28,7 +28,7 @@ class DataExportManager {
         csvContent += "Start Time,End Time,Duration (hours),Goal (hours),Met Goal,Eating Window (hours)\n"
 
         let fastingHistory = loadFastingHistory()
-        print("📊 Fasting entries: \(fastingHistory.count)")
+        AppLogger.info("📊 Fasting entries: \(fastingHistory.count)", category: AppLogger.csvOperations)
 
         for session in fastingHistory {
             let startTime = formatDate(session.startTime)
@@ -48,7 +48,7 @@ class DataExportManager {
         csvContent += "Date,Weight (lbs),BMI,Body Fat %,Source\n"
 
         let weightEntries = loadWeightEntries()
-        print("📊 Weight entries: \(weightEntries.count)")
+        AppLogger.info("📊 Weight entries: \(weightEntries.count)", category: AppLogger.csvOperations)
 
         for entry in weightEntries {
             let date = formatDate(entry.date)
@@ -67,7 +67,7 @@ class DataExportManager {
         csvContent += "Date,Time,Type,Amount (oz)\n"
 
         let drinkEntries = loadDrinkEntries()
-        print("📊 Hydration entries: \(drinkEntries.count)")
+        AppLogger.info("📊 Hydration entries: \(drinkEntries.count)", category: AppLogger.csvOperations)
 
         for entry in drinkEntries {
             let date = formatDate(entry.date, includeTime: false)
@@ -85,7 +85,7 @@ class DataExportManager {
         csvContent += "Bed Time,Wake Time,Duration (hours),Quality (1-5),Source\n"
 
         let sleepEntries = loadSleepEntries()
-        print("📊 Sleep entries: \(sleepEntries.count)")
+        AppLogger.info("📊 Sleep entries: \(sleepEntries.count)", category: AppLogger.csvOperations)
 
         for entry in sleepEntries {
             let bedTime = formatDate(entry.bedTime)
@@ -104,7 +104,7 @@ class DataExportManager {
         csvContent += "Date,Mood (1-10),Energy (1-10),Notes\n"
 
         let moodEntries = loadMoodEntries()
-        print("📊 Mood entries: \(moodEntries.count)")
+        AppLogger.info("📊 Mood entries: \(moodEntries.count)", category: AppLogger.csvOperations)
 
         for entry in moodEntries {
             let date = formatDate(entry.date)
@@ -136,12 +136,10 @@ class DataExportManager {
         // Write to file
         do {
             try csvContent.write(to: fileURL, atomically: true, encoding: .utf8)
-            print("✅ CSV export successful: \(fileURL.lastPathComponent)")
-            print("=====================================\n")
+            AppLogger.info("✅ CSV export completed successfully: \(fileURL.lastPathComponent)", category: AppLogger.csvOperations)
             return fileURL
         } catch {
-            print("❌ CSV export failed: \(error.localizedDescription)")
-            print("=====================================\n")
+            AppLogger.error("CSV export failed", category: AppLogger.csvOperations, error: error)
             return nil
         }
     }

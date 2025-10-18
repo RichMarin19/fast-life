@@ -201,6 +201,12 @@ class HealthKitNudgeManager: ObservableObject {
         }
     }
 
+    /// API compatibility: markPermissionGranted delegates to handleAuthorizationGranted
+    /// Following established naming convention compatibility pattern
+    func markPermissionGranted(for dataType: HealthDataType) {
+        handleAuthorizationGranted(for: dataType)
+    }
+
     /// Reset nudge display state (for testing)
     func resetNudges() {
         for dataType in HealthDataType.allCases {
@@ -229,14 +235,14 @@ class HealthKitNudgeManager: ObservableObject {
     VStack(spacing: 16) {
         HealthKitNudgeView(
             dataType: .weight,
-            onConnect: { print("Connect tapped") },
-            onDismiss: { print("Dismiss tapped") }
+            onConnect: { AppLogger.debug("HealthKitNudgeView: Connect tapped", category: AppLogger.ui) },
+            onDismiss: { AppLogger.debug("HealthKitNudgeView: Dismiss tapped", category: AppLogger.ui) }
         )
 
         HealthKitNudgeView(
             dataType: .hydration,
-            onConnect: { print("Connect tapped") },
-            onDismiss: { print("Dismiss tapped") }
+            onConnect: { AppLogger.debug("HealthKitNudgeView: Connect tapped", category: AppLogger.ui) },
+            onDismiss: { AppLogger.debug("HealthKitNudgeView: Dismiss tapped", category: AppLogger.ui) }
         )
     }
     .padding()

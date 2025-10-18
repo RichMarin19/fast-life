@@ -22,7 +22,9 @@ struct WeightEntry: Codable, Identifiable {
 
 enum WeightSource: String, Codable {
     case manual = "Manual Entry"
+    case manualEntry = "Manual"        // API compatibility - unique raw value
     case healthKit = "Apple Health"
     case renpho = "Renpho Scale"
+    case smartScale = "Smart Scale"    // API compatibility
     case other = "Other Scale"
 }

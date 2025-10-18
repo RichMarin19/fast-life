@@ -1,0 +1,57 @@
+# SwiftFormat Configuration for Fast LIFe
+# Enforces consistent code formatting across the project
+
+# Specify the Swift version
+--swiftversion 5.9
+
+# Formatting rules
+--indent 4
+--indentcase false
+--trimwhitespace always
+--commas always
+--decimalgrouping 3
+--exponentgrouping disabled
+--fractiongrouping disabled
+--hexgrouping 4
+--octalgrouping 4
+--binarygrouping 4
+
+# Wrapping rules
+--maxwidth 120
+--wraparguments before-first
+--wrapparameters before-first
+--wrapcollections before-first
+--wrapreturntype preserve
+--closingparen balanced
+
+# Empty braces/brackets
+--emptybraces spaced
+--emptybrackets no-space
+
+# Header comments
+--header strip
+
+# Import organization
+--importgrouping testable-bottom
+
+# Self removal
+--self remove
+
+# Semicolons
+--semicolons never
+
+# Extension access control
+--extensionacl on-declarations
+
+# Organize declarations
+--organizetypes actor,class,enum,struct
+
+# Excluded files/folders
+--exclude Pods,fastlane,.build,DerivedData,.swiftpm,FastingTrackerTests/Fixtures
+
+# Rules to enable
+--enable isEmpty
+--enable sortedImports
+--enable redundantSelf
+--enable redundantReturn
+--enable redundantNilInit

@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class FastingManager: ObservableObject {
     @Published var currentSession: FastingSession?
     @Published var fastingHistory: [FastingSession] = []
@@ -106,28 +107,27 @@ class FastingManager: ObservableObject {
     }
 
     func startFast() {
-        print("\n⏱️  === START FAST ===")
+        AppLogger.info("Starting new fasting session", category: AppLogger.fasting)
 
         // ROADMAP REQUIREMENT: Guard overlapping sessions - reject invalid state transition (start→start)
         // Following Apple State Management best practices
         // Reference: https://developer.apple.com/documentation/swift/maintaining_state_in_your_apps
         guard currentSession == nil else {
-            print("❌ INVALID STATE TRANSITION: Cannot start fast - session already active")
+            AppLogger.error("Cannot start fast - session already active", category: AppLogger.fasting)
             AppLogger.error("Prevented invalid fasting state transition: start→start", category: AppLogger.fasting)
             return
         }
 
-        print("Goal: \(fastingGoalHours)h")
-        print("Current Streak: \(currentStreak)")
+        AppLogger.info("Fast configuration: goal=\(fastingGoalHours)h, currentStreak=\(currentStreak)", category: AppLogger.fasting)
 
         // Calculate eating window duration if there's a previous fast
         var eatingWindowDuration: TimeInterval? = nil
         if let lastFast = fastingHistory.first, let lastEndTime = lastFast.endTime {
             eatingWindowDuration = Date().timeIntervalSince(lastEndTime)
             let hours = eatingWindowDuration! / 3600
-            print("🍽️  Eating window: \(String(format: "%.1f", hours))h (since last fast ended)")
+            AppLogger.debug("Eating window calculated: \(String(format: "%.1f", hours))h since last fast ended", category: AppLogger.fasting)
         } else {
-            print("🍽️  No previous fast found - first fast or no history")
+            AppLogger.debug("No previous fast found - first fast or no history", category: AppLogger.fasting)
         }
 
         let session = FastingSession(startTime: Date(), goalHours: fastingGoalHours, eatingWindowDuration: eatingWindowDuration, source: .manual)
@@ -146,27 +146,26 @@ class FastingManager: ObservableObject {
         // Sync to HealthKit when starting fasting session
         syncActiveSessionToHealthKit()
 
-        print("✅ Fast started successfully")
-        print("=========================\n")
+        AppLogger.info("Fast started successfully", category: AppLogger.fasting)
     }
 
     func stopFast() {
-        print("\n🛑 === STOP FAST ===")
+        AppLogger.info("Stopping current fasting session", category: AppLogger.fasting)
 
         // ROADMAP REQUIREMENT: Reject invalid state transitions (end without active)
         // Following Apple State Management best practices
         guard var session = currentSession else {
-            print("❌ INVALID STATE TRANSITION: Cannot stop fast - no active session")
+            AppLogger.error("Cannot stop fast - no active session", category: AppLogger.fasting)
             AppLogger.error("Prevented invalid fasting state transition: end without active", category: AppLogger.fasting)
             return
         }
 
         session.endTime = Date()
         let duration = session.endTime!.timeIntervalSince(session.startTime) / 3600
-        print("Duration: \(String(format: "%.2f", duration))h")
-        print("Goal: \(session.goalHours ?? 16)h")
+        AppLogger.info("Fast session completed: duration=\(String(format: "%.2f", duration))h", category: AppLogger.fasting)
+        AppLogger.debug("Session goal: \(session.goalHours ?? 16)h", category: AppLogger.fasting)
         let goalStatus = session.metGoal ? "✅" : "❌"
-        print("Met Goal: \(goalStatus)")
+        AppLogger.info("Goal achievement status: metGoal=\(goalStatus)", category: AppLogger.fasting)
 
         // Add to history FIRST (one entry per day)
         addToHistory(session)
@@ -186,8 +185,7 @@ class FastingManager: ObservableObject {
         // Cancel notification
         NotificationManager.shared.cancelGoalNotification()
 
-        print("✅ Fast stopped successfully")
-        print("====================\n")
+        AppLogger.info("Fast stopped successfully", category: AppLogger.fasting)
     }
 
     func deleteFast() {
@@ -199,6 +197,12 @@ class FastingManager: ObservableObject {
 
         // Cancel notification
         NotificationManager.shared.cancelGoalNotification()
+    }
+
+    /// API compatibility: deleteCurrentFast delegates to deleteFast
+    /// Following established naming convention compatibility pattern
+    func deleteCurrentFast() {
+        deleteFast()
     }
 
     func stopFastWithCustomTimes(startTime: Date, endTime: Date) {
@@ -224,10 +228,8 @@ class FastingManager: ObservableObject {
     }
 
     func addManualFast(startTime: Date, endTime: Date, goalHours: Double) {
-        print("\n📝 === ADD MANUAL FAST ===")
-        print("Start: \(startTime)")
-        print("End: \(endTime)")
-        print("Goal: \(goalHours)h")
+        AppLogger.info("Adding manual fast session", category: AppLogger.fasting)
+        AppLogger.debug("Manual fast parameters: start=\(startTime), end=\(endTime), goal=\(goalHours)h", category: AppLogger.fasting)
 
         // Calculate eating window if there's a previous fast before this manual entry
         var eatingWindowDuration: TimeInterval? = nil
@@ -236,7 +238,7 @@ class FastingManager: ObservableObject {
             if startTime > lastEndTime {
                 eatingWindowDuration = startTime.timeIntervalSince(lastEndTime)
                 let hours = eatingWindowDuration! / 3600
-                print("🍽️  Eating window: \(String(format: "%.1f", hours))h (since last fast ended)")
+                AppLogger.debug("Eating window for manual fast: \(String(format: "%.1f", hours))h since last fast ended", category: AppLogger.fasting)
             }
         }
 
@@ -244,10 +246,10 @@ class FastingManager: ObservableObject {
         session.endTime = endTime
 
         let duration = endTime.timeIntervalSince(startTime) / 3600
-        print("Duration: \(String(format: "%.2f", duration))h")
+        AppLogger.info("Fast session completed: duration=\(String(format: "%.2f", duration))h", category: AppLogger.fasting)
         let goalStatus = session.metGoal ? "✅" : "❌"
-        print("Met Goal: \(goalStatus)")
-        print("⚠️  Manual fasts do NOT trigger notifications (by design)")
+        AppLogger.info("Goal achievement status: metGoal=\(goalStatus)", category: AppLogger.fasting)
+        AppLogger.debug("Manual fasts do not trigger notifications by design", category: AppLogger.fasting)
 
         // Add to history FIRST (one entry per day)
         addToHistory(session)
@@ -256,50 +258,41 @@ class FastingManager: ObservableObject {
         // This ensures the new session is included in streak calculations
         updateStreak(for: session)
 
-        print("✅ Manual fast added successfully")
-        print("==========================\n")
+        AppLogger.info("Manual fast added successfully", category: AppLogger.fasting)
     }
 
     func deleteFast(for date: Date) {
-        print("\n🗑️  === DELETE FAST ===")
-        print("Date: \(date)")
-        let threadName = Thread.current.isMainThread ? "Main" : "Background"
-        print("Thread: \(threadName)")
+        AppLogger.info("Deleting fast session for date: \(date)", category: AppLogger.fasting)
 
         // THREAD SAFETY: Synchronize deletion with serial queue
         historyQueue.async { [weak self] in
             guard let self = self else { return }
 
-            print("📍 Deletion executing on historyQueue")
+            AppLogger.debug("Executing deletion on background queue", category: AppLogger.fasting)
 
             let calendar = Calendar.current
             let targetDay = calendar.startOfDay(for: date)
 
-            // Remove the fast for this day (must update on main thread for @Published)
-            DispatchQueue.main.async {
+            // Remove the fast for this day and recalculate streaks (must update on main thread for @Published)
+            Task { @MainActor in
                 let beforeCount = self.fastingHistory.count
                 self.fastingHistory.removeAll { session in
                     calendar.startOfDay(for: session.startTime) == targetDay
                 }
                 let afterCount = self.fastingHistory.count
-                print("📊 History count: \(beforeCount) → \(afterCount)")
+                AppLogger.debug("History updated after deletion: \(beforeCount) → \(afterCount)", category: AppLogger.fasting)
                 self.saveHistory()
+
+                // Recalculate streaks from history (deleting may break streak)
+                self.calculateStreakFromHistory()
             }
 
-            // Recalculate streaks from history (deleting may break streak)
-            // This already uses historyQueue internally, so will execute after deletion completes
-            self.calculateStreakFromHistory()
-
-            print("✅ Fast deleted successfully")
-            print("====================\n")
+            AppLogger.info("Fast deleted successfully", category: AppLogger.fasting)
         }
     }
 
     private func addToHistory(_ session: FastingSession) {
-        print("\n📥 === ADD TO HISTORY ===")
-        print("Session Date: \(session.startTime)")
-        let threadName = Thread.current.isMainThread ? "Main" : "Background"
-        print("Thread: \(threadName)")
+        AppLogger.debug("Adding session to history: date=\(session.startTime), duration=\(session.duration)h", category: AppLogger.fasting)
 
         // ROADMAP REQUIREMENT: Handle day-boundary and time zone transitions
         // Following Apple Calendar best practices for timezone-aware date handling
@@ -309,8 +302,8 @@ class FastingManager: ObservableObject {
 
         // Log timezone information for debugging day-boundary issues
         let timeZone = calendar.timeZone
-        print("🌍 Timezone: \(timeZone.identifier)")
-        print("📅 Session day (start of day): \(sessionDay)")
+        AppLogger.debug("Session timezone: \(timeZone.identifier)", category: AppLogger.fasting)
+        AppLogger.debug("Session day (start of day): \(sessionDay)", category: AppLogger.fasting)
 
         let beforeCount = fastingHistory.count
 
@@ -318,11 +311,11 @@ class FastingManager: ObservableObject {
         if let existingIndex = fastingHistory.firstIndex(where: {
             calendar.startOfDay(for: $0.startTime) == sessionDay
         }) {
-            print("🔄 Replacing existing fast for this day")
+            AppLogger.debug("Replacing existing fast for this day", category: AppLogger.fasting)
             // Replace existing fast for this day
             fastingHistory[existingIndex] = session
         } else {
-            print("➕ Adding new fast")
+            AppLogger.debug("Adding new fast to history", category: AppLogger.fasting)
             // Add new fast
             fastingHistory.append(session)
         }
@@ -330,13 +323,12 @@ class FastingManager: ObservableObject {
         // Sort by date (most recent first)
         fastingHistory.sort { $0.startTime > $1.startTime }
 
-        print("📊 History count: \(beforeCount) → \(fastingHistory.count)")
+        AppLogger.debug("History count updated: \(beforeCount) → \(fastingHistory.count)", category: AppLogger.fasting)
 
         // No limit on history - need all data for lifetime statistics and streak calculations
         saveHistory()
 
-        print("✅ Added to history successfully")
-        print("========================\n")
+        AppLogger.info("Added to history successfully", category: AppLogger.fasting)
     }
 
     private func startTimer() {
@@ -410,35 +402,33 @@ class FastingManager: ObservableObject {
     /// Call this from MainTabView.onAppear() to defer heavy data loading until after first frame renders
     /// This prevents white screen lag on app launch
     func loadHistoryAsync() {
-        print("\n📂 === LOAD HISTORY ASYNC ===")
-        let threadName = Thread.current.isMainThread ? "Main" : "Background"
-        print("Thread: \(threadName)")
+        AppLogger.debug("Loading fasting history asynchronously", category: AppLogger.fasting)
 
         // THREAD SAFETY: Use historyQueue instead of global queue for synchronized access
         historyQueue.async { [weak self] in
             guard let self = self else { return }
 
-            print("📍 Loading history on historyQueue")
+            AppLogger.debug("Executing history load on background queue", category: AppLogger.fasting)
 
-            // Load and decode history on background thread
-            guard let history = self.dataStore.safeLoad([FastingSession].self, forKey: self.historyKey) else {
-                print("⚠️  No history found or decode failed")
-                return
-            }
+            // Swift 6 Compliance: Access MainActor-isolated properties within Task block
+            Task { @MainActor in
+                // Load and decode history on background thread with MainActor access
+                guard let history = self.dataStore.safeLoad([FastingSession].self, forKey: self.historyKey) else {
+                    AppLogger.debug("No history found or decode failed", category: AppLogger.fasting)
+                    return
+                }
 
-            let filteredHistory = history.filter { $0.isComplete }.sorted { $0.startTime > $1.startTime }
-            print("📊 Loaded \(filteredHistory.count) complete fasts from storage")
+                let filteredHistory = history.filter { $0.isComplete }.sorted { $0.startTime > $1.startTime }
+                AppLogger.debug("History loaded from storage: \(filteredHistory.count) complete fasts", category: AppLogger.fasting)
 
-            // Update @Published property on main thread
-            DispatchQueue.main.async {
+                // Update @Published property and recalculate streaks on main thread
                 self.fastingHistory = filteredHistory
-                print("✅ History updated on main thread")
+                AppLogger.debug("History updated on main thread", category: AppLogger.fasting)
+
+                // Recalculate streaks after history update
+                self.calculateStreakFromHistory()
             }
 
-            // Recalculate streaks (already uses historyQueue internally)
-            self.calculateStreakFromHistory()
-
-            print("==========================\n")
         }
     }
 
@@ -467,44 +457,40 @@ class FastingManager: ObservableObject {
     }
 
     private func calculateStreakFromHistory() {
-        print("\n🔥 === CALCULATE STREAK FROM HISTORY ===")
-        let threadName = Thread.current.isMainThread ? "Main" : "Background"
-        print("Called from thread: \(threadName)")
+        AppLogger.debug("Starting streak calculation from fasting history", category: AppLogger.fasting)
 
-        // THREAD SAFETY: Execute on serial queue to prevent reading stale fastingHistory
-        // Ensures streak calculation always uses most up-to-date history
-        // Reference: https://developer.apple.com/documentation/dispatch/dispatchqueue
-        historyQueue.async { [weak self] in
+        // SWIFT CONCURRENCY: Use Task to properly isolate @MainActor data access
+        // Ensures streak calculation uses up-to-date history with proper actor isolation
+        // Reference: https://developer.apple.com/documentation/swift/mainactor
+        Task { @MainActor [weak self] in
             guard let self = self else { return }
 
-            print("📍 Executing on historyQueue (serial, thread-safe)")
+            AppLogger.debug("Executing streak calculation on MainActor", category: AppLogger.fasting)
 
             let calendar = Calendar.current
             let today = calendar.startOfDay(for: Date())
 
-            // Capture fastingHistory snapshot inside serial queue (thread-safe read)
+            // Access fastingHistory directly - we're on MainActor
             let historyCopy = self.fastingHistory
-            print("📊 History snapshot: \(historyCopy.count) total fasts")
+            AppLogger.debug("Processing fasting history: \(historyCopy.count) total sessions", category: AppLogger.fasting)
 
             // Get all goal-met fasts sorted by date (most recent first)
             let goalMetFasts = historyCopy
                 .filter { $0.metGoal }
                 .sorted { $0.startTime > $1.startTime }
 
-            print("✅ Goal-met fasts: \(goalMetFasts.count)")
+            AppLogger.debug("Goal-met fasts found: \(goalMetFasts.count) sessions", category: AppLogger.fasting)
 
             guard !goalMetFasts.isEmpty else {
-                print("⚠️  No goal-met fasts → Streak = 0")
-                DispatchQueue.main.async {
-                    self.currentStreak = 0
-                    self.saveStreak()
-                }
+                AppLogger.debug("No goal-met fasts found, streak = 0", category: AppLogger.fasting)
+                self.currentStreak = 0
+                self.saveStreak()
                 return
             }
 
             let formatter = DateFormatter()
             formatter.dateStyle = .short
-            print("📅 Most recent goal-met fast: \(formatter.string(from: goalMetFasts[0].startTime))")
+            AppLogger.debug("Most recent goal-met fast: \(formatter.string(from: goalMetFasts[0].startTime))", category: AppLogger.fasting)
 
             // Calculate current streak (must include today or yesterday)
             let mostRecentFast = goalMetFasts[0]
@@ -573,29 +559,22 @@ class FastingManager: ObservableObject {
             }
 
             // Update @Published properties on main thread
-            print("\n📈 STREAK CALCULATION RESULTS:")
-            let currentDayText = currentStreakValue == 1 ? "day" : "days"
-            let longestDayText = maxStreak == 1 ? "day" : "days"
-            print("   Current Streak: \(currentStreakValue) \(currentDayText)")
-            print("   Longest Streak: \(maxStreak) \(longestDayText)")
+            AppLogger.info("Streak calculation completed: current=\(currentStreakValue), longest=\(maxStreak)", category: AppLogger.fasting)
 
-            DispatchQueue.main.async {
-                let oldCurrent = self.currentStreak
-                let oldLongest = self.longestStreak
+            let oldCurrent = self.currentStreak
+            let oldLongest = self.longestStreak
 
-                self.currentStreak = currentStreakValue
-                self.longestStreak = maxStreak
-                self.saveStreak()
-                self.saveLongestStreak()
+            self.currentStreak = currentStreakValue
+            self.longestStreak = maxStreak
+            self.saveStreak()
+            self.saveLongestStreak()
 
-                if oldCurrent != currentStreakValue || oldLongest != maxStreak {
-                    print("🔄 Streak updated: Current \(oldCurrent) → \(currentStreakValue), Longest \(oldLongest) → \(maxStreak)")
-                } else {
-                    print("✅ Streak unchanged")
-                }
-
-                print("=====================================\n")
+            if oldCurrent != currentStreakValue || oldLongest != maxStreak {
+                AppLogger.info("Streak updated: current \(oldCurrent)→\(currentStreakValue), longest \(oldLongest)→\(maxStreak)", category: AppLogger.fasting)
+            } else {
+                AppLogger.debug("Streak unchanged", category: AppLogger.fasting)
             }
+
         } // end historyQueue.async
     }
 
@@ -670,49 +649,43 @@ class FastingManager: ObservableObject {
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
-            DispatchQueue.main.async {
-                // Use history queue for thread-safe history modification
-                self.historyQueue.async {
-                    // Track newly added entries for accurate reporting
-                    var newlyAddedCount = 0
+            // Industry Standard: Process HealthKit data on MainActor for @Published property access
+            Task { @MainActor in
+                // Track newly added entries for accurate reporting
+                var newlyAddedCount = 0
 
-                    // Import fasting sessions from HealthKit with robust deduplication
-                    for hkSession in fastingSessions {
-                        // Comprehensive duplicate check following WeightManager pattern
-                        let isDuplicate = self.fastingHistory.contains { existingSession in
-                            abs(existingSession.startTime.timeIntervalSince(hkSession.startTime)) < 300 && // Within 5 minutes
-                            existingSession.isComplete == hkSession.isComplete &&
-                            (existingSession.endTime == nil) == (hkSession.endTime == nil) // Both nil or both non-nil
-                        }
-
-                        if !isDuplicate {
-                            let session = FastingSession(
-                                startTime: hkSession.startTime,
-                                endTime: hkSession.endTime,
-                                goalHours: hkSession.goalHours,
-                                eatingWindowDuration: hkSession.eatingWindowDuration,
-                                source: .healthKit
-                            )
-                            self.fastingHistory.append(session)
-                            newlyAddedCount += 1
-                        }
+                // Import fasting sessions from HealthKit with robust deduplication
+                for hkSession in fastingSessions {
+                    // Comprehensive duplicate check following WeightManager pattern
+                    let isDuplicate = self.fastingHistory.contains { existingSession in
+                        abs(existingSession.startTime.timeIntervalSince(hkSession.startTime)) < 300 && // Within 5 minutes
+                        existingSession.isComplete == hkSession.isComplete &&
+                        (existingSession.endTime == nil) == (hkSession.endTime == nil) // Both nil or both non-nil
                     }
 
-                    // Update @Published properties on main thread
-                    DispatchQueue.main.async {
-                        // Sort by start time (most recent first) and save
-                        self.fastingHistory.sort { $0.startTime > $1.startTime }
-                        self.saveHistory()
-
-                        // Recalculate streaks after sync
-                        self.calculateStreakFromHistory()
-
-                        // Report sync results
-                        AppLogger.info("HealthKit fasting sync completed: \\(newlyAddedCount) new fasting sessions added", category: AppLogger.fasting)
-                        completion?(newlyAddedCount, nil)
+                    if !isDuplicate {
+                        let session = FastingSession(
+                            startTime: hkSession.startTime,
+                            endTime: hkSession.endTime,
+                            goalHours: hkSession.goalHours,
+                            eatingWindowDuration: hkSession.eatingWindowDuration,
+                            source: .healthKit
+                        )
+                        self.fastingHistory.append(session)
+                        newlyAddedCount += 1
                     }
                 }
+
+                // Sort by start time (most recent first) and save
+                self.fastingHistory.sort { $0.startTime > $1.startTime }
+                self.saveHistory()
+
+                // Recalculate streaks after sync
+                self.calculateStreakFromHistory()
+
+                // Report sync results
+                AppLogger.info("HealthKit fasting sync completed: \(newlyAddedCount) new fasting sessions added", category: AppLogger.fasting)
+                completion?(newlyAddedCount, nil)
             }
         }
     }
@@ -726,7 +699,7 @@ class FastingManager: ObservableObject {
             return
         }
 
-        AppLogger.info("Starting historical fasting sync from HealthKit from \\(startDate)", category: AppLogger.fasting)
+        AppLogger.info("Starting historical fasting sync from HealthKit from \(startDate)", category: AppLogger.fasting)
 
         HealthKitManager.shared.fetchFastingSessions(startDate: startDate) { [weak self] (fastingSessions: [FastingSession]) in
             guard let self = self else {
@@ -736,51 +709,45 @@ class FastingManager: ObservableObject {
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
-            DispatchQueue.main.async {
-                // Use history queue for thread-safe history modification
-                self.historyQueue.async {
-                    // Track newly added entries for accurate reporting
-                    var newlyAddedCount = 0
+            // Industry Standard: Process historical HealthKit data on MainActor for @Published property access
+            Task { @MainActor in
+                // Track newly added entries for accurate reporting
+                var newlyAddedCount = 0
 
-                    // Merge HealthKit fasting sessions with local sessions using robust deduplication
-                    for hkSession in fastingSessions {
-                        // Historical import uses more flexible duplicate check
-                        let isDuplicate = self.fastingHistory.contains { existingSession in
-                            abs(existingSession.startTime.timeIntervalSince(hkSession.startTime)) < 600 && // Within 10 minutes (flexible for historical)
-                            existingSession.isComplete == hkSession.isComplete
-                        }
-
-                        if !isDuplicate {
-                            let session = FastingSession(
-                                startTime: hkSession.startTime,
-                                endTime: hkSession.endTime,
-                                goalHours: hkSession.goalHours,
-                                eatingWindowDuration: hkSession.eatingWindowDuration,
-                                source: .healthKit
-                            )
-                            self.fastingHistory.append(session)
-                            newlyAddedCount += 1
-                        }
+                // Merge HealthKit fasting sessions with local sessions using robust deduplication
+                for hkSession in fastingSessions {
+                    // Historical import uses more flexible duplicate check
+                    let isDuplicate = self.fastingHistory.contains { existingSession in
+                        abs(existingSession.startTime.timeIntervalSince(hkSession.startTime)) < 600 && // Within 10 minutes (flexible for historical)
+                        existingSession.isComplete == hkSession.isComplete
                     }
 
-                    // Update @Published properties on main thread
-                    DispatchQueue.main.async {
-                        // Sort by start time (most recent first)
-                        self.fastingHistory.sort { $0.startTime > $1.startTime }
-                        self.saveHistory()
-
-                        // Recalculate streaks after sync
-                        self.calculateStreakFromHistory()
-
-                        // Report actual sync results
-                        AppLogger.info("Historical HealthKit fasting sync completed: \\(newlyAddedCount) new fasting sessions imported from \\(fastingSessions.count) total sessions", category: AppLogger.fasting)
-                        completion(newlyAddedCount, nil)
+                    if !isDuplicate {
+                        let session = FastingSession(
+                            startTime: hkSession.startTime,
+                            endTime: hkSession.endTime,
+                            goalHours: hkSession.goalHours,
+                            eatingWindowDuration: hkSession.eatingWindowDuration,
+                            source: .healthKit
+                        )
+                        self.fastingHistory.append(session)
+                        newlyAddedCount += 1
                     }
+                }
+
+                // Sort by start time (most recent first)
+                self.fastingHistory.sort { $0.startTime > $1.startTime }
+                self.saveHistory()
+
+                // Recalculate streaks after sync
+                self.calculateStreakFromHistory()
+
+                // Report actual sync results
+                AppLogger.info("Historical HealthKit fasting sync completed: \(newlyAddedCount) new fasting sessions imported from \(fastingSessions.count) total sessions", category: AppLogger.fasting)
+                completion(newlyAddedCount, nil)
                 }
             }
         }
-    }
 
     /// Manual sync with deletion detection (Universal Method #3)
     func syncFromHealthKitWithReset(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
@@ -791,7 +758,7 @@ class FastingManager: ObservableObject {
             return
         }
 
-        AppLogger.info("Starting manual fasting sync with anchor reset for deletion detection from \\(startDate)", category: AppLogger.fasting)
+        AppLogger.info("Starting manual fasting sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.fasting)
 
         HealthKitManager.shared.fetchFastingSessions(startDate: startDate) { [weak self] (fastingSessions: [FastingSession]) in
             guard let self = self else {
@@ -801,68 +768,62 @@ class FastingManager: ObservableObject {
                 return
             }
 
-            // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
-            DispatchQueue.main.async {
-                // Use history queue for thread-safe history modification
-                self.historyQueue.async {
-                    // Industry Standard: Complete sync with deletion detection
-                    // Step 1: Remove HealthKit entries that are no longer in Apple Health
-                    let originalCount = self.fastingHistory.count
+            // Industry Standard: Manual sync with deletion detection on MainActor for @Published property access
+            Task { @MainActor in
+                // Industry Standard: Complete sync with deletion detection
+                // Step 1: Remove HealthKit entries that are no longer in Apple Health
+                let originalCount = self.fastingHistory.count
 
-                    self.fastingHistory.removeAll { fastLifeSession in
-                        // Only remove HealthKit-sourced sessions (preserve manual sessions)
-                        guard fastLifeSession.source == .healthKit else {
-                            return false
-                        }
-
-                        // Check if this Fast LIFe fasting session still exists in current HealthKit data
-                        let stillExistsInHealthKit = fastingSessions.contains { healthKitSession in
-                            let timeDiff = abs(fastLifeSession.startTime.timeIntervalSince(healthKitSession.startTime))
-                            return timeDiff < 300 && // Within 5 minutes
-                                   fastLifeSession.isComplete == healthKitSession.isComplete
-                        }
-
-                        return !stillExistsInHealthKit
-                    }
-                    _ = originalCount - self.fastingHistory.count  // Explicitly ignore deletedCount calculation
-                    AppLogger.info("Manual sync: Removed \\(originalCount - self.fastingHistory.count) obsolete fasting sessions", category: AppLogger.fasting)
-
-                    // Step 2: Add new HealthKit fasting sessions not already in Fast LIFe
-                    var addedCount = 0
-                    for healthKitSession in fastingSessions {
-                        let alreadyExists = self.fastingHistory.contains { fastLifeSession in
-                            let timeDiff = abs(fastLifeSession.startTime.timeIntervalSince(healthKitSession.startTime))
-                            return timeDiff < 300 &&
-                                   fastLifeSession.isComplete == healthKitSession.isComplete
-                        }
-
-                        if !alreadyExists {
-                            let session = FastingSession(
-                                startTime: healthKitSession.startTime,
-                                endTime: healthKitSession.endTime,
-                                goalHours: healthKitSession.goalHours,
-                                eatingWindowDuration: healthKitSession.eatingWindowDuration,
-                                source: .healthKit
-                            )
-                            self.fastingHistory.append(session)
-                            addedCount += 1
-                        }
+                self.fastingHistory.removeAll { fastLifeSession in
+                    // Only remove HealthKit-sourced sessions (preserve manual sessions)
+                    guard fastLifeSession.source == .healthKit else {
+                        return false
                     }
 
-                    // Update @Published properties on main thread
-                    DispatchQueue.main.async {
-                        // Sort by start time (most recent first) and save
-                        self.fastingHistory.sort { $0.startTime > $1.startTime }
-                        self.saveHistory()
+                    // Check if this Fast LIFe fasting session still exists in current HealthKit data
+                    let stillExistsInHealthKit = fastingSessions.contains { healthKitSession in
+                        let timeDiff = abs(fastLifeSession.startTime.timeIntervalSince(healthKitSession.startTime))
+                        return timeDiff < 300 && // Within 5 minutes
+                               fastLifeSession.isComplete == healthKitSession.isComplete
+                    }
 
-                        // Recalculate streaks after sync
-                        self.calculateStreakFromHistory()
+                    return !stillExistsInHealthKit
+                }
+                _ = originalCount - self.fastingHistory.count  // Explicitly ignore deletedCount calculation
+                AppLogger.info("Manual sync: Removed \(originalCount - self.fastingHistory.count) obsolete fasting sessions", category: AppLogger.fasting)
 
-                        // Report comprehensive sync results
-                        AppLogger.info("Manual HealthKit fasting sync completed: \\(addedCount) sessions added, \\(originalCount - self.fastingHistory.count) sessions removed, \\(fastingSessions.count) total HealthKit sessions", category: AppLogger.fasting)
-                        completion(addedCount, nil)
+                // Step 2: Add new HealthKit fasting sessions not already in Fast LIFe
+                var addedCount = 0
+                for healthKitSession in fastingSessions {
+                    let alreadyExists = self.fastingHistory.contains { fastLifeSession in
+                        let timeDiff = abs(fastLifeSession.startTime.timeIntervalSince(healthKitSession.startTime))
+                        return timeDiff < 300 &&
+                               fastLifeSession.isComplete == healthKitSession.isComplete
+                    }
+
+                    if !alreadyExists {
+                        let session = FastingSession(
+                            startTime: healthKitSession.startTime,
+                            endTime: healthKitSession.endTime,
+                            goalHours: healthKitSession.goalHours,
+                            eatingWindowDuration: healthKitSession.eatingWindowDuration,
+                            source: .healthKit
+                        )
+                        self.fastingHistory.append(session)
+                        addedCount += 1
                     }
                 }
+
+                // Sort by start time (most recent first) and save
+                self.fastingHistory.sort { $0.startTime > $1.startTime }
+                self.saveHistory()
+
+                // Recalculate streaks after sync
+                self.calculateStreakFromHistory()
+
+                // Report comprehensive sync results
+                AppLogger.info("Manual HealthKit fasting sync completed: \(addedCount) sessions added, \(originalCount - self.fastingHistory.count) sessions removed, \(fastingSessions.count) total HealthKit sessions", category: AppLogger.fasting)
+                completion(addedCount, nil)
             }
         }
     }
@@ -887,7 +848,7 @@ class FastingManager: ObservableObject {
                     if let error = error {
                         AppLogger.error("Observer-triggered fasting sync failed", category: AppLogger.fasting, error: error)
                     } else if count > 0 {
-                        AppLogger.info("Observer-triggered fasting sync: \\(count) new fasting sessions added", category: AppLogger.fasting)
+                        AppLogger.info("Observer-triggered fasting sync: \(count) new fasting sessions added", category: AppLogger.fasting)
                     }
                 }
             }
@@ -906,7 +867,7 @@ class FastingManager: ObservableObject {
     // MARK: - Preference Management (Universal Pattern)
 
     func setSyncPreference(_ enabled: Bool) {
-        AppLogger.info("Setting fasting sync preference to \\(enabled)", category: AppLogger.fasting)
+        AppLogger.info("Setting fasting sync preference to \(enabled)", category: AppLogger.fasting)
         syncWithHealthKit = enabled
         _ = dataStore.safeSave(enabled, forKey: syncPreferenceKey)
 

@@ -98,11 +98,10 @@ struct FastingSettingsView: View {
             }
             .navigationTitle("Fasting Settings")
             .navigationBarTitleDisplayMode(.inline)
+            .navigationBarBackButtonHidden(false)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        dismiss()
-                    }
+                Button("Done") {
+                    dismiss()
                 }
             }
         }

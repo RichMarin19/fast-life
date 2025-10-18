@@ -128,7 +128,7 @@ enum TrackerType: String, CaseIterable, Identifiable {
         case .fasting: return "Fasting"
         case .hydration: return "Hydration"
         case .sleep: return "Sleep"
-        case .mood: return "Mood"
+        case .mood: return "Mood & Energy"
         }
     }
 
@@ -141,17 +141,17 @@ enum TrackerType: String, CaseIterable, Identifiable {
         case .mood: return "face.smiling"
         }
     }
-}
 
-// MARK: - Shared UI Utilities
-// Following Apple's architecture guidelines for shared UI types
-
-/// Wrapper for Date that conforms to Identifiable for use in SwiftUI sheets and lists
-/// Using TimeInterval as ID for performance optimization per Apple guidelines
-struct IdentifiableDate: Identifiable {
-    let date: Date
-
-    var id: TimeInterval {
-        date.timeIntervalSince1970
+    // Luxury SF Symbol icons following luxury spec design guidelines
+    // Style: Minimalist line icons, 2pt rounded strokes, 24pt/28pt bounding box
+    var icon: String {
+        switch self {
+        case .weight: return "scalemass.fill"           // Modern scale outline
+        case .fasting: return "timer.circle.fill"       // Circular timer design
+        case .hydration: return "drop.fill"             // Single water drop silhouette
+        case .sleep: return "moon.circle.fill"          // Crescent moon outline
+        case .mood: return "face.smiling.fill"          // Simple smile design
+        }
     }
 }
+

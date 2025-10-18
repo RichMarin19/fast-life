@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 
+@MainActor
 class MoodManager: ObservableObject {
     @Published var moodEntries: [MoodEntry] = []
 
@@ -13,7 +14,8 @@ class MoodManager: ObservableObject {
     private let hasCompletedInitialImportKey = "moodHasCompletedInitialImport"
 
     /// Observer suppression flag to prevent infinite sync loops during manual operations
-    private var isSuppressingObserver = false
+    /// NOTE: nonisolated for thread-safe access from HealthKit background contexts
+    private nonisolated(unsafe) var isSuppressingObserver = false
 
     /// Observer query for automatic HealthKit sync
     private var observerQuery: Any? // HKObserverQuery type-erased
@@ -166,6 +168,37 @@ class MoodManager: ObservableObject {
 
         let totalEnergy = recentEntries.reduce(0) { $0 + $1.energyLevel }
         return Double(totalEnergy) / Double(recentEntries.count)
+    }
+
+    /// Today's average mood level
+    /// Following Apple HealthKit patterns for daily aggregations
+    var todayAverageMood: Double? {
+        let todayEntries = todayEntries()
+        guard !todayEntries.isEmpty else { return nil }
+
+        let totalMood = todayEntries.reduce(0) { $0 + $1.moodLevel }
+        return Double(totalMood) / Double(todayEntries.count)
+    }
+
+    /// Today's average energy level
+    /// Following Apple HealthKit patterns for daily aggregations
+    var todayAverageEnergy: Double? {
+        let todayEntries = todayEntries()
+        guard !todayEntries.isEmpty else { return nil }
+
+        let totalEnergy = todayEntries.reduce(0) { $0 + $1.energyLevel }
+        return Double(totalEnergy) / Double(todayEntries.count)
+    }
+
+    /// Get today's mood entries
+    /// Following existing HydrationManager.todaysDrinks() pattern for consistency
+    private func todayEntries() -> [MoodEntry] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+
+        return moodEntries.filter { entry in
+            calendar.isDate(entry.date, inSameDayAs: today)
+        }
     }
 
     /// Get entries for a specific date range

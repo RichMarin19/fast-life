@@ -2,7 +2,8 @@ import SwiftUI
 import Charts
 
 struct WeightTrackingView: View {
-    @StateObject private var weightManager = WeightManager()
+    @EnvironmentObject var weightManager: WeightManager
+    @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
     @ObservedObject private var healthKitManager = HealthKitManager.shared
     @ObservedObject private var nudgeManager = HealthKitNudgeManager.shared
 
@@ -30,21 +31,21 @@ struct WeightTrackingView: View {
                 HealthKitNudgeView(
                     dataType: .weight,
                     onConnect: {
-                        print("📱 WeightTrackingView: HealthKit nudge - requesting weight authorization")
+                        AppLogger.info("HealthKit nudge - requesting weight authorization", category: AppLogger.healthKit)
                         HealthKitManager.shared.requestWeightAuthorization { success, error in
                             DispatchQueue.main.async {
                                 if success {
-                                    print("✅ WeightTrackingView: Weight authorization granted from nudge")
+                                    AppLogger.info("Weight authorization granted from nudge", category: AppLogger.healthKit)
                                     weightManager.syncWithHealthKit = true
                                     showHealthKitNudge = false
                                 } else {
-                                    print("❌ WeightTrackingView: Weight authorization denied from nudge")
+                                    AppLogger.info("Weight authorization denied from nudge", category: AppLogger.healthKit)
                                 }
                             }
                         }
                     },
                     onDismiss: {
-                        print("📱 WeightTrackingView: HealthKit nudge dismissed")
+                        AppLogger.info("HealthKit nudge dismissed", category: AppLogger.ui)
                         showHealthKitNudge = false
                         nudgeManager.dismissNudge(for: .weight)
                     }
@@ -54,11 +55,28 @@ struct WeightTrackingView: View {
         return nil
     }
 
+    /// Milestone Ring Card with computed data from weight manager
+    /// TODO: Replace placeholder data with actual milestone calculations
+    private var milestoneRingCard: some View {
+        MilestoneRingCard(
+            progress: 0.65,  // TODO: Calculate actual progress to next milestone
+            milestoneIndex: 6,  // TODO: Calculate current milestone number
+            centerValue: weightManager.latestWeight.map { String(format: "%.1f", weightManager.displayWeight(for: $0)) } ?? "---",
+            dateText: weightManager.latestWeight.map { $0.date.formatted(date: .abbreviated, time: .omitted) } ?? "",
+            leftStat: "Start weight",  // TODO: Get actual start weight
+            midStat: "Progress",  // TODO: Calculate % complete
+            rightStat: weightGoal > 0 ? "\(String(format: "%.1f", max(0, (weightManager.latestWeight?.weight ?? weightGoal) - weightGoal))) to go" : "Set goal",
+            totalMilestones: 10,
+            completedMilestones: 6  // TODO: Calculate actual milestones completed
+        )
+    }
+
     var body: some View {
         TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),
             hasData: !weightManager.weightEntries.isEmpty,
             nudge: healthKitNudgeView,
+            gradientStyle: .luxury,  // 🔥 LUXURY UI ACTIVATED
             settingsAction: { showingSettings = true }
         ) {
             if weightManager.weightEntries.isEmpty {
@@ -77,6 +95,12 @@ struct WeightTrackingView: View {
                     showingTrends: $showingTrends
                 )
                 .padding(.horizontal)
+
+                // Milestone Ring Card - NEW per North Star spec
+                // Placed directly beneath hero area
+                // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §6
+                milestoneRingCard
+                    .padding(.horizontal)
 
                 // Weight Chart
                 WeightChartView(
@@ -100,11 +124,12 @@ struct WeightTrackingView: View {
             AddWeightView(weightManager: weightManager)
         }
         .sheet(isPresented: $showingSettings) {
-            WeightSettingsView(
+            WeightControlCenterView(
                 weightManager: weightManager,
                 showGoalLine: $showGoalLine,
                 weightGoal: $weightGoal
             )
+            .environmentObject(behavioralScheduler)
         }
         .sheet(isPresented: $showingGoalEditor) {
             FirstTimeWeightSetupView(
@@ -115,6 +140,12 @@ struct WeightTrackingView: View {
         }
         .sheet(isPresented: $showingTrends) {
             WeightTrendsView(weightManager: weightManager)
+                .onAppear {
+                    AppLogger.info("🎯 Progress Story sheet appeared", category: AppLogger.ui)
+                }
+        }
+        .onChange(of: showingTrends) { oldValue, newValue in
+            AppLogger.info("🎯 showingTrends changed from \(oldValue) to \(newValue)", category: AppLogger.ui)
         }
         // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
         .sheet(isPresented: $showingFirstTimeSetup) {
@@ -138,7 +169,22 @@ struct WeightTrackingView: View {
             // Following Lose It pattern - contextual reminder on first tracker access
             showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
             if showHealthKitNudge {
-                print("📱 WeightTrackingView: Showing HealthKit nudge for first-time user")
+                AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
+            }
+
+            // Auto-show Progress Story if user has data AND hasn't opted out
+            // Industry pattern: Immediate engagement with progress visualization
+            // Respects user's opt-out preference (user control = trust)
+            if !weightManager.weightEntries.isEmpty {
+                let contentID = "progress_story_trends_v1"
+                let isOptedOut = ContentOptOutManager.shared.isContentOptedOut(id: contentID)
+
+                if !isOptedOut {
+                    AppLogger.info("🎯 Auto-showing Progress Story on Weight Tracker open", category: AppLogger.ui)
+                    showingTrends = true
+                } else {
+                    AppLogger.info("🎯 Progress Story opted out - skipping auto-show", category: AppLogger.ui)
+                }
             }
 
             // Note: Removed auto-authorization logic - now uses nudge banner pattern like HydrationTrackingView
@@ -211,15 +257,15 @@ struct EmptyWeightStateView: View {
                 Button(action: {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                     // Request weight permissions immediately when user wants to sync weight data
-                    print("📱 WeightTrackingView (EmptyState): Sync button tapped - requesting weight authorization directly")
+                    AppLogger.info("EmptyState: Sync button tapped - requesting weight authorization", category: AppLogger.healthKit)
                     HealthKitManager.shared.requestWeightAuthorization { success, error in
                         if success {
-                            print("✅ WeightTrackingView (EmptyState): Weight authorization granted - starting sync")
+                            AppLogger.info("EmptyState: Weight authorization granted - starting sync", category: AppLogger.healthKit)
                             DispatchQueue.main.async {
                                 weightManager.syncFromHealthKit()
                             }
                         } else {
-                            print("❌ WeightTrackingView (EmptyState): Weight authorization denied")
+                            AppLogger.info("EmptyState: Weight authorization denied", category: AppLogger.healthKit)
                         }
                     }
                 }) {

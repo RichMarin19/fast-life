@@ -3,6 +3,7 @@ import os.log
 
 /// Centralized logging system following Apple Unified Logging guidelines
 /// Reference: https://developer.apple.com/documentation/os/logging
+/// Updated to modern Logger API (iOS 14+) for enhanced performance and privacy
 struct AppLogger {
 
     // MARK: - Subsystem Configuration
@@ -10,49 +11,46 @@ struct AppLogger {
     /// App bundle identifier for consistent log subsystem naming
     private static let subsystem = Bundle.main.bundleIdentifier ?? "com.fastlife.app"
 
-    // MARK: - Logging Categories
+    // MARK: - Logging Categories (Modern Logger API - iOS 14+)
 
     /// General app lifecycle and main functionality
-    static let general = OSLog(subsystem: subsystem, category: "General")
+    static let general = Logger(subsystem: subsystem, category: "general")
 
     /// Weight tracking operations and calculations
-    static let weightTracking = OSLog(subsystem: subsystem, category: "WeightTracking")
+    static let weightTracking = Logger(subsystem: subsystem, category: "weight")
 
     /// Fasting timer operations and state management
-    static let fastingTimer = OSLog(subsystem: subsystem, category: "FastingTimer")
+    static let fastingTimer = Logger(subsystem: subsystem, category: "fasting-timer")
 
     /// Notification scheduling and management
-    static let notifications = OSLog(subsystem: subsystem, category: "Notifications")
+    static let notifications = Logger(subsystem: subsystem, category: "notifications")
 
     /// CSV import/export operations
-    static let csvOperations = OSLog(subsystem: subsystem, category: "CSVOperations")
+    static let csvOperations = Logger(subsystem: subsystem, category: "csv-operations")
 
     /// HealthKit integration events
-    static let healthKit = OSLog(subsystem: subsystem, category: "HealthKit")
+    static let healthKit = Logger(subsystem: subsystem, category: "healthkit")
 
     /// Sleep tracking operations
-    static let sleep = OSLog(subsystem: subsystem, category: "Sleep")
+    static let sleep = Logger(subsystem: subsystem, category: "sleep")
 
     /// Hydration tracking operations
-    static let hydration = OSLog(subsystem: subsystem, category: "Hydration")
+    static let hydration = Logger(subsystem: subsystem, category: "hydration")
 
     /// User interface and navigation events
-    static let ui = OSLog(subsystem: subsystem, category: "UI")
+    static let ui = Logger(subsystem: subsystem, category: "ui")
 
     /// Data persistence operations
-    static let persistence = OSLog(subsystem: subsystem, category: "Persistence")
+    static let persistence = Logger(subsystem: subsystem, category: "persistence")
 
     /// Force-unwrap safety fixes monitoring (CRITICAL for beta monitoring)
-    static let safety = OSLog(subsystem: subsystem, category: "Safety")
-
-    // MARK: - Phase 1 Additional Categories
-    // Following roadmap requirements for comprehensive logging
+    static let safety = Logger(subsystem: subsystem, category: "safety")
 
     /// Mood tracking operations and validation
-    static let mood = OSLog(subsystem: subsystem, category: "Mood")
+    static let mood = Logger(subsystem: subsystem, category: "mood")
 
     /// Fasting state transitions and validation
-    static let fasting = OSLog(subsystem: subsystem, category: "Fasting")
+    static let fasting = Logger(subsystem: subsystem, category: "fasting")
 
     // MARK: - Safety Logging Methods
 
@@ -65,8 +63,7 @@ struct AppLogger {
         line: Int = #line
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        let logMessage = "⚠️ SAFETY: \(message) [\(fileName):\(line) in \(function)]"
-        os_log("%{public}@", log: safety, type: .fault, logMessage)
+        safety.fault("⚠️ SAFETY: \(message, privacy: .public) [\(fileName, privacy: .public):\(line, privacy: .public) in \(function, privacy: .public)]")
     }
 
     /// Log successful safety handling
@@ -77,8 +74,7 @@ struct AppLogger {
         line: Int = #line
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        let logMessage = "✅ SAFETY: \(message) [\(fileName):\(line) in \(function)]"
-        os_log("%{public}@", log: safety, type: .info, logMessage)
+        safety.info("✅ SAFETY: \(message, privacy: .public) [\(fileName, privacy: .public):\(line, privacy: .public) in \(function, privacy: .public)]")
     }
 
     // MARK: - Performance Logging
@@ -91,47 +87,46 @@ struct AppLogger {
         function: String = #function
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        let logMessage = "⏱️ PERF: \(operation) completed in \(String(format: "%.3f", duration))s [\(fileName) in \(function)]"
-        os_log("%{public}@", log: general, type: .info, logMessage)
+        general.info("⏱️ PERF: \(operation, privacy: .public) completed in \(String(format: "%.3f", duration), privacy: .public)s [\(fileName, privacy: .public) in \(function, privacy: .public)]")
     }
 
-    // MARK: - Convenience Logging Methods
+    // MARK: - Convenience Logging Methods (Modern Logger API)
 
     /// Log general app events
     static func info(
         _ message: String,
-        category: OSLog = general
+        category: Logger = general
     ) {
-        os_log("ℹ️ %{public}@", log: category, type: .info, message)
+        category.info("ℹ️ \(message, privacy: .public)")
     }
 
     /// Log debug information (only in debug builds)
     static func debug(
         _ message: String,
-        category: OSLog = general
+        category: Logger = general
     ) {
         #if DEBUG
-        os_log("🔍 DEBUG: %{public}@", log: category, type: .debug, message)
+        category.debug("🔍 DEBUG: \(message, privacy: .public)")
         #endif
     }
 
     /// Log error conditions
     static func error(
         _ message: String,
-        category: OSLog = general,
+        category: Logger = general,
         error: Error? = nil
     ) {
         let errorInfo = error?.localizedDescription ?? ""
         let logMessage = errorInfo.isEmpty ? "❌ ERROR: \(message)" : "❌ ERROR: \(message) - \(errorInfo)"
-        os_log("%{public}@", log: category, type: .error, logMessage)
+        category.error("\(logMessage, privacy: .public)")
     }
 
     /// Log warning conditions
     static func warning(
         _ message: String,
-        category: OSLog = general
+        category: Logger = general
     ) {
-        os_log("⚠️ WARNING: %{public}@", log: category, type: .fault, message)
+        category.fault("⚠️ WARNING: \(message, privacy: .public)")
     }
 
     // MARK: - Legacy Print Replacement (Transition Helper)
@@ -147,7 +142,7 @@ struct AppLogger {
         #if DEBUG
         let fileName = URL(fileURLWithPath: file).lastPathComponent
         let logMessage = "🖨️ PRINT: \(message) [\(fileName):\(line) in \(function)]"
-        os_log("%{public}@", log: general, type: .debug, logMessage)
+        general.debug("\(logMessage, privacy: .public)")
         #endif
     }
 }

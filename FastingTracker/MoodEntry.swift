@@ -7,7 +7,7 @@ enum MoodDataSource: String, Codable, CaseIterable {
     case healthKit = "HealthKit"
 }
 
-struct MoodEntry: Codable, Identifiable {
+struct MoodEntry: Codable, Identifiable, Equatable {
     let id: UUID
     let date: Date
     let moodLevel: Int      // 1-10 scale

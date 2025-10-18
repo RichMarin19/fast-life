@@ -242,6 +242,40 @@ Enable background app refresh to pre-load HealthKit data:
 // Even faster launch since data is already fresh
 ```
 
+## SwiftUI View Performance
+
+### View Decomposition for Compilation Performance
+**Issue**: Large SwiftUI views (>500 lines) hit compilation timeout: "The compiler is unable to type-check this expression in reasonable time"
+
+**Solution**: Use @ViewBuilder computed properties to break down complex views:
+```swift
+var body: some View {
+    NavigationView {
+        ScrollView {
+            VStack(spacing: 20) {
+                healthKitNudgeSection
+                titleSection
+                timerSection
+            }
+        }
+    }
+}
+
+@ViewBuilder
+private var timerSection: some View {
+    // Complex timer UI broken into manageable computed property
+    VStack { /* timer content */ }
+}
+```
+
+**Benefits**:
+- Eliminates SwiftUI compilation timeouts
+- Improves code organization and maintainability
+- Preserves existing functionality without breaking changes
+- Better Xcode intellisense and debugging
+
+**Best Practice**: Keep main view body under ~100 lines, extract complex sections into @ViewBuilder computed properties rather than separate structs to maintain data flow.
+
 ## Monitoring
 
 ### Key Metrics to Track:

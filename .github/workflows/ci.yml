@@ -1,0 +1,102 @@
+name: CI - Fast LIFe
+
+on:
+  push:
+    branches: [ main, develop, 'feat/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:  # Allow manual CI runs
+
+# Cancel outdated workflow runs to save CI minutes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-loc-gate:
+    name: Lint & LOC Gate
+    runs-on: macos-14
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Cache Homebrew to speed up SwiftLint installation (saves ~60 seconds)
+    - name: Cache Homebrew
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Caches/Homebrew
+          /usr/local/Cellar/swiftlint
+          /opt/homebrew/Cellar/swiftlint
+        key: ${{ runner.os }}-brew-swiftlint-${{ hashFiles('.swiftlint.yml') }}
+        restore-keys: |
+          ${{ runner.os }}-brew-swiftlint-
+          ${{ runner.os }}-brew-
+
+    - name: Install SwiftLint
+      run: |
+        if ! command -v swiftlint &> /dev/null; then
+          brew install swiftlint
+        else
+          echo "SwiftLint already installed (cache hit)"
+        fi
+
+    - name: Run SwiftLint
+      run: |
+        swiftlint lint --strict --reporter github-actions-logging
+
+    - name: Run LOC Gate
+      run: |
+        bash scripts/loc_gate.sh
+
+  build-and-test:
+    name: Build & Test
+    runs-on: macos-14
+    needs: lint-and-loc-gate
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # Cache DerivedData and Swift packages (saves ~3-5 minutes on cache hit)
+    - name: Cache DerivedData
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/Library/Developer/Xcode/DerivedData
+          .build
+        key: ${{ runner.os }}-deriveddata-${{ hashFiles('**/*.swift', '**/*.xcodeproj/**') }}
+        restore-keys: |
+          ${{ runner.os }}-deriveddata-
+
+    - name: Select Xcode
+      run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
+
+    - name: Show Xcode version
+      run: xcodebuild -version
+
+    - name: Build project
+      run: |
+        xcodebuild clean build \
+          -project FastingTracker.xcodeproj \
+          -scheme FastingTracker \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' \
+          CODE_SIGNING_ALLOWED=NO
+
+    - name: Run unit tests
+      run: |
+        xcodebuild test \
+          -project FastingTracker.xcodeproj \
+          -scheme FastingTracker \
+          -destination 'platform=iOS Simulator,name=iPhone 15 Pro,OS=17.5' \
+          CODE_SIGNING_ALLOWED=NO \
+          -enableCodeCoverage YES
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results
+        path: |
+          **/xcresult

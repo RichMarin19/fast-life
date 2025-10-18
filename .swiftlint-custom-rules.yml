@@ -1,0 +1,72 @@
+# Custom SwiftLint Rules for Fast LIFe
+# Enforces North Star design system and project-specific patterns
+
+custom_rules:
+  # Rule: No raw hex color values - must use Theme.ColorToken
+  no_raw_hex_colors:
+    name: "No Raw Hex Colors"
+    message: "Use Theme.ColorToken instead of raw hex values (e.g., Theme.ColorToken.bgDeepStart)"
+    regex: 'Color\(hex:\s*"#[0-9A-Fa-f]{6}"'
+    severity: error
+    match_kinds:
+      - identifier
+
+  # Rule: Buttons must have accessibility labels
+  button_accessibility_label:
+    name: "Button Accessibility Label Required"
+    message: "All Button views must have .accessibilityLabel() modifier for VoiceOver support"
+    regex: 'Button\s*\{[^}]*\}\s*(?!.*\.accessibilityLabel)'
+    severity: warning
+    match_kinds:
+      - identifier
+
+  # Rule: Enforce ViewModel suffix for view model classes
+  viewmodel_naming:
+    name: "ViewModel Naming Convention"
+    message: "View model classes should end with 'ViewModel' suffix"
+    regex: 'class\s+\w+(?<!ViewModel)\s*:\s*ObservableObject'
+    severity: warning
+    match_kinds:
+      - typeidentifier
+
+  # Rule: Enforce Manager suffix for manager classes
+  manager_naming:
+    name: "Manager Naming Convention"
+    message: "Manager classes should end with 'Manager' suffix"
+    regex: 'class\s+\w+(?<!Manager)\s*:\s*ObservableObject.*\{\s*static\s+let\s+shared'
+    severity: warning
+    match_kinds:
+      - typeidentifier
+
+  # Rule: Prefer isEmpty over count comparison
+  prefer_is_empty:
+    name: "Prefer isEmpty"
+    message: "Use .isEmpty instead of .count == 0 or .count > 0"
+    regex: '\.count\s*[=><!]=\s*0'
+    severity: warning
+
+  # Rule: No magic numbers (except common ones: 0, 1, 2)
+  no_magic_numbers:
+    name: "No Magic Numbers"
+    message: "Define magic numbers as named constants for clarity"
+    regex: '(?<![0-9])[3-9]\d+(?![0-9])'
+    severity: warning
+    excluded:
+      - ".*Tests\\.swift"
+      - ".*Preview\\.swift"
+
+  # Rule: SwiftUI state management - @StateObject for owned, @ObservedObject for passed
+  state_object_vs_observed:
+    name: "Correct State Property Wrapper"
+    message: "Use @StateObject for owned instances, @ObservedObject for passed instances"
+    regex: '@ObservedObject\s+(private\s+)?var\s+\w+\s*=\s*\w+\('
+    severity: error
+
+  # Rule: Require TODO/FIXME to have ticket reference or date
+  todo_with_context:
+    name: "TODO/FIXME Must Have Context"
+    message: "TODO/FIXME must include ticket number (FL-XXX) or date (YYYY-MM-DD)"
+    regex: '(TODO|FIXME)(?!.*(?:FL-\d+|\d{4}-\d{2}-\d{2}))'
+    severity: warning
+    excluded:
+      - ".*Tests\\.swift"

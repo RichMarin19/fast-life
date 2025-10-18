@@ -145,121 +145,41 @@ struct CurrentWeightCard: View {
                     showingAddWeight = true
                 }
 
-                // Weight Change Display - EXCITING, MOTIVATIONAL, CELEBRATORY! 🎉
-                // Shows TOTAL progress from START weight to CURRENT weight
-                // Per Apple HIG: "Celebrate achievements to encourage healthy behaviors"
-                // Reference: https://developer.apple.com/design/human-interface-guidelines/health-and-fitness
+                // Motivation Banner - LUXURY BRAND STYLE
+                // Shows progress message in brand emerald style
+                // Per spec: 10% accent.primary opacity, clean line icons, no emojis
+                // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §4
                 if let progress = calculateTotalProgress() {
-                    VStack(spacing: 8) {
-                        if progress.isLoss {
-                            // WEIGHT LOSS - CELEBRATE! 🎉
-                            // TAPPABLE - opens Trends view
-                            // Per Apple HIG: "Make it easy for people to drill down into details"
-                            HStack(spacing: 8) {
-                                // Celebration emoji - dynamic based on amount
-                                Text(celebrationEmoji(for: progress.amount))
-                                    .font(.system(size: 28))
-
-                                // Weight lost - LARGE and PROUD
-                                Text("\((progress.amount), specifier: "%.1f") \("lbs") lost!")
-                                    .font(.system(size: 24, weight: .heavy, design: .rounded))
-                                    .foregroundColor(.white)
-
-                                // Fire emoji for extra motivation
-                                Text("🔥")
-                                    .font(.system(size: 28))
-                            }
-                            .padding(.horizontal, 20)
-                            .padding(.vertical, 12)
-                            .background(
-                                // Gradient background - exciting and vibrant
-                                LinearGradient(
-                                    colors: [Color("FLSuccess"), Color("FLSuccess").opacity(0.8)],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .cornerRadius(8)
-                            .shadow(color: Color("FLSuccess").opacity(0.3), radius: 8, x: 0, y: 4)
-                            .contentShape(Rectangle())  // Make entire pill tappable
-                            .onTapGesture {
-                                showingTrends = true
-                            }
-
-                        } else {
-                            // WEIGHT GAIN - PROGRESSIVELY GENTLER as gain increases
-                            // TAPPABLE - opens Trends view to see patterns
-                            // Psychology: More supportive = users stay engaged
-                            let gentleMessage = gentleGainMessage(for: progress.amount)
-
-                            HStack(spacing: 8) {
-                                // Gentle emoji (changes based on amount)
-                                Text(gentleMessage.emoji)
-                                    .font(.system(size: 20))
-
-                                // Supportive message (gets softer as gain increases)
-                                Text(gentleMessage.message)
-                                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                                    .foregroundColor(gentleMessage.color)
-                            }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 10)
-                            .background(gentleMessage.color.opacity(0.08))
-                            .cornerRadius(8)
-                            .contentShape(Rectangle())  // Make entire message tappable
-                            .onTapGesture {
-                                showingTrends = true
-                            }
-                        }
+                    MotivationBanner(
+                        message: progress.isLoss
+                        ? "You've lost \((progress.amount), default: "%.1f") lbs - keep it up!"
+                            : "Progress isn't always linear - you're doing great",
+                        isPositive: progress.isLoss
+                    )
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        AppLogger.info("🎯 Motivation Banner tapped - opening Progress Story", category: AppLogger.ui)
+                        showingTrends = true
+                        AppLogger.info("🎯 showingTrends set to true", category: AppLogger.ui)
                     }
                     .padding(.top, 8)
                 }
 
-                // Goal Display - EXCITING, PROMINENT, MOTIVATIONAL! 🎯
-                // ENTIRE PILL IS TAPPABLE for maximum usability
-                // Per Apple HIG: "Make controls easy to interact with by giving them ample hit targets"
-                // Reference: https://developer.apple.com/design/human-interface-guidelines/buttons
+                // Goal Badge - LUXURY BRAND STYLE
+                // Clean, premium badge with flag icon (no emojis, no gear)
+                // Per spec: 15% accent.primary opacity, 1.5pt border, 10pt corners
+                // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §5
                 if weightGoal > 0 {
                     Divider()
                         .padding(.vertical, 4)
 
-                    // Entire pill is tappable - large hit target for better UX
+                    // Entire badge is tappable - opens goal editor
                     Button(action: {
                         showingGoalEditor = true
                     }) {
-                        HStack(spacing: 10) {
-                            // 🎯 Target emoji for visual excitement
-                            Text("🎯")
-                                .font(.system(size: 28))
-
-                            // Goal label and value - COMPACT but still EXCITING!
-                            (Text("GOAL: ")
-                                .font(.system(size: 32, weight: .heavy, design: .rounded))
-                                .foregroundColor(Color("FLSuccess"))
-                            + Text("\(Int((weightGoal))) \("lbs")")
-                                .font(.system(size: 32, weight: .heavy, design: .rounded))
-                                .foregroundColor(Color("FLSuccess")))
-
-                            // Gear icon visual indicator that this is editable
-                            // No longer a separate button - entire pill is tappable
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 24))
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 8)  // Reduced for more compact pill
-                        .background(
-                            // Subtle green background for extra pop
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color("FLSuccess").opacity(0.08))
-                        )
-                        .overlay(
-                            // Green border for emphasis
-                            RoundedRectangle(cornerRadius: 16)
-                                .strokeBorder(Color("FLSuccess").opacity(0.3), lineWidth: 2)
-                        )
+                        GoalBadge(goalText: "\(Int(weightGoal)) lbs")
                     }
-                    .buttonStyle(.plain)  // Removes default button styling, keeps custom design
+                    .buttonStyle(.plain)  // Removes default button styling
 
                     // Progress Ring - Beautiful circular visual progress indicator
                     // Inspired by milestone concept with sexy color scheme
@@ -481,5 +401,76 @@ struct CircularProgressRing: View {
             // Empty dots: light gray
             return Color.gray.opacity(0.2)
         }
+    }
+}
+
+// MARK: - Motivation Banner (Luxury Brand Style)
+
+/// Motivation Banner - Brand-tinted emerald style per North Star spec
+/// Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §4
+/// No emojis - uses clean SF Symbol line icons
+struct MotivationBanner: View {
+    let message: String
+    let isPositive: Bool
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // SF Symbol placeholder for progress wave/spark icon (2pt stroke equivalent)
+            // Replace with custom ic_progress_wave when available
+            Image(systemName: isPositive ? "chart.line.uptrend.xyaxis" : "heart.fill")
+                .renderingMode(.template)
+                .foregroundColor(Theme.ColorToken.accentPrimary)
+                .font(.system(size: 20, weight: .medium))
+
+            Text(message)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Theme.ColorToken.accentPrimary)
+
+            Spacer(minLength: 0)
+        }
+        .padding(14)
+        .background(
+            Theme.ColorToken.card
+                .overlay(Theme.ColorToken.accentPrimary.opacity(0.10))
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .shadow(color: Theme.ColorToken.shadowCard, radius: 10, x: 0, y: 6)
+        .accessibilityLabel(Text("Motivation: \(message)"))
+    }
+}
+
+// MARK: - Goal Badge (Luxury Brand Style)
+
+/// Goal Badge - Clean premium badge per North Star spec
+/// Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §5
+/// No emojis, no gear icon - just clean flag icon and goal text
+struct GoalBadge: View {
+    let goalText: String  // e.g., "150 lbs"
+
+    var body: some View {
+        HStack(spacing: 10) {
+            // SF Symbol placeholder for flag/arrow-to-goal icon (24pt, 2pt stroke equivalent)
+            // Replace with custom ic_goal_flag when available
+            Image(systemName: "flag.fill")
+                .renderingMode(.template)
+                .foregroundColor(Theme.ColorToken.accentPrimary)
+                .font(.system(size: 20, weight: .semibold))
+
+            Text("GOAL: \(goalText)")
+                .font(.system(size: 18, weight: .semibold))
+                .foregroundColor(Theme.ColorToken.accentPrimary)
+
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Theme.ColorToken.accentPrimary, lineWidth: 1.5)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Theme.ColorToken.accentPrimary.opacity(0.15))
+                )
+        )
     }
 }
