@@ -118,25 +118,31 @@ struct WeightChartView: View {
 
     var body: some View {
         VStack(spacing: 16) {
+            // REMOVED: Header HStack with "Weight Chart" title and Picker
+            // DSCard now provides title in header, Picker moved down to align with time range label
+
+            // Display current time range (Month/Year) for Month view + Picker control
+            // UX Fix: Picker aligned with time range label (related controls grouped together)
+            // Following Apple HIG: Related controls should be grouped together
             HStack {
-                Text("Weight Chart")
-                    .font(.headline)
+                if let label = timeRangeLabel {
+                    Text(label)
+                        .font(.title3)
+                        .fontWeight(.bold)
+                        .foregroundColor(Color("FLPrimary"))
+                } else {
+                    // If no time range label, show empty spacer to push Picker to right
+                    Spacer()
+                }
+
                 Spacer()
+
                 Picker("Time Range", selection: $selectedTimeRange) {
                     ForEach(WeightTimeRange.allCases, id: \.self) { range in
                         Text(range.rawValue).tag(range)
                     }
                 }
                 .pickerStyle(.menu)
-            }
-
-            // Display current time range (Month/Year) for Month view
-            if let label = timeRangeLabel {
-                Text(label)
-                    .font(.title3)
-                    .fontWeight(.bold)
-                    .foregroundColor(Color("FLPrimary"))
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
 
             // Progress percentage moved to CurrentWeightCard (below goal pill)
@@ -437,10 +443,9 @@ struct WeightChartView: View {
             Toggle("Show Goal Line", isOn: $showGoalLine)
                 .font(.subheadline)
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        // REMOVED: Card styling (padding, background, cornerRadius, shadow)
+        // DSCard universal container now provides all standardized styling
+        // Following Universal Standardization Architecture pattern
     }
 
     // MARK: - X-Axis Labels
