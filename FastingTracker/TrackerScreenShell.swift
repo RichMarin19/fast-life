@@ -60,7 +60,10 @@ struct TrackerScreenShell<Content: View>: View {
     }
 
     var body: some View {
-        ZStack {
+        // 🔍 FORENSIC: Log TrackerScreenShell render
+        let _ = AppLogger.info("⏱️ TrackerScreenShell.body rendering (gradientStyle: \(gradientStyle == .luxury ? "luxury" : "none"))", category: AppLogger.ui)
+
+        return ZStack {
             // Optional luxury gradient background
             // Only rendered when gradientStyle = .luxury
             if gradientStyle == .luxury {
@@ -115,8 +118,9 @@ struct TrackerScreenShell<Content: View>: View {
                     // Control Center icon - premium command panel feel
                     // SF Symbol: slider.horizontal.3 communicates control/adjustment
                     // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §7
+                    // Fix: Use textOnDark for visibility on dark gradient background
                     Image(systemName: "slider.horizontal.3")
-                        .foregroundColor(gradientStyle == .luxury ? Theme.ColorToken.textPrimary : Color("FLWarning"))
+                        .foregroundColor(gradientStyle == .luxury ? Theme.ColorToken.textOnDark : Color("FLWarning"))
                         .font(.system(size: 20, weight: .semibold))
                 }
                 .accessibilityLabel("Control Center")

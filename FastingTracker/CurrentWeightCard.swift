@@ -120,13 +120,9 @@ struct CurrentWeightCard: View {
                 // TAPPABLE Current Weight Section - opens Add Weight sheet
                 // Per Apple HIG: "Let people interact with content in ways they find most natural"
                 // Reference: https://developer.apple.com/design/human-interface-guidelines/gestures
+                // REFACTORED: Removed "Current Weight" label - now provided by UniversalCardContainer header
+                // Industry Pattern: Pure content component (Apple Health, Spotify)
                 VStack(spacing: 6) {
-                    // "Current Weight" label
-                    Text("Current Weight")
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.secondary)
-
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("\(weightManager.displayWeight(for: latest), specifier: "%.1f")")
                             .font(.system(size: 48, weight: .bold))
@@ -223,11 +219,12 @@ struct CurrentWeightCard: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        // REMOVED: Styling now provided by UniversalCardContainer wrapper
+        // - .frame(maxWidth: .infinity) → provided by wrapper
+        // - .padding() → provided by wrapper (Theme.Spacing.pad)
+        // - .background() → provided by wrapper (Theme.ColorToken.card)
+        // - .cornerRadius() → provided by wrapper (Theme.Radius.card)
+        // - .shadow() → provided by wrapper (Theme.ColorToken.shadowCard)
     }
 }
 

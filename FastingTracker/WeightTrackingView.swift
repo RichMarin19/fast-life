@@ -6,6 +6,7 @@ struct WeightTrackingView: View {
     @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
     @ObservedObject private var healthKitManager = HealthKitManager.shared
     @ObservedObject private var nudgeManager = HealthKitNudgeManager.shared
+    @ObservedObject private var cardManager = TrackerCardManager.shared  // Layer 3: Card visibility management
 
     // PHASE 1: Unit preferences integration
     // Following Apple's reactive UI pattern for settings changes
@@ -20,10 +21,12 @@ struct WeightTrackingView: View {
     @State private var showGoalLine = false
     @State private var weightGoal: Double = 180.0
     @State private var showHealthKitNudge = false
+    // REMOVED: @State private var showMilestoneCard - now managed by TrackerCardManager
 
     // UserDefaults keys for persistence
     private let showGoalLineKey = "showGoalLine"
     private let weightGoalKey = "goalWeight"  // MUST match onboarding key (OnboardingView.swift line 686)
+    // REMOVED: showMilestoneCardKey - now managed by TrackerCardManager
 
     private var healthKitNudgeView: AnyView? {
         if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .weight) {
@@ -57,6 +60,7 @@ struct WeightTrackingView: View {
 
     /// Milestone Ring Card with computed data from weight manager
     /// TODO: Replace placeholder data with actual milestone calculations
+    /// UPDATED: Removed onOptOut - now uses DSCard eye-slash dismiss (TrackerCardManager)
     private var milestoneRingCard: some View {
         MilestoneRingCard(
             progress: 0.65,  // TODO: Calculate actual progress to next milestone
@@ -67,12 +71,16 @@ struct WeightTrackingView: View {
             midStat: "Progress",  // TODO: Calculate % complete
             rightStat: weightGoal > 0 ? "\(String(format: "%.1f", max(0, (weightManager.latestWeight?.weight ?? weightGoal) - weightGoal))) to go" : "Set goal",
             totalMilestones: 10,
-            completedMilestones: 6  // TODO: Calculate actual milestones completed
+            completedMilestones: 6,  // TODO: Calculate actual milestones completed
+            onOptOut: nil  // REMOVED: Now uses DSCard eye-slash dismiss
         )
     }
 
     var body: some View {
-        TrackerScreenShell(
+        // 🔍 FORENSIC: Log body render
+        let _ = AppLogger.info("⏱️ WeightTrackingView.body rendering", category: AppLogger.ui)
+
+        return TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),
             hasData: !weightManager.weightEntries.isEmpty,
             nudge: healthKitNudgeView,
@@ -86,21 +94,40 @@ struct WeightTrackingView: View {
                     weightManager: weightManager
                 )
             } else {
-                // Current Weight Card
-                CurrentWeightCard(
-                    weightManager: weightManager,
-                    weightGoal: weightGoal,
-                    showingGoalEditor: $showingGoalEditor,
-                    showingAddWeight: $showingAddWeight,
-                    showingTrends: $showingTrends
-                )
-                .padding(.horizontal)
+                // Current Weight Card - Using DSCard (Layer 3: Design System)
+                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Industry Pattern: Apple Health-style card container with pure content component
+                if cardManager.isCardVisible(.currentWeight) {
+                    DSCard(
+                        cardType: .currentWeight,
+                        cardManager: cardManager
+                    ) {
+                        CurrentWeightCard(
+                            weightManager: weightManager,
+                            weightGoal: weightGoal,
+                            showingGoalEditor: $showingGoalEditor,
+                            showingAddWeight: $showingAddWeight,
+                            showingTrends: $showingTrends
+                        )
+                    }
+                    .padding(.horizontal, DSSpacing.screenEdgePadding)
+                    .transition(.opacity.combined(with: .scale))  // Smooth hide animation
+                }
 
-                // Milestone Ring Card - NEW per North Star spec
-                // Placed directly beneath hero area
+                // Milestone Ring Card - Using DSCard (Layer 3: Design System)
+                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Industry Pattern: Apple Health-style card container with pure content component
                 // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §6
-                milestoneRingCard
-                    .padding(.horizontal)
+                if cardManager.isCardVisible(.milestone) {
+                    DSCard(
+                        cardType: .milestone,
+                        cardManager: cardManager
+                    ) {
+                        milestoneRingCard
+                    }
+                    .padding(.horizontal, DSSpacing.screenEdgePadding)
+                    .transition(.opacity.combined(with: .scale))
+                }
 
                 // Weight Chart
                 WeightChartView(
@@ -156,8 +183,15 @@ struct WeightTrackingView: View {
             )
         }
         .onAppear {
+            // 🔍 FORENSIC: Track onAppear start time
+            let startTime = CFAbsoluteTimeGetCurrent()
+            AppLogger.info("⏱️ WeightTrackingView.onAppear START", category: AppLogger.ui)
+
             // Load saved goal settings from UserDefaults
+            let loadSettingsStart = CFAbsoluteTimeGetCurrent()
             loadGoalSettings()
+            let loadSettingsDuration = (CFAbsoluteTimeGetCurrent() - loadSettingsStart) * 1000
+            AppLogger.info("⏱️ loadGoalSettings took \(String(format: "%.2f", loadSettingsDuration))ms", category: AppLogger.ui)
 
             // Show first-time setup if user has no weight data
             // No delay needed - weightManager loads synchronously in init
@@ -167,29 +201,45 @@ struct WeightTrackingView: View {
 
             // Show HealthKit nudge for first-time users who skipped onboarding
             // Following Lose It pattern - contextual reminder on first tracker access
+            let nudgeStart = CFAbsoluteTimeGetCurrent()
             showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
+            let nudgeDuration = (CFAbsoluteTimeGetCurrent() - nudgeStart) * 1000
+            AppLogger.info("⏱️ shouldShowNudge took \(String(format: "%.2f", nudgeDuration))ms", category: AppLogger.ui)
+
             if showHealthKitNudge {
                 AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
-            }
-
-            // Auto-show Progress Story if user has data AND hasn't opted out
-            // Industry pattern: Immediate engagement with progress visualization
-            // Respects user's opt-out preference (user control = trust)
-            if !weightManager.weightEntries.isEmpty {
-                let contentID = "progress_story_trends_v1"
-                let isOptedOut = ContentOptOutManager.shared.isContentOptedOut(id: contentID)
-
-                if !isOptedOut {
-                    AppLogger.info("🎯 Auto-showing Progress Story on Weight Tracker open", category: AppLogger.ui)
-                    showingTrends = true
-                } else {
-                    AppLogger.info("🎯 Progress Story opted out - skipping auto-show", category: AppLogger.ui)
-                }
             }
 
             // Note: Removed auto-authorization logic - now uses nudge banner pattern like HydrationTrackingView
             // User must explicitly tap "Connect" in nudge banner to authorize
             // This follows Lose It app pattern and Apple HIG contextual permission guidelines
+
+            // 🔍 FORENSIC: Track total onAppear duration
+            let totalDuration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
+            AppLogger.info("⏱️ WeightTrackingView.onAppear TOTAL: \(String(format: "%.2f", totalDuration))ms", category: AppLogger.ui)
+        }
+        .task {
+            // Auto-show Progress Story with delay to prevent cold start freeze
+            // Delay allows Weight Tracker view to render fully before presenting sheet
+            // Industry pattern: Deferred engagement to prevent UI blocking
+            // Reference: Apple HIG - Launching (avoid blocking UI on startup)
+            guard !weightManager.weightEntries.isEmpty else { return }
+
+            let contentID = "progress_story_trends_v1"
+            let isOptedOut = ContentOptOutManager.shared.isContentOptedOut(id: contentID)
+
+            guard !isOptedOut else {
+                AppLogger.info("🎯 Progress Story opted out - skipping auto-show", category: AppLogger.ui)
+                return
+            }
+
+            // Delay 0.6 seconds to let view render + animations settle
+            try? await Task.sleep(nanoseconds: 600_000_000)  // 0.6 seconds
+
+            await MainActor.run {
+                AppLogger.info("🎯 Auto-showing Progress Story on Weight Tracker open (delayed)", category: AppLogger.ui)
+                showingTrends = true
+            }
         }
         .onChange(of: showGoalLine) { _, _ in
             saveGoalSettings()
@@ -209,12 +259,16 @@ struct WeightTrackingView: View {
         if let savedGoal = UserDefaults.standard.object(forKey: weightGoalKey) as? Double {
             weightGoal = savedGoal
         }
+
+        // REMOVED: Milestone card visibility - now managed by TrackerCardManager
     }
 
     func saveGoalSettings() {
         UserDefaults.standard.set(showGoalLine, forKey: showGoalLineKey)
         UserDefaults.standard.set(weightGoal, forKey: weightGoalKey)
     }
+
+    // REMOVED: saveMilestoneVisibility() - now managed by TrackerCardManager
 
     // Removed: handleHealthDataSelection - no longer needed with direct authorization
 }

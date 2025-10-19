@@ -37,6 +37,42 @@ enum ContentCategory: String, Codable, CaseIterable {
     }
 }
 
+/// Weight Tracker card types that can be hidden/shown
+/// Used in Control Center for managing tracker card visibility
+/// Industry Pattern: Enum registry for feature toggles (Spotify, Apple Health)
+enum TrackerCardType: String, Codable, CaseIterable, Identifiable {
+    case currentWeight = "current_weight_card"
+    case milestone = "milestone_card"
+    case chart = "chart_card"
+    case stats = "stats_card"
+    case history = "history_card"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .currentWeight: return "Current Weight"
+        case .milestone: return "Milestone"
+        case .chart: return "Chart"
+        case .stats: return "Statistics"
+        case .history: return "History"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .currentWeight: return "Latest weight with progress tracking"
+        case .milestone: return "Progress ring with milestone tracking"
+        case .chart: return "Weight trend chart"
+        case .stats: return "Weight statistics summary"
+        case .history: return "Weight entry history list"
+        }
+    }
+
+    // REMOVED: visibilityKey - now managed by TrackerCardManager internally
+    // All visibility state goes through TrackerCardManager.shared.isCardVisible()
+}
+
 /// Shared opt-out manager accessible from anywhere in the app
 /// Industry pattern: Singleton manager for app-wide state (like UserDefaults)
 class ContentOptOutManager: ObservableObject {
@@ -135,6 +171,9 @@ struct WeightControlCenterView: View {
     // Observe ContentOptOutManager for reactive UI updates
     @ObservedObject private var optOutManager = ContentOptOutManager.shared
 
+    // Observe TrackerCardManager for card visibility (Single Source of Truth)
+    @ObservedObject private var cardManager = TrackerCardManager.shared
+
     // Card order persistence - default: Goals → Notifications → Insights → Sync → Experience
     @AppStorage("weightControlCenterCardOrder") private var cardOrderData: Data = Data()
     @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .experience]
@@ -166,6 +205,7 @@ struct WeightControlCenterView: View {
 
     // User experience opt-out preferences (Manage My Experience card)
     // Reference: Fast_LIFe_Control_Center_Gameplan.md §3
+    @AppStorage("experienceOptOut_trackerCards") private var optOutTrackerCards: Bool = false
     @AppStorage("experienceOptOut_educationalInsights") private var optOutEducationalInsights: Bool = false
     @AppStorage("experienceOptOut_behavioralNudges") private var optOutBehavioralNudges: Bool = false
     @AppStorage("experienceOptOut_motivationalMessages") private var optOutMotivationalMessages: Bool = false
@@ -179,6 +219,37 @@ struct WeightControlCenterView: View {
     // UserDefaults keys
     private let userDefaults = UserDefaults.standard
     private let hasCompletedInitialImportKey = "weightHasCompletedInitialImport"
+
+    // Restore all confirmation alert
+    @State private var showingRestoreAllAlert = false
+
+    // MARK: - Computed Properties
+
+    /// Determines if the floating "Restore All" button should be shown
+    /// Shows when ANY content is hidden or opted out:
+    /// - Category opt-outs (Weight Tracker Cards, Educational Insights, Behavioral Nudges, etc.)
+    /// - Individual content opt-outs (specific tips, nudges, messages, summaries)
+    /// - Hidden tracker cards (Milestone, Chart, Stats, History)
+    ///
+    /// Scalable: Automatically handles new categories without code changes
+    private var shouldShowRestoreButton: Bool {
+        // 1. Check category opt-outs (Weight Tracker Cards + Content Categories)
+        let hasCategoryOptOuts = optOutTrackerCards ||
+                                 optOutEducationalInsights ||
+                                 optOutBehavioralNudges ||
+                                 optOutMotivationalMessages ||
+                                 optOutProgressSummaries
+
+        // 2. Check individual content opt-outs
+        let hasIndividualOptOuts = !optOutManager.optedOutContentItems.isEmpty
+
+        // 3. Check hidden tracker cards (via TrackerCardManager - Single Source of Truth)
+        let hasHiddenTrackerCards = TrackerCardType.allCases.contains { cardType in
+            !cardManager.isCardVisible(cardType)
+        }
+
+        return hasCategoryOptOuts || hasIndividualOptOuts || hasHiddenTrackerCards
+    }
 
     var body: some View {
         ZStack {
@@ -335,6 +406,14 @@ struct WeightControlCenterView: View {
         } message: {
             Text("Choose how to sync your weight data with Apple Health. You can import all your historical weight entries or start fresh with only future entries.")
         }
+        .alert("Restore All Content", isPresented: $showingRestoreAllAlert) {
+            Button("Yes, Restore All", role: .destructive) {
+                restoreAllToDefault()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will restore all hidden tracker cards and opted-out content to default. Are you sure?")
+        }
     }
 
     // MARK: - Card Views
@@ -356,17 +435,20 @@ struct WeightControlCenterView: View {
 
                 Spacer()
 
-                // Badge for Manage My Experience card showing count of opted-out categories + items
+                // Badge for Manage My Experience card showing count of opted-out categories + items + hidden tracker cards
                 // Interactive: Tapping cycles through opted-out items with smooth scroll
                 if cardType == .experience {
-                    let categoryOptOutCount = [optOutEducationalInsights, optOutBehavioralNudges, optOutMotivationalMessages, optOutProgressSummaries].filter({ $0 }).count
+                    let categoryOptOutCount = [optOutTrackerCards, optOutEducationalInsights, optOutBehavioralNudges, optOutMotivationalMessages, optOutProgressSummaries].filter({ $0 }).count
                     let individualOptOutCount = optOutManager.optedOutContentItems.count
-                    let totalOptOutCount = categoryOptOutCount + individualOptOutCount
+                    let hiddenTrackerCardsCount = TrackerCardType.allCases.filter { cardType in
+                        !cardManager.isCardVisible(cardType)
+                    }.count
+                    let totalOptOutCount = categoryOptOutCount + individualOptOutCount + hiddenTrackerCardsCount
 
                     if totalOptOutCount > 0 {
                         Button(action: {
-                            // Layer 2: Badge tap cycles through opted-out items
-                            cycleToNextOptedOutItem()
+                            // Show restore all confirmation alert
+                            showingRestoreAllAlert = true
                         }) {
                             Text("\(totalOptOutCount)")
                                 .font(.system(size: 14, weight: .bold))
@@ -381,7 +463,7 @@ struct WeightControlCenterView: View {
                         .scaleEffect(badgeScale)  // Layer 6: Bounce animation
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: badgeScale)
                         .accessibilityLabel("\(totalOptOutCount) \(totalOptOutCount == 1 ? "item" : "items") opted out")
-                        .accessibilityHint("Tap to scroll through opted-out items")
+                        .accessibilityHint("Tap to restore all hidden content")
                     }
                 }
             }
@@ -668,6 +750,12 @@ struct WeightControlCenterView: View {
             Divider()
                 .background(Theme.ColorToken.dividerOnDark)
 
+            // Weight Tracker Cards Toggle (Category-level control)
+            trackerCardsToggle()
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
             // Educational Insights Toggle (Category-level control)
             categoryToggle(
                 isOn: Binding(
@@ -721,17 +809,16 @@ struct WeightControlCenterView: View {
                 category: .progressSummaries
             )
 
-            // Restore All button (only show if at least one category is paused)
-            if optOutEducationalInsights || optOutBehavioralNudges || optOutMotivationalMessages || optOutProgressSummaries {
+            // Floating "Restore All" button
+            // Shows when ANY content is hidden: categories, individual items, or tracker cards
+            // Triggers confirmation alert (same as badge)
+            if shouldShowRestoreButton {
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
 
                 Button(action: {
-                    // Restore all categories (turn all back on by setting all opt-outs to false)
-                    optOutEducationalInsights = false
-                    optOutBehavioralNudges = false
-                    optOutMotivationalMessages = false
-                    optOutProgressSummaries = false
+                    // Show confirmation alert (same behavior as badge)
+                    showingRestoreAllAlert = true
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.clockwise")
@@ -833,6 +920,107 @@ struct WeightControlCenterView: View {
                 }
             }
         }
+    }
+
+    // Helper view for Weight Tracker Cards toggle with hidden cards list
+    @ViewBuilder
+    private func trackerCardsToggle() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Category-level toggle (matches other category toggles)
+            Toggle(isOn: Binding(
+                get: { !self.optOutTrackerCards },
+                set: { self.optOutTrackerCards = !$0 }
+            )) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Weight Tracker Cards")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    Text("Manage which cards appear on your tracker")
+                        .font(.system(size: 13))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+            .tint(Theme.ColorToken.accentPrimary)
+
+            // Show hidden tracker cards (if any) - via TrackerCardManager (Single Source of Truth)
+            let hiddenCards = TrackerCardType.allCases.filter { cardType in
+                !cardManager.isCardVisible(cardType)
+            }
+
+            if !hiddenCards.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    // "Hidden cards" header
+                    Text("Hidden cards:")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
+                        .padding(.leading, 16)
+                        .padding(.top, 4)
+
+                    // List of hidden cards
+                    ForEach(hiddenCards) { cardType in
+                        HStack(spacing: 8) {
+                            Image(systemName: "eye.slash.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Theme.ColorToken.stateWarning)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(cardType.displayName)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                                Text(cardType.description)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.6))
+                            }
+
+                            Spacer()
+
+                            // Restore button for individual card (via TrackerCardManager)
+                            Button(action: {
+                                cardManager.showCard(cardType)
+                            }) {
+                                Text("Restore")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(Theme.ColorToken.accentPrimary)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Theme.ColorToken.textSecondaryOnDark.opacity(0.1))
+                        )
+                        .padding(.horizontal, 8)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Restore All Functionality
+
+    /// Restore all content to default state
+    /// Restores: Hidden tracker cards, category opt-outs, individual opt-outs
+    private func restoreAllToDefault() {
+        // 1. Restore all tracker cards (show all) via TrackerCardManager
+        for cardType in TrackerCardType.allCases {
+            cardManager.showCard(cardType)
+        }
+
+        // 2. Restore all category opt-outs (turn all ON)
+        optOutTrackerCards = false
+        optOutEducationalInsights = false
+        optOutBehavioralNudges = false
+        optOutMotivationalMessages = false
+        optOutProgressSummaries = false
+
+        // 3. Clear all individual opt-outs
+        optOutManager.optedOutContentItems.removeAll()
+        if let encoded = try? JSONEncoder().encode([ContentItem]()) {
+            optedOutContentData = encoded
+        }
+
+        // Haptic feedback for confirmation
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
     // MARK: - About Card (Fixed at Bottom)

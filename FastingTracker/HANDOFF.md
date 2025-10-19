@@ -1844,7 +1844,149 @@ message: progress.isLoss
 
 ---
 
-*Last Updated: 2025-10-17*
+---
+
+## 🎯 WEIGHT TRACKER LAYER 3 UNIVERSAL CARD SYSTEM
+
+### Design System Evolution - DSCard Migration
+**Date:** 2025-10-18
+**Status:** IN PROGRESS (2/5 cards complete)
+**Game Plan:** See `WEIGHT_TRACKER_LAYER3_GAMEPLAN.md` for full implementation strategy
+
+#### Strategic Architecture: Single Source of Truth ✅ COMPLETE
+
+**Problem Solved:** Card visibility scattered across multiple UserDefaults keys
+**Solution Applied:** TrackerCardManager as central manager for all card state
+
+**Implementation Success:**
+- ✅ **TrackerCardManager**: Singleton managing visibility, order, expansion state
+- ✅ **DSCard**: Universal container with standardized styling (padding, background, shadow, corners)
+- ✅ **DSCardHeader**: Reusable header with eye-slash dismiss, expand/collapse controls
+- ✅ **Control Center Integration**: All hidden cards appear in "Manage My Experience" section
+- ✅ **Backwards Compatibility**: One-time migration from legacy UserDefaults keys
+
+**Cards Migrated (2/5):**
+1. **Current Weight Card** ✅ - Eye-slash working, Control Center integration verified
+2. **Milestone Card** ✅ - Eye-slash working, Control Center integration verified
+3. **Chart Card** ⏳ NEXT - UX fix required (Picker placement)
+4. **Stats Card** 📋 TODO
+5. **History Card** 📋 TODO
+
+#### UX Issue Identified: Chart Card Picker Placement
+
+**Problem (Image #1):** Picker button ("Month ◊") in top-right conflicts with DSCard eye-slash position
+
+**Solution Pattern:**
+```
+BEFORE:
+[Weight Chart | Month ◊]  ← Picker blocks eye-slash
+[October 2025]
+
+AFTER:
+[Weight Chart | 👁️⃠]      ← DSCard eye-slash
+[October 2025 | Month ◊]  ← Picker aligned with label
+```
+
+**Rationale:**
+- DSCard header needs top-right space for eye-slash button
+- Picker + time range label are related (both for time range selection)
+- Horizontal alignment improves UX clarity (Apple HIG: group related controls)
+
+#### Git Checkpoint Strategy ✅ MANDATORY
+
+**Why Checkpoints Matter:**
+- Layer 3 foundation (2/5 cards) is WORKING on device
+- Need revert point before touching complex Chart Card
+- Industry standard: Checkpoint after each major working state
+
+**Checkpoint Schedule:**
+1. **IMMEDIATE**: Before Chart Card migration (Current Weight + Milestone working)
+2. After Chart Card migration (3/5 cards complete)
+3. After Stats Card migration (4/5 cards complete)
+4. **Layer 3 Complete**: All 5 cards using DSCard (CELEBRATE 🎉)
+
+**Commit Pattern:**
+```bash
+git add .
+git commit -m "✅ Layer 3 Checkpoint: [Card Name] migrated to DSCard
+
+- [Card Name]: DSCard + eye-slash dismiss ✅
+- Build: SUCCESS ✅
+- Device Testing: VERIFIED ✅
+
+Status: X/5 cards complete
+Next: [Next Card] migration"
+
+git push origin main  # ONLY after device testing confirms working
+```
+
+#### Refactoring Strategy: Two-Phase Approach
+
+**Phase 1: Opportunistic Refactoring (During Layer 3 Migration)**
+- Extract reusable components when 2+ files have duplication
+- Replace hardcoded values with design tokens
+- Only if extraction is simple (< 30 minutes)
+- **Rule**: Do NOT refactor complex logic (chart calculations, data filtering)
+
+**Phase 2: Dedicated Refactoring Sprint (After Layer 3 Complete)**
+- Extract Level 3 components: DSProgressRing, DSStatDisplay, DSBadge, DSBanner
+- Audit design token usage across all cards
+- Performance optimization (lazy loading, reduce re-renders)
+- Code organization and documentation
+
+**Timeline:**
+- Layer 3 Migration: 2-3 hours (Chart + Stats + History cards)
+- Opportunistic Refactoring: Included in migration time
+- Dedicated Refactoring Sprint: 2-4 hours (after Layer 3 complete)
+
+#### Universal Standardization Architecture ✅ DOCUMENTED
+
+**Reference:** `UNIVERSAL_STANDARDIZATION_ARCHITECTURE.md`
+
+**Core Pattern:**
+```
+Level 1: Universal Containers (DSCard, DSButton, DSTextField)
+  ↓
+Level 2: Custom Content (CurrentWeightCard, WeightChartView)
+  ↓
+Level 3: Reusable Components (DSProgressRing, DSStatDisplay, DSBadge)
+  ↓
+Design Tokens (DSSpacing, DSColors, DSTypography)
+```
+
+**Mandate:** All future development must follow this architecture
+- Single source of truth for all styling
+- Universal containers used everywhere
+- Easy to troubleshoot (one place to fix bugs)
+- Scales across all 5 trackers (Weight, Fasting, Hydration, Sleep, Mood)
+
+#### Key Lessons for Future Card Migrations
+
+**MANDATORY Patterns:**
+1. ✅ **Pure Content Components** - No padding/background/corners/shadow in content
+2. ✅ **DSCard Wrapper** - All styling comes from universal container
+3. ✅ **Design Tokens Only** - No hardcoded colors/spacing/fonts
+4. ✅ **TrackerCardManager** - Single source of truth for visibility
+5. ✅ **Device Testing** - Verify eye-slash works before git commit
+
+**Success Criteria for Layer 3 Complete:**
+- [ ] All 5 cards use DSCard universal container
+- [ ] Eye-slash dismiss works on all cards (device tested)
+- [ ] All hidden cards appear in Control Center
+- [ ] Restore button works for all cards
+- [ ] Badge count accurate
+- [ ] Build succeeds with zero errors
+- [ ] No visual regressions
+- [ ] Git checkpoints created after each card
+
+**Strategic Position:** Foundation complete for Chart Card migration. UX issue identified with clear solution pattern. Ready to execute next phase with proven architecture.
+
+---
+
+*Last Updated: 2025-10-18*
+*Layer 3 Game Plan: DOCUMENTED ✅*
+*Git Checkpoint Strategy: MANDATORY ✅*
+*Refactoring Strategy: TWO-PHASE APPROACH ✅*
 *Phase C.1 Luxury UI Foundation: COMPLETE ✅*
 *Expert Fixes Documented: 13 errors → 0 errors ✅*
 *Consultant Roadmap Integration: COMPLETE ✅*
