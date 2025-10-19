@@ -149,13 +149,33 @@ struct WeightTrackingView: View {
                     .transition(.opacity.combined(with: .scale))
                 }
 
-                // Weight Statistics
-                WeightStatsView(weightManager: weightManager)
-                    .padding(.horizontal)
+                // Weight Statistics Card - Using DSCard (Layer 3: Design System)
+                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Industry Pattern: Apple Health-style card container with pure content component
+                if cardManager.isCardVisible(.stats) {
+                    DSCard(
+                        cardType: .stats,
+                        cardManager: cardManager
+                    ) {
+                        WeightStatsView(weightManager: weightManager)
+                    }
+                    .padding(.horizontal, DSSpacing.screenEdgePadding)
+                    .transition(.opacity.combined(with: .scale))
+                }
 
-                // Weight History List
-                WeightHistoryListView(weightManager: weightManager)
-                    .padding(.horizontal)
+                // Weight History List Card - Using DSCard (Layer 3: Design System)
+                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Industry Pattern: Apple Health-style card container with pure content component
+                if cardManager.isCardVisible(.history) {
+                    DSCard(
+                        cardType: .history,
+                        cardManager: cardManager
+                    ) {
+                        WeightHistoryListView(weightManager: weightManager)
+                    }
+                    .padding(.horizontal, DSSpacing.screenEdgePadding)
+                    .transition(.opacity.combined(with: .scale))
+                }
             }
         }
         .sheet(isPresented: $showingAddWeight) {

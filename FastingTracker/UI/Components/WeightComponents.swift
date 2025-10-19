@@ -79,9 +79,8 @@ struct WeightStatsView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Statistics")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // REMOVED: "Statistics" header - DSCard now provides title in header
+            // Following Universal Standardization Architecture pattern
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 WeightChangeStatCard(
@@ -110,10 +109,9 @@ struct WeightStatsView: View {
                 )
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        // REMOVED: Card styling (padding, background, cornerRadius, shadow)
+        // DSCard universal container now provides all standardized styling
+        // Following Universal Standardization Architecture pattern
     }
 }
 
@@ -197,9 +195,8 @@ struct WeightHistoryListView: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Text("Weight History")
-                .font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            // REMOVED: "Weight History" header - DSCard now provides title in header
+            // Following Universal Standardization Architecture pattern
 
             ForEach(Array(weightManager.weightEntries.prefix(10))) { entry in
                 WeightHistoryRow(entry: entry, weightManager: weightManager)
@@ -213,10 +210,9 @@ struct WeightHistoryListView: View {
                 Divider()
             }
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .cornerRadius(8)
-        .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+        // REMOVED: Card styling (padding, background, cornerRadius, shadow)
+        // DSCard universal container now provides all standardized styling
+        // Following Universal Standardization Architecture pattern
     }
 }
 
