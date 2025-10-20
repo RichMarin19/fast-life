@@ -73,6 +73,39 @@ enum TrackerCardType: String, Codable, CaseIterable, Identifiable {
     // All visibility state goes through TrackerCardManager.shared.isCardVisible()
 }
 
+/// Progress Story card types that can be hidden/shown
+/// Used in Control Center for managing Progress Story card visibility
+/// Industry Pattern: Same as TrackerCardType - enum registry for feature toggles
+enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
+    case sevenDay = "progress_story_7day_card"
+    case thirtyDay = "progress_story_30day_card"
+    case banner = "progress_story_banner_card"
+    case recap = "progress_story_recap_card"
+    case didYouKnow = "progress_story_tip_card"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .sevenDay: return "7-Day Trend"
+        case .thirtyDay: return "30-Day Trend"
+        case .banner: return "Progress Banner"
+        case .recap: return "Progress Recap"
+        case .didYouKnow: return "Did You Know"
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .sevenDay: return "7-day weight trend card"
+        case .thirtyDay: return "30-day weight trend card"
+        case .banner: return "Motivational progress message"
+        case .recap: return "Net change, streak, and entries"
+        case .didYouKnow: return "Educational weight loss tip"
+        }
+    }
+}
+
 /// Shared opt-out manager accessible from anywhere in the app
 /// Industry pattern: Singleton manager for app-wide state (like UserDefaults)
 class ContentOptOutManager: ObservableObject {
@@ -174,6 +207,9 @@ struct WeightControlCenterView: View {
     // Observe TrackerCardManager for card visibility (Single Source of Truth)
     @ObservedObject private var cardManager = TrackerCardManager.shared
 
+    // Observe ProgressStoryCardManager for Progress Story card visibility (Single Source of Truth)
+    @ObservedObject private var progressStoryCardManager = ProgressStoryCardManager.shared
+
     // Card order persistence - default: Goals → Notifications → Insights → Sync → Experience
     @AppStorage("weightControlCenterCardOrder") private var cardOrderData: Data = Data()
     @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .experience]
@@ -230,6 +266,7 @@ struct WeightControlCenterView: View {
     /// - Category opt-outs (Weight Tracker Cards, Educational Insights, Behavioral Nudges, etc.)
     /// - Individual content opt-outs (specific tips, nudges, messages, summaries)
     /// - Hidden tracker cards (Milestone, Chart, Stats, History)
+    /// - Hidden Progress Story cards (7-Day, 30-Day, Banner, Recap, Did You Know)
     ///
     /// Scalable: Automatically handles new categories without code changes
     private var shouldShowRestoreButton: Bool {
@@ -248,7 +285,12 @@ struct WeightControlCenterView: View {
             !cardManager.isCardVisible(cardType)
         }
 
-        return hasCategoryOptOuts || hasIndividualOptOuts || hasHiddenTrackerCards
+        // 4. Check hidden Progress Story cards (via ProgressStoryCardManager - Single Source of Truth)
+        let hasHiddenProgressStoryCards = ProgressStoryCardType.allCases.contains { cardType in
+            !progressStoryCardManager.isCardVisible(cardType)
+        }
+
+        return hasCategoryOptOuts || hasIndividualOptOuts || hasHiddenTrackerCards || hasHiddenProgressStoryCards
     }
 
     var body: some View {
@@ -435,7 +477,7 @@ struct WeightControlCenterView: View {
 
                 Spacer()
 
-                // Badge for Manage My Experience card showing count of opted-out categories + items + hidden tracker cards
+                // Badge for Manage My Experience card showing count of opted-out categories + items + hidden cards
                 // Interactive: Tapping cycles through opted-out items with smooth scroll
                 if cardType == .experience {
                     let categoryOptOutCount = [optOutTrackerCards, optOutEducationalInsights, optOutBehavioralNudges, optOutMotivationalMessages, optOutProgressSummaries].filter({ $0 }).count
@@ -443,7 +485,10 @@ struct WeightControlCenterView: View {
                     let hiddenTrackerCardsCount = TrackerCardType.allCases.filter { cardType in
                         !cardManager.isCardVisible(cardType)
                     }.count
-                    let totalOptOutCount = categoryOptOutCount + individualOptOutCount + hiddenTrackerCardsCount
+                    let hiddenProgressStoryCardsCount = ProgressStoryCardType.allCases.filter { cardType in
+                        !progressStoryCardManager.isCardVisible(cardType)
+                    }.count
+                    let totalOptOutCount = categoryOptOutCount + individualOptOutCount + hiddenTrackerCardsCount + hiddenProgressStoryCardsCount
 
                     if totalOptOutCount > 0 {
                         Button(action: {
@@ -464,6 +509,15 @@ struct WeightControlCenterView: View {
                         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: badgeScale)
                         .accessibilityLabel("\(totalOptOutCount) \(totalOptOutCount == 1 ? "item" : "items") opted out")
                         .accessibilityHint("Tap to restore all hidden content")
+                        .onAppear {
+                            // DEBUG: Log badge calculation components
+                            AppLogger.debug("Badge count breakdown:", category: AppLogger.ui)
+                            AppLogger.debug("  categoryOptOutCount: \(categoryOptOutCount)", category: AppLogger.ui)
+                            AppLogger.debug("  individualOptOutCount: \(individualOptOutCount)", category: AppLogger.ui)
+                            AppLogger.debug("  hiddenTrackerCardsCount: \(hiddenTrackerCardsCount)", category: AppLogger.ui)
+                            AppLogger.debug("  hiddenProgressStoryCardsCount: \(hiddenProgressStoryCardsCount)", category: AppLogger.ui)
+                            AppLogger.debug("  TOTAL: \(totalOptOutCount)", category: AppLogger.ui)
+                        }
                     }
                 }
             }
@@ -798,16 +852,8 @@ struct WeightControlCenterView: View {
             Divider()
                 .background(Theme.ColorToken.dividerOnDark)
 
-            // Progress Summaries Toggle (Category-level control)
-            categoryToggle(
-                isOn: Binding(
-                    get: { !self.optOutProgressSummaries },
-                    set: { self.optOutProgressSummaries = !$0 }
-                ),
-                title: "Progress Summaries",
-                description: "Weekly recaps showing trends and wins",
-                category: .progressSummaries
-            )
+            // Progress Summaries Toggle (Master toggle for all Progress Story cards)
+            progressStoryCardsToggle()
 
             // Floating "Restore All" button
             // Shows when ANY content is hidden: categories, individual items, or tracker cards
@@ -926,10 +972,27 @@ struct WeightControlCenterView: View {
     @ViewBuilder
     private func trackerCardsToggle() -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Category-level toggle (matches other category toggles)
+            // Master toggle for ALL Weight Tracker Cards
+            // When ON: Show all 5 cards | When OFF: Hide all 5 cards
+            // Industry Pattern: Apple Health section-level toggles
+            // Following "simple method first" strategy
             Toggle(isOn: Binding(
-                get: { !self.optOutTrackerCards },
-                set: { self.optOutTrackerCards = !$0 }
+                get: {
+                    // Toggle is ON if ALL cards are visible
+                    TrackerCardType.allCases.allSatisfy { cardManager.isCardVisible($0) }
+                },
+                set: { newValue in
+                    // When toggle changes: Show or hide ALL 5 cards
+                    for cardType in TrackerCardType.allCases {
+                        if newValue {
+                            cardManager.showCard(cardType)
+                        } else {
+                            cardManager.hideCard(cardType)
+                        }
+                    }
+                    // Also update legacy @AppStorage flag (for backwards compatibility)
+                    self.optOutTrackerCards = !newValue
+                }
             )) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Weight Tracker Cards")
@@ -996,24 +1059,120 @@ struct WeightControlCenterView: View {
         }
     }
 
+    // Helper view for Progress Story Cards toggle with hidden cards list
+    @ViewBuilder
+    private func progressStoryCardsToggle() -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            // Master toggle for ALL Progress Story Cards
+            // When ON: Show all 5 cards | When OFF: Hide all 5 cards
+            // Industry Pattern: Apple Health section-level toggles (same as Weight Tracker Cards)
+            // Following "simple method first" strategy
+            Toggle(isOn: Binding(
+                get: {
+                    // Toggle is ON if ALL Progress Story cards are visible
+                    ProgressStoryCardType.allCases.allSatisfy { progressStoryCardManager.isCardVisible($0) }
+                },
+                set: { newValue in
+                    // When toggle changes: Show or hide ALL 5 Progress Story cards
+                    for cardType in ProgressStoryCardType.allCases {
+                        if newValue {
+                            progressStoryCardManager.showCard(cardType)
+                        } else {
+                            progressStoryCardManager.hideCard(cardType)
+                        }
+                    }
+                    // Also update legacy @AppStorage flag (for backwards compatibility)
+                    self.optOutProgressSummaries = !newValue
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Progress Summaries")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    Text("Weekly recaps showing trends and wins")
+                        .font(.system(size: 13))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+            .tint(Theme.ColorToken.accentPrimary)
+
+            // Show hidden Progress Story cards (if any) - via ProgressStoryCardManager (Single Source of Truth)
+            let hiddenCards = ProgressStoryCardType.allCases.filter { cardType in
+                !progressStoryCardManager.isCardVisible(cardType)
+            }
+
+            if !hiddenCards.isEmpty {
+                VStack(alignment: .leading, spacing: 8) {
+                    // "Hidden cards" header
+                    Text("Hidden cards:")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
+                        .padding(.leading, 16)
+                        .padding(.top, 4)
+
+                    // List of hidden Progress Story cards
+                    ForEach(hiddenCards) { cardType in
+                        HStack(spacing: 8) {
+                            Image(systemName: "eye.slash.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Theme.ColorToken.stateWarning)
+
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(cardType.displayName)
+                                    .font(.system(size: 13, weight: .medium))
+                                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                                Text(cardType.description)
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.6))
+                            }
+
+                            Spacer()
+
+                            // Restore button for individual card (via ProgressStoryCardManager)
+                            Button(action: {
+                                progressStoryCardManager.showCard(cardType)
+                            }) {
+                                Text("Restore")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(Theme.ColorToken.accentPrimary)
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Theme.ColorToken.textSecondaryOnDark.opacity(0.1))
+                        )
+                        .padding(.horizontal, 8)
+                    }
+                }
+            }
+        }
+    }
+
     // MARK: - Restore All Functionality
 
     /// Restore all content to default state
-    /// Restores: Hidden tracker cards, category opt-outs, individual opt-outs
+    /// Restores: Hidden tracker cards, hidden Progress Story cards, category opt-outs, individual opt-outs
     private func restoreAllToDefault() {
         // 1. Restore all tracker cards (show all) via TrackerCardManager
         for cardType in TrackerCardType.allCases {
             cardManager.showCard(cardType)
         }
 
-        // 2. Restore all category opt-outs (turn all ON)
+        // 2. Restore all Progress Story cards (show all) via ProgressStoryCardManager
+        for cardType in ProgressStoryCardType.allCases {
+            progressStoryCardManager.showCard(cardType)
+        }
+
+        // 3. Restore all category opt-outs (turn all ON)
         optOutTrackerCards = false
         optOutEducationalInsights = false
         optOutBehavioralNudges = false
         optOutMotivationalMessages = false
         optOutProgressSummaries = false
 
-        // 3. Clear all individual opt-outs
+        // 4. Clear all individual opt-outs
         optOutManager.optedOutContentItems.removeAll()
         if let encoded = try? JSONEncoder().encode([ContentItem]()) {
             optedOutContentData = encoded

@@ -67,6 +67,7 @@
 		52F16D772EA45ED4002C9FC5 /* DSSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D732EA45ED4002C9FC5 /* DSSpacing.swift */; };
 		52F16D782EA45ED4002C9FC5 /* DSTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D742EA45ED4002C9FC5 /* DSTypography.swift */; };
 		52F16D792EA45ED4002C9FC5 /* DSCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D702EA45ED4002C9FC5 /* DSCard.swift */; };
+		52F16D7B2EA48151002C9FC5 /* ProgressStoryCardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D7A2EA48151002C9FC5 /* ProgressStoryCardManager.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -163,6 +164,7 @@
 		52F16D722EA45ED4002C9FC5 /* DSColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSColors.swift; sourceTree = "<group>"; };
 		52F16D732EA45ED4002C9FC5 /* DSSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSSpacing.swift; sourceTree = "<group>"; };
 		52F16D742EA45ED4002C9FC5 /* DSTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTypography.swift; sourceTree = "<group>"; };
+		52F16D7A2EA48151002C9FC5 /* ProgressStoryCardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressStoryCardManager.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -219,6 +221,7 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52F16D7A2EA48151002C9FC5 /* ProgressStoryCardManager.swift */,
 				52F16D702EA45ED4002C9FC5 /* DSCard.swift */,
 				52F16D712EA45ED4002C9FC5 /* DSCardHeader.swift */,
 				52F16D722EA45ED4002C9FC5 /* DSColors.swift */,
@@ -434,6 +437,7 @@
 				5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */,
 				5289E07D2E8D700000254E70 /* Core/Managers/HydrationManager.swift in Sources */,
 				5288A52B2EA44CF100806BE7 /* TrackerCardManagerTestView.swift in Sources */,
+				52F16D7B2EA48151002C9FC5 /* ProgressStoryCardManager.swift in Sources */,
 				521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */,
 				5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */,
 				52B2CFC72E95A9C80061FCFF /* CrashReportManager.swift in Sources */,

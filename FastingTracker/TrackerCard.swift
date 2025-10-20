@@ -67,3 +67,18 @@ struct CardPreference: Codable, Identifiable {
         self.sortOrder = sortOrder
     }
 }
+
+/// Codable model for persisting Progress Story card preferences
+/// Same pattern as CardPreference but for Progress Story cards
+/// Industry Pattern: JSON serialization for UserDefaults storage
+struct ProgressStoryCardPreference: Codable, Identifiable {
+    let id: String  // cardType.rawValue
+    var isVisible: Bool
+    var sortOrder: Int
+
+    init(cardType: ProgressStoryCardType, isVisible: Bool = true, sortOrder: Int) {
+        self.id = cardType.rawValue
+        self.isVisible = isVisible
+        self.sortOrder = sortOrder
+    }
+}

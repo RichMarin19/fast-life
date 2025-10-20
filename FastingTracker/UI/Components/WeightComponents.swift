@@ -420,6 +420,9 @@ struct WeightTrendsView: View {
     // Unified opt-out system: ContentOptOutManager for all cards + global
     @ObservedObject private var optOutManager = ContentOptOutManager.shared
 
+    // Progress Story Card Manager for master toggle visibility control
+    @ObservedObject private var progressStoryCardManager = ProgressStoryCardManager.shared
+
     // Content IDs for opt-out tracking
     private let contentID_ProgressStory = "progress_story_v1"        // Global (toolbar button)
     private let contentID_7Day = "progress_story_7day_v1"            // 7-day card
@@ -593,18 +596,16 @@ struct WeightTrendsView: View {
                         // STACKED LAYOUT v1.1: Narrative flow top-to-bottom
 
                         // 1. 7-DAY CARD (full-width)
-                        if !optOutManager.isContentOptedOut(id: contentID_7Day) {
+                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
+                        if progressStoryCardManager.isCardVisible(.sevenDay) && !optOutManager.isContentOptedOut(id: contentID_7Day) {
                             TrendCardFull(
                                 periodLabel: "7 DAYS",
                                 delta: calculateDelta(days: 7),
                                 surface: Theme.ColorToken.surfaceIce,
                                 onHide: {
                                     withAnimation(.easeInOut(duration: 0.25)) {
-                                        optOutManager.optOutContent(
-                                            id: contentID_7Day,
-                                            category: .progressSummaries,
-                                            text: "7-day trend"
-                                        )
+                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
+                                        progressStoryCardManager.hideCard(.sevenDay)
                                     }
                                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 }
@@ -621,14 +622,12 @@ struct WeightTrendsView: View {
                         let bannerAccent = bannerAccentColor(for: state7d)
 
                         // 2. MOTIVATIONAL BANNER
-                        if !optOutManager.isContentOptedOut(id: contentID_Banner) {
+                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
+                        if progressStoryCardManager.isCardVisible(.banner) && !optOutManager.isContentOptedOut(id: contentID_Banner) {
                             ProgressBanner(text: bannerText, accent: bannerAccent, onHide: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
-                                    optOutManager.optOutContent(
-                                        id: contentID_Banner,
-                                        category: .behavioralNudges,
-                                        text: "Progress banner"
-                                    )
+                                    // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
+                                    progressStoryCardManager.hideCard(.banner)
                                 }
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             })
@@ -638,18 +637,16 @@ struct WeightTrendsView: View {
                         }
 
                         // 3. 30-DAY CARD (full-width)
-                        if !optOutManager.isContentOptedOut(id: contentID_30Day) {
+                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
+                        if progressStoryCardManager.isCardVisible(.thirtyDay) && !optOutManager.isContentOptedOut(id: contentID_30Day) {
                             TrendCardFull(
                                 periodLabel: "30 DAYS",
                                 delta: calculateDelta(days: 30),
                                 surface: Theme.ColorToken.surfaceIvory,
                                 onHide: {
                                     withAnimation(.easeInOut(duration: 0.25)) {
-                                        optOutManager.optOutContent(
-                                            id: contentID_30Day,
-                                            category: .progressSummaries,
-                                            text: "30-day trend"
-                                        )
+                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
+                                        progressStoryCardManager.hideCard(.thirtyDay)
                                     }
                                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 }
@@ -660,18 +657,16 @@ struct WeightTrendsView: View {
                         }
 
                         // 4. RECAP ROW (Net Δ | Streak | Entries)
-                        if !optOutManager.isContentOptedOut(id: contentID_Recap) {
+                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
+                        if progressStoryCardManager.isCardVisible(.recap) && !optOutManager.isContentOptedOut(id: contentID_Recap) {
                             RecapRow(
                                 netDelta: netDelta30d,
                                 bestStreak: bestStreak,
                                 entries: totalEntries,
                                 onHide: {
                                     withAnimation(.easeInOut(duration: 0.25)) {
-                                        optOutManager.optOutContent(
-                                            id: contentID_Recap,
-                                            category: .progressSummaries,
-                                            text: "Progress recap"
-                                        )
+                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
+                                        progressStoryCardManager.hideCard(.recap)
                                     }
                                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 }
@@ -682,16 +677,14 @@ struct WeightTrendsView: View {
                         }
 
                         // 5. DID YOU KNOW BANNER (optional - show if user has 5+ entries)
-                        if totalEntries >= 5 && !optOutManager.isContentOptedOut(id: contentID_Tip) {
+                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
+                        if totalEntries >= 5 && progressStoryCardManager.isCardVisible(.didYouKnow) && !optOutManager.isContentOptedOut(id: contentID_Tip) {
                             DidYouKnowBanner(
                                 text: randomDidYouKnowTip(),
                                 onHide: {
                                     withAnimation(.easeInOut(duration: 0.25)) {
-                                        optOutManager.optOutContent(
-                                            id: contentID_Tip,
-                                            category: .educationalInsights,
-                                            text: "Did You Know tip"
-                                        )
+                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
+                                        progressStoryCardManager.hideCard(.didYouKnow)
                                     }
                                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                                 }
