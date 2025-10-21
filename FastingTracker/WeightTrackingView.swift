@@ -8,6 +8,9 @@ struct WeightTrackingView: View {
     @ObservedObject private var nudgeManager = HealthKitNudgeManager.shared
     @ObservedObject private var cardManager = TrackerCardManager.shared  // Layer 3: Card visibility management
 
+    // Layer 5: Drag-to-reorder state
+    @State private var draggedCard: TrackerCardType?
+
     // PHASE 1: Unit preferences integration
     // Following Apple's reactive UI pattern for settings changes
     // Reference: https://developer.apple.com/documentation/swiftui/observedobject
@@ -94,81 +97,23 @@ struct WeightTrackingView: View {
                     weightManager: weightManager
                 )
             } else {
-                // Current Weight Card - Using DSCard (Layer 3: Design System)
-                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
-                // Layer 4: Added canExpand for expand/collapse functionality
-                // Industry Pattern: Apple Health-style card container with pure content component
-                if cardManager.isCardVisible(.currentWeight) {
-                    DSCard(
-                        cardType: .currentWeight,
-                        cardManager: cardManager,
-                        canExpand: true  // Layer 4: Enable expand/collapse
-                    ) {
-                        CurrentWeightCard(
-                            weightManager: weightManager,
-                            weightGoal: weightGoal,
-                            showingGoalEditor: $showingGoalEditor,
-                            showingAddWeight: $showingAddWeight,
-                            showingTrends: $showingTrends
-                        )
-                    }
-                    .padding(.horizontal, DSSpacing.screenEdgePadding)
-                    .transition(.opacity.combined(with: .scale))  // Smooth hide animation
-                }
-
-                // Milestone Ring Card - Using DSCard (Layer 3: Design System)
-                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
-                // Layer 4: Added canExpand for expand/collapse functionality
-                // Industry Pattern: Apple Health-style card container with pure content component
-                // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §6
-                if cardManager.isCardVisible(.milestone) {
-                    DSCard(
-                        cardType: .milestone,
-                        cardManager: cardManager,
-                        canExpand: true  // Layer 4: Enable expand/collapse
-                    ) {
-                        milestoneRingCard
-                    }
-                    .padding(.horizontal, DSSpacing.screenEdgePadding)
-                    .transition(.opacity.combined(with: .scale))
-                }
-
-                // Weight Chart Card - Using DSCard (Layer 3: Design System)
-                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
-                // Layer 4: Added canExpand for expand/collapse functionality
-                // Industry Pattern: Apple Health-style card container with pure content component
-                // UX Fix: Picker relocated to align with time range label (no longer conflicts with eye-slash)
-                if cardManager.isCardVisible(.chart) {
-                    DSCard(
-                        cardType: .chart,
-                        cardManager: cardManager,
-                        canExpand: true  // Layer 4: Enable expand/collapse
-                    ) {
-                        WeightChartView(
-                            weightManager: weightManager,
-                            selectedTimeRange: $selectedTimeRange,
-                            showGoalLine: $showGoalLine,
-                            weightGoal: $weightGoal
-                        )
-                    }
-                    .padding(.horizontal, DSSpacing.screenEdgePadding)
-                    .transition(.opacity.combined(with: .scale))
-                }
-
-                // Weight Statistics Card - Using DSCard (Layer 3: Design System)
-                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
-                // Layer 4: Added canExpand for expand/collapse functionality
-                // Industry Pattern: Apple Health-style card container with pure content component
-                if cardManager.isCardVisible(.stats) {
-                    DSCard(
-                        cardType: .stats,
-                        cardManager: cardManager,
-                        canExpand: true  // Layer 4: Enable expand/collapse
-                    ) {
-                        WeightStatsView(weightManager: weightManager)
-                    }
-                    .padding(.horizontal, DSSpacing.screenEdgePadding)
-                    .transition(.opacity.combined(with: .scale))
+                // LAYER 5: Drag-to-reorder cards
+                // Cards displayed in user-customized order from TrackerCardManager
+                // Industry Pattern: Apple Health - Long-press and drag to reorder
+                ForEach(cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
+                    cardView(for: cardType)
+                        .padding(.horizontal, DSSpacing.screenEdgePadding)
+                        .transition(.opacity.combined(with: .scale))
+                        .onDrag {
+                            // Layer 5: Enable drag for reordering
+                            self.draggedCard = cardType
+                            return NSItemProvider(object: cardType.rawValue as NSString)
+                        }
+                        .onDrop(of: [.text], delegate: TrackerCardDropDelegate(
+                            card: cardType,
+                            draggedCard: $draggedCard,
+                            cardManager: cardManager
+                        ))
                 }
 
                 // Weight History List Card - MOVED TO CONTROL CENTER
@@ -284,6 +229,66 @@ struct WeightTrackingView: View {
         }
     }
 
+    // MARK: - Card View Builder (Layer 5)
+
+    /// Returns the appropriate card view for each card type
+    /// Industry Pattern: Builder pattern for dynamic card rendering
+    @ViewBuilder
+    private func cardView(for cardType: TrackerCardType) -> some View {
+        switch cardType {
+        case .currentWeight:
+            DSCard(
+                cardType: .currentWeight,
+                cardManager: cardManager,
+                canExpand: true
+            ) {
+                CurrentWeightCard(
+                    weightManager: weightManager,
+                    weightGoal: weightGoal,
+                    showingGoalEditor: $showingGoalEditor,
+                    showingAddWeight: $showingAddWeight,
+                    showingTrends: $showingTrends
+                )
+            }
+
+        case .milestone:
+            DSCard(
+                cardType: .milestone,
+                cardManager: cardManager,
+                canExpand: true
+            ) {
+                milestoneRingCard
+            }
+
+        case .chart:
+            DSCard(
+                cardType: .chart,
+                cardManager: cardManager,
+                canExpand: true
+            ) {
+                WeightChartView(
+                    weightManager: weightManager,
+                    selectedTimeRange: $selectedTimeRange,
+                    showGoalLine: $showGoalLine,
+                    weightGoal: $weightGoal
+                )
+            }
+
+        case .stats:
+            DSCard(
+                cardType: .stats,
+                cardManager: cardManager,
+                canExpand: true
+            ) {
+                WeightStatsView(weightManager: weightManager)
+            }
+
+        case .history:
+            // History card is in Control Center, not on main screen
+            EmptyView()
+        }
+    }
+
     // MARK: - Goal Settings Persistence
 
     private func loadGoalSettings() {
@@ -379,6 +384,48 @@ struct EmptyWeightStateView: View {
 
 
 
+
+// MARK: - Tracker Card Drop Delegate (Layer 5)
+
+/// Drop delegate for drag-and-drop tracker card reordering on main screen
+/// Industry Pattern: Apple Health - Drag cards to customize dashboard order
+/// Note: Different from ControlCenterCardDropDelegate (used in Control Center settings)
+struct TrackerCardDropDelegate: DropDelegate {
+    let card: TrackerCardType
+    @Binding var draggedCard: TrackerCardType?
+    let cardManager: TrackerCardManager
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let draggedCard = draggedCard else { return false }
+
+        // Get current visible cards in order
+        let visibleCards = cardManager.getVisibleCardsInOrder()
+
+        // Find indices of dragged and target cards
+        guard let fromIndex = visibleCards.firstIndex(of: draggedCard),
+              let toIndex = visibleCards.firstIndex(of: card) else {
+            return false
+        }
+
+        // Only reorder if indices are different
+        if fromIndex != toIndex {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                cardManager.reorderCards(from: fromIndex, to: toIndex)
+            }
+        }
+
+        self.draggedCard = nil
+        return true
+    }
+
+    func dropEntered(info: DropInfo) {
+        // Optional: Add visual feedback during drag (e.g., scale effect)
+    }
+
+    func dropExited(info: DropInfo) {
+        // Optional: Remove visual feedback
+    }
+}
 
 // MARK: - View Modifier for Conditional X-Axis Scale
 
