@@ -576,16 +576,17 @@ struct WeightTrendsView: View {
 
                 ScrollView {
                     VStack(spacing: 16) {
-                        // TITLE: Your Progress Story (luxury cyan-blue gradient)
-                        // Per user requirement: All titles use cyan→blue gradient (Control Center pattern)
-                        // Color Refresh v1: SF Pro Rounded for luxury feel
-                        Text("Your Progress Story")
+                        // TITLE: Your LIFe Journey (luxury gradient)
+                        // Per UI/UX spec (FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md): "brand blue-green gradient text"
+                        // Matching TrackerScreenShell title pattern: Theme.ColorToken gradient
+                        // Reference: TrackerScreenShell.swift lines 156-164
+                        Text("Your LIFe Journey")
                             .font(.system(size: 34, weight: .bold, design: .rounded))
                             .foregroundStyle(
                                 LinearGradient(
                                     colors: [
-                                        Color(red: 0.4, green: 0.8, blue: 0.9),  // Cyan
-                                        Color(red: 0.3, green: 0.7, blue: 1.0)   // Light blue
+                                        Theme.ColorToken.accentInfo,    // Blue (left)
+                                        Theme.ColorToken.accentPrimary  // Emerald (right)
                                     ],
                                     startPoint: .leading,
                                     endPoint: .trailing
