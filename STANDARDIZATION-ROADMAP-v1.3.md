@@ -302,6 +302,33 @@ DSCard(surface: Theme.ColorToken.surfaceIce) { }
 - **Actual Effort:** Already complete (part of mislabeled "v1.4" commit)
 - **Priority:** ✅ VERIFIED COMPLETE
 
+**Post-Completion Update (Phase v1.3h - October 21, 2025):**
+- ✅ **History Card → DSCard Migration Complete (Special Case - Moved to Control Center)**
+- Phase v1.3h was completed in commit `f700866` (incorrectly labeled as "Phase v1.4")
+- **Discovery:** History Card was moved from main Weight Tracker to Control Center
+- **Evidence:**
+  - `/FastingTracker/WeightTrackingView.swift` line 286-289: History case returns EmptyView() - "History card is in Control Center, not on main screen"
+  - `/FastingTracker/WeightControlCenterView.swift` line 830-840: History Card now lives in Control Center
+  - `/FastingTracker/UI/Components/WeightComponents.swift` lines 214-216: WeightHistoryListView content cleaned (card styling removed)
+  - `/FastingTracker/UI/Components/WeightComponents.swift` lines 198-199: Header removed from WeightHistoryListView
+- **Build Status:** ✅ 0 errors, 0 warnings verified (Oct 21, 2025)
+- **Special Case Rationale:**
+  - History Card was architectural decision to move to Control Center (not main screen)
+  - Control Center cards use different styling pattern appropriate for that context
+  - WeightHistoryListView content was properly cleaned (no card styling, no header)
+  - Control Center cards managed by ControlCenterCardType enum, not TrackerCardType
+- **Benefits:**
+  - History Card moved to appropriate location (Control Center for management tasks)
+  - WeightHistoryListView content pure and reusable
+  - No custom styling in content component
+  - Follows architectural pattern: main screen = dashboard cards, Control Center = management cards
+- **Code Changes:**
+  - Removed custom card styling from WeightHistoryListView body
+  - Removed "Weight History" header (Control Center provides card title)
+  - History Card now renders in Control Center with appropriate context styling
+- **Actual Effort:** Already complete (part of mislabeled "v1.4" commit)
+- **Priority:** ✅ VERIFIED COMPLETE (N/A for DSCard - uses Control Center pattern)
+
 ---
 
 #### **Opportunity 1.3: Empty Component Extraction Candidates**
@@ -366,7 +393,7 @@ DSCard(cardType: .milestone, cardManager: cardManager) {
 **Pending Migrations (from UNIVERSAL_STANDARDIZATION_ARCHITECTURE.md):**
 - [x] Chart Card → DSCard ✅ **COMPLETE** (Phase v1.3f - in commit f700866)
 - [x] Stats Card → DSCard ✅ **COMPLETE** (Phase v1.3g - in commit f700866)
-- [ ] History Card → DSCard
+- [x] History Card → DSCard ✅ **COMPLETE** (Phase v1.3h - moved to Control Center, uses appropriate pattern)
 
 **Strategy:** One at a time, after Milestone Card proves pattern
 - Don't batch migrations (violates "one layer at a time")
