@@ -156,6 +156,45 @@ enum Theme {
         /// Drag handle color - Semi-transparent white (60% opacity)
         /// Usage: Reorder handles on dark cards (Control Center)
         static let dragHandle = Color.white.opacity(0.6)
+
+        // MARK: Mood Gradient Colors (v1.1 - Adaptive Behavioral Design)
+        // Reference: FastLIFe_LIFeJourney_UIUX_v1.1_AdaptiveBehavioralDesign.md
+        // Subtle background mood overlays (12-18% opacity) based on trend state
+
+        /// Mood improving gradient start - Teal (#1FBFA1)
+        /// Usage: Background mood overlay top for weight loss trend (improving state)
+        /// Emotion: Progress, calm, growth
+        static let moodImprovingStart = Color(flHex: "#1FBFA1")
+
+        /// Mood improving gradient end - Blue (#2B86C5)
+        /// Usage: Background mood overlay bottom for weight loss trend (improving state)
+        /// Emotion: Focus, clarity, achievement
+        static let moodImprovingEnd = Color(flHex: "#2B86C5")
+
+        /// Mood regressing gradient start - Coral (#E47A6E)
+        /// Usage: Background mood overlay top for weight gain trend (regressing state)
+        /// Emotion: Gentle awareness, non-judgmental feedback
+        static let moodRegressingStart = Color(flHex: "#E47A6E")
+
+        /// Mood regressing gradient end - Peach (#F0B9A1)
+        /// Usage: Background mood overlay bottom for weight gain trend (regressing state)
+        /// Emotion: Warmth, support, understanding
+        static let moodRegressingEnd = Color(flHex: "#F0B9A1")
+
+        /// Mood stable gradient start - Gold (#EEC36A)
+        /// Usage: Background mood overlay top for stable weight trend (stable state)
+        /// Emotion: Balance, mastery, consistency
+        static let moodStableStart = Color(flHex: "#EEC36A")
+
+        /// Mood stable gradient end - Light gold (#F5D97E)
+        /// Usage: Background mood overlay bottom for stable weight trend (stable state)
+        /// Emotion: Harmony, calm confidence
+        static let moodStableEnd = Color(flHex: "#F5D97E")
+
+        /// Coral accent - Soft coral for regressing state indicators (#E47A6E)
+        /// Usage: Ring accents, emotion indicators for weight gain trends
+        /// Replaces harsh red with supportive, non-judgmental color
+        static let accentCoral = Color(flHex: "#E47A6E")
     }
 
     // MARK: - Corner Radius

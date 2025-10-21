@@ -427,6 +427,7 @@ struct WeightTrendsView: View {
 
     // Content IDs for opt-out tracking
     private let contentID_ProgressStory = "progress_story_v1"        // Global (toolbar button)
+    private let contentID_CoachBar = "progress_story_coach_bar_v1"   // Coach Bar (v1.2)
     private let contentID_7Day = "progress_story_7day_v1"            // 7-day card
     private let contentID_30Day = "progress_story_30day_v1"          // 30-day card
     private let contentID_Banner = "progress_story_banner_v1"        // Motivational banner
@@ -483,16 +484,31 @@ struct WeightTrendsView: View {
         return weightManager.weightEntries.count
     }
 
+    /// Coach Bar text based on 7-day trend state (v1.1)
+    /// Per v1.1 spec §5: Behavioral micro-copy under subtitle
+    /// v1.2: Added exclamation points for motivational emphasis
+    private func coachBarText(for state: TrendState) -> String {
+        switch state {
+        case .improving:
+            return "Progress in motion — your consistency shows!"
+        case .regressing:
+            return "Weight gain is feedback, not failure — hydrate and sleep strong!"
+        case .flat:
+            return "Balance is mastery in motion — keep showing up!"
+        }
+    }
+
     /// Banner text based on 7-day trend state
     /// Per Stacked_v1.1 spec: Dynamic behavioral copy
+    /// v1.2: Added exclamation points for motivational emphasis
     private func banner7Text(for state: TrendState) -> String {
         switch state {
         case .improving:
-            return "Small wins compound. Keep stacking the days."
+            return "Small wins compound. Keep stacking the days!"
         case .regressing:
-            return "Course‑correct today. One choice changes the trend."
+            return "Course‑correct today. One choice changes the trend!"
         case .flat:
-            return "Consistency is power. Nudge your routine by 1%."
+            return "Consistency is power. Nudge your routine by 1%!"
         }
     }
 
@@ -556,13 +572,58 @@ struct WeightTrendsView: View {
     }
 
     @State private var isAnimating = false  // Animation state for staggered fade-in
+    @Environment(\.accessibilityReduceMotion) var reduceMotion  // v1.1: Respect Reduce Motion
+    @State private var moodAnimate = false  // v1.1: Mood background micro-drift animation
+
+    // MARK: - Adaptive Mood Overlay (v1.1)
+
+    /// Returns adaptive mood gradient overlay based on trend state
+    /// Per v1.1 spec §2: Subtle 12-18% opacity overlays on navy base
+    /// Colors reflect emotional state without being alarmist
+    private func adaptiveMoodOverlay(for state: TrendState) -> LinearGradient {
+        switch state {
+        case .improving:  // Weight loss (teal → blue)
+            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
+            // Improving: top 0.22, bottom 0.16 (was 0.18/0.12)
+            return LinearGradient(
+                colors: [
+                    Theme.ColorToken.moodImprovingStart.opacity(0.22),  // Teal
+                    Theme.ColorToken.moodImprovingEnd.opacity(0.16)     // Blue
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .regressing:  // Weight gain (coral → peach)
+            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
+            // Regressing: top 0.22, bottom 0.16 (was 0.18/0.12)
+            return LinearGradient(
+                colors: [
+                    Theme.ColorToken.moodRegressingStart.opacity(0.22),  // Coral
+                    Theme.ColorToken.moodRegressingEnd.opacity(0.16)     // Peach
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .flat:  // Stable (gold → light gold)
+            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
+            // Stable: top 0.18, bottom 0.12 (was 0.16/0.10)
+            return LinearGradient(
+                colors: [
+                    Theme.ColorToken.moodStableStart.opacity(0.18),  // Gold
+                    Theme.ColorToken.moodStableEnd.opacity(0.12)     // Light gold
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
 
     var body: some View {
         NavigationView {
-            // Luxury gradient background - Color Refresh v1
-            // Per FastLIFe_ProgressStory_ColorRefresh_v1.md: 3-stop breathing gradient
+            // v1.1 Adaptive Background: Navy base + Mood overlay based on 7-day trend
+            // Per FastLIFe_LIFeJourney_UIUX_v1.1_AdaptiveBehavioralDesign.md §3
             ZStack {
-                // Deep 3-stop navy gradient (Stacked v1.2)
+                // Layer 1: Deep 3-stop navy gradient (base canvas)
                 LinearGradient(
                     colors: [
                         Theme.ColorToken.bgDeepStart,  // Top: #0C1A2B (calm base)
@@ -574,9 +635,21 @@ struct WeightTrendsView: View {
                 )
                 .ignoresSafeArea()
 
+                // Layer 2: Adaptive mood gradient overlay (12-18% opacity)
+                // Driven by 7-day trend state: improving/regressing/stable
+                // Changes color to reflect emotional tone without being alarmist
+                adaptiveMoodOverlay(for: trendState(for: calculateDelta(days: 7) ?? 0))
+                    .ignoresSafeArea()
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: calculateDelta(days: 7))
+                    .offset(y: reduceMotion ? 0 : (moodAnimate ? -6 : 6))  // Micro drift (breathing effect)
+                    .animation(
+                        reduceMotion ? nil : .easeInOut(duration: 5).repeatForever(autoreverses: true),
+                        value: moodAnimate
+                    )
+
                 ScrollView {
-                    VStack(spacing: 16) {
-                        // HEADER: Title + Subtitle per UI/UX spec
+                    VStack(spacing: 20) {
+                        // HEADER: Title + Subtitle per UI/UX spec (v1.2: spacing 16pt → 20pt)
                         // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
                         VStack(spacing: 4) {
                             // TITLE: Your LIFe Journey (luxury gradient)
@@ -598,22 +671,42 @@ struct WeightTrendsView: View {
 
                             // SUBTITLE: Motivational tagline
                             // Font: SF Pro Display 15pt, weight 400, italic (per spec §4)
+                            // v1.2: Changed to white for better visibility on gradient background
                             Text("Progress you can feel — one choice at a time.")
                                 .font(.system(size: 15, weight: .regular, design: .default))
                                 .italic()
-                                .foregroundColor(Theme.ColorToken.textSecondary)
+                                .foregroundColor(.white)
                                 .frame(maxWidth: .infinity, alignment: .center)  // Centered
                                 .multilineTextAlignment(.center)
                         }
                         .padding(.top, 8)
                         .padding(.bottom, 8)
 
+                        // COACH BAR (v1.2) - State-based micro-copy under subtitle with hide functionality
+                        // Per v1.2 spec: Accent background, white text, eye.slash hide button
+                        // Registers under "Your Progress Journey" in Control Center
+                        // Dual visibility system: ProgressStoryCardManager (master) + ContentOptOutManager (individual)
+                        let coachState7d = trendState(for: calculateDelta(days: 7) ?? 0)
+                        if progressStoryCardManager.isCardVisible(.coachBar) && !optOutManager.isContentOptedOut(id: contentID_CoachBar) {
+                            CoachBar(text: coachBarText(for: coachState7d), onHide: {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    // Hide via ProgressStoryCardManager (shows in "Your Progress Journey" section)
+                                    progressStoryCardManager.hideCard(.coachBar)
+                                }
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            })
+                            .padding(.bottom, 8)
+                            .opacity(isAnimating ? 1 : 0)
+                            .offset(y: isAnimating ? 0 : 20)
+                            .animation(.easeInOut(duration: 0.4).delay(0.05), value: isAnimating)
+                        }
+
                         // STACKED LAYOUT v1.1: Narrative flow top-to-bottom
 
-                        // 1. 7-DAY CARD (full-width)
+                        // 1. 7-DAY CARD (full-width) - CIRCULAR TREND RING
                         // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
                         if progressStoryCardManager.isCardVisible(.sevenDay) && !optOutManager.isContentOptedOut(id: contentID_7Day) {
-                            TrendCardFull(
+                            CircularTrendRingCard(
                                 periodLabel: "7 DAYS",
                                 delta: calculateDelta(days: 7),
                                 surface: Theme.ColorToken.surfaceIce,
@@ -651,10 +744,10 @@ struct WeightTrendsView: View {
                             .animation(.easeInOut(duration: 0.4).delay(0.2), value: isAnimating)
                         }
 
-                        // 3. 30-DAY CARD (full-width)
+                        // 3. 30-DAY CARD (full-width) - CIRCULAR TREND RING
                         // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
                         if progressStoryCardManager.isCardVisible(.thirtyDay) && !optOutManager.isContentOptedOut(id: contentID_30Day) {
-                            TrendCardFull(
+                            CircularTrendRingCard(
                                 periodLabel: "30 DAYS",
                                 delta: calculateDelta(days: 30),
                                 surface: Theme.ColorToken.surfaceIvory,
@@ -735,6 +828,11 @@ struct WeightTrendsView: View {
                 // Trigger staggered fade-in animation on view appear
                 withAnimation {
                     isAnimating = true
+                }
+
+                // v1.1: Trigger mood background micro-drift animation (respects Reduce Motion)
+                if !reduceMotion {
+                    moodAnimate = true
                 }
             }
             .toolbar {
@@ -910,6 +1008,56 @@ struct LightCard<Content: View>: View {
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  */
 
+/// Coach Bar - Behavioral micro-copy under subtitle (v1.2)
+/// Per v1.2 spec C.1: Enhanced emotional anchor with icon
+/// Appears between subtitle and first card
+/// ✅ REUSABLE across all trackers - just pass trend-driven text + optional icon
+struct CoachBar: View {
+    let text: String  // State-based micro-copy
+    var icon: String = "sparkles"  // SF Symbol name (default: sparkles)
+    let onHide: () -> Void  // Hide callback
+
+    var body: some View {
+        ZStack(alignment: .topTrailing) {
+            // Coach Bar content
+            HStack(spacing: 8) {
+                // Icon: sparkles or heart.text.square, 18-20pt, WHITE (v1.2)
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
+
+                Text(text)
+                    .font(.system(size: 21, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)  // WHITE for better visibility (v1.2)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, Theme.Spacing.pad)
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
+
+            // Eye.slash button overlaid in top-right corner
+            Button(action: onHide) {
+                Image(systemName: "eye.slash")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white.opacity(0.9))
+                    .frame(width: 44, height: 44)  // Apple HIG tap target
+            }
+            .buttonStyle(.plain)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Theme.ColorToken.accentInfo)  // ACCENT background (v1.2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Theme.ColorToken.accentInfo.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: Theme.ColorToken.shadowCard, radius: 8, x: 0, y: 4)
+        )
+        .accessibilityLabel("Coach tip: \(text)")
+    }
+}
+
 /// Progress Banner - Motivational/Action message with accent stripe
 /// Per Stacked v1.2 spec: Frosted glass background with eye.slash dismiss on RIGHT (matching DSCard pattern)
 /// ✅ REUSABLE across all trackers - just pass text + accent color
@@ -920,40 +1068,29 @@ struct ProgressBanner: View {
     let onHide: () -> Void  // Hide callback
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-RIGHT)
-            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
-            HStack {
-                Spacer()
-
-                Button(action: onHide) {
-                    Image(systemName: "eye.slash")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                        .frame(width: 44, height: 44)  // Apple HIG tap target
-                }
-                .buttonStyle(.plain)
-            }
-
+        ZStack(alignment: .topTrailing) {
             // Banner content
-            HStack(spacing: 12) {
-                // Left accent stripe
-                Capsule()
-                    .fill(accent)
-                    .frame(width: 3, height: 28)
+            Text(text)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(Theme.Spacing.pad)
 
-                Text(text)
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                    .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
-
-                Spacer(minLength: 0)
+            // Eye.slash button overlaid in top-right corner
+            Button(action: onHide) {
+                Image(systemName: "eye.slash")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(Theme.ColorToken.textSecondary)
+                    .frame(width: 44, height: 44)  // Apple HIG tap target
             }
+            .buttonStyle(.plain)
         }
-        .padding(16)
         .background(
-            // Stacked v1.2: Frosted glass banner
+            // Stacked v1.2: Solid background banner
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white.opacity(0.6))
+                .fill(Color.white)
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
                         .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
@@ -964,7 +1101,228 @@ struct ProgressBanner: View {
     }
 }
 
-/// Trend Card Full-Width - Single period display (7D or 30D)
+/// Circular Trend Ring Card - "Your LIFe Journey" luxury visual card
+/// Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
+/// Circular progress ring with gradient based on trend state
+/// Industry Pattern: Apple Watch Activity Rings
+struct CircularTrendRingCard: View {
+    let periodLabel: String  // "7 DAYS" or "30 DAYS"
+    let delta: Double?       // Signed value (negative = loss)
+    let surface: Color       // surfaceIce or surfaceIvory
+    let onHide: () -> Void   // Hide card callback
+
+    @State private var animateRing = false  // Ring sweep animation
+
+    private var state: WeightTrendsView.TrendState {
+        guard let delta = delta else { return .flat }
+        if delta < -0.2 { return .improving }
+        if delta > 0.2 { return .regressing }
+        return .flat
+    }
+
+    /// Gradient colors based on trend state per spec §3
+    /// Loss → Teal #22D1A3 → Blue #2B86C5
+    /// Gain → Coral #E47A6E → Rose #D63A3A
+    /// Stable → Gold #EEC36A → Amber #DFA53F
+    private var ringGradient: LinearGradient {
+        switch state {
+        case .improving:  // Loss
+            return LinearGradient(
+                colors: [
+                    Color(hex: "22D1A3"),  // Teal
+                    Color(hex: "2B86C5")   // Blue
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .regressing:  // Gain
+            return LinearGradient(
+                colors: [
+                    Color(hex: "E47A6E"),  // Coral
+                    Color(hex: "D63A3A")   // Rose
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .flat:  // Stable
+            return LinearGradient(
+                colors: [
+                    Color(hex: "EEC36A"),  // Gold
+                    Color(hex: "DFA53F")   // Amber
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    private var tag: String {
+        guard let delta = delta else { return "NO DATA" }
+        if delta < -0.2 { return "LOST" }
+        if delta > 0.2 { return "GAINED" }
+        return "FLAT"
+    }
+
+    /// Microcopy per spec §6
+    /// v1.2: Added exclamation points for motivational emphasis
+    private var microcopy: String {
+        switch state {
+        case .improving:
+            return "You're right on track — keep fueling smart!"
+        case .regressing:
+            return "Small upticks are data, not defeat — consistency wins!"
+        case .flat:
+            return "Holding steady means you're balanced — that's progress!"
+        }
+    }
+
+    /// Ring progress (0.0 - 1.0) - simplified for v1
+    /// TODO: Calculate actual progress based on goal distance
+    private var ringProgress: Double {
+        guard let delta = delta else { return 0.0 }
+        // Simple mapping: 0-5 lbs = 0.0-1.0 ring fill
+        let maxChange: Double = 5.0
+        let normalizedProgress = min(abs(delta) / maxChange, 1.0)
+        return normalizedProgress
+    }
+
+    /// Accent color for ring glow based on trend state
+    /// Per v1.1 spec §4: Ambient glow uses accent color at 35% opacity
+    private var accentColor: Color {
+        switch state {
+        case .improving:  // Weight loss → Success green
+            return Theme.ColorToken.stateSuccess
+        case .regressing:  // Weight gain → Coral (non-judgmental)
+            return Theme.ColorToken.accentCoral
+        case .flat:  // Stable → Gold
+            return Theme.ColorToken.accentGold
+        }
+    }
+
+    /// Emotion indicator icon (v1.1 spec §7)
+    /// Returns SF Symbol name for trend state
+    private func emotionIcon(for state: WeightTrendsView.TrendState) -> String {
+        switch state {
+        case .improving:  return "checkmark.seal"           // Trend down
+        case .regressing: return "arrow.up.right.circle"    // Trend up
+        case .flat:       return "pause.circle"             // Holding steady
+        }
+    }
+
+    /// Emotion indicator label (v1.1 spec §7)
+    /// Returns text label for trend state
+    private func emotionLabel(for state: WeightTrendsView.TrendState) -> String {
+        switch state {
+        case .improving:  return "trend down"
+        case .regressing: return "trend up"
+        case .flat:       return "holding steady"
+        }
+    }
+
+    var body: some View {
+        LightCard(surface: surface, onHide: onHide) {
+            VStack(spacing: 20) {
+                // CIRCULAR PROGRESS RING
+                // v1.2: Centered horizontally (user requirement: all center icons/imagery centered by default)
+                ZStack {
+                    // Background ring (unfilled)
+                    Circle()
+                        .stroke(
+                            Color.white.opacity(0.2),
+                            style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        )
+                        .frame(width: 160, height: 160)
+
+                    // Progress ring (gradient fill)
+                    // v1.2: Enhanced glow per spec C.2 for better visibility on light cards
+                    Circle()
+                        .trim(from: 0, to: animateRing ? ringProgress : 0)
+                        .stroke(
+                            ringGradient,
+                            style: StrokeStyle(lineWidth: 12, lineCap: .round)
+                        )
+                        .frame(width: 160, height: 160)
+                        .rotationEffect(.degrees(-90))  // Start from top
+                        .shadow(color: accentColor.opacity(0.40), radius: 20, x: 0, y: 7)  // Enhanced ambient glow (v1.2)
+                        .overlay(
+                            // Inner halo for additional depth (v1.2 spec C.2)
+                            Circle()
+                                .stroke(accentColor.opacity(0.08), lineWidth: 1)
+                                .blur(radius: 14)
+                                .frame(width: 180, height: 180)
+                        )
+                        .animation(.easeOut(duration: 1.2), value: animateRing)
+
+                    // Center content - Weight change value
+                    VStack(spacing: 4) {
+                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                            Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
+                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .foregroundColor(Theme.ColorToken.textPrimary)
+
+                            Text("lbs")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(Theme.ColorToken.textSecondary)
+                        }
+
+                        // Emotion Indicator (v1.2) - Icon + Label
+                        // Per v1.2 spec C.3: Enhanced sizes for better legibility
+                        // Icon: 20pt, Label: 14pt semibold
+                        if delta != nil {
+                            HStack(spacing: 4) {
+                                Image(systemName: emotionIcon(for: state))
+                                    .font(.system(size: 20, weight: .semibold))
+                                    .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
+
+                                Text(emotionLabel(for: state))
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 8)
+
+                // TAG + PERIOD LABEL
+                HStack(spacing: 8) {
+                    Text(tag)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.25))
+                        )
+
+                    Text(periodLabel)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Theme.ColorToken.textSecondary)
+                }
+
+                // MICROCOPY (motivational message)
+                Text(microcopy)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .padding(.horizontal, 12)
+            }
+            .padding(.vertical, 8)
+        }
+        .onAppear {
+            // Trigger ring animation on appear
+            animateRing = true
+        }
+        .transition(.opacity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(tag) \(delta != nil ? String(format: "%.1f", abs(delta!)) : "no data") pounds in \(periodLabel)")
+    }
+}
+
+/// LEGACY: Trend Card Full-Width - Simple flat number display
+/// Replaced by CircularTrendRingCard but kept for reference
 /// Per Stacked v1.2 spec: Light surface card with LightCard wrapper
 struct TrendCardFull: View {
     let periodLabel: String  // "7 DAYS" or "30 DAYS"

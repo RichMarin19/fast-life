@@ -32,7 +32,7 @@ enum ContentCategory: String, Codable, CaseIterable {
         case .educationalInsights: return "Educational Insights"
         case .behavioralNudges: return "Behavioral Nudges"
         case .motivationalMessages: return "Motivational Messages"
-        case .progressSummaries: return "Progress Summaries"
+        case .progressSummaries: return "Your Progress Journey"
         }
     }
 }
@@ -77,6 +77,7 @@ enum TrackerCardType: String, Codable, CaseIterable, Identifiable {
 /// Used in Control Center for managing Progress Story card visibility
 /// Industry Pattern: Same as TrackerCardType - enum registry for feature toggles
 enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
+    case coachBar = "progress_story_coach_bar_card"  // v1.2: Coach Bar
     case sevenDay = "progress_story_7day_card"
     case thirtyDay = "progress_story_30day_card"
     case banner = "progress_story_banner_card"
@@ -87,6 +88,7 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .coachBar: return "Coach Bar"
         case .sevenDay: return "7-Day Trend"
         case .thirtyDay: return "30-Day Trend"
         case .banner: return "Progress Banner"
@@ -97,6 +99,7 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
+        case .coachBar: return "Behavioral micro-copy under subtitle"
         case .sevenDay: return "7-day weight trend card"
         case .thirtyDay: return "30-day weight trend card"
         case .banner: return "Motivational progress message"
@@ -1128,7 +1131,7 @@ struct WeightControlCenterView: View {
                 }
             )) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Progress Summaries")
+                    Text("Your Progress Journey")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     Text("Weekly recaps showing trends and wins")
