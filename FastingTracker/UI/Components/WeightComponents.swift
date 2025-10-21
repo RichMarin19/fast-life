@@ -705,6 +705,7 @@ struct WeightTrendsView: View {
                         // STACKED LAYOUT v1.1: Narrative flow top-to-bottom
 
                         // 1. 7-DAY CARD (full-width) - CIRCULAR TREND RING
+                        // Universal Ice standard: All Progress Story cards use surfaceIce for visual consistency
                         // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
                         if progressStoryCardManager.isCardVisible(.sevenDay) && !optOutManager.isContentOptedOut(id: contentID_7Day) {
                             CircularTrendRingCard(
@@ -746,12 +747,13 @@ struct WeightTrendsView: View {
                         }
 
                         // 3. 30-DAY CARD (full-width) - CIRCULAR TREND RING
+                        // Universal Ice standard: All Progress Story cards use surfaceIce for visual consistency
                         // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
                         if progressStoryCardManager.isCardVisible(.thirtyDay) && !optOutManager.isContentOptedOut(id: contentID_30Day) {
                             CircularTrendRingCard(
                                 periodLabel: "30 DAYS",
                                 delta: calculateDelta(days: 30),
-                                surface: Theme.ColorToken.surfaceIvory,
+                                surface: Theme.ColorToken.surfaceIce,
                                 onHide: {
                                     withAnimation(.easeInOut(duration: 0.25)) {
                                         // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
@@ -829,12 +831,13 @@ struct WeightTrendsView: View {
 
                         // 6. FOOTER CELEBRATION (optional - motivational message)
                         // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
-                        // Animated text: "You're showing up. That's what builds your LIFe."
+                        // Animated text: "You're showing up. That's what builds your LIFe!"
                         // Subtle, encouraging, human tone
+                        // Standard: Dark background = light text, proper punctuation
                         if totalEntries >= 1 {
-                            Text("You're showing up. That's what builds your LIFe.")
+                            Text("You're showing up. That's what builds your LIFe!")
                                 .font(.system(size: 15, weight: .medium, design: .rounded))
-                                .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
+                                .foregroundColor(.white.opacity(0.8))
                                 .italic()
                                 .multilineTextAlignment(.center)
                                 .frame(maxWidth: .infinity)
@@ -1064,7 +1067,7 @@ struct ProgressBanner: View {
     let onHide: () -> Void  // Hide callback
 
     var body: some View {
-        DSBanner(white: onHide) {
+        DSBanner(ice: onHide) {
             Text(text)
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
@@ -1412,7 +1415,7 @@ struct RecapRow: View {
     }
 
     var body: some View {
-        DSBanner(mint: onHide) {
+        DSBanner(ice: onHide) {
             // Metrics row
             HStack(spacing: 12) {
                 // Net delta
@@ -1521,7 +1524,7 @@ struct DidYouKnowBanner: View {
     let onHide: () -> Void  // Hide callback
 
     var body: some View {
-        DSBanner(mint: onHide) {
+        DSBanner(ice: onHide) {
             HStack(spacing: 12) {
                 Image(systemName: "lightbulb")
                     .foregroundColor(Theme.ColorToken.accentInfo)

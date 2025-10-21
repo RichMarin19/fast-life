@@ -49,6 +49,10 @@ struct DSCard<Content: View>: View {
     /// Optional subtitle
     let subtitle: String?
 
+    /// Optional surface color for light backgrounds (ice/ivory/mint)
+    /// When nil, uses default white background
+    let surface: Color?
+
     /// Card content (MUST be pure - no styling!)
     let content: Content
 
@@ -76,6 +80,7 @@ struct DSCard<Content: View>: View {
         cardType: TrackerCardType,
         title: String? = nil,
         subtitle: String? = nil,
+        surface: Color? = nil,  // Optional light surface color
         onDismiss: (() -> Void)? = nil,
         onToggleExpand: (() -> Void)? = nil,
         isExpanded: Bool = true,
@@ -87,6 +92,7 @@ struct DSCard<Content: View>: View {
         self.cardType = cardType
         self.title = title
         self.subtitle = subtitle
+        self.surface = surface
         self.onDismiss = onDismiss
         self.onToggleExpand = onToggleExpand
         self.isExpanded = isExpanded
@@ -119,7 +125,7 @@ struct DSCard<Content: View>: View {
             }
         }
         .padding(DSSpacing.cardPadding)  // UNIVERSAL PADDING: 16pt
-        .background(DSColors.cardBackground)  // UNIVERSAL BACKGROUND: White
+        .background(surface ?? DSColors.cardBackground)  // Light surface or default white
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))  // UNIVERSAL RADIUS: 16pt
         .shadow(
             color: DSColors.cardShadow,  // UNIVERSAL SHADOW
@@ -139,6 +145,7 @@ extension DSCard {
         cardType: TrackerCardType,
         title: String? = nil,
         subtitle: String? = nil,
+        surface: Color? = nil,  // Optional light surface color
         cardManager: TrackerCardManager = .shared,
         canExpand: Bool = false,
         canReorder: Bool = false,
@@ -148,6 +155,7 @@ extension DSCard {
             cardType: cardType,
             title: title,
             subtitle: subtitle,
+            surface: surface,
             onDismiss: { cardManager.hideCard(cardType) },
             onToggleExpand: canExpand ? { cardManager.toggleCardExpansion(cardType) } : nil,
             isExpanded: cardManager.isCardExpanded(cardType),

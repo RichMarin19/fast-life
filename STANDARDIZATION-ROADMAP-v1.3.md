@@ -68,48 +68,120 @@ Per UNIVERSAL_STANDARDIZATION_ARCHITECTURE.md Rule 3: "Extract reusable componen
 ---
 
 #### **Opportunity 1.2: LightCard Container**
-**Status:** Currently custom container in WeightComponents.swift (lines 922-967)
+**Status:** ✅ **COMPLETED** - Phase v1.3c (October 21, 2025)
 
 **Analysis:**
 - **Pattern:** Light surface cards (ice/ivory/mint) with hide button + custom content
-- **Current Usage:** CircularTrendRingCard (7-day + 30-day trend cards)
+- **Current Usage:** CircularTrendRingCard (7-day + 30-day trend cards), RecapRow, DidYouKnowBanner
 - **Code:** 46 lines of container logic
 - **Already Standardized:** Uses 16pt padding (matches DSBanner)
 
-**Questions:**
-1. Should LightCard become `DSLightCard` in Design System?
-2. Or should we migrate to DSCard with `surface` parameter?
-
-**Option A: Extract to DSLightCard** (New Level 1 container)
-- Pros: Dedicated container for light surface pattern
-- Cons: Another container type to maintain
-
-**Option B: Enhance DSCard with surface parameter** (Extend existing Level 1)
-- Pros: Fewer containers, more unified
-- Cons: DSCard becomes more complex
-
-**Recommendation:** **Option B** - Extend DSCard
+**Decision:** **Option B** - Enhance DSCard with surface parameter ✅
 - Follows "simple method first" strategy
 - Single universal container > multiple specialized containers
 - Industry pattern: Apple uses one Card component with styling variants
 
-**Proposed Solution:**
+**Implementation Complete:**
 ```swift
+// DSCard.swift now supports surface parameter:
+let surface: Color?  // Optional light surface color
+
 DSCard(
-    cardType: .trendRing,
-    surface: Theme.ColorToken.surfaceIce,  // NEW parameter
-    cardManager: cardManager
+    cardType: .milestone,
+    surface: Theme.ColorToken.surfaceIce,  // Light surface support
+    onDismiss: onHide
 ) {
-    // Trend ring content
+    // Pure content
 }
 ```
 
-**Extraction Candidate:** ⚠️ **MEDIUM PRIORITY**
-- Requires DSCard enhancement (adds complexity)
-- Only 2 instances currently (7-day + 30-day)
-- Can defer until more light surface cards appear
+**Results:**
+- ✅ DSCard enhanced with `surface: Color?` parameter
+- ✅ Default behavior unchanged (white background when surface = nil)
+- ✅ Light surfaces (ice/ivory/mint) now supported
+- ✅ Build succeeded (0 errors, 0 warnings)
+- ⚠️ LightCard still used in Progress Story cards (not migrated - requires card type system expansion)
 
-**Estimated Effort:** 3 hours (enhance DSCard + migrate 2 instances + test)
+**Migration Status:**
+- **Not Migrated:** CircularTrendRingCard still uses LightCard
+  - Reason: Progress Story cards don't use TrackerCardType enum
+  - Future: Could add ProgressStoryCardType support to DSCard
+  - Decision: Defer - only 2 instances, working pattern
+
+**Code Impact:**
+- DSCard enhanced: +1 parameter, +3 lines
+- No code eliminated yet (LightCard still in use)
+- **Future Potential:** 46 lines can be eliminated when Progress Story cards migrate
+
+**Actual Effort:** 1.5 hours
+**Priority:** ✅ COMPLETED (deferred full migration)
+
+**Post-Completion Update (Phase v1.3d - October 21, 2025):**
+- ✅ **Ice Color Standardization Complete - "North Star" Weight Tracker Standard**
+- Changed ALL Progress Story cards to Ice: ProgressBanner, RecapRow, DidYouKnowBanner, 7-day card, 30-day card
+- Changed 30-day card from surfaceIvory → surfaceIce for uniform appearance
+- **Universal Standard Established:** `Theme.ColorToken.surfaceIce` is now the universal light card color for ALL Progress Story cards throughout the entire app
+- **North Star Standard:** This Weight Tracker Progress Story design is the template for all future trackers (Fasting, Hydration, Sleep, Mood)
+- **Industry Pattern:** Apple Health uses single light surface color for consistency
+- **Build Status:** ✅ 0 errors, 0 warnings
+- **Code Changes:** 5 single-line edits in WeightComponents.swift
+  - Lines 1067, 1415, 1524: Banners (white/mint → ice)
+  - Line 755: 30-day card (ivory → ice)
+  - Line 708, 749: Added "Universal Ice standard" comments
+- **Text Contrast Standards:**
+  - Light background (Ice) = Dark text (Theme.ColorToken.textPrimary) ✅
+  - Dark background (Navy gradient) = Light text (.white.opacity(0.8)) ✅
+  - Standard: Dark background = light text, Light background = dark text
+- **Punctuation Standard Established:**
+  - All motivational/footer messages must use proper punctuation
+  - Footer text now: "You're showing up. That's what builds your LIFe!" (added exclamation)
+- **Benefits:**
+  - Perfect visual consistency across ALL Progress Story cards
+  - Single source of truth for light card styling
+  - Reduced cognitive load (one color standard = easier to replicate)
+  - Apple HIG compliant (consistent visual language)
+  - Proper text contrast (accessibility compliant)
+
+**Ice Color Standard Documentation ("North Star" for all trackers):**
+```swift
+// WeightComponents.swift - ALL Progress Story cards use Ice surface
+// This is the "North Star" standard for replicating across all trackers
+
+// Banners
+DSBanner(ice: onHide) {  // Universal light card standard
+    // Progress Banner, Recap Row, Did You Know Banner, Reflection Nudge
+}
+
+// Circular Trend Cards
+CircularTrendRingCard(
+    periodLabel: "7 DAYS",  // or "30 DAYS"
+    delta: calculateDelta(days: 7),
+    surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard
+    onHide: onHide
+)
+
+// Theme.ColorToken.surfaceIce = #F4FAFD (light ice/blue)
+// Apply to ALL Progress Story cards app-wide - this is the North Star standard
+// When replicating for Fasting/Hydration/Sleep/Mood trackers, use this same pattern
+```
+
+**Text Contrast Standard (Accessibility):**
+```swift
+// Footer text on dark background
+Text("You're showing up. That's what builds your LIFe!")
+    .foregroundColor(.white.opacity(0.8))  // Light text on dark background
+
+// Card text on light background (Ice)
+Text("Progress text")
+    .foregroundColor(Theme.ColorToken.textPrimary)  // Dark text on light background
+
+// Standard: Dark background = light text, Light background = dark text
+```
+
+**Punctuation Standard:**
+- All motivational messages must use proper punctuation (periods, exclamation points)
+- Footer messages should end with exclamation points for motivational emphasis
+- Example: "You're showing up. That's what builds your LIFe!" ✅
 
 ---
 
