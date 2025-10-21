@@ -426,13 +426,14 @@ struct WeightTrendsView: View {
     @ObservedObject private var progressStoryCardManager = ProgressStoryCardManager.shared
 
     // Content IDs for opt-out tracking
-    private let contentID_ProgressStory = "progress_story_v1"        // Global (toolbar button)
-    private let contentID_CoachBar = "progress_story_coach_bar_v1"   // Coach Bar (v1.2)
-    private let contentID_7Day = "progress_story_7day_v1"            // 7-day card
-    private let contentID_30Day = "progress_story_30day_v1"          // 30-day card
-    private let contentID_Banner = "progress_story_banner_v1"        // Motivational banner
-    private let contentID_Recap = "progress_story_recap_v1"          // Recap row
-    private let contentID_Tip = "progress_story_tip_v1"              // Did You Know
+    private let contentID_ProgressStory = "progress_story_v1"             // Global (toolbar button)
+    private let contentID_CoachBar = "progress_story_coach_bar_v1"        // Coach Bar (v1.2)
+    private let contentID_7Day = "progress_story_7day_v1"                 // 7-day card
+    private let contentID_30Day = "progress_story_30day_v1"               // 30-day card
+    private let contentID_Banner = "progress_story_banner_v1"             // Motivational banner
+    private let contentID_ReflectionNudge = "progress_story_reflection_v1" // Reflection Nudge (v1.2b)
+    private let contentID_Recap = "progress_story_recap_v1"               // Recap row
+    private let contentID_Tip = "progress_story_tip_v1"                   // Did You Know
 
     // MARK: - Trend State Logic (Layer 1)
 
@@ -762,6 +763,30 @@ struct WeightTrendsView: View {
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : 20)
                             .animation(.easeInOut(duration: 0.4).delay(0.3), value: isAnimating)
+                        }
+
+                        // 3.5. REFLECTION NUDGE (v1.2b/v1.2c) - Below 30-day card, behavioral prompt
+                        // Per v1.2 spec D.3: Rotate random prompt, tap triggers micro-plan (stub)
+                        // v1.2c: Upgraded to dual visibility system (ProgressStoryCardManager + ContentOptOutManager)
+                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
+                        if progressStoryCardManager.isCardVisible(.reflection) && !optOutManager.isContentOptedOut(id: contentID_ReflectionNudge) {
+                            ReflectionNudge(
+                                onHide: {
+                                    withAnimation(.easeInOut(duration: 0.25)) {
+                                        // Hide via ProgressStoryCardManager (shows in "Your Progress Journey" section)
+                                        progressStoryCardManager.hideCard(.reflection)
+                                    }
+                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                },
+                                onTap: {
+                                    // v1.2b: Stub for micro-plan Coach prompt (functional later)
+                                    // TODO: Trigger Coach prompt modal
+                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                }
+                            )
+                            .opacity(isAnimating ? 1 : 0)
+                            .offset(y: isAnimating ? 0 : 20)
+                            .animation(.easeInOut(duration: 0.4).delay(0.35), value: isAnimating)
                         }
 
                         // 4. RECAP ROW (Net Δ | Streak | Entries)
@@ -1112,6 +1137,8 @@ struct CircularTrendRingCard: View {
     let onHide: () -> Void   // Hide card callback
 
     @State private var animateRing = false  // Ring sweep animation
+    @State private var showWinHalo = false  // v1.2b: Win halo animation (D.1)
+    @Environment(\.accessibilityReduceMotion) var reduceMotion  // Respect Reduce Motion
 
     private var state: WeightTrendsView.TrendState {
         guard let delta = delta else { return .flat }
@@ -1225,6 +1252,17 @@ struct CircularTrendRingCard: View {
                 // CIRCULAR PROGRESS RING
                 // v1.2: Centered horizontally (user requirement: all center icons/imagery centered by default)
                 ZStack {
+                    // WIN HALO (v1.2b) - Expanding + fading celebration when trend = improving
+                    // Per v1.2 spec D.1: One-time animation on appear, skip on Reduce Motion
+                    if state == .improving && !reduceMotion {
+                        Circle()
+                            .stroke(accentColor.opacity(0.15), lineWidth: 8)
+                            .frame(width: 180, height: 180)
+                            .scaleEffect(showWinHalo ? 1.12 : 1.0)
+                            .opacity(showWinHalo ? 0.0 : 1.0)
+                            .animation(.easeOut(duration: 0.9), value: showWinHalo)
+                    }
+
                     // Background ring (unfilled)
                     Circle()
                         .stroke(
@@ -1314,6 +1352,12 @@ struct CircularTrendRingCard: View {
         .onAppear {
             // Trigger ring animation on appear
             animateRing = true
+
+            // v1.2b: Trigger win halo animation (D.1) - only when improving + Reduce Motion OFF
+            if state == .improving && !reduceMotion {
+                showWinHalo = true
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
         }
         .transition(.opacity)
         .accessibilityElement(children: .combine)
@@ -1406,15 +1450,26 @@ struct TrendCardFull: View {
 /// Recap Row - Three metrics in single row (Net Δ | Streak | Entries)
 /// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
 /// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
+/// v1.2b: Added streak badge system (D.2) - badge dot + haptic when new best streak achieved
 struct RecapRow: View {
     let netDelta: Double   // Signed across 30d
     let bestStreak: Int    // Days
     let entries: Int       // Total entries
     let onHide: () -> Void // Hide callback
 
+    // v1.2b: Track best streak in @AppStorage for badge system
+    @AppStorage("weight_tracker_best_streak") private var savedBestStreak: Int = 0
+    @State private var showNewBestBadge = false  // Badge animation state
+
     private var netText: String {
         let tag = netDelta < 0 ? "LOST" : (netDelta > 0 ? "GAINED" : "FLAT")
         return "\(tag) \(String(format: "%.1f", abs(netDelta))) lbs"
+    }
+
+    /// Check if current streak is new best
+    /// Per v1.2 spec D.2: New best streak → small badge dot + haptic .success
+    private var isNewBest: Bool {
+        return bestStreak > savedBestStreak && bestStreak > 0
     }
 
     var body: some View {
@@ -1442,10 +1497,24 @@ struct RecapRow: View {
 
                 Spacer()
 
-                // Best streak
-                Label("\(bestStreak)‑day streak", systemImage: "flame")
-                    .font(.system(size: 14, weight: .regular))
-                    .foregroundColor(Theme.ColorToken.textPrimary)
+                // Best streak (v1.2b: with badge dot when new best achieved)
+                ZStack(alignment: .topTrailing) {
+                    Label("\(bestStreak)‑day streak", systemImage: "flame.fill")
+                        .font(.system(size: 14, weight: .regular))
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+
+                    // NEW BEST BADGE (v1.2b) - Small dot overlay when new best streak achieved
+                    // Per v1.2 spec D.2: Badge dot + haptic .success
+                    if isNewBest {
+                        Circle()
+                            .fill(Theme.ColorToken.stateSuccess)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 6, y: -4)
+                            .opacity(showNewBestBadge ? 1.0 : 0.0)
+                            .scaleEffect(showNewBestBadge ? 1.0 : 0.5)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.6), value: showNewBestBadge)
+                    }
+                }
 
                 Spacer()
 
@@ -1465,6 +1534,90 @@ struct RecapRow: View {
                         .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
                 )
         )
+        .onAppear {
+            // v1.2b: Check for new best streak and trigger badge animation + haptic feedback
+            if isNewBest {
+                // Update saved best streak
+                savedBestStreak = bestStreak
+
+                // Trigger badge animation
+                showNewBestBadge = true
+
+                // Haptic .success feedback (per spec D.2)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+        }
+    }
+}
+
+/// Reflection Nudge - Behavioral prompt for micro-planning (v1.2b)
+/// Per v1.2 spec D.3: Below 30-day card, rotate one line at random
+/// Tap → triggers micro-plan Coach prompt (stub now, functional later)
+struct ReflectionNudge: View {
+    let onHide: () -> Void  // Hide callback
+    let onTap: () -> Void   // Tap callback (stub for now)
+
+    /// Random reflection prompt per v1.2 spec D.3
+    /// Rotates between 3 options to encourage micro-planning
+    private var reflectionPrompt: String {
+        let prompts = [
+            "One small habit to try this week?",
+            "What helped most on your best day?",
+            "Pick tomorrow's anchor: sleep / steps / water."
+        ]
+        return prompts.randomElement() ?? prompts[0]
+    }
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 12) {
+                // Top row: eye.slash icon (top-RIGHT)
+                // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
+                HStack {
+                    Spacer()
+
+                    Button(action: onHide) {
+                        Image(systemName: "eye.slash")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(Theme.ColorToken.textSecondary)
+                            .frame(width: 44, height: 44)  // Apple HIG tap target
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                // Reflection prompt content
+                HStack(spacing: 12) {
+                    Image(systemName: "sparkle")
+                        .foregroundColor(Theme.ColorToken.accentGold)
+                        .font(.system(size: 16))
+
+                    Text(reflectionPrompt)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+                        .italic()
+
+                    Spacer()
+
+                    // Chevron disclosure (indicates tappable)
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.6))
+                        .font(.system(size: 12))
+                }
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Theme.ColorToken.surfaceIce)  // v1.2c: Changed from surfaceIvory → surfaceIce for visual hierarchy standardization
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
+                    )
+                    .shadow(color: Theme.ColorToken.shadowCard, radius: 6, x: 0, y: 3)
+            )
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Reflection prompt: \(reflectionPrompt)")
+        .accessibilityHint("Tap to respond")
     }
 }
 

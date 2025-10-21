@@ -81,6 +81,7 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
     case sevenDay = "progress_story_7day_card"
     case thirtyDay = "progress_story_30day_card"
     case banner = "progress_story_banner_card"
+    case reflection = "progress_story_reflection_card"  // v1.2b/v1.2c: Reflection Nudge
     case recap = "progress_story_recap_card"
     case didYouKnow = "progress_story_tip_card"
 
@@ -92,6 +93,7 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
         case .sevenDay: return "7-Day Trend"
         case .thirtyDay: return "30-Day Trend"
         case .banner: return "Progress Banner"
+        case .reflection: return "Reflection Prompts"
         case .recap: return "Progress Recap"
         case .didYouKnow: return "Did You Know"
         }
@@ -103,6 +105,7 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
         case .sevenDay: return "7-day weight trend card"
         case .thirtyDay: return "30-day weight trend card"
         case .banner: return "Motivational progress message"
+        case .reflection: return "Micro-planning prompts for habit building"
         case .recap: return "Net change, streak, and entries"
         case .didYouKnow: return "Educational weight loss tip"
         }
