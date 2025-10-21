@@ -91,26 +91,26 @@ import SwiftUI
                         .foregroundColor(Theme.ColorToken.textPrimary)
                 }
 
-                // Ivory
+                // Ivory (now uses Ice - Phase v1.3e)
                 DSCard(
                     cardType: .milestone,
-                    title: "Ivory Surface",
-                    surface: Theme.ColorToken.surfaceIvory,
+                    title: "Ivory → Ice (Unified)",
+                    surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard
                     onDismiss: { print("Ivory dismissed") }
                 ) {
-                    Text("Light Ivory/Cream")
+                    Text("Now uses Ice (Unified Standard)")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(Theme.ColorToken.textPrimary)
                 }
 
-                // Mint
+                // Mint (now uses Ice - Phase v1.3e)
                 DSCard(
                     cardType: .milestone,
-                    title: "Mint Surface",
-                    surface: Theme.ColorToken.surfaceMint,
+                    title: "Mint → Ice (Unified)",
+                    surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard
                     onDismiss: { print("Mint dismissed") }
                 ) {
-                    Text("Light Mint/Green")
+                    Text("Now uses Ice (Unified Standard)")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(Theme.ColorToken.textPrimary)
                 }

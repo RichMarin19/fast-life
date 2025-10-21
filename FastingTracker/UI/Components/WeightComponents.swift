@@ -1085,7 +1085,7 @@ struct ProgressBanner: View {
 struct CircularTrendRingCard: View {
     let periodLabel: String  // "7 DAYS" or "30 DAYS"
     let delta: Double?       // Signed value (negative = loss)
-    let surface: Color       // surfaceIce or surfaceIvory
+    let surface: Color       // Universal Ice standard (Phase v1.3e)
     let onHide: () -> Void   // Hide card callback
 
     @State private var animateRing = false  // Ring sweep animation
@@ -1312,7 +1312,7 @@ struct CircularTrendRingCard: View {
 struct TrendCardFull: View {
     let periodLabel: String  // "7 DAYS" or "30 DAYS"
     let delta: Double?       // Signed value (negative = loss)
-    let surface: Color       // surfaceIce or surfaceIvory
+    let surface: Color       // Universal Ice standard (Phase v1.3e)
     let onHide: () -> Void   // Hide card callback
 
     private var state: WeightTrendsView.TrendState {

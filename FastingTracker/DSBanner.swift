@@ -157,7 +157,7 @@ extension DSBanner {
         @ViewBuilder content: () -> Content
     ) {
         self.init(
-            surface: Theme.ColorToken.surfaceIvory,  // Use surfaceIvory (matches consultant's version)
+            surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard (Phase v1.3e)
             cornerRadius: 14,
             enableShadow: true,
             shadowColor: Theme.ColorToken.shadowCard,
@@ -180,7 +180,7 @@ extension DSBanner {
         @ViewBuilder content: () -> Content
     ) {
         self.init(
-            surface: Theme.ColorToken.surfaceMint,
+            surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard (Phase v1.3e)
             cornerRadius: 14,
             enableShadow: false,  // Mint banners typically don't have shadow
             shadowColor: .clear,
