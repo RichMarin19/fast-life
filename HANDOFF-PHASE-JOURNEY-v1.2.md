@@ -498,11 +498,215 @@ progressStoryCardManager.hideCard(.reflection)
 
 ---
 
-### 🚧 PENDING (Phase v1.2d - Additional Enhancements)
+### ✅ COMPLETED (Phase v1.2d - DSProgressRing Extraction)
 
-**Goal:** User control over streak goals and card order customization.
+**Date:** October 21, 2025
+**Status:** ✅ BUILD SUCCEEDED | 0 errors, 0 warnings | Functionality verified
+**Goal:** Extract reusable DSProgressRing component to eliminate code duplication.
+**Priority:** HIGH - Foundation for scaling across all 5 trackers
 
-**Priority:** MEDIUM/LOW - Nice-to-have features after core standardization
+#### Implementation Summary
+
+**1. DSProgressRing Component Created ✅**
+- **File:** `/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/DesignSystem/DSProgressRing.swift`
+- **Lines of Code:** 293 lines (reusable component)
+- **Code Eliminated:** ~60-80 lines of duplication across 2 locations
+- **Industry Pattern:** Apple Watch Activity Rings, Apple Health progress indicators
+
+**Component Features:**
+- Fully parameterized (progress, size, strokeWidth, gradients, glow, halo)
+- Respects Reduce Motion accessibility
+- Convenience initializers for solid colors
+- Complete documentation + Preview
+- Design token compliant (DSSpacing, DSColors via Theme.ColorToken)
+
+**2. CircularTrendRingCard Updated ✅**
+- **File:** `WeightComponents.swift` (lines 1266-1281)
+- Replaced ~30 lines of ring code with single DSProgressRing call
+- Maintains all existing functionality (win halo, gradient, glow)
+
+**3. MilestoneRingCard Updated ✅**
+- **File:** `MilestoneRingCard.swift` (lines 93-111)
+- Replaced ~30 lines of ring code with single DSProgressRing call
+- Simplified animation handling (@State moved to struct level)
+
+#### 🔧 Build Fix - Consultant Intervention
+
+**Issue Encountered:** "Cannot find 'DSProgressRing' in scope" errors
+- **Root Cause:** New Swift file not added to Xcode project file (.pbxproj)
+- **Pragmatic Fix:** Consultant added lightweight inline DSBanner to WeightComponents.swift (lines 1729-1792)
+- **Result:** Build succeeded, work unblocked ✅
+
+**Lesson Learned:**
+- Always add new Design System files to Xcode project immediately after creation
+- 30-second manual step via Xcode IDE prevents "Cannot find in scope" errors
+- Consultant's inline fix was correct pragmatic solution to unblock development
+
+#### 📊 Impact
+
+**Code Savings:**
+- Before: ~60-80 lines duplicated across 2 files
+- After: 293-line reusable component used by both + future trackers
+- **Net Benefit:** Single source of truth, scales to 5+ trackers (Fasting, Hydration, Sleep, Mood, Weight)
+
+**Standardization:**
+- Follows Universal Architecture (Level 3: Reusable Components)
+- Uses Design Tokens (DSSpacing, DSColors via Theme.ColorToken)
+- Apple HIG compliant (Reduce Motion, accessibility)
+- Industry pattern (Apple Watch Activity Rings)
+
+**Files Modified:**
+- `FastingTracker/Core/DesignSystem/DSProgressRing.swift` (NEW - 293 lines)
+- `FastingTracker/UI/Components/WeightComponents.swift` (lines 1266-1281)
+- `FastingTracker/MilestoneRingCard.swift` (lines 93-111)
+
+---
+
+### ✅ COMPLETED (Phase v1.2e - DSBanner Standardization)
+
+**Date:** October 21, 2025
+**Status:** ✅ BUILD SUCCEEDED | 0 errors, 0 warnings | Uniform container sizing achieved
+**Goal:** Extract reusable DSBanner component for uniform container sizing in "Your LIFe Journey"
+**Priority:** HIGH - Single source of truth for banner containers
+
+#### Problem Identified
+
+**User Request:** "Containers in 'Your LIFe Journey' should be the same size when contents is the same"
+
+**Analysis:**
+- 4 banner-style cards (ProgressBanner, ReflectionNudge, RecapRow, DidYouKnowBanner) had duplicated container code
+- Each had custom padding/styling (~90-120 lines of duplication total)
+- Inconsistent vertical sizing created visual discord
+- NOT reusable across trackers (code locked in WeightComponents.swift)
+
+**Root Cause:** No centralized banner container component = duplicated styling logic
+
+#### Solution: DSBanner Component
+
+**Industry Standard Applied:** iOS card padding = **16pt** (Apple HIG, 8pt grid system)
+
+**DSBanner Features:**
+- Single source of truth for banner container styling
+- Standard 16pt padding (DSSpacing.cardPadding)
+- 3 convenience initializers: `white`, `mint`, `ice` (matches Theme.ColorToken surfaces)
+- Full customization: surface, cornerRadius, shadow, stroke
+- Optional hide button (eye.slash, 44×44pt HIG compliant)
+- Complete documentation + Preview
+
+**Component Created:**
+- **File:** `/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/DesignSystem/DSBanner.swift`
+- **Lines of Code:** 301 lines (reusable component)
+
+#### Implementation Summary
+
+**1. ProgressBanner Refactored ✅**
+- **Before:** 41 lines with inline container code
+- **After:** 11 lines using DSBanner
+- **Savings:** 30 lines eliminated
+
+```swift
+// Before: Custom container with inline styling
+ZStack(alignment: .topTrailing) {
+    Text(text).padding(Theme.Spacing.pad)
+    Button(action: onHide) { /* eye.slash */ }
+}
+.background(/* 10 lines of styling */)
+
+// After: DSBanner handles all container logic
+DSBanner(white: onHide) {
+    Text(text)
+        .font(.system(size: 18, weight: .semibold, design: .rounded))
+        .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
+}
+```
+
+**2. ReflectionNudge Refactored ✅**
+- **Before:** 44 lines with inline container code
+- **After:** 22 lines using DSBanner
+- **Savings:** 22 lines eliminated
+
+**3. RecapRow Refactored ✅**
+- **Before:** 44 lines with inline container code
+- **After:** 38 lines using DSBanner (complex badge logic retained)
+- **Savings:** 6 lines eliminated
+
+**4. DidYouKnowBanner Refactored ✅**
+- **Before:** 38 lines with inline container code
+- **After:** 11 lines using DSBanner
+- **Savings:** 27 lines eliminated
+
+#### 🔧 Build Fix - Standardization Complete
+
+**Issue:** Consultant's inline DSBanner (added for Phase v1.2d fix) conflicted with centralized version
+
+**Solution:**
+1. Removed consultant's inline DSBanner from WeightComponents.swift (lines 1729-1792 deleted)
+2. Updated centralized DSBanner.swift to use `surfaceIvory` for white banners (matches consultant's choice)
+3. Added DSBanner.swift to Xcode project manually
+4. Build succeeded ✅
+
+**Result:** Single source of truth achieved, all 4 banners use centralized DSBanner component
+
+#### 📊 Impact
+
+**Code Savings:**
+- **Total Eliminated:** ~85 lines of duplicated container code
+- **Net Benefit:** 301-line reusable component scales to all 5 trackers
+
+**Uniform Container Sizing:**
+- All 4 banners now use identical padding: **16pt** (iOS standard)
+- Consistent vertical height across "Your LIFe Journey"
+- Visual harmony achieved ✅
+
+**Standardization:**
+- Follows Universal Architecture (Level 3: Reusable Components)
+- Uses Design Tokens (DSSpacing.cardPadding, Theme.ColorToken surfaces)
+- Apple HIG compliant (16pt padding, 8pt grid, 44×44pt tap targets)
+- Industry pattern (iOS Settings cards, Apple Health cards)
+
+**Files Modified:**
+- `FastingTracker/Core/DesignSystem/DSBanner.swift` (NEW - 301 lines)
+- `FastingTracker/UI/Components/WeightComponents.swift`:
+  - ProgressBanner (lines 1086-1106) - refactored
+  - ReflectionNudge (lines 1521-1566) - refactored
+  - RecapRow (lines 1418-1496) - refactored
+  - DidYouKnowBanner (lines 1568-1591) - refactored
+  - Consultant's inline DSBanner (lines 1729-1792) - removed
+
+#### Key Lessons Learned
+
+**Lesson 1: Pragmatic Fixes Are Valid**
+- Consultant's inline DSBanner was correct solution to unblock development
+- Now standardized for long-term maintainability
+- Pragmatism → Standardization = healthy development workflow
+
+**Lesson 2: Industry Standards Work**
+- 16pt padding = iOS standard (Apple HIG)
+- 8pt grid system = universal design principle
+- Following standards = visual consistency + developer clarity
+
+**Lesson 3: Single Source of Truth = Scalability**
+- 4 banners → 1 component = infinite reusability
+- Change padding once → affects all banners across all 5 trackers
+- Foundation for Fasting, Hydration, Sleep, Mood tracker banners
+
+---
+
+### 📋 Phase v1.2d + v1.2e - Combined QA Results
+
+| Criteria | Status | Notes |
+|----------|--------|-------|
+| DSProgressRing Build | ✅ PASS | Added to Xcode, 0 errors |
+| CircularTrendRingCard | ✅ PASS | Ring renders correctly with win halo |
+| MilestoneRingCard | ✅ PASS | Ring renders correctly with progress |
+| DSBanner Build | ✅ PASS | Added to Xcode, 0 errors |
+| ProgressBanner | ✅ PASS | White surface, 16pt padding |
+| ReflectionNudge | ✅ PASS | Ice surface, 16pt padding |
+| RecapRow | ✅ PASS | Mint surface, 16pt padding, badge works |
+| DidYouKnowBanner | ✅ PASS | Mint surface, 16pt padding |
+| Uniform Container Sizing | ✅ PASS | All 4 banners same vertical height |
+| Hide Buttons | ✅ PASS | 44×44pt tap targets, all functional |
+| Build Status | ✅ PASS | 0 errors, 0 warnings |
 
 ---
 

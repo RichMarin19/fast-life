@@ -1087,41 +1087,20 @@ struct CoachBar: View {
 /// Per Stacked v1.2 spec: Frosted glass background with eye.slash dismiss on RIGHT (matching DSCard pattern)
 /// ✅ REUSABLE across all trackers - just pass text + accent color
 /// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
 struct ProgressBanner: View {
     let text: String
     let accent: Color
     let onHide: () -> Void  // Hide callback
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            // Banner content
+        DSBanner(white: onHide) {
             Text(text)
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
                 .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(Theme.Spacing.pad)
-
-            // Eye.slash button overlaid in top-right corner
-            Button(action: onHide) {
-                Image(systemName: "eye.slash")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(Theme.ColorToken.textSecondary)
-                    .frame(width: 44, height: 44)  // Apple HIG tap target
-            }
-            .buttonStyle(.plain)
         }
-        .background(
-            // Stacked v1.2: Solid background banner
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.white)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
-                )
-                .shadow(color: Theme.ColorToken.shadowCard, radius: 8, x: 0, y: 4)
-        )
         .accessibilityLabel("Progress tip: \(text)")
     }
 }
@@ -1263,33 +1242,22 @@ struct CircularTrendRingCard: View {
                             .animation(.easeOut(duration: 0.9), value: showWinHalo)
                     }
 
-                    // Background ring (unfilled)
-                    Circle()
-                        .stroke(
-                            Color.white.opacity(0.2),
-                            style: StrokeStyle(lineWidth: 12, lineCap: .round)
-                        )
-                        .frame(width: 160, height: 160)
-
-                    // Progress ring (gradient fill)
-                    // v1.2: Enhanced glow per spec C.2 for better visibility on light cards
-                    Circle()
-                        .trim(from: 0, to: animateRing ? ringProgress : 0)
-                        .stroke(
-                            ringGradient,
-                            style: StrokeStyle(lineWidth: 12, lineCap: .round)
-                        )
-                        .frame(width: 160, height: 160)
-                        .rotationEffect(.degrees(-90))  // Start from top
-                        .shadow(color: accentColor.opacity(0.40), radius: 20, x: 0, y: 7)  // Enhanced ambient glow (v1.2)
-                        .overlay(
-                            // Inner halo for additional depth (v1.2 spec C.2)
-                            Circle()
-                                .stroke(accentColor.opacity(0.08), lineWidth: 1)
-                                .blur(radius: 14)
-                                .frame(width: 180, height: 180)
-                        )
-                        .animation(.easeOut(duration: 1.2), value: animateRing)
+                    // v1.2d: Replaced duplicated ring code with DSProgressRing component
+                    // Industry Pattern: Apple Watch Activity Rings
+                    // Extracted to eliminate ~60-80 lines of duplication across CircularTrendRingCard + MilestoneRingCard
+                    DSProgressRing(
+                        progress: ringProgress,
+                        size: 160,
+                        strokeWidth: 12,
+                        progressGradient: ringGradient,
+                        trackColor: Color.white.opacity(0.2),
+                        glowColor: accentColor,
+                        glowIntensity: 0.40,
+                        enableGlow: true,
+                        enableHalo: true,
+                        animationDuration: 1.2,
+                        animateProgress: $animateRing
+                    )
 
                     // Center content - Weight change value
                     VStack(spacing: 4) {
@@ -1451,6 +1419,7 @@ struct TrendCardFull: View {
 /// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
 /// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
 /// v1.2b: Added streak badge system (D.2) - badge dot + haptic when new best streak achieved
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
 struct RecapRow: View {
     let netDelta: Double   // Signed across 30d
     let bestStreak: Int    // Days
@@ -1473,21 +1442,7 @@ struct RecapRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-RIGHT)
-            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
-            HStack {
-                Spacer()
-
-                Button(action: onHide) {
-                    Image(systemName: "eye.slash")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                        .frame(width: 44, height: 44)  // Apple HIG tap target
-                }
-                .buttonStyle(.plain)
-            }
-
+        DSBanner(mint: onHide) {
             // Metrics row
             HStack(spacing: 12) {
                 // Net delta
@@ -1524,16 +1479,6 @@ struct RecapRow: View {
                     .foregroundColor(Theme.ColorToken.textPrimary)
             }
         }
-        .padding(16)
-        .background(
-            // Temporary: Simple styling until v1.2 implemented (Layer 4)
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Theme.ColorToken.surfaceMint)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
-                )
-        )
         .onAppear {
             // v1.2b: Check for new best streak and trigger badge animation + haptic feedback
             if isNewBest {
@@ -1553,6 +1498,7 @@ struct RecapRow: View {
 /// Reflection Nudge - Behavioral prompt for micro-planning (v1.2b)
 /// Per v1.2 spec D.3: Below 30-day card, rotate one line at random
 /// Tap → triggers micro-plan Coach prompt (stub now, functional later)
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
 struct ReflectionNudge: View {
     let onHide: () -> Void  // Hide callback
     let onTap: () -> Void   // Tap callback (stub for now)
@@ -1570,22 +1516,7 @@ struct ReflectionNudge: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 12) {
-                // Top row: eye.slash icon (top-RIGHT)
-                // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
-                HStack {
-                    Spacer()
-
-                    Button(action: onHide) {
-                        Image(systemName: "eye.slash")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(Theme.ColorToken.textSecondary)
-                            .frame(width: 44, height: 44)  // Apple HIG tap target
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                // Reflection prompt content
+            DSBanner(ice: onHide) {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkle")
                         .foregroundColor(Theme.ColorToken.accentGold)
@@ -1604,16 +1535,6 @@ struct ReflectionNudge: View {
                         .font(.system(size: 12))
                 }
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Theme.ColorToken.surfaceIce)  // v1.2c: Changed from surfaceIvory → surfaceIce for visual hierarchy standardization
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
-                    )
-                    .shadow(color: Theme.ColorToken.shadowCard, radius: 6, x: 0, y: 3)
-            )
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Reflection prompt: \(reflectionPrompt)")
@@ -1624,27 +1545,13 @@ struct ReflectionNudge: View {
 /// Did You Know Banner - Optional educational micro-tip
 /// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
 /// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
 struct DidYouKnowBanner: View {
     let text: String
     let onHide: () -> Void  // Hide callback
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-RIGHT)
-            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
-            HStack {
-                Spacer()
-
-                Button(action: onHide) {
-                    Image(systemName: "eye.slash")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                        .frame(width: 44, height: 44)  // Apple HIG tap target
-                }
-                .buttonStyle(.plain)
-            }
-
-            // Tip content
+        DSBanner(mint: onHide) {
             HStack(spacing: 12) {
                 Image(systemName: "lightbulb")
                     .foregroundColor(Theme.ColorToken.accentInfo)
@@ -1657,16 +1564,6 @@ struct DidYouKnowBanner: View {
                 Spacer()
             }
         }
-        .padding(16)
-        .background(
-            // Temporary: Simple styling until v1.2 implemented (Layer 4)
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Theme.ColorToken.surfaceMint)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
-                )
-        )
     }
 }
 
@@ -1827,4 +1724,3 @@ struct TrendCard: View {
         }
     }
 }
-

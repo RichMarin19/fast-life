@@ -24,6 +24,8 @@ struct MilestoneRingCard: View {
     let completedMilestones: Int    // How many completed
     let onOptOut: (() -> Void)?     // Optional: Hide card callback
 
+    @State private var animateProgress: Bool = true
+
     // MARK: - Accessibility
 
     @Environment(\.accessibilityReduceMotion) var reduceMotion
@@ -91,34 +93,22 @@ struct MilestoneRingCard: View {
             .padding(.horizontal, 8)
 
             // LAYER 3: BIGGER circular ring in center
+            // v1.2d: Replaced duplicated ring code with DSProgressRing component
+            // Industry Pattern: Apple Watch Activity Rings
+            // Extracted to eliminate ~60-80 lines of duplication across CircularTrendRingCard + MilestoneRingCard
             ZStack {
-                // Background ring (track)
-                Circle()
-                    .trim(from: 0, to: 1)
-                    .stroke(
-                        Theme.ColorToken.dividerDark,
-                        style: StrokeStyle(lineWidth: 18, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-
-                // Progress arc with glow effect
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        Theme.ColorToken.accentPrimary,
-                        style: StrokeStyle(lineWidth: 18, lineCap: .round)
-                    )
-                    .shadow(
-                        color: Theme.ColorToken.accentPrimary.opacity(0.3),
-                        radius: 14,
-                        x: 0,
-                        y: 6
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .animation(
-                        reduceMotion ? .none : .easeInOut(duration: 0.25),
-                        value: progress
-                    )
+                DSProgressRing(
+                    progress: progress,
+                    size: 260,
+                    strokeWidth: 18,
+                    progressColor: Theme.ColorToken.accentPrimary,
+                    trackColor: Theme.ColorToken.dividerDark,
+                    glowIntensity: 0.30,
+                    enableGlow: true,
+                    enableHalo: false,  // No halo for milestone ring (simpler design)
+                    animationDuration: 0.25,
+                    animateProgress: $animateProgress
+                )
 
                 // Center content
                 VStack(spacing: 4) {
@@ -198,3 +188,4 @@ struct MilestoneRingCard: View {
         .padding(.horizontal, 20)
     }
 }
+
