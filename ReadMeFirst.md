@@ -43,6 +43,7 @@ This document is your **single source of truth** for:
 | v1.3f | Chart Card → DSCard | ✅ DONE | `f700866` | Oct 21, 2025 |
 | v1.3g | Stats Card → DSCard | ✅ DONE | `f700866` | Oct 21, 2025 |
 | v1.3h | History Card (Control Center) | ✅ DONE | `f700866` | Oct 21, 2025 |
+| v1.3i | Current Weight Card → DSCard | ✅ DONE | `f700866` | Oct 21, 2025 |
 
 ---
 
@@ -60,7 +61,6 @@ This document is your **single source of truth** for:
 
 | Phase | Name | Priority | Est. Time | Status |
 |-------|------|----------|-----------|--------|
-| v1.3i | Current Weight Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
 | v1.3j | Typography Migration (Weight Tracker) | LOW | 3-4 hrs | ⏸️ PENDING |
 
 ---
@@ -85,15 +85,23 @@ When completing a phase:
 
 ### 🎯 WHAT TO DO NEXT
 
-**Current Status:** Phase v1.3h COMPLETE ✅ (8 phases done)
+**Current Status:** Phase v1.3i COMPLETE ✅ (9 phases done)
 
-**Next Recommended Action:** Phase v1.3i (Current Weight Card → DSCard)
+**🎉 MAJOR MILESTONE:** All Weight Tracker card migrations complete!
+- ✅ Current Weight Card (v1.3i)
+- ✅ Milestone Card (v1.3b)
+- ✅ Chart Card (v1.3f)
+- ✅ Stats Card (v1.3g)
+- ✅ History Card → Control Center (v1.3h)
 
-**Before starting v1.3i:**
-1. Update this MASTER GAMEPLAN with v1.3i status = IN PROGRESS
-2. Search for Current Weight Card implementation
-3. Follow the Phase Completion Checklist above
-4. Update this section when done
+**Next Recommended Action:** Phase v1.3j (Typography Migration - LOW priority)
+- This is optional cleanup, not critical path
+- All high/medium priority phases COMPLETE ✅
+
+**Alternative Next Steps:**
+1. Start working on next tracker (Fasting, Hydration, Sleep, Mood)
+2. Continue with Typography Migration (LOW priority)
+3. Review overall progress and plan next phase
 
 ---
 

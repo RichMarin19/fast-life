@@ -329,6 +329,54 @@ DSCard(surface: Theme.ColorToken.surfaceIce) { }
 - **Actual Effort:** Already complete (part of mislabeled "v1.4" commit)
 - **Priority:** ✅ VERIFIED COMPLETE (N/A for DSCard - uses Control Center pattern)
 
+**Post-Completion Update (Phase v1.3i - October 21, 2025):**
+- ✅ **Current Weight Card → DSCard Migration Complete (Already Done in Mislabeled Commit)**
+- Phase v1.3i was completed in commit `f700866` (incorrectly labeled as "Phase v1.4")
+- **Discovery:** Current Weight Card was already migrated to DSCard universal container
+- **Evidence:**
+  - `/FastingTracker/WeightTrackingView.swift` line 240-252: Current Weight Card wrapped in DSCard with `cardType: .currentWeight`, `canExpand: true`
+  - `/FastingTracker/CurrentWeightCard.swift` lines 222-227: Comments indicate all card styling removed (frame, padding, background, cornerRadius, shadow)
+  - `/FastingTracker/CurrentWeightCard.swift` line 123: "Current Weight" label removed - UniversalCardContainer provides header
+- **Build Status:** ✅ 0 errors, 0 warnings verified (Oct 21, 2025)
+- **Implementation Details:**
+  ```swift
+  // WeightTrackingView.swift line 240-252
+  DSCard(
+      cardType: .currentWeight,
+      cardManager: cardManager,
+      canExpand: true
+  ) {
+      CurrentWeightCard(
+          weightManager: weightManager,
+          weightGoal: weightGoal,
+          showingGoalEditor: $showingGoalEditor,
+          showingAddWeight: $showingAddWeight,
+          showingTrends: $showingTrends
+      )
+  }
+  ```
+- **Benefits:**
+  - Universal card container standardization complete for Current Weight Card
+  - Consistent card behavior (expand/collapse via DSCard)
+  - Standard 16pt padding provided by DSCard
+  - Card visibility managed by TrackerCardManager
+  - Clean content component (no styling, no header duplication)
+- **Code Changes:**
+  - Removed all card styling from CurrentWeightCard body (frame, padding, background, cornerRadius, shadow)
+  - Removed "Current Weight" label (DSCard header provides it)
+  - Content now pure weight display + motivation + goal logic without container styling
+- **Actual Effort:** Already complete (part of mislabeled "v1.4" commit)
+- **Priority:** ✅ VERIFIED COMPLETE
+
+**Summary: All Main Screen Card Migrations Complete (v1.3f, v1.3g, v1.3h, v1.3i):**
+- ✅ Chart Card → DSCard (Phase v1.3f)
+- ✅ Stats Card → DSCard (Phase v1.3g)
+- ✅ History Card → Control Center (Phase v1.3h - special case, appropriate pattern)
+- ✅ Current Weight Card → DSCard (Phase v1.3i)
+- **Result:** All Weight Tracker main screen cards now use DSCard universal container
+- **Pattern Validated:** Universal Architecture working across all card types
+- **Next:** Milestone Card is the only remaining card (already uses DSCard per Phase v1.3b)
+
 ---
 
 #### **Opportunity 1.3: Empty Component Extraction Candidates**
