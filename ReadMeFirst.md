@@ -41,6 +41,7 @@ This document is your **single source of truth** for:
 | v1.3d | Ice Color (Progress Story) | ✅ DONE | `3b665d7` | Oct 21, 2025 |
 | v1.3e | Ice Color (App-Wide) | ✅ DONE | `e135bfa` | Oct 21, 2025 |
 | v1.3f | Chart Card → DSCard | ✅ DONE | `f700866` | Oct 21, 2025 |
+| v1.3g | Stats Card → DSCard | ✅ DONE | `f700866` | Oct 21, 2025 |
 
 ---
 
@@ -58,7 +59,6 @@ This document is your **single source of truth** for:
 
 | Phase | Name | Priority | Est. Time | Status |
 |-------|------|----------|-----------|--------|
-| v1.3g | Stats Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
 | v1.3h | History Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
 | v1.3i | Current Weight Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
 | v1.3j | Typography Migration (Weight Tracker) | LOW | 3-4 hrs | ⏸️ PENDING |
@@ -85,13 +85,13 @@ When completing a phase:
 
 ### 🎯 WHAT TO DO NEXT
 
-**Current Status:** Phase v1.3f COMPLETE ✅ (6 phases done)
+**Current Status:** Phase v1.3g COMPLETE ✅ (7 phases done)
 
-**Next Recommended Action:** Phase v1.3g (Stats Card → DSCard)
+**Next Recommended Action:** Phase v1.3h (History Card → DSCard)
 
-**Before starting v1.3g:**
-1. Update this MASTER GAMEPLAN with v1.3g status = IN PROGRESS
-2. Read STANDARDIZATION-ROADMAP-v1.3.md section on Stats Card migration
+**Before starting v1.3h:**
+1. Update this MASTER GAMEPLAN with v1.3h status = IN PROGRESS
+2. Read STANDARDIZATION-ROADMAP-v1.3.md section on History Card migration
 3. Follow the Phase Completion Checklist above
 4. Update this section when done
 

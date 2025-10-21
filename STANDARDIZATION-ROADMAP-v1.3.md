@@ -270,6 +270,38 @@ DSCard(surface: Theme.ColorToken.surfaceIce) { }
 - **Actual Effort:** Already complete (part of mislabeled "v1.4" commit)
 - **Priority:** ✅ VERIFIED COMPLETE
 
+**Post-Completion Update (Phase v1.3g - October 21, 2025):**
+- ✅ **Stats Card → DSCard Migration Complete (Already Done in Mislabeled Commit)**
+- Phase v1.3g was completed in commit `f700866` (incorrectly labeled as "Phase v1.4")
+- **Discovery:** Stats Card was already migrated to DSCard universal container
+- **Evidence:**
+  - `/FastingTracker/WeightTrackingView.swift` line 278-284: Stats Card wrapped in DSCard with `cardType: .stats`, `canExpand: true`
+  - `/FastingTracker/UI/Components/WeightComponents.swift` lines 112-114: Comments indicate card styling removed, DSCard provides all styling
+  - `/FastingTracker/UI/Components/WeightComponents.swift` lines 82-83: Header removed, DSCard now provides title in header
+- **Build Status:** ✅ 0 errors, 0 warnings verified (Oct 21, 2025)
+- **Implementation Details:**
+  ```swift
+  // WeightTrackingView.swift line 278-284
+  DSCard(
+      cardType: .stats,
+      cardManager: cardManager,
+      canExpand: true
+  ) {
+      WeightStatsView(weightManager: weightManager)
+  }
+  ```
+- **Benefits:**
+  - Universal card container standardization complete for Stats Card
+  - Consistent card behavior (expand/collapse via DSCard)
+  - Standard 16pt padding provided by DSCard
+  - Card visibility managed by TrackerCardManager
+- **Code Changes:**
+  - Removed custom card styling from WeightStatsView body
+  - Removed "Statistics" header (DSCard provides it)
+  - Content now pure stats grid without container styling
+- **Actual Effort:** Already complete (part of mislabeled "v1.4" commit)
+- **Priority:** ✅ VERIFIED COMPLETE
+
 ---
 
 #### **Opportunity 1.3: Empty Component Extraction Candidates**
@@ -333,7 +365,7 @@ DSCard(cardType: .milestone, cardManager: cardManager) {
 
 **Pending Migrations (from UNIVERSAL_STANDARDIZATION_ARCHITECTURE.md):**
 - [x] Chart Card → DSCard ✅ **COMPLETE** (Phase v1.3f - in commit f700866)
-- [ ] Stats Card → DSCard
+- [x] Stats Card → DSCard ✅ **COMPLETE** (Phase v1.3g - in commit f700866)
 - [ ] History Card → DSCard
 
 **Strategy:** One at a time, after Milestone Card proves pattern
