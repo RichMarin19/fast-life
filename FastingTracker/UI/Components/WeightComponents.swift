@@ -708,6 +708,22 @@ struct WeightTrendsView: View {
                             .offset(y: isAnimating ? 0 : 20)
                             .animation(.easeInOut(duration: 0.4).delay(0.5), value: isAnimating)
                         }
+
+                        // 6. FOOTER CELEBRATION (optional - motivational message)
+                        // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
+                        // Animated text: "You're showing up. That's what builds your LIFe."
+                        // Subtle, encouraging, human tone
+                        if totalEntries >= 1 {
+                            Text("You're showing up. That's what builds your LIFe.")
+                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
+                                .italic()
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 24)
+                                .opacity(isAnimating ? 1 : 0)
+                                .animation(.easeInOut(duration: 0.6).delay(0.6), value: isAnimating)
+                        }
                     }
                     .padding(.horizontal, 16)  // Consistent 16pt horizontal rhythm
                     .padding(.vertical, 16)
