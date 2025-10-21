@@ -96,11 +96,13 @@ struct WeightTrackingView: View {
             } else {
                 // Current Weight Card - Using DSCard (Layer 3: Design System)
                 // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Layer 4: Added canExpand for expand/collapse functionality
                 // Industry Pattern: Apple Health-style card container with pure content component
                 if cardManager.isCardVisible(.currentWeight) {
                     DSCard(
                         cardType: .currentWeight,
-                        cardManager: cardManager
+                        cardManager: cardManager,
+                        canExpand: true  // Layer 4: Enable expand/collapse
                     ) {
                         CurrentWeightCard(
                             weightManager: weightManager,
@@ -116,12 +118,14 @@ struct WeightTrackingView: View {
 
                 // Milestone Ring Card - Using DSCard (Layer 3: Design System)
                 // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Layer 4: Added canExpand for expand/collapse functionality
                 // Industry Pattern: Apple Health-style card container with pure content component
                 // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §6
                 if cardManager.isCardVisible(.milestone) {
                     DSCard(
                         cardType: .milestone,
-                        cardManager: cardManager
+                        cardManager: cardManager,
+                        canExpand: true  // Layer 4: Enable expand/collapse
                     ) {
                         milestoneRingCard
                     }
@@ -131,12 +135,14 @@ struct WeightTrackingView: View {
 
                 // Weight Chart Card - Using DSCard (Layer 3: Design System)
                 // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Layer 4: Added canExpand for expand/collapse functionality
                 // Industry Pattern: Apple Health-style card container with pure content component
                 // UX Fix: Picker relocated to align with time range label (no longer conflicts with eye-slash)
                 if cardManager.isCardVisible(.chart) {
                     DSCard(
                         cardType: .chart,
-                        cardManager: cardManager
+                        cardManager: cardManager,
+                        canExpand: true  // Layer 4: Enable expand/collapse
                     ) {
                         WeightChartView(
                             weightManager: weightManager,
@@ -151,11 +157,13 @@ struct WeightTrackingView: View {
 
                 // Weight Statistics Card - Using DSCard (Layer 3: Design System)
                 // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
+                // Layer 4: Added canExpand for expand/collapse functionality
                 // Industry Pattern: Apple Health-style card container with pure content component
                 if cardManager.isCardVisible(.stats) {
                     DSCard(
                         cardType: .stats,
-                        cardManager: cardManager
+                        cardManager: cardManager,
+                        canExpand: true  // Layer 4: Enable expand/collapse
                     ) {
                         WeightStatsView(weightManager: weightManager)
                     }
@@ -163,19 +171,15 @@ struct WeightTrackingView: View {
                     .transition(.opacity.combined(with: .scale))
                 }
 
-                // Weight History List Card - Using DSCard (Layer 3: Design System)
-                // DSCard provides: standardized padding, background, shadow, corners, header with eye-slash
-                // Industry Pattern: Apple Health-style card container with pure content component
-                if cardManager.isCardVisible(.history) {
-                    DSCard(
-                        cardType: .history,
-                        cardManager: cardManager
-                    ) {
-                        WeightHistoryListView(weightManager: weightManager)
-                    }
-                    .padding(.horizontal, DSSpacing.screenEdgePadding)
-                    .transition(.opacity.combined(with: .scale))
-                }
+                // Weight History List Card - MOVED TO CONTROL CENTER
+                // History is now accessed via Control Center (gear icon → History section)
+                // Reason: Better information architecture - History is data management, not dashboard
+                // Industry Pattern: Apple Health - Detailed logs live in settings/management areas
+                // Removed from main screen to reduce clutter (4 cards instead of 5)
+                // TrackerCardType.history still exists for backwards compatibility
+
+                // REMOVED: History card no longer shown on main Weight Tracker screen
+                // Users access history via: Gear Icon → Control Center → History section
             }
         }
         .sheet(isPresented: $showingAddWeight) {

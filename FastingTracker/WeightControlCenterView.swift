@@ -164,6 +164,7 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
     case notifications = "notifications"
     case insights = "insights"
     case sync = "sync"
+    case history = "history"  // NEW: Weight History (moved from main screen)
     case experience = "experience"
 
     var id: String { rawValue }
@@ -174,6 +175,7 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
         case .notifications: return "Notifications"
         case .insights: return "Insights & Education"
         case .sync: return "Apple Health Sync"
+        case .history: return "Weight History"  // NEW
         case .experience: return "Manage My Experience"
         }
     }
@@ -184,6 +186,7 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
         case .notifications: return "bell.fill"
         case .insights: return "lightbulb.fill"
         case .sync: return "arrow.triangle.2.circlepath"
+        case .history: return "list.bullet.clipboard.fill"  // NEW: History icon
         case .experience: return "slider.horizontal.3"
         }
     }
@@ -210,9 +213,9 @@ struct WeightControlCenterView: View {
     // Observe ProgressStoryCardManager for Progress Story card visibility (Single Source of Truth)
     @ObservedObject private var progressStoryCardManager = ProgressStoryCardManager.shared
 
-    // Card order persistence - default: Goals → Notifications → Insights → Sync → Experience
+    // Card order persistence - default: Goals → Notifications → Insights → Sync → History → Experience
     @AppStorage("weightControlCenterCardOrder") private var cardOrderData: Data = Data()
-    @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .experience]
+    @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .experience]
 
     // Drag and drop state (Hub pattern)
     @State private var draggedCard: ControlCenterCardType?
@@ -547,6 +550,8 @@ struct WeightControlCenterView: View {
             insightsCardContent
         case .sync:
             syncCardContent
+        case .history:
+            historyCardContent
         case .experience:
             experienceCardContent
         }
@@ -788,6 +793,20 @@ struct WeightControlCenterView: View {
                 )
                 .frame(maxWidth: .infinity)  // Center horizontally
             }
+        }
+    }
+
+    // MARK: - History Card
+
+    private var historyCardContent: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Sprint 1: Benefit copy - explain why history matters
+            Text("Review and manage your weight entries.")
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+            // Show weight history list (reusing existing component)
+            WeightHistoryListView(weightManager: weightManager)
         }
     }
 
@@ -1256,18 +1275,37 @@ struct WeightControlCenterView: View {
 
     private func loadCardOrder() {
         if let decoded = try? JSONDecoder().decode([ControlCenterCardType].self, from: cardOrderData) {
+            var migratedOrder = decoded
+            var needsMigration = false
+
+            // Migration: Add .history card if it's missing from saved order
+            if !migratedOrder.contains(.history) {
+                // Insert History before Experience (matches default order)
+                if let experienceIndex = migratedOrder.firstIndex(of: .experience) {
+                    migratedOrder.insert(.history, at: experienceIndex)
+                } else {
+                    // Fallback: append to end if Experience not found
+                    migratedOrder.append(.history)
+                }
+                needsMigration = true
+            }
+
             // Migration: Add .experience card if it's missing from saved order
-            if !decoded.contains(.experience) {
+            if !migratedOrder.contains(.experience) {
                 // Append Experience card to end of existing order
-                cardOrder = decoded + [.experience]
-                // Save the migrated order
+                migratedOrder.append(.experience)
+                needsMigration = true
+            }
+
+            cardOrder = migratedOrder
+
+            // Save the migrated order if changes were made
+            if needsMigration {
                 saveCardOrder()
-            } else {
-                cardOrder = decoded
             }
         } else {
-            // Default order: Goals → Notifications → Insights → Sync → Experience
-            cardOrder = [.goals, .notifications, .insights, .sync, .experience]
+            // Default order: Goals → Notifications → Insights → Sync → History → Experience
+            cardOrder = [.goals, .notifications, .insights, .sync, .history, .experience]
         }
     }
 
