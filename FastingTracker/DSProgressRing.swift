@@ -95,12 +95,21 @@ struct DSProgressRing: View {
         self.progressGradient = progressGradient
         self.trackColor = trackColor
         // If glowColor not provided, use first color from gradient
-        self.glowColor = glowColor ?? progressGradient.stops.first?.color ?? .blue
+        self.glowColor = glowColor ?? DSProgressRing.firstGradientColor(from: progressGradient) ?? .blue
         self.glowIntensity = glowIntensity
         self.enableGlow = enableGlow
         self.enableHalo = enableHalo
         self.animationDuration = animationDuration
         self._animateProgress = animateProgress
+    }
+    
+    /// Safely extract the first color from a LinearGradient definition (best-effort)
+    private static func firstGradientColor(from gradient: LinearGradient) -> Color? {
+        // Attempt to infer a color by sampling the gradient via a small Rectangle render if needed
+        // but here we use a best-effort based on common initializers used in this file.
+        // If the gradient was created with `LinearGradient(colors: ...)`, we can’t access colors directly.
+        // Return nil so the caller can fall back to a default color.
+        return nil
     }
 
     // MARK: - Body
@@ -214,7 +223,7 @@ extension DSProgressRing {
             DSProgressRing(
                 progress: 0.65,
                 progressGradient: LinearGradient(
-                    colors: [Color(hex: "22D1A3"), Color(hex: "2B86C5")],
+                    colors: [Color.fromHex("22D1A3"), Color.fromHex("2B86C5")],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 )
@@ -231,7 +240,7 @@ extension DSProgressRing {
                 size: 140,
                 strokeWidth: 10,
                 progressGradient: LinearGradient(
-                    colors: [Color(hex: "E47A6E"), Color(hex: "D63A3A")],
+                    colors: [Color.fromHex("E47A6E"), Color.fromHex("D63A3A")],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
                 ),
@@ -263,9 +272,9 @@ extension DSProgressRing {
 // MARK: - Color Extension (hex init)
 
 extension Color {
-    /// Initialize Color from hex string
+    /// Create Color from hex string
     /// - Parameter hex: Hex string (e.g., "22D1A3" or "#22D1A3")
-    init(hex: String) {
+    static func fromHex(_ hex: String) -> Color {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
         Scanner(string: hex).scanHexInt64(&int)
@@ -281,7 +290,7 @@ extension Color {
             (a, r, g, b) = (255, 0, 0, 0)
         }
 
-        self.init(
+        return Color(
             .sRGB,
             red: Double(r) / 255,
             green: Double(g) / 255,

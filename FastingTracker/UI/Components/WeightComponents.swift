@@ -1037,49 +1037,19 @@ struct LightCard<Content: View>: View {
 /// Per v1.2 spec C.1: Enhanced emotional anchor with icon
 /// Appears between subtitle and first card
 /// ✅ REUSABLE across all trackers - just pass trend-driven text + optional icon
+/// v1.3: Refactored to use DSCoachBar component for standardization
 struct CoachBar: View {
     let text: String  // State-based micro-copy
     var icon: String = "sparkles"  // SF Symbol name (default: sparkles)
     let onHide: () -> Void  // Hide callback
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            // Coach Bar content
-            HStack(spacing: 8) {
-                // Icon: sparkles or heart.text.square, 18-20pt, WHITE (v1.2)
-                Image(systemName: icon)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundColor(.white)
-
-                Text(text)
-                    .font(.system(size: 21, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)  // WHITE for better visibility (v1.2)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(.horizontal, Theme.Spacing.pad)
-            .padding(.vertical, 14)
-            .frame(maxWidth: .infinity)
-
-            // Eye.slash button overlaid in top-right corner
-            Button(action: onHide) {
-                Image(systemName: "eye.slash")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.9))
-                    .frame(width: 44, height: 44)  // Apple HIG tap target
-            }
-            .buttonStyle(.plain)
-        }
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Theme.ColorToken.accentInfo)  // ACCENT background (v1.2)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Theme.ColorToken.accentInfo.opacity(0.3), lineWidth: 1)
-                )
-                .shadow(color: Theme.ColorToken.shadowCard, radius: 8, x: 0, y: 4)
+        DSCoachBar(
+            text: text,
+            icon: icon,
+            backgroundColor: Theme.ColorToken.accentInfo,
+            onHide: onHide
         )
-        .accessibilityLabel("Coach tip: \(text)")
     }
 }
 
