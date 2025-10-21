@@ -18,6 +18,78 @@ This document is your **single source of truth** for:
 
 ---
 
+## 📋 MASTER GAMEPLAN: PHASE TRACKING
+
+**CRITICAL RULE:** Always update this section BEFORE and AFTER any work.
+
+### Current Phase: v1.3 (Standardization & Card Migration)
+
+**Phase Versioning Rules:**
+- ✅ Sequential only: v1.3a → v1.3b → v1.3c ... → v1.3z → v1.4a
+- ❌ NEVER skip phases or jump versions
+- ✅ Update this gameplan EVERY TIME a phase completes
+
+---
+
+### ✅ COMPLETED PHASES (v1.3 Series)
+
+| Phase | Name | Status | Commit | Date |
+|-------|------|--------|--------|------|
+| v1.3 | DSCoachBar Extraction | ✅ DONE | `253ba5a` | Oct 21, 2025 |
+| v1.3b | Milestone Card → DSCard | ✅ DONE | `b4f50c1` | Oct 21, 2025 |
+| v1.3c | DSCard Surface Parameter | ✅ DONE | (in v1.3b) | Oct 21, 2025 |
+| v1.3d | Ice Color (Progress Story) | ✅ DONE | `3b665d7` | Oct 21, 2025 |
+| v1.3e | Ice Color (App-Wide) | ✅ DONE | `e135bfa` | Oct 21, 2025 |
+| v1.3f | Typography + Color System | ✅ DONE | `f700866` | Oct 21, 2025 |
+
+**Note:** v1.3f was incorrectly labeled as "v1.4" in commit message. It's actually v1.3f.
+
+---
+
+### 🔄 PENDING PHASES (v1.3 Series)
+
+| Phase | Name | Priority | Est. Time | Status |
+|-------|------|----------|-----------|--------|
+| v1.3g | Chart Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
+| v1.3h | Stats Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
+| v1.3i | History Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
+| v1.3j | Current Weight Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
+| v1.3k | Typography Migration (Weight Tracker) | LOW | 3-4 hrs | ⏸️ PENDING |
+
+---
+
+### 📊 PHASE COMPLETION CHECKLIST (Use this for EVERY phase)
+
+When starting a new phase:
+- [ ] Read STANDARDIZATION-ROADMAP-v1.3.md to understand the task
+- [ ] Update this MASTER GAMEPLAN with phase name and status = IN PROGRESS
+- [ ] Create todo list with specific tasks
+- [ ] Verify build succeeds before starting (0 errors baseline)
+
+When completing a phase:
+- [ ] Test build succeeds (0 errors, 0 warnings)
+- [ ] Test functionality works (manual verification)
+- [ ] Update STANDARDIZATION-ROADMAP-v1.3.md with results
+- [ ] Update this MASTER GAMEPLAN with status = DONE and commit hash
+- [ ] Create git commit with proper phase number (e.g., "Phase v1.3g: ...")
+- [ ] Document what's next in this MASTER GAMEPLAN
+
+---
+
+### 🎯 WHAT TO DO NEXT
+
+**Current Status:** All high-priority phases COMPLETE ✅
+
+**Next Recommended Action:** Phase v1.3g (Chart Card → DSCard)
+
+**Before starting v1.3g:**
+1. Update this MASTER GAMEPLAN with v1.3g status = IN PROGRESS
+2. Read STANDARDIZATION-ROADMAP-v1.3.md section on Chart Card migration
+3. Follow the Phase Completion Checklist above
+4. Update this section when done
+
+---
+
 ## 📂 PROJECT STRUCTURE
 
 ### Core Architecture Locations
