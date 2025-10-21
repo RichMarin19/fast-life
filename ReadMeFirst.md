@@ -40,9 +40,17 @@ This document is your **single source of truth** for:
 | v1.3c | DSCard Surface Parameter | ✅ DONE | (in v1.3b) | Oct 21, 2025 |
 | v1.3d | Ice Color (Progress Story) | ✅ DONE | `3b665d7` | Oct 21, 2025 |
 | v1.3e | Ice Color (App-Wide) | ✅ DONE | `e135bfa` | Oct 21, 2025 |
-| v1.3f | Typography + Color System | ✅ DONE | `f700866` | Oct 21, 2025 |
+| v1.3f | Chart Card → DSCard | ✅ DONE | `f700866` | Oct 21, 2025 |
 
-**Note:** v1.3f was incorrectly labeled as "v1.4" in commit message. It's actually v1.3f.
+---
+
+### ⚠️ MISLABELED COMMITS (Fix in future)
+
+| Commit | Wrong Label | Should Be | What It Contains |
+|--------|-------------|-----------|------------------|
+| `f700866` | "Phase v1.4" | v1.3f | Typography + Color Context System |
+
+**Note:** This commit exists and is functional, but was incorrectly labeled. Work is complete, just needs proper phase number in documentation.
 
 ---
 
@@ -50,11 +58,10 @@ This document is your **single source of truth** for:
 
 | Phase | Name | Priority | Est. Time | Status |
 |-------|------|----------|-----------|--------|
-| v1.3g | Chart Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
-| v1.3h | Stats Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
-| v1.3i | History Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
-| v1.3j | Current Weight Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
-| v1.3k | Typography Migration (Weight Tracker) | LOW | 3-4 hrs | ⏸️ PENDING |
+| v1.3g | Stats Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
+| v1.3h | History Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
+| v1.3i | Current Weight Card → DSCard | MEDIUM | 1.5 hrs | ⏸️ PENDING |
+| v1.3j | Typography Migration (Weight Tracker) | LOW | 3-4 hrs | ⏸️ PENDING |
 
 ---
 
@@ -78,13 +85,13 @@ When completing a phase:
 
 ### 🎯 WHAT TO DO NEXT
 
-**Current Status:** All high-priority phases COMPLETE ✅
+**Current Status:** Phase v1.3f COMPLETE ✅ (6 phases done)
 
-**Next Recommended Action:** Phase v1.3g (Chart Card → DSCard)
+**Next Recommended Action:** Phase v1.3g (Stats Card → DSCard)
 
 **Before starting v1.3g:**
 1. Update this MASTER GAMEPLAN with v1.3g status = IN PROGRESS
-2. Read STANDARDIZATION-ROADMAP-v1.3.md section on Chart Card migration
+2. Read STANDARDIZATION-ROADMAP-v1.3.md section on Stats Card migration
 3. Follow the Phase Completion Checklist above
 4. Update this section when done
 
