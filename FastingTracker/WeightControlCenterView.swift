@@ -220,6 +220,10 @@ struct WeightControlCenterView: View {
     // Drag and drop state (Hub pattern)
     @State private var draggedCard: ControlCenterCardType?
 
+    // Layer 4: Expand/collapse state for Control Center cards
+    @AppStorage("controlCenterExpandedCards") private var expandedCardsData: Data = Data()
+    @State private var expandedCards: Set<String> = []
+
     // Badge interaction: Track current highlighted item for cycling through opted-out content
     @State private var currentHighlightedItemIndex: Int = 0
     @State private var highlightedItemID: String? = nil  // Track which item to highlight by ID
@@ -411,6 +415,7 @@ struct WeightControlCenterView: View {
         }
         .onAppear {
             loadCardOrder()
+            loadExpandedCards()  // Layer 4: Load expansion state
             loadOptedOutContent()  // Load opted-out content items
             weightGoalString = String(format: "%.1f", weightGoal)
             userSyncPreference = weightManager.syncWithHealthKit
@@ -465,6 +470,8 @@ struct WeightControlCenterView: View {
 
     @ViewBuilder
     private func cardView(for cardType: ControlCenterCardType) -> some View {
+        let isExpanded = isCardExpanded(cardType)
+
         VStack(spacing: 0) {
             // Card Header (Hub pattern - no visible drag handle, long-press to drag)
             HStack(spacing: 12) {
@@ -523,16 +530,32 @@ struct WeightControlCenterView: View {
                         }
                     }
                 }
+
+                // Layer 4: Chevron expand/collapse button
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        toggleCardExpansion(cardType)
+                    }
+                }) {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+                .buttonStyle(.plain)
             }
             .padding(16)
             .background(Theme.ColorToken.cardHeaderOnDark)
 
-            Divider()
-                .background(Theme.ColorToken.dividerOnDark)
+            // Layer 4: Show content only when expanded
+            if isExpanded {
+                Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
 
-            // Card Content
-            cardContent(for: cardType)
-                .padding(16)
+                // Card Content
+                cardContent(for: cardType)
+                    .padding(16)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+            }
         }
         .background(Theme.ColorToken.cardOnDark)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -1204,7 +1227,9 @@ struct WeightControlCenterView: View {
     // MARK: - About Card (Fixed at Bottom)
 
     private var aboutCard: some View {
-        VStack(spacing: 0) {
+        let isExpanded = expandedCards.contains("about")
+
+        return VStack(spacing: 0) {
             // Card Header
             HStack(spacing: 12) {
                 Image(systemName: "info.circle.fill")
@@ -1216,59 +1241,116 @@ struct WeightControlCenterView: View {
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
 
                 Spacer()
+
+                // Layer 4: Chevron expand/collapse button
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        if expandedCards.contains("about") {
+                            expandedCards.remove("about")
+                        } else {
+                            expandedCards.insert("about")
+                        }
+                        saveExpandedCards()
+                    }
+                }) {
+                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+                .buttonStyle(.plain)
             }
             .padding(16)
             .background(Theme.ColorToken.cardHeaderOnDark)
 
-            Divider()
-                .background(Theme.ColorToken.dividerOnDark)
+            // Layer 4: Show content only when expanded
+            if isExpanded {
+                Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
 
-            // About content
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Text("Total Entries")
-                        .font(.system(size: 16))
-                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
-                    Spacer()
-                    Text("\(weightManager.weightEntries.count)")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                }
+                // About content
+                VStack(alignment: .leading, spacing: 12) {
+                    HStack {
+                        Text("Total Entries")
+                            .font(.system(size: 16))
+                            .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                        Spacer()
+                        Text("\(weightManager.weightEntries.count)")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    }
 
-                // Behavioral insight: Identity reinforcement
-                if let oldest = weightManager.weightEntries.sorted(by: { $0.date < $1.date }).first {
-                    Divider()
-                        .background(Theme.ColorToken.dividerOnDark)
+                    // Behavioral insight: Identity reinforcement
+                    if let oldest = weightManager.weightEntries.sorted(by: { $0.date < $1.date }).first {
+                        Divider()
+                            .background(Theme.ColorToken.dividerOnDark)
 
-                    VStack(alignment: .leading, spacing: 6) {
-                        HStack {
-                            Text("Tracking Since")
-                                .font(.system(size: 16))
-                                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
-                            Spacer()
-                            Text(oldest.date.formatted(date: .abbreviated, time: .omitted))
-                                .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                        VStack(alignment: .leading, spacing: 6) {
+                            HStack {
+                                Text("Tracking Since")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                                Spacer()
+                                Text(oldest.date.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.system(size: 16, weight: .semibold))
+                                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                            }
+
+                            // Identity badge
+                            HStack(spacing: 6) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(Theme.ColorToken.accentGold)
+                                Text("You've logged \(weightManager.weightEntries.count) entries since \(Calendar.current.component(.year, from: oldest.date))")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                            }
+                            .padding(.top, 4)
                         }
-
-                        // Identity badge
-                        HStack(spacing: 6) {
-                            Image(systemName: "star.fill")
-                                .font(.system(size: 11))
-                                .foregroundColor(Theme.ColorToken.accentGold)
-                            Text("You've logged \(weightManager.weightEntries.count) entries since \(Calendar.current.component(.year, from: oldest.date))")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
-                        }
-                        .padding(.top, 4)
                     }
                 }
+                .padding(16)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
-            .padding(16)
         }
         .background(Theme.ColorToken.cardOnDark)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: Theme.ColorToken.shadowCardOnDark, radius: 16, x: 0, y: 8)
+    }
+
+    // MARK: - Layer 4: Expansion State Management
+
+    /// Check if a card is currently expanded
+    private func isCardExpanded(_ cardType: ControlCenterCardType) -> Bool {
+        return expandedCards.contains(cardType.rawValue)
+    }
+
+    /// Toggle expansion state for a card
+    private func toggleCardExpansion(_ cardType: ControlCenterCardType) {
+        if expandedCards.contains(cardType.rawValue) {
+            expandedCards.remove(cardType.rawValue)
+        } else {
+            expandedCards.insert(cardType.rawValue)
+        }
+        saveExpandedCards()
+    }
+
+    /// Load expanded cards from UserDefaults
+    private func loadExpandedCards() {
+        if let decoded = try? JSONDecoder().decode(Set<String>.self, from: expandedCardsData) {
+            expandedCards = decoded
+        } else {
+            // Default: All cards expanded on first launch
+            expandedCards = Set(ControlCenterCardType.allCases.map { $0.rawValue })
+            expandedCards.insert("about")  // About card also expanded by default
+            saveExpandedCards()
+        }
+    }
+
+    /// Save expanded cards to UserDefaults
+    private func saveExpandedCards() {
+        if let encoded = try? JSONEncoder().encode(expandedCards) {
+            expandedCardsData = encoded
+        }
     }
 
     // MARK: - Card Order Persistence
