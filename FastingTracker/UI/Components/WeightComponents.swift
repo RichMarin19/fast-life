@@ -208,6 +208,7 @@ struct WeightHistoryListView: View {
                         }
                     }
                 Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
             }
         }
         // REMOVED: Card styling (padding, background, cornerRadius, shadow)
@@ -227,28 +228,29 @@ struct WeightHistoryRow: View {
                 HStack(spacing: 4) {
                     Text(entry.date, style: .date)
                         .font(.headline)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     Text("•")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     Text(entry.date, style: .time)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
 
                 HStack(spacing: 8) {
                     Text(entry.source.rawValue)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
                     if let bmi = entry.bmi {
                         Text("BMI: \(bmi, specifier: "%.1f")")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     }
 
                     if let bodyFat = entry.bodyFat {
                         Text("BF: \(bodyFat, specifier: "%.1f")%")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     }
                 }
             }
@@ -258,7 +260,7 @@ struct WeightHistoryRow: View {
             Text("\(weightManager.displayWeight(for: entry), specifier: "%.1f") \("lbs")")
                 .font(.title3)
                 .fontWeight(.semibold)
-                .foregroundColor(Color("FLPrimary"))
+                .foregroundColor(Theme.ColorToken.accentPrimary)
         }
         .contentShape(Rectangle())
         .contextMenu {
