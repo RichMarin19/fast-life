@@ -576,25 +576,37 @@ struct WeightTrendsView: View {
 
                 ScrollView {
                     VStack(spacing: 16) {
-                        // TITLE: Your LIFe Journey (luxury gradient)
-                        // Per UI/UX spec (FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md): "brand blue-green gradient text"
-                        // Matching TrackerScreenShell title pattern: Theme.ColorToken gradient
-                        // Reference: TrackerScreenShell.swift lines 156-164
-                        Text("Your LIFe Journey")
-                            .font(.system(size: 34, weight: .bold, design: .rounded))
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [
-                                        Theme.ColorToken.accentInfo,    // Blue (left)
-                                        Theme.ColorToken.accentPrimary  // Emerald (right)
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
+                        // HEADER: Title + Subtitle per UI/UX spec
+                        // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
+                        VStack(spacing: 4) {
+                            // TITLE: Your LIFe Journey (luxury gradient)
+                            // Font: SF Pro Rounded 34pt (matching app standard, not spec's 28pt)
+                            // Gradient: Theme.ColorToken.accentInfo → accentPrimary (blue→emerald)
+                            Text("Your LIFe Journey")
+                                .font(.system(size: 34, weight: .bold, design: .rounded))
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [
+                                            Theme.ColorToken.accentInfo,    // Blue (left)
+                                            Theme.ColorToken.accentPrimary  // Emerald (right)
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
                                 )
-                            )
-                            .frame(maxWidth: .infinity, alignment: .center)  // Centered horizontally
-                            .padding(.top, 8)
-                            .padding(.bottom, 8)
+                                .frame(maxWidth: .infinity, alignment: .center)  // Centered
+
+                            // SUBTITLE: Motivational tagline
+                            // Font: SF Pro Display 15pt, weight 400, italic (per spec §4)
+                            Text("Progress you can feel — one choice at a time.")
+                                .font(.system(size: 15, weight: .regular, design: .default))
+                                .italic()
+                                .foregroundColor(Theme.ColorToken.textSecondary)
+                                .frame(maxWidth: .infinity, alignment: .center)  // Centered
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, 8)
+                        .padding(.bottom, 8)
 
                         // STACKED LAYOUT v1.1: Narrative flow top-to-bottom
 
@@ -771,7 +783,8 @@ struct WeightTrendsView: View {
 // MARK: - Light Card Wrapper (Stacked v1.2)
 
 /// LightCard - Reusable wrapper for light surface cards with opt-out menu
-/// Per Stacked v1.2 spec: Light surfaces with ellipsis menu for per-card opt-out
+/// Per Stacked v1.2 spec: Light surfaces with eye.slash dismiss on RIGHT (matching DSCard pattern)
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader (line 108-116)
 struct LightCard<Content: View>: View {
     let surface: Color
     let content: Content
@@ -785,8 +798,11 @@ struct LightCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-left) for hiding card
+            // Top row: eye.slash icon (top-RIGHT) for hiding card
+            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
             HStack {
+                Spacer()
+
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 16, weight: .semibold))
@@ -794,8 +810,6 @@ struct LightCard<Content: View>: View {
                         .frame(width: 44, height: 44)  // Apple HIG tap target
                 }
                 .buttonStyle(.plain)
-
-                Spacer()
             }
 
             content
@@ -881,8 +895,9 @@ struct LightCard<Content: View>: View {
  */
 
 /// Progress Banner - Motivational/Action message with accent stripe
-/// Per Stacked v1.2 spec: Frosted glass background with opt-out icon
+/// Per Stacked v1.2 spec: Frosted glass background with eye.slash dismiss on RIGHT (matching DSCard pattern)
 /// ✅ REUSABLE across all trackers - just pass text + accent color
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
 struct ProgressBanner: View {
     let text: String
     let accent: Color
@@ -890,8 +905,11 @@ struct ProgressBanner: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-left)
+            // Top row: eye.slash icon (top-RIGHT)
+            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
             HStack {
+                Spacer()
+
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 14, weight: .semibold))
@@ -899,8 +917,6 @@ struct ProgressBanner: View {
                         .frame(width: 44, height: 44)  // Apple HIG tap target
                 }
                 .buttonStyle(.plain)
-
-                Spacer()
             }
 
             // Banner content
@@ -1014,7 +1030,8 @@ struct TrendCardFull: View {
 }
 
 /// Recap Row - Three metrics in single row (Net Δ | Streak | Entries)
-/// Per Stacked v1.2 spec: Mint surface with opt-out icon
+/// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
 struct RecapRow: View {
     let netDelta: Double   // Signed across 30d
     let bestStreak: Int    // Days
@@ -1028,8 +1045,11 @@ struct RecapRow: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-left)
+            // Top row: eye.slash icon (top-RIGHT)
+            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
             HStack {
+                Spacer()
+
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 14, weight: .semibold))
@@ -1037,8 +1057,6 @@ struct RecapRow: View {
                         .frame(width: 44, height: 44)  // Apple HIG tap target
                 }
                 .buttonStyle(.plain)
-
-                Spacer()
             }
 
             // Metrics row
@@ -1077,15 +1095,19 @@ struct RecapRow: View {
 }
 
 /// Did You Know Banner - Optional educational micro-tip
-/// Per Stacked v1.2 spec: Mint surface with opt-out icon
+/// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
 struct DidYouKnowBanner: View {
     let text: String
     let onHide: () -> Void  // Hide callback
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-left)
+            // Top row: eye.slash icon (top-RIGHT)
+            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
             HStack {
+                Spacer()
+
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 14, weight: .semibold))
@@ -1093,8 +1115,6 @@ struct DidYouKnowBanner: View {
                         .frame(width: 44, height: 44)  // Apple HIG tap target
                 }
                 .buttonStyle(.plain)
-
-                Spacer()
             }
 
             // Tip content

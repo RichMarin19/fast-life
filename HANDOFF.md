@@ -8,6 +8,30 @@
 
 ---
 
+## 🚨 CRITICAL: TEST BEFORE COMMIT
+
+### ❌ NEVER COMMIT BEFORE TESTING
+**This is a MANDATORY workflow rule. ALWAYS follow this sequence:**
+
+1. ✅ Make code changes
+2. ✅ Build the project (`xcodebuild` or Xcode)
+3. ✅ Test on physical device (when possible)
+4. ✅ Verify functionality works as expected
+5. ✅ ONLY THEN create git commit
+
+**Why this matters:**
+- Commits should only contain VERIFIED working code
+- Testing catches issues before they enter git history
+- Reverting untested commits wastes time
+- Professional development practice
+
+**NO EXCEPTIONS. If you commit before testing, you MUST:**
+1. Immediately undo the commit (`git reset HEAD~1`)
+2. Test the changes properly
+3. Only commit after successful testing
+
+---
+
 ## 🗂️ Documentation Structure
 
 This documentation has been reorganized for improved navigation and focus. The main sections are:
