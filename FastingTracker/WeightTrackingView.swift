@@ -63,7 +63,7 @@ struct WeightTrackingView: View {
 
     /// Milestone Ring Card with computed data from weight manager
     /// TODO: Replace placeholder data with actual milestone calculations
-    /// UPDATED: Removed onOptOut - now uses DSCard eye-slash dismiss (TrackerCardManager)
+    /// UPDATED: Migrated to DSCard pattern (Phase v1.3b) - uses cardManager for visibility control
     private var milestoneRingCard: some View {
         MilestoneRingCard(
             progress: 0.65,  // TODO: Calculate actual progress to next milestone
@@ -75,7 +75,7 @@ struct WeightTrackingView: View {
             rightStat: weightGoal > 0 ? "\(String(format: "%.1f", max(0, (weightManager.latestWeight?.weight ?? weightGoal) - weightGoal))) to go" : "Set goal",
             totalMilestones: 10,
             completedMilestones: 6,  // TODO: Calculate actual milestones completed
-            onOptOut: nil  // REMOVED: Now uses DSCard eye-slash dismiss
+            cardManager: cardManager  // Phase v1.3b: Use TrackerCardManager for DSCard integration
         )
     }
 
