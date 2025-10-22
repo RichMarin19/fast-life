@@ -563,7 +563,7 @@ struct WeightControlCenterView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(16)
+            .padding(DSSpacing.cardPadding)
             .background(Theme.ColorToken.cardHeaderOnDark)
 
             // Layer 4: Show content only when expanded
@@ -573,7 +573,7 @@ struct WeightControlCenterView: View {
 
                 // Card Content
                 cardContent(for: cardType)
-                    .padding(16)
+                    .padding(DSSpacing.cardPadding)
                     .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -789,7 +789,7 @@ struct WeightControlCenterView: View {
                     }
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     .frame(maxWidth: .infinity)
-                    .padding(12)
+                    .padding(DSSpacing.cardElementSpacing)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(Theme.ColorToken.accentPrimary)
@@ -829,7 +829,7 @@ struct WeightControlCenterView: View {
                         .font(.system(size: 12, weight: .medium))
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
-                .padding(8)
+                .padding(DSSpacing.cardSmallSpacing)
                 .background(
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .fill(Theme.ColorToken.accentInfo.opacity(0.15))
@@ -936,7 +936,7 @@ struct WeightControlCenterView: View {
                     }
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     .frame(maxWidth: .infinity)
-                    .padding(12)
+                    .padding(DSSpacing.cardElementSpacing)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(Theme.ColorToken.accentGold.opacity(0.3))
@@ -1279,7 +1279,7 @@ struct WeightControlCenterView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(16)
+            .padding(DSSpacing.cardPadding)
             .background(Theme.ColorToken.cardHeaderOnDark)
 
             // Layer 4: Show content only when expanded
@@ -1328,7 +1328,7 @@ struct WeightControlCenterView: View {
                         }
                     }
                 }
-                .padding(16)
+                .padding(DSSpacing.cardPadding)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }

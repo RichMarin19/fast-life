@@ -939,7 +939,7 @@ struct LightCard<Content: View>: View {
     var body: some View {
         // Content with standard padding (matching DSBanner pattern)
         content
-            .padding(16)  // 16pt - iOS standard
+            .padding(DSSpacing.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: .topTrailing) {
                 // Eye.slash button (positioned as overlay, matching DSBanner pattern)
