@@ -158,10 +158,10 @@ class WeightControlCenterViewModel: ObservableObject {
 
     var shouldShowRestoreButton: Bool {
         let hasCategoryOptOuts = optOutTrackerCards ||
-                                 optOutEducationalInsights ||
-                                 optOutBehavioralNudges ||
-                                 optOutMotivationalMessages ||
-                                 optOutProgressSummaries
+            optOutEducationalInsights ||
+            optOutBehavioralNudges ||
+            optOutMotivationalMessages ||
+            optOutProgressSummaries
 
         let hasIndividualOptOuts = !optOutManager.optedOutContentItems.isEmpty
 
@@ -871,7 +871,7 @@ class WeightControlCenterViewModel: ObservableObject {
             let preferredComponents = calendar.dateComponents([.hour, .minute], from: preferredReminderTime)
 
             // Build quiet hours if enabled (supports midnight-spanning)
-            var quietHours: WeightQuietHours? = nil
+            var quietHours: WeightQuietHours?
             if quietHoursEnabled {
                 let start = calendar.dateComponents([.hour, .minute], from: quietHoursStart)
                 let end = calendar.dateComponents([.hour, .minute], from: quietHoursEnd)
@@ -899,4 +899,3 @@ class WeightControlCenterViewModel: ObservableObject {
         await WeightNotificationManager.shared.debugPrintPendingWeightReminders()
     }
 }
-

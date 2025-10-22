@@ -35,7 +35,7 @@ struct TopStatusBar: View {
         // Realistic cardiac cycle: Quick systole + longer diastole
         // Using easeOut for authentic heart contraction pattern
         return .easeOut(duration: durationPerBeat * 0.7)
-               .repeatForever(autoreverses: true)
+            .repeatForever(autoreverses: true)
     }
 
     var body: some View {

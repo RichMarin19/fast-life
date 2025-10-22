@@ -68,7 +68,7 @@ class MockWeightManager: ObservableObject {
         let weightInPounds = appSettings.weightUnit.toPounds(weight)
         return weightEntries.contains(where: {
             abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
-            abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
+                abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
         })
     }
 

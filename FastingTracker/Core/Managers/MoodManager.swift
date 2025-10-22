@@ -293,8 +293,8 @@ class MoodManager: ObservableObject {
                     // Comprehensive duplicate check following WeightManager pattern
                     let isDuplicate = self.moodEntries.contains { entry in
                         abs(entry.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes
-                        entry.moodLevel == hkEntry.moodLevel &&
-                        entry.energyLevel == hkEntry.energyLevel
+                            entry.moodLevel == hkEntry.moodLevel &&
+                            entry.energyLevel == hkEntry.energyLevel
                     }
 
                     if !isDuplicate {
@@ -350,8 +350,8 @@ class MoodManager: ObservableObject {
                     // Historical import uses more flexible duplicate check
                     let isDuplicate = self.moodEntries.contains { entry in
                         abs(entry.date.timeIntervalSince(hkEntry.date)) < 600 && // Within 10 minutes (flexible for historical)
-                        entry.moodLevel == hkEntry.moodLevel &&
-                        entry.energyLevel == hkEntry.energyLevel
+                            entry.moodLevel == hkEntry.moodLevel &&
+                            entry.energyLevel == hkEntry.energyLevel
                     }
 
                     if !isDuplicate {
@@ -413,8 +413,8 @@ class MoodManager: ObservableObject {
                     let stillExistsInHealthKit = moodEntries.contains { healthKitEntry in
                         let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
                         return timeDiff < 300 && // Within 5 minutes
-                               fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
-                               fastLifeEntry.energyLevel == healthKitEntry.energyLevel
+                            fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
+                            fastLifeEntry.energyLevel == healthKitEntry.energyLevel
                     }
 
                     return !stillExistsInHealthKit
@@ -427,8 +427,8 @@ class MoodManager: ObservableObject {
                     let alreadyExists = self.moodEntries.contains { fastLifeEntry in
                         let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
                         return timeDiff < 300 &&
-                               fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
-                               fastLifeEntry.energyLevel == healthKitEntry.energyLevel
+                            fastLifeEntry.moodLevel == healthKitEntry.moodLevel &&
+                            fastLifeEntry.energyLevel == healthKitEntry.energyLevel
                     }
 
                     if !alreadyExists {

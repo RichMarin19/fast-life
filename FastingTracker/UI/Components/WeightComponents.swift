@@ -10,66 +10,66 @@ import SwiftUI
 
  WHEN TO USE:
  Add this pattern to ANY content view that shows:
-   • Educational tips
-   • Behavioral nudges
-   • Motivational messages
-   • Progress summaries
-   • Insights or smart coaching
+ • Educational tips
+ • Behavioral nudges
+ • Motivational messages
+ • Progress summaries
+ • Insights or smart coaching
 
  INDUSTRY STANDARD:
  Follows Spotify, Instagram, Netflix, Apple Health pattern:
-   • Granular opt-out (per item, not per category)
-   • Centralized hub to restore content (Manage My Experience)
-   • User control = trust + engagement
+ • Granular opt-out (per item, not per category)
+ • Centralized hub to restore content (Manage My Experience)
+ • User control = trust + engagement
 
  HOW TO IMPLEMENT:
 
  1️⃣ IMPORT MANAGER (at top of your view):
-    @ObservedObject private var optOutManager = ContentOptOutManager.shared
+ @ObservedObject private var optOutManager = ContentOptOutManager.shared
 
  2️⃣ UNIQUE CONTENT ID (constant in your view):
-    private let contentID = "unique_content_id_v1"
-    // Example IDs:
-    //   - "progress_story_trends_v1"
-    //   - "tip_water_intake_v1"
-    //   - "nudge_log_weight_streak_v1"
-    //   - "motivation_milestone_5lb_v1"
+ private let contentID = "unique_content_id_v1"
+ // Example IDs:
+ //   - "progress_story_trends_v1"
+ //   - "tip_water_intake_v1"
+ //   - "nudge_log_weight_streak_v1"
+ //   - "motivation_milestone_5lb_v1"
 
  3️⃣ CHECK OPT-OUT STATUS (before showing content):
-    if !optOutManager.isContentOptedOut(id: contentID) {
-        // Show your content here
-    }
+ if !optOutManager.isContentOptedOut(id: contentID) {
+ // Show your content here
+ }
 
  4️⃣ ADD OPT-OUT BUTTON (in toolbar or inline):
-    .toolbar {
-        ToolbarItem(placement: .navigationBarLeading) {
-            Button {
-                optOutManager.optOutContent(
-                    id: contentID,
-                    category: .progressSummaries,  // Choose: .educationalInsights, .behavioralNudges, .motivationalMessages, .progressSummaries
-                    text: "Your Progress Story"   // Display name shown in Manage My Experience
-                )
-                dismiss()
-            } label: {
-                HStack(spacing: 4) {
-                    Image(systemName: "eye.slash")
-                        .font(DSTypography.cardSubtitle)
-                    Text("Don't show again")
-                        .font(DSTypography.cardSubtitle)
-                }
-                .foregroundColor(.secondary)
-            }
-        }
-    }
+ .toolbar {
+ ToolbarItem(placement: .navigationBarLeading) {
+ Button {
+ optOutManager.optOutContent(
+ id: contentID,
+ category: .progressSummaries,  // Choose: .educationalInsights, .behavioralNudges, .motivationalMessages, .progressSummaries
+ text: "Your Progress Story"   // Display name shown in Manage My Experience
+ )
+ dismiss()
+ } label: {
+ HStack(spacing: 4) {
+ Image(systemName: "eye.slash")
+ .font(DSTypography.cardSubtitle)
+ Text("Don't show again")
+ .font(DSTypography.cardSubtitle)
+ }
+ .foregroundColor(.secondary)
+ }
+ }
+ }
 
  RESULT:
-   ✅ User opts out → Content no longer appears
-   ✅ Item shows up in "Manage My Experience" card
-   ✅ User can restore individual items or all at once
-   ✅ Auto-syncs via @AppStorage (iCloud compatible)
+ ✅ User opts out → Content no longer appears
+ ✅ Item shows up in "Manage My Experience" card
+ ✅ User can restore individual items or all at once
+ ✅ Auto-syncs via @AppStorage (iCloud compatible)
 
  REFERENCE IMPLEMENTATION:
-   See WeightTrendsView struct below (lines 349-460)
+ See WeightTrendsView struct below (lines 349-460)
 
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  */
@@ -272,7 +272,7 @@ struct WeightHistoryRow: View {
         }
         .alert("Delete Weight Entry", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
-            .accessibilityLabel("Cancel weight entry deletion")
+                .accessibilityLabel("Cancel weight entry deletion")
 
             Button("Delete", role: .destructive) {
                 weightManager.deleteWeightEntry(entry)
@@ -981,60 +981,60 @@ struct LightCard<Content: View>: View {
 
  WHEN TO USE:
  Apply this pattern to ANY tracker that needs progress visualization:
-   • Hydration Tracker: 7d/30d intake trends
-   • Sleep Tracker: 7d/30d sleep quality trends
-   • Mood Tracker: 7d/30d stability trends
-   • Fasting Tracker: 7d/30d fasting completion trends
+ • Hydration Tracker: 7d/30d intake trends
+ • Sleep Tracker: 7d/30d sleep quality trends
+ • Mood Tracker: 7d/30d stability trends
+ • Fasting Tracker: 7d/30d fasting completion trends
 
  INDUSTRY STANDARD:
  Follows Apple Health, MyFitnessPal, Strava pattern:
-   • Stacked narrative (tell a story top-to-bottom)
-   • Glass morphism UI (luxury feel on dark gradients)
-   • Behavioral copy (adapting to user's trend state)
-   • Educational tips (Did You Know banners)
+ • Stacked narrative (tell a story top-to-bottom)
+ • Glass morphism UI (luxury feel on dark gradients)
+ • Behavioral copy (adapting to user's trend state)
+ • Educational tips (Did You Know banners)
 
  HOW TO IMPLEMENT:
 
  1️⃣ TREND CALCULATION (in your view):
-    private func calculateDelta(days: Int) -> Double? {
-        // Calculate signed delta (negative = improving, positive = regressing)
-        // Use your tracker's metric (weight, hours, mood score, etc.)
-    }
+ private func calculateDelta(days: Int) -> Double? {
+ // Calculate signed delta (negative = improving, positive = regressing)
+ // Use your tracker's metric (weight, hours, mood score, etc.)
+ }
 
  2️⃣ TREND STATE LOGIC:
-    enum TrendState { case improving, regressing, flat }
+ enum TrendState { case improving, regressing, flat }
 
-    private func trendState(for delta: Double) -> TrendState {
-        // Define thresholds for your metric
-        if delta < -threshold { return .improving }
-        if delta > +threshold { return .regressing }
-        return .flat
-    }
+ private func trendState(for delta: Double) -> TrendState {
+ // Define thresholds for your metric
+ if delta < -threshold { return .improving }
+ if delta > +threshold { return .regressing }
+ return .flat
+ }
 
  3️⃣ USE COMPONENTS:
-    TrendCardFull(periodLabel: "7 DAYS", delta: calculateDelta(days: 7))
-    ProgressBanner(text: adaptiveMessage, accent: adaptiveColor)
-    RecapRow(netDelta: net30d, bestStreak: streak, entries: count)
-    DidYouKnowBanner(text: randomTip())
+ TrendCardFull(periodLabel: "7 DAYS", delta: calculateDelta(days: 7))
+ ProgressBanner(text: adaptiveMessage, accent: adaptiveColor)
+ RecapRow(netDelta: net30d, bestStreak: streak, entries: count)
+ DidYouKnowBanner(text: randomTip())
 
  4️⃣ BACKGROUND:
-    ZStack {
-        LinearGradient(
-            colors: [Theme.ColorToken.bgDeepStart, Theme.ColorToken.bgDeepEnd],
-            startPoint: .top, endPoint: .bottom
-        ).ignoresSafeArea()
+ ZStack {
+ LinearGradient(
+ colors: [Theme.ColorToken.bgDeepStart, Theme.ColorToken.bgDeepEnd],
+ startPoint: .top, endPoint: .bottom
+ ).ignoresSafeArea()
 
-        ScrollView { /* Stacked components with 16pt spacing */ }
-    }
+ ScrollView { /* Stacked components with 16pt spacing */ }
+ }
 
  RESULT:
-   ✅ Consistent luxury UI across all trackers
-   ✅ Reusable components = faster development
-   ✅ Industry-standard progress visualization
-   ✅ Behavioral psychology = user engagement
+ ✅ Consistent luxury UI across all trackers
+ ✅ Reusable components = faster development
+ ✅ Industry-standard progress visualization
+ ✅ Behavioral psychology = user engagement
 
  REFERENCE IMPLEMENTATION:
-   See WeightTrendsView (lines 420-610) for complete example
+ See WeightTrendsView (lines 420-610) for complete example
 
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
  */
@@ -1732,4 +1732,3 @@ struct ProgressStoryCardDropDelegate: DropDelegate {
         return true
     }
 }
-

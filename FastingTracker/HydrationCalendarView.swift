@@ -198,8 +198,8 @@ struct HydrationDayView: View {
             // Background
             RoundedRectangle(cornerRadius: 8)
                 .fill(dayStatus == .goalMet ? Color.orange.opacity(0.1) :
-                      dayStatus == .partial ? Color.red.opacity(0.1) :
-                      Color.gray.opacity(0.1))
+                        dayStatus == .partial ? Color.red.opacity(0.1) :
+                        Color.gray.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(isToday() ? Color.blue : Color.clear, lineWidth: 2)

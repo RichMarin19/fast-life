@@ -24,7 +24,7 @@ struct ContentView: View {
                     healthKitNudgeSection
                     titleSection
                     timerSection
-            }
+                }
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -216,62 +216,62 @@ struct ContentView: View {
 
             // Timer Circle
             ZStack {
-            Circle()
-                .stroke(Color.gray.opacity(0.3), lineWidth: 20)
-                .frame(width: 250, height: 250)
+                Circle()
+                    .stroke(Color.gray.opacity(0.3), lineWidth: 20)
+                    .frame(width: 250, height: 250)
 
-            Circle()
-                .trim(from: 0, to: fastingManager.progress)
-                .stroke(
-                    fastingManager.isActive ?
-                    AngularGradient(
-                        gradient: Gradient(colors: progressGradientColors),
-                        center: .center,
-                        startAngle: .degrees(0),
-                        endAngle: .degrees(360)
-                    ) : AngularGradient(
-                        gradient: Gradient(colors: [Color.gray, Color.gray]),
-                        center: .center
-                    ),
-                    style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                )
-                .frame(width: 250, height: 250)
-                .rotationEffect(.degrees(-90))
-                .animation(.linear(duration: 1), value: fastingManager.progress)
+                Circle()
+                    .trim(from: 0, to: fastingManager.progress)
+                    .stroke(
+                        fastingManager.isActive ?
+                            AngularGradient(
+                                gradient: Gradient(colors: progressGradientColors),
+                                center: .center,
+                                startAngle: .degrees(0),
+                                endAngle: .degrees(360)
+                            ) : AngularGradient(
+                                gradient: Gradient(colors: [Color.gray, Color.gray]),
+                                center: .center
+                            ),
+                        style: StrokeStyle(lineWidth: 20, lineCap: .round)
+                    )
+                    .frame(width: 250, height: 250)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.linear(duration: 1), value: fastingManager.progress)
 
-            VStack(spacing: 12) {
-                Image(systemName: "clock")
-                    .font(.system(size: 40))
-                    .foregroundColor(fastingManager.isActive ? .blue : .gray)
+                VStack(spacing: 12) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 40))
+                        .foregroundColor(fastingManager.isActive ? .blue : .gray)
 
-                // Elapsed Time - Tappable to edit
-                Button(action: {
-                    if fastingManager.isActive {
-                        showingEditStartTime = true
+                    // Elapsed Time - Tappable to edit
+                    Button(action: {
+                        if fastingManager.isActive {
+                            showingEditStartTime = true
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Text("Fasting")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(formattedElapsedTime)
+                                .font(.system(size: 32, weight: .bold, design: .monospaced))
+                                .foregroundColor(fastingManager.isActive ? .primary : .gray)
+                        }
                     }
-                }) {
+                    .buttonStyle(.plain)
+                    .disabled(!fastingManager.isActive)
+
+                    // Countdown Time
                     VStack(spacing: 4) {
-                        Text("Fasting")
+                        Text("Remaining")
                             .font(.caption)
                             .foregroundColor(.secondary)
-                        Text(formattedElapsedTime)
-                            .font(.system(size: 32, weight: .bold, design: .monospaced))
-                            .foregroundColor(fastingManager.isActive ? .primary : .gray)
+                        Text(formattedRemainingTime)
+                            .font(.system(size: 28, weight: .semibold, design: .monospaced))
+                            .foregroundColor(fastingManager.isActive ? progressColor : .gray)
                     }
                 }
-                .buttonStyle(.plain)
-                .disabled(!fastingManager.isActive)
-
-                // Countdown Time
-                VStack(spacing: 4) {
-                    Text("Remaining")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text(formattedRemainingTime)
-                        .font(.system(size: 28, weight: .semibold, design: .monospaced))
-                        .foregroundColor(fastingManager.isActive ? progressColor : .gray)
-                }
-            }
             }
         }
 
@@ -312,7 +312,7 @@ struct ContentView: View {
                 (Text("GOAL: ")
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundColor(Color("FLSuccess"))
-                + Text("\(Int(fastingManager.fastingGoalHours))h")
+                    + Text("\(Int(fastingManager.fastingGoalHours))h")
                     .font(.system(size: 32, weight: .heavy, design: .rounded))
                     .foregroundColor(Color("FLSuccess")))
 
@@ -608,7 +608,7 @@ struct ContentView: View {
     private func syncFutureFastingData() {
         AppLogger.info("Starting sync future fasting data from nudge", category: AppLogger.healthKit)
 
-        HealthKitManager.shared.requestFastingAuthorization { success, error in
+        HealthKitManager.shared.requestFastingAuthorization { success, _ in
             DispatchQueue.main.async {
                 if success {
                     AppLogger.info("Fasting authorization granted - syncing future data only", category: AppLogger.healthKit)
@@ -636,7 +636,7 @@ struct ContentView: View {
         AppLogger.info("Requesting basic HealthKit authorization before sync options", category: AppLogger.healthKit)
 
         // Request basic workout write permission (minimum needed for fasting sync)
-        HealthKitManager.shared.requestFastingAuthorization { success, error in
+        HealthKitManager.shared.requestFastingAuthorization { success, _ in
             DispatchQueue.main.async {
                 if success {
                     AppLogger.info("Basic HealthKit authorization granted - showing sync options", category: AppLogger.healthKit)

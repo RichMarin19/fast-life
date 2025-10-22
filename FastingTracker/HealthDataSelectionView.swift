@@ -145,7 +145,6 @@ private struct HealthDataRow: View {
     }
 }
 
-
 #if DEBUG
 struct HealthDataSelectionView_Previews: PreviewProvider {
     static var previews: some View {

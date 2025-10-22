@@ -26,7 +26,7 @@ struct SleepTrackingView: View {
                             // DIRECT AUTHORIZATION: Same pattern as existing sleep sync
                             // Request sleep permissions immediately when user wants to connect
                             Log.debug("📱 SleepTrackingView: HealthKit nudge - requesting sleep authorization", category: .general)
-                            HealthKitManager.shared.requestSleepAuthorization { success, error in
+                            HealthKitManager.shared.requestSleepAuthorization { success, _ in
                                 DispatchQueue.main.async {
                                     if success {
                                         Log.debug("✅ SleepTrackingView: Sleep authorization granted from nudge", category: .general)
@@ -278,7 +278,7 @@ struct AddSleepView: View {
 
     @State private var bedTime = Calendar.current.date(byAdding: .hour, value: -8, to: Date()) ?? Date()
     @State private var wakeTime = Date()
-    @State private var sleepQuality: Int? = nil
+    @State private var sleepQuality: Int?
 
     var body: some View {
         NavigationView {
@@ -362,7 +362,7 @@ struct SleepSyncSettingsView: View {
                                 // Request sleep permissions immediately when user enables sleep sync
                                 // UNIFIED EXPERIENCE: Same pattern as WeightTrackingView
                                 Log.debug("📱 SleepTrackingView: Requesting sleep authorization directly", category: .general)
-                                HealthKitManager.shared.requestSleepAuthorization { success, error in
+                                HealthKitManager.shared.requestSleepAuthorization { success, _ in
                                     DispatchQueue.main.async {
                                         if success {
                                             Log.debug("✅ SleepTrackingView: Sleep authorization granted - enabling sync", category: .general)

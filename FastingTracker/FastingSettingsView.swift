@@ -79,7 +79,7 @@ struct FastingSettingsView: View {
                         }
                     }
 
-                    if fastingManager.fastingHistory.filter({ $0.isComplete }).count > 0 {
+                    if !fastingManager.fastingHistory.filter({ $0.isComplete }).isEmpty {
                         HStack {
                             Text("Average Duration")
                             Spacer()
@@ -145,7 +145,7 @@ struct FastingSettingsView: View {
 
         if enabled {
             // Request authorization first
-            HealthKitManager.shared.requestFastingAuthorization { success, error in
+            HealthKitManager.shared.requestFastingAuthorization { success, _ in
                 DispatchQueue.main.async {
                     if success {
                         AppLogger.info("Fasting HealthKit authorization granted", category: AppLogger.healthKit)
@@ -184,7 +184,7 @@ struct FastingSettingsView: View {
                     DispatchQueue.main.async {
                         self.isSyncing = false
 
-                        if completedFasts.count > 0 {
+                        if !completedFasts.isEmpty {
                             // NOTE: This reports local data count since fasting sync is write-only to HealthKit
                             // Unlike weight/water which are bidirectional, fasting sessions are only exported
                             // This is accurate behavior for export-only operations

@@ -148,7 +148,7 @@ struct CurrentWeightCard: View {
                 if let progress = calculateTotalProgress() {
                     MotivationBanner(
                         message: progress.isLoss
-                        ? "You've lost \((progress.amount), default: "%.1f") lbs - keep it up!"
+                            ? "You've lost \((progress.amount), default: "%.1f") lbs - keep it up!"
                             : "Progress isn't always linear - you're doing great",
                         isPositive: progress.isLoss
                     )

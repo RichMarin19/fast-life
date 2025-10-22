@@ -356,7 +356,7 @@ class SleepNotificationRule: BehavioralNotificationRule, ObservableObject {
     @Published var isEnabled: Bool = true
     @Published var frequency: NotificationFrequency = .daily
     @Published var timing: NotificationTiming = .exact(hour: 21, minute: 30) // Wind-down time
-    @Published var quietHours: QuietHours? = nil // Sleep notifications override quiet hours
+    @Published var quietHours: QuietHours? // Sleep notifications override quiet hours
 
     @Published var toneStyle: NotificationToneStyle = .supportive
     @Published var adaptiveFrequency: Bool = true
@@ -450,8 +450,6 @@ class SleepNotificationRule: BehavioralNotificationRule, ObservableObject {
         try container.encode(interruptionLevel, forKey: .interruptionLevel)
     }
 }
-
-
 
 /// Weight notification rule for habit formation and consistency
 class WeightNotificationRule: BehavioralNotificationRule, ObservableObject {
@@ -552,7 +550,6 @@ class WeightNotificationRule: BehavioralNotificationRule, ObservableObject {
         try container.encode(interruptionLevel, forKey: .interruptionLevel)
     }
 }
-
 
 // MARK: - Behavioral Trigger Types
 

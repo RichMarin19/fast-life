@@ -41,7 +41,7 @@ struct StreakCalendarView: View {
             VStack(spacing: 12) {
                 // Weekday headers
                 HStack(spacing: 8) {
-                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { index, day in
+                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
                         Text(day)
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -187,8 +187,8 @@ struct CalendarDayView: View {
             // Background
             RoundedRectangle(cornerRadius: 8)
                 .fill(dayStatus == .goalMet ? Color.orange.opacity(0.1) :
-                      dayStatus == .incomplete ? Color.red.opacity(0.1) :
-                      Color.gray.opacity(0.1))
+                        dayStatus == .incomplete ? Color.red.opacity(0.1) :
+                        Color.gray.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(isToday() ? Color("FLPrimary") : Color.clear, lineWidth: 2)

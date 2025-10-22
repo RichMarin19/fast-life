@@ -131,9 +131,9 @@ struct DSBanner<Content: View>: View {
                 .fill(surface)
                 .overlay(
                     enableStroke ?
-                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                         .stroke(strokeColor, lineWidth: strokeWidth)
-                    : nil
+                        : nil
                 )
                 .shadow(
                     color: enableShadow ? shadowColor : .clear,

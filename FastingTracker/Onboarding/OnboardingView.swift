@@ -20,7 +20,6 @@ struct OnboardingView: View {
 
     @Binding var isOnboardingComplete: Bool
 
-
     init(isOnboardingComplete: Binding<Bool>) {
         self._isOnboardingComplete = isOnboardingComplete
 
@@ -96,50 +95,50 @@ struct OnboardingView: View {
                 Spacer()
 
                 HStack(spacing: 0) {
-                Text("Fast L")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundColor(.blue)
-                Text("IF")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundColor(.green)
-                Text("e")
-                    .font(.system(size: 64, weight: .bold, design: .rounded))
-                    .foregroundColor(.cyan)
-            }
+                    Text("Fast L")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundColor(.blue)
+                    Text("IF")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundColor(.green)
+                    Text("e")
+                        .font(.system(size: 64, weight: .bold, design: .rounded))
+                        .foregroundColor(.cyan)
+                }
 
-            Text("Your Intermittent Fasting Companion")
-                .font(.title3)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+                Text("Your Intermittent Fasting Companion")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
 
-            Spacer()
+                Spacer()
 
-            VStack(spacing: 20) {
-                FeatureRow(icon: "timer", title: "Track Fasting", description: "Monitor your fasting windows and streaks")
-                FeatureRow(icon: "drop.fill", title: "Stay Hydrated", description: "Log water, coffee, and tea intake")
-                FeatureRow(icon: "bed.double.fill", title: "Sleep Tracking", description: "Monitor sleep quality and duration")
-                FeatureRow(icon: "scalemass.fill", title: "Weight Goals", description: "Track progress with HealthKit integration")
-            }
-            .padding(.horizontal)
+                VStack(spacing: 20) {
+                    FeatureRow(icon: "timer", title: "Track Fasting", description: "Monitor your fasting windows and streaks")
+                    FeatureRow(icon: "drop.fill", title: "Stay Hydrated", description: "Log water, coffee, and tea intake")
+                    FeatureRow(icon: "bed.double.fill", title: "Sleep Tracking", description: "Monitor sleep quality and duration")
+                    FeatureRow(icon: "scalemass.fill", title: "Weight Goals", description: "Track progress with HealthKit integration")
+                }
+                .padding(.horizontal)
 
-            Spacer()
+                Spacer()
 
-            Button(action: {
-                AppLogger.debug("Onboarding: Welcome page event", category: AppLogger.ui)
-                AppLogger.debug("Get Started button tapped", category: AppLogger.ui)
-                AppLogger.debug("Advancing to Current Weight page", category: AppLogger.ui)
-                                currentPage = 1
-            }) {
-                Text("Get Started")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .cornerRadius(15)
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 40)
+                Button(action: {
+                    AppLogger.debug("Onboarding: Welcome page event", category: AppLogger.ui)
+                    AppLogger.debug("Get Started button tapped", category: AppLogger.ui)
+                    AppLogger.debug("Advancing to Current Weight page", category: AppLogger.ui)
+                    currentPage = 1
+                }) {
+                    Text("Get Started")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(15)
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 40)
             }  // End VStack
         }  // End ZStack
         .task {
@@ -541,30 +540,30 @@ struct OnboardingView: View {
                     // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
                     DispatchQueue.main.async {
                         HealthKitManager.shared.requestAuthorization { success, error in
-                        if success {
-                            AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
+                            if success {
+                                AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
 
-                            // Verify which permissions were actually granted
-                            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
-                            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
-                            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+                                // Verify which permissions were actually granted
+                                let weightGranted = HealthKitManager.shared.isWeightAuthorized()
+                                let waterGranted = HealthKitManager.shared.isWaterAuthorized()
+                                let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
 
-                            AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
+                                AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
 
-                            if weightGranted || waterGranted || sleepGranted {
-                                AppLogger.debug("HealthKit permissions granted, enabling sync with all historical data, advancing to Notifications", category: AppLogger.healthKit)
-                                saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
-                                currentPage = 6
+                                if weightGranted || waterGranted || sleepGranted {
+                                    AppLogger.debug("HealthKit permissions granted, enabling sync with all historical data, advancing to Notifications", category: AppLogger.healthKit)
+                                    saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
+                                    currentPage = 6
+                                } else {
+                                    AppLogger.debug("No HealthKit permissions granted, disabling sync, advancing to Notifications", category: AppLogger.healthKit)
+                                    saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                                    currentPage = 6
+                                }
                             } else {
-                                AppLogger.debug("No HealthKit permissions granted, disabling sync, advancing to Notifications", category: AppLogger.healthKit)
+                                AppLogger.debug("HealthKit authorization failed: \(String(describing: error)), disabling sync", category: AppLogger.healthKit)
                                 saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
                                 currentPage = 6
                             }
-                        } else {
-                            AppLogger.debug("HealthKit authorization failed: \(String(describing: error)), disabling sync", category: AppLogger.healthKit)
-                            saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                            currentPage = 6
-                        }
                         }
                     }
                 }) {
@@ -590,30 +589,30 @@ struct OnboardingView: View {
                     // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
                     DispatchQueue.main.async {
                         HealthKitManager.shared.requestAuthorization { success, error in
-                        if success {
-                            AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
+                            if success {
+                                AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
 
-                            // Verify which permissions were actually granted
-                            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
-                            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
-                            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+                                // Verify which permissions were actually granted
+                                let weightGranted = HealthKitManager.shared.isWeightAuthorized()
+                                let waterGranted = HealthKitManager.shared.isWaterAuthorized()
+                                let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
 
-                            AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
+                                AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
 
-                            if weightGranted || waterGranted || sleepGranted {
-                                AppLogger.debug("HealthKit permissions granted, enabling sync with future data only, advancing to Notifications", category: AppLogger.healthKit)
-                                saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
-                                currentPage = 6
+                                if weightGranted || waterGranted || sleepGranted {
+                                    AppLogger.debug("HealthKit permissions granted, enabling sync with future data only, advancing to Notifications", category: AppLogger.healthKit)
+                                    saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
+                                    currentPage = 6
+                                } else {
+                                    AppLogger.debug("No HealthKit permissions granted, disabling sync, advancing to Notifications", category: AppLogger.healthKit)
+                                    saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                                    currentPage = 6
+                                }
                             } else {
-                                AppLogger.debug("No HealthKit permissions granted, disabling sync, advancing to Notifications", category: AppLogger.healthKit)
+                                AppLogger.debug("HealthKit authorization failed: \(String(describing: error)), disabling sync", category: AppLogger.healthKit)
                                 saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
                                 currentPage = 6
                             }
-                        } else {
-                            AppLogger.debug("HealthKit authorization failed: \(String(describing: error)), disabling sync", category: AppLogger.healthKit)
-                            saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                            currentPage = 6
-                        }
                         }
                     }
                 }) {

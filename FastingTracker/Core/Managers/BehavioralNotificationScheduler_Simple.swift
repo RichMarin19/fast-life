@@ -124,7 +124,6 @@ final class BehavioralNotificationSchedulerSimple: ObservableObject {
             }
 
             return granted
-
         } catch {
             AppLogger.error("Failed to request notification permissions", category: AppLogger.notifications, error: error)
             return false

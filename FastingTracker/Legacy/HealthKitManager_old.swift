@@ -344,9 +344,9 @@ class HealthKitManager: ObservableObject {
 
     /// Returns true if any data type has a sync error
     public var hasSyncErrors: Bool {
-        return [lastWeightSyncError, lastWaterSyncError, lastSleepSyncError, lastFastingSyncError]
+        return ![lastWeightSyncError, lastWaterSyncError, lastSleepSyncError, lastFastingSyncError]
             .compactMap { $0 }
-            .count > 0
+            .isEmpty
     }
 
     // MARK: - Public Sync Status Update Methods
@@ -471,7 +471,7 @@ class HealthKitManager: ObservableObject {
             predicate: predicate,
             anchor: savedAnchor,
             limit: HKObjectQueryNoLimit
-        ) { [weak self] query, addedObjects, deletedObjects, newAnchor, error in
+        ) { [weak self] _, addedObjects, deletedObjects, newAnchor, error in
 
             // Apply industry-standard HKError handling
             if let error = error {
@@ -548,7 +548,7 @@ class HealthKitManager: ObservableObject {
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
-        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] query, results, error in
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] _, results, error in
 
             // Apply industry-standard HKError handling
             if let error = error {
@@ -727,7 +727,7 @@ class HealthKitManager: ObservableObject {
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
         // Use HKSampleQuery (not anchored) for complete historical import
-        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] query, results, error in
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [sortDescriptor]) { [weak self] _, results, error in
 
             // Apply industry-standard HKError handling
             if let error = error {
@@ -818,7 +818,7 @@ class HealthKitManager: ObservableObject {
         // Fetch BMI
         if let bmiType = HKObjectType.quantityType(forIdentifier: .bodyMassIndex) {
             group.enter()
-            let bmiQuery = HKSampleQuery(sampleType: bmiType, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { query, results, error in
+            let bmiQuery = HKSampleQuery(sampleType: bmiType, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { _, results, _ in
                 if let sample = results?.first as? HKQuantitySample {
                     bmi = sample.quantity.doubleValue(for: HKUnit.count())
                 }
@@ -830,7 +830,7 @@ class HealthKitManager: ObservableObject {
         // Fetch Body Fat Percentage
         if let bodyFatType = HKObjectType.quantityType(forIdentifier: .bodyFatPercentage) {
             group.enter()
-            let bodyFatQuery = HKSampleQuery(sampleType: bodyFatType, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { query, results, error in
+            let bodyFatQuery = HKSampleQuery(sampleType: bodyFatType, predicate: predicate, limit: 1, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]) { _, results, _ in
                 if let sample = results?.first as? HKQuantitySample {
                     bodyFat = sample.quantity.doubleValue(for: HKUnit.percent()) * 100 // Convert to percentage
                 }
@@ -872,7 +872,7 @@ class HealthKitManager: ObservableObject {
             samplesToSave.append(bodyFatSample)
         }
 
-        healthStore.save(samplesToSave) { [weak self] success, error in
+        healthStore.save(samplesToSave) { [weak self] _, error in
             DispatchQueue.main.async {
                 if let error = error {
                     // Apply industry-standard HKError handling
@@ -905,7 +905,7 @@ class HealthKitManager: ObservableObject {
 
         // Use UUID predicate for precise deletion (Apple official pattern)
         let predicate = HKQuery.predicateForObjects(with: [uuid])
-        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: 1, sortDescriptors: nil) { [weak self] query, results, error in
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: 1, sortDescriptors: nil) { [weak self] _, results, error in
             guard let samples = results, error == nil, !samples.isEmpty else {
                 DispatchQueue.main.async {
                     // Sample not found or already deleted - consider this success
@@ -945,7 +945,7 @@ class HealthKitManager: ObservableObject {
         let endDate = Calendar.current.date(byAdding: .minute, value: 30, to: date) ?? date
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
 
-        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { query, results, error in
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { _, results, error in
             guard let samples = results as? [HKQuantitySample], error == nil else {
                 DispatchQueue.main.async {
                     completion(nil)
@@ -1012,7 +1012,7 @@ class HealthKitManager: ObservableObject {
 
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
 
-        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { [weak self] query, results, error in
+        let query = HKSampleQuery(sampleType: weightType, predicate: predicate, limit: HKObjectQueryNoLimit, sortDescriptors: nil) { [weak self] _, results, error in
 
             guard let samples = results, error == nil, !samples.isEmpty else {
                 DispatchQueue.main.async {
@@ -1054,7 +1054,7 @@ class HealthKitManager: ObservableObject {
             predicate: predicate,
             anchor: savedAnchor,
             limit: HKObjectQueryNoLimit
-        ) { [weak self] query, addedObjects, deletedObjects, newAnchor, error in
+        ) { [weak self] _, addedObjects, _, newAnchor, error in
 
             guard error == nil else {
                 if let error = error {
@@ -1149,7 +1149,7 @@ class HealthKitManager: ObservableObject {
         // Disable background delivery when no longer observing
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
 
-        healthStore.disableBackgroundDelivery(for: weightType) { success, error in
+        healthStore.disableBackgroundDelivery(for: weightType) { _, error in
             if let error = error {
                 AppLogger.error("Failed to disable background delivery", category: AppLogger.healthKit, error: error)
             }
@@ -1174,7 +1174,7 @@ class HealthKitManager: ObservableObject {
         healthStore.stop(query)
         // Disable background delivery when no longer observing
         guard let waterType = HKObjectType.quantityType(forIdentifier: .dietaryWater) else { return }
-        healthStore.disableBackgroundDelivery(for: waterType) { success, error in
+        healthStore.disableBackgroundDelivery(for: waterType) { _, error in
             if let error = error {
                 AppLogger.error("Failed to disable hydration background delivery", category: AppLogger.healthKit, error: error)
             }
@@ -1337,7 +1337,7 @@ class HealthKitManager: ObservableObject {
             predicate: predicate,
             anchor: savedAnchor,
             limit: HKObjectQueryNoLimit
-        ) { [weak self] query, addedObjects, deletedObjects, newAnchor, error in
+        ) { [weak self] _, addedObjects, deletedObjects, newAnchor, error in
 
             guard error == nil else {
                 if let error = error {
@@ -1509,7 +1509,7 @@ class HealthKitManager: ObservableObject {
         // Enable background delivery
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
 
-        healthStore.enableBackgroundDelivery(for: sleepType, frequency: .immediate) { success, error in
+        healthStore.enableBackgroundDelivery(for: sleepType, frequency: .immediate) { _, error in
             if let error = error {
                 AppLogger.error("Failed to enable sleep background delivery", category: AppLogger.healthKit, error: error)
             }
@@ -1521,7 +1521,7 @@ class HealthKitManager: ObservableObject {
 
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
 
-        healthStore.disableBackgroundDelivery(for: sleepType) { success, error in
+        healthStore.disableBackgroundDelivery(for: sleepType) { _, error in
             if let error = error {
                 AppLogger.error("Failed to disable sleep background delivery", category: AppLogger.healthKit, error: error)
             }
@@ -1665,7 +1665,7 @@ class HealthKitManager: ObservableObject {
             // Filter for Fast LIFe workouts only
             guard let workouts = samples as? [HKWorkout],
                   let fastingWorkout = workouts.first(where: { workout in
-                      workout.metadata?[HKMetadataKeyWorkoutBrandName] as? String == "Fast LIFe"
+                    workout.metadata?[HKMetadataKeyWorkoutBrandName] as? String == "Fast LIFe"
                   }) else {
                 AppLogger.warning("No matching fasting workout found in HealthKit", category: AppLogger.healthKit)
                 DispatchQueue.main.async {
@@ -1706,7 +1706,7 @@ class HealthKitManager: ObservableObject {
             predicate: predicate,
             anchor: savedAnchor,
             limit: HKObjectQueryNoLimit
-        ) { [weak self] query, addedObjects, deletedObjects, newAnchor, error in
+        ) { [weak self] _, addedObjects, _, newAnchor, error in
 
             guard error == nil else {
                 if let error = error {
@@ -1880,7 +1880,7 @@ class HealthKitManager: ObservableObject {
             predicate: predicate,
             limit: HKObjectQueryNoLimit,
             sortDescriptors: [sortDescriptor]
-        ) { query, results, error in
+        ) { _, results, error in
             guard error == nil else {
                 AppLogger.error("Error fetching mindfulness sessions", category: AppLogger.healthKit, error: error)
                 DispatchQueue.main.async {
@@ -1932,7 +1932,7 @@ class HealthKitManager: ObservableObject {
             return
         }
 
-        let query = HKObserverQuery(sampleType: mindfulType, predicate: nil) { query, completionHandler, error in
+        let query = HKObserverQuery(sampleType: mindfulType, predicate: nil) { _, completionHandler, error in
             if let error = error {
                 AppLogger.error("Mindfulness observer query error", category: AppLogger.healthKit, error: error)
                 completionHandler()
@@ -1964,7 +1964,7 @@ class HealthKitManager: ObservableObject {
         }
 
         // Disable background delivery when no longer observing
-        healthStore.disableBackgroundDelivery(for: mindfulType) { success, error in
+        healthStore.disableBackgroundDelivery(for: mindfulType) { _, error in
             if let error = error {
                 AppLogger.error("Failed to disable background delivery for mindfulness", category: AppLogger.healthKit, error: error)
             } else {

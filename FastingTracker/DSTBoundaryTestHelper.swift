@@ -247,7 +247,7 @@ class DSTBoundaryTestHelper {
         let testTimes = [
             Calendar.current.date(byAdding: .minute, value: -30, to: testDate)!, // Before transition
             testDate, // At transition
-            Calendar.current.date(byAdding: .minute, value: 30, to: testDate)!, // After transition
+            Calendar.current.date(byAdding: .minute, value: 30, to: testDate)! // After transition
         ]
 
         for (index, time) in testTimes.enumerated() {

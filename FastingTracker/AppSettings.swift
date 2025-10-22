@@ -154,4 +154,3 @@ enum TrackerType: String, CaseIterable, Identifiable {
         }
     }
 }
-

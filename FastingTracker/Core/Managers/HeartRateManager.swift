@@ -47,7 +47,7 @@ actor HeartRateManager {
         }
 
         // Create observer query for automatic updates
-        observerQuery = HKObserverQuery(sampleType: heartRateType, predicate: nil) { [weak self] query, completionHandler, error in
+        observerQuery = HKObserverQuery(sampleType: heartRateType, predicate: nil) { [weak self] _, completionHandler, error in
             Task { @Sendable [weak self] in
                 await self?.handleBackgroundUpdate(error: error)
                 completionHandler()
@@ -114,7 +114,7 @@ actor HeartRateManager {
                     predicate: nil,
                     limit: 1,
                     sortDescriptors: [sort]
-                ) { _, samples, error in
+                ) { _, _, error in
                     if let error = error {
                         // Query failed - likely no read access
                         self.logger.info("📊 Read access check: DENIED (query failed: \(error.localizedDescription))")
@@ -160,7 +160,6 @@ actor HeartRateManager {
             // Test 5: Apple's recommended read access check (the real test)
             let readAccess = await hasReadAccess()
             logger.info("🧪 ✅ REAL READ ACCESS CHECK: \(readAccess ? "✅ GRANTED" : "❌ DENIED")")
-
         } catch {
             logger.error("🧪 Diagnostic test failed: \(error)")
         }
@@ -227,7 +226,6 @@ actor HeartRateManager {
             healthStore.execute(query)
         }
     }
-
 }
 
 // MARK: - MainActor Facade for SwiftUI Integration
@@ -367,4 +365,3 @@ final class HeartRateViewModel: ObservableObject {
         }
     }
 }
-

@@ -87,7 +87,6 @@ class UserDefaultsDataStore: DataStore {
 
             // Log successful save for debugging
             AppLogger.debug("Successfully saved data for key '\(key)' (\(data.count) bytes)", category: AppLogger.general)
-
         } catch let encodingError as EncodingError {
             let error = DataStoreError.encodingFailed(key)
             CrashReportManager.shared.recordPersistenceError(error, context: [
@@ -135,7 +134,6 @@ class UserDefaultsDataStore: DataStore {
 
             AppLogger.debug("Successfully loaded data for key '\(key)' (\(data.count) bytes)", category: AppLogger.general)
             return object
-
         } catch let decodingError as DecodingError {
             let error = DataStoreError.decodingFailed(key)
             CrashReportManager.shared.recordPersistenceError(error, context: [
@@ -231,7 +229,7 @@ class UserDefaultsDataStore: DataStore {
         if object is Data { return false }
 
         // If it's a basic type (String, Number, Array, Dict), it's old format
-        return object is String || object is NSNumber || object is Array<Any> || object is Dictionary<String, Any>
+        return object is String || object is NSNumber || object is [Any] || object is [String: Any]
     }
 
     /// Migrates Double value from old format

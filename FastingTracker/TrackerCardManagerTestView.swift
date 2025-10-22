@@ -89,7 +89,7 @@ struct TrackerCardManagerTestView: View {
                         Text("Visible Cards")
                         Spacer()
                         Text("\(cardManager.getVisibleCardsInOrder().count)")
-                            .foregroundColor(cardManager.getVisibleCardsInOrder().count > 0 ? .green : .red)
+                            .foregroundColor(!cardManager.getVisibleCardsInOrder().isEmpty ? .green : .red)
                     }
 
                     // Hidden count

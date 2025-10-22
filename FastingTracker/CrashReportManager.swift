@@ -30,8 +30,8 @@ public class CrashReportManager {
 
         // Create directory if it doesn't exist
         try? fileManager.createDirectory(at: crashLogsDirectory,
-                                       withIntermediateDirectories: true,
-                                       attributes: [.protectionKey: FileProtectionType.completeUnlessOpen])
+                                         withIntermediateDirectories: true,
+                                         attributes: [.protectionKey: FileProtectionType.completeUnlessOpen])
 
         return crashLogsDirectory
     }()

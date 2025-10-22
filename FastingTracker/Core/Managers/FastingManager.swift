@@ -140,7 +140,7 @@ class FastingManager: ObservableObject {
         AppLogger.info("Fast configuration: goal=\(fastingGoalHours)h, currentStreak=\(currentStreak)", category: AppLogger.fasting)
 
         // Calculate eating window duration if there's a previous fast
-        var eatingWindowDuration: TimeInterval? = nil
+        var eatingWindowDuration: TimeInterval?
         if let lastFast = fastingHistory.first, let lastEndTime = lastFast.endTime {
             eatingWindowDuration = Date().timeIntervalSince(lastEndTime)
             let hours = eatingWindowDuration! / 3600
@@ -251,7 +251,7 @@ class FastingManager: ObservableObject {
         AppLogger.debug("Manual fast parameters: start=\(startTime), end=\(endTime), goal=\(goalHours)h", category: AppLogger.fasting)
 
         // Calculate eating window if there's a previous fast before this manual entry
-        var eatingWindowDuration: TimeInterval? = nil
+        var eatingWindowDuration: TimeInterval?
         if let lastFast = fastingHistory.first, let lastEndTime = lastFast.endTime {
             // Only calculate if the manual fast starts after the previous fast ended
             if startTime > lastEndTime {
@@ -447,7 +447,6 @@ class FastingManager: ObservableObject {
                 // Recalculate streaks after history update
                 self.calculateStreakFromHistory()
             }
-
         }
     }
 
@@ -593,7 +592,6 @@ class FastingManager: ObservableObject {
             } else {
                 AppLogger.debug("Streak unchanged", category: AppLogger.fasting)
             }
-
         } // end historyQueue.async
     }
 
@@ -678,8 +676,8 @@ class FastingManager: ObservableObject {
                     // Comprehensive duplicate check following WeightManager pattern
                     let isDuplicate = self.fastingHistory.contains { existingSession in
                         abs(existingSession.startTime.timeIntervalSince(hkSession.startTime)) < 300 && // Within 5 minutes
-                        existingSession.isComplete == hkSession.isComplete &&
-                        (existingSession.endTime == nil) == (hkSession.endTime == nil) // Both nil or both non-nil
+                            existingSession.isComplete == hkSession.isComplete &&
+                            (existingSession.endTime == nil) == (hkSession.endTime == nil) // Both nil or both non-nil
                     }
 
                     if !isDuplicate {
@@ -738,7 +736,7 @@ class FastingManager: ObservableObject {
                     // Historical import uses more flexible duplicate check
                     let isDuplicate = self.fastingHistory.contains { existingSession in
                         abs(existingSession.startTime.timeIntervalSince(hkSession.startTime)) < 600 && // Within 10 minutes (flexible for historical)
-                        existingSession.isComplete == hkSession.isComplete
+                            existingSession.isComplete == hkSession.isComplete
                     }
 
                     if !isDuplicate {
@@ -764,9 +762,9 @@ class FastingManager: ObservableObject {
                 // Report actual sync results
                 AppLogger.info("Historical HealthKit fasting sync completed: \(newlyAddedCount) new fasting sessions imported from \(fastingSessions.count) total sessions", category: AppLogger.fasting)
                 completion(newlyAddedCount, nil)
-                }
             }
         }
+    }
 
     /// Manual sync with deletion detection (Universal Method #3)
     func syncFromHealthKitWithReset(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
@@ -803,7 +801,7 @@ class FastingManager: ObservableObject {
                     let stillExistsInHealthKit = fastingSessions.contains { healthKitSession in
                         let timeDiff = abs(fastLifeSession.startTime.timeIntervalSince(healthKitSession.startTime))
                         return timeDiff < 300 && // Within 5 minutes
-                               fastLifeSession.isComplete == healthKitSession.isComplete
+                            fastLifeSession.isComplete == healthKitSession.isComplete
                     }
 
                     return !stillExistsInHealthKit
@@ -817,7 +815,7 @@ class FastingManager: ObservableObject {
                     let alreadyExists = self.fastingHistory.contains { fastLifeSession in
                         let timeDiff = abs(fastLifeSession.startTime.timeIntervalSince(healthKitSession.startTime))
                         return timeDiff < 300 &&
-                               fastLifeSession.isComplete == healthKitSession.isComplete
+                            fastLifeSession.isComplete == healthKitSession.isComplete
                     }
 
                     if !alreadyExists {

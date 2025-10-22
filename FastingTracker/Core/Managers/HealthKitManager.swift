@@ -450,7 +450,7 @@ class HealthKitManager: ObservableObject, HealthKitManagerProtocol {
             predicate: predicate,
             limit: HKObjectQueryNoLimit,
             sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)]
-        ) { _, samples, error in
+        ) { _, samples, _ in
             let sleepEntries = (samples as? [HKCategorySample])?.compactMap { sample in
                 SleepEntry(
                     id: sample.uuid,
@@ -616,5 +616,4 @@ class HealthKitManager: ObservableObject, HealthKitManagerProtocol {
         let authStatus = getWeightAuthorizationStatus()
         return authStatus == .sharingDenied
     }
-
 }

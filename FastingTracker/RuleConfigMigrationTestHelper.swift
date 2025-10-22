@@ -123,7 +123,6 @@ class RuleConfigMigrationTestHelper {
 
             Log.debug("   ✅ RE-ENCODE SUCCESS: Can save updated configuration", category: .general)
             Log.debug("   V2.0 JSON includes: \"throttleMinutes\" : \(rule.throttleMinutes)", category: .general)
-
         } catch {
             Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
@@ -151,7 +150,6 @@ class RuleConfigMigrationTestHelper {
             } else {
                 Log.debug("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)", category: .general)
             }
-
         } catch {
             Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
@@ -179,7 +177,6 @@ class RuleConfigMigrationTestHelper {
             } else {
                 Log.debug("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)", category: .general)
             }
-
         } catch {
             Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
@@ -207,7 +204,6 @@ class RuleConfigMigrationTestHelper {
             } else {
                 Log.debug("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)", category: .general)
             }
-
         } catch {
             Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
@@ -272,7 +268,6 @@ class RuleConfigMigrationTestHelper {
             } else {
                 Log.debug("   ❌ MIGRATION FAILED: Default throttle not applied", category: .general)
             }
-
         } catch {
             Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
@@ -323,7 +318,6 @@ class RuleConfigMigrationTestHelper {
             Log.debug("     - interruptionLevel: \(rule.interruptionLevel.rawValue)", category: .general)
 
             Log.debug("   ✅ FORWARD COMPATIBILITY: New fields ignored gracefully", category: .general)
-
         } catch {
             Log.debug("   ❌ FORWARD COMPATIBILITY FAILED: \(error)", category: .general)
         }

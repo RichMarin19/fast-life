@@ -67,7 +67,7 @@ struct AddSleepView: View {
 
     @State private var bedTime = Calendar.current.date(byAdding: .hour, value: -8, to: Date()) ?? Date()
     @State private var wakeTime = Date()
-    @State private var sleepQuality: Int? = nil
+    @State private var sleepQuality: Int?
 
     var body: some View {
         NavigationView {
@@ -162,7 +162,7 @@ struct SleepSyncSettingsView: View {
                                 // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                                 // Request sleep permissions immediately when user enables sleep sync
                                 Log.debug("📱 SleepTrackingView: Requesting sleep authorization directly", category: .general)
-                                HealthKitManager.shared.requestSleepAuthorization { success, error in
+                                HealthKitManager.shared.requestSleepAuthorization { success, _ in
                                     DispatchQueue.main.async {
                                         if success {
                                             Log.debug("✅ SleepTrackingView: Sleep authorization granted - enabling sync", category: .general)
@@ -244,13 +244,13 @@ struct SleepSyncSettingsView: View {
                 }
                 .accessibilityLabel("Sync only future sleep data from Apple Health")
                 Button("Cancel", role: .cancel) { }
-                .accessibilityLabel("Cancel sleep sync import")
+                    .accessibilityLabel("Cancel sleep sync import")
             } message: {
                 Text("Choose how to sync your sleep data with Apple Health. You can import all your historical sleep entries or start fresh with only future entries.")
             }
             .alert("Sync Status", isPresented: $showingSyncAlert) {
                 Button("OK") { }
-                .accessibilityLabel("Dismiss sleep sync status")
+                    .accessibilityLabel("Dismiss sleep sync status")
             } message: {
                 Text(syncMessage)
             }

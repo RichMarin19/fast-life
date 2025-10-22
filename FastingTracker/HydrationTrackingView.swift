@@ -31,195 +31,195 @@ struct HydrationTrackingView: View {
                     .padding(.top, 40)
                 } else {
 
-                // HealthKit Nudge for first-time users who skipped onboarding
-                // Following Lose It app pattern - contextual banner with single Connect action
-                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .hydration) {
-                    HealthKitNudgeView(
-                        dataType: .hydration,
-                        onConnect: {
-                            // DIRECT AUTHORIZATION: Same pattern as existing hydration sync
-                            // Request hydration permissions immediately when user wants to connect
-                            AppLogger.info("HealthKit nudge - requesting hydration authorization", category: AppLogger.healthKit)
-                            HealthKitManager.shared.requestHydrationAuthorization { success, error in
-                                DispatchQueue.main.async {
-                                    if success {
-                                        AppLogger.info("Hydration authorization granted from nudge", category: AppLogger.healthKit)
-                                        // Enable sync automatically when granted from nudge
-                                        // Note: HydrationManager doesn't have enableSync() method yet
-                                        // For now, we'll just hide the nudge
-                                        showHealthKitNudge = false
-                                    } else {
-                                        AppLogger.info("Hydration authorization denied from nudge", category: AppLogger.healthKit)
-                                        // Still hide nudge if user denied (don't keep asking)
-                                        nudgeManager.dismissNudge(for: .hydration)
-                                        showHealthKitNudge = false
+                    // HealthKit Nudge for first-time users who skipped onboarding
+                    // Following Lose It app pattern - contextual banner with single Connect action
+                    if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .hydration) {
+                        HealthKitNudgeView(
+                            dataType: .hydration,
+                            onConnect: {
+                                // DIRECT AUTHORIZATION: Same pattern as existing hydration sync
+                                // Request hydration permissions immediately when user wants to connect
+                                AppLogger.info("HealthKit nudge - requesting hydration authorization", category: AppLogger.healthKit)
+                                HealthKitManager.shared.requestHydrationAuthorization { success, _ in
+                                    DispatchQueue.main.async {
+                                        if success {
+                                            AppLogger.info("Hydration authorization granted from nudge", category: AppLogger.healthKit)
+                                            // Enable sync automatically when granted from nudge
+                                            // Note: HydrationManager doesn't have enableSync() method yet
+                                            // For now, we'll just hide the nudge
+                                            showHealthKitNudge = false
+                                        } else {
+                                            AppLogger.info("Hydration authorization denied from nudge", category: AppLogger.healthKit)
+                                            // Still hide nudge if user denied (don't keep asking)
+                                            nudgeManager.dismissNudge(for: .hydration)
+                                            showHealthKitNudge = false
+                                        }
                                     }
                                 }
+                            },
+                            onDismiss: {
+                                // Mark nudge as dismissed - won't show again
+                                nudgeManager.dismissNudge(for: .hydration)
+                                showHealthKitNudge = false
                             }
-                        },
-                        onDismiss: {
-                            // Mark nudge as dismissed - won't show again
-                            nudgeManager.dismissNudge(for: .hydration)
-                            showHealthKitNudge = false
-                        }
-                    )
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                }
-
-                // Progress Ring (Multi-colored by drink type)
-                ZStack {
-                    // Background ring
-                    Circle()
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 20)
-                        .frame(width: 250, height: 250)
-
-                    // Water segment (cyan)
-                    Circle()
-                        .trim(from: 0, to: hydrationManager.todaysProgressByType(.water))
-                        .stroke(Color.cyan, style: StrokeStyle(lineWidth: 20, lineCap: .round))
-                        .frame(width: 250, height: 250)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.water))
-
-                    // Coffee segment (brown) - starts after water
-                    Circle()
-                        .trim(
-                            from: hydrationManager.todaysProgressByType(.water),
-                            to: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee)
                         )
-                        .stroke(Color.brown, style: StrokeStyle(lineWidth: 20, lineCap: .round))
-                        .frame(width: 250, height: 250)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.coffee))
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                    }
 
-                    // Tea segment (green) - starts after water + coffee
-                    Circle()
-                        .trim(
-                            from: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee),
-                            to: hydrationManager.todaysProgress()
-                        )
-                        .stroke(Color.green, style: StrokeStyle(lineWidth: 20, lineCap: .round))
-                        .frame(width: 250, height: 250)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.tea))
+                    // Progress Ring (Multi-colored by drink type)
+                    ZStack {
+                        // Background ring
+                        Circle()
+                            .stroke(Color.gray.opacity(0.3), lineWidth: 20)
+                            .frame(width: 250, height: 250)
 
-                    VStack(spacing: 12) {
-                        Image(systemName: "drop.fill")
-                            .font(.system(size: 40))
-                            .foregroundColor(.cyan)
+                        // Water segment (cyan)
+                        Circle()
+                            .trim(from: 0, to: hydrationManager.todaysProgressByType(.water))
+                            .stroke(Color.cyan, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                            .frame(width: 250, height: 250)
+                            .rotationEffect(.degrees(-90))
+                            .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.water))
 
-                        // Current Progress
-                        VStack(spacing: 4) {
-                            Text("Today")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text("\(Int(hydrationManager.todaysTotalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                        // Coffee segment (brown) - starts after water
+                        Circle()
+                            .trim(
+                                from: hydrationManager.todaysProgressByType(.water),
+                                to: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee)
+                            )
+                            .stroke(Color.brown, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                            .frame(width: 250, height: 250)
+                            .rotationEffect(.degrees(-90))
+                            .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.coffee))
+
+                        // Tea segment (green) - starts after water + coffee
+                        Circle()
+                            .trim(
+                                from: hydrationManager.todaysProgressByType(.water) + hydrationManager.todaysProgressByType(.coffee),
+                                to: hydrationManager.todaysProgress()
+                            )
+                            .stroke(Color.green, style: StrokeStyle(lineWidth: 20, lineCap: .round))
+                            .frame(width: 250, height: 250)
+                            .rotationEffect(.degrees(-90))
+                            .animation(.linear(duration: 0.5), value: hydrationManager.todaysProgressByType(.tea))
+
+                        VStack(spacing: 12) {
+                            Image(systemName: "drop.fill")
+                                .font(.system(size: 40))
+                                .foregroundColor(.cyan)
+
+                            // Current Progress
+                            VStack(spacing: 4) {
+                                Text("Today")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("\(Int(hydrationManager.todaysTotalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
+                                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                            }
+
+                            // Goal
+                            VStack(spacing: 4) {
+                                Text("Goal")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Text("\(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
+                                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.cyan)
+                            }
                         }
+                    }
 
-                        // Goal
-                        VStack(spacing: 4) {
-                            Text("Goal")
-                                .font(.caption)
+                    // Progress Percentage
+                    Text("\(hydrationManager.todaysProgressPercentage())%")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+
+                    // Goal Settings Button
+                    Button(action: {
+                        showingGoalSettings = true
+                    }) {
+                        HStack {
+                            Text("Daily Goal: \(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
+                                .font(.headline)
                                 .foregroundColor(.secondary)
-                            Text("\(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
-                                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                            Image(systemName: "gearshape.fill")
                                 .foregroundColor(.cyan)
                         }
                     }
-                }
+                    .accessibilityLabel("Edit daily hydration goal")
+                    .padding(.bottom, 10)
 
-                // Progress Percentage
-                Text("\(hydrationManager.todaysProgressPercentage())%")
-                    .font(.title2)
-                    .foregroundColor(.secondary)
+                    Spacer()
+                        .frame(height: 10)
 
-                // Goal Settings Button
-                Button(action: {
-                    showingGoalSettings = true
-                }) {
-                    HStack {
-                        Text("Daily Goal: \(Int(hydrationManager.dailyGoalInPreferredUnit())) \(hydrationManager.currentUnitAbbreviation)")
-                            .font(.headline)
-                            .foregroundColor(.secondary)
-                        Image(systemName: "gearshape.fill")
-                            .foregroundColor(.cyan)
-                    }
-                }
-                .accessibilityLabel("Edit daily hydration goal")
-                .padding(.bottom, 10)
-
-                Spacer()
-                    .frame(height: 10)
-
-                // Log Drink Buttons
-                VStack(spacing: 16) {
-                    Text("Log a Drink")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.horizontal, 40)
-
-                    HStack(spacing: 16) {
-                        // Water Button
-                        DrinkButton(
-                            type: .water,
-                            color: .cyan,
-                            action: {
-                                selectedDrinkType = .water
-                                showingDrinkPicker = true
-                            }
-                        )
-                        .accessibilityLabel("Log water intake")
-
-                        // Coffee Button
-                        DrinkButton(
-                            type: .coffee,
-                            color: .brown,
-                            action: {
-                                selectedDrinkType = .coffee
-                                showingDrinkPicker = true
-                            }
-                        )
-                        .accessibilityLabel("Log coffee intake")
-
-                        // Tea Button
-                        DrinkButton(
-                            type: .tea,
-                            color: .green,
-                            action: {
-                                selectedDrinkType = .tea
-                                showingDrinkPicker = true
-                            }
-                        )
-                        .accessibilityLabel("Log tea intake")
-                    }
-                    .padding(.horizontal, 40)
-                }
-                .padding(.bottom, 20)
-
-                // Today's Drinks History
-                if !hydrationManager.todaysDrinks().isEmpty {
-                    VStack(spacing: 12) {
-                        Text("Today's Drinks")
+                    // Log Drink Buttons
+                    VStack(spacing: 16) {
+                        Text("Log a Drink")
                             .font(.headline)
                             .foregroundColor(.primary)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 40)
 
-                        ForEach(hydrationManager.todaysDrinks()) { drink in
-                            DrinkHistoryRow(drink: drink, onDelete: {
-                                hydrationManager.deleteDrinkEntry(drink)
-                            })
-                            .padding(.horizontal, 40)
+                        HStack(spacing: 16) {
+                            // Water Button
+                            DrinkButton(
+                                type: .water,
+                                color: .cyan,
+                                action: {
+                                    selectedDrinkType = .water
+                                    showingDrinkPicker = true
+                                }
+                            )
+                            .accessibilityLabel("Log water intake")
+
+                            // Coffee Button
+                            DrinkButton(
+                                type: .coffee,
+                                color: .brown,
+                                action: {
+                                    selectedDrinkType = .coffee
+                                    showingDrinkPicker = true
+                                }
+                            )
+                            .accessibilityLabel("Log coffee intake")
+
+                            // Tea Button
+                            DrinkButton(
+                                type: .tea,
+                                color: .green,
+                                action: {
+                                    selectedDrinkType = .tea
+                                    showingDrinkPicker = true
+                                }
+                            )
+                            .accessibilityLabel("Log tea intake")
                         }
+                        .padding(.horizontal, 40)
                     }
                     .padding(.bottom, 20)
-                }
 
-                Spacer()
-                    .frame(height: 20)
+                    // Today's Drinks History
+                    if !hydrationManager.todaysDrinks().isEmpty {
+                        VStack(spacing: 12) {
+                            Text("Today's Drinks")
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, 40)
+
+                            ForEach(hydrationManager.todaysDrinks()) { drink in
+                                DrinkHistoryRow(drink: drink, onDelete: {
+                                    hydrationManager.deleteDrinkEntry(drink)
+                                })
+                                .padding(.horizontal, 40)
+                            }
+                        }
+                        .padding(.bottom, 20)
+                    }
+
+                    Spacer()
+                        .frame(height: 20)
                 }
             }
         }
@@ -276,7 +276,7 @@ struct HydrationTrackingView: View {
             // Industry standards (MyFitnessPal/Lose It): Always let user choose import type
             Button("Import All Historical Data") {
                 // Request authorization and import complete hydration history
-                HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                HealthKitManager.shared.requestHydrationAuthorization { success, _ in
                     DispatchQueue.main.async {
                         if success {
                             AppLogger.info("Hydration authorization granted - syncing all data", category: AppLogger.healthKit)
@@ -291,7 +291,7 @@ struct HydrationTrackingView: View {
 
             Button("Future Data Only") {
                 // Request authorization and sync only future entries
-                HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                HealthKitManager.shared.requestHydrationAuthorization { success, _ in
                     DispatchQueue.main.async {
                         if success {
                             AppLogger.info("Hydration authorization granted - future only sync", category: AppLogger.healthKit)
@@ -305,7 +305,7 @@ struct HydrationTrackingView: View {
             .accessibilityLabel("Sync only future hydration data from Apple Health")
 
             Button("Cancel", role: .cancel) { }
-            .accessibilityLabel("Cancel hydration sync import")
+                .accessibilityLabel("Cancel hydration sync import")
         } message: {
             Text("Choose how to sync your hydration data with Apple Health. You can import all your historical hydration entries or start fresh with only future entries.")
         }
@@ -533,7 +533,7 @@ struct DrinkAmountPickerView: View {
                                     .padding()
                                     .background(
                                         (!useCustomAmount && selectedAmount == amount) ?
-                                        drinkColor.opacity(0.15) : Color(.systemGray6)
+                                            drinkColor.opacity(0.15) : Color(.systemGray6)
                                     )
                                     .cornerRadius(12)
                                 }
@@ -553,7 +553,7 @@ struct DrinkAmountPickerView: View {
                                         .padding()
                                         .background(
                                             useCustomAmount ?
-                                            drinkColor.opacity(0.15) : Color(.systemGray6)
+                                                drinkColor.opacity(0.15) : Color(.systemGray6)
                                         )
                                         .cornerRadius(12)
                                         .onChange(of: customAmount) { _, newValue in
@@ -651,7 +651,7 @@ struct EmptyHydrationStateView: View {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                     // Request hydration permissions immediately when user wants to sync hydration data
                     AppLogger.info("EmptyState: Sync button tapped - requesting hydration authorization", category: AppLogger.healthKit)
-                    HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                    HealthKitManager.shared.requestHydrationAuthorization { success, _ in
                         if success {
                             AppLogger.info("EmptyState: Hydration authorization granted - starting sync", category: AppLogger.healthKit)
                             DispatchQueue.main.async {

@@ -557,8 +557,8 @@ class HydrationManager: ObservableObject {
                     // More comprehensive duplicate check following WeightManager pattern
                     let isDuplicate = self.drinkEntries.contains { entry in
                         abs(entry.date.timeIntervalSince(date)) < 300 && // Within 5 minutes
-                        abs(entry.amount - amount) < 0.01 && // Within 0.01 oz/ml
-                        entry.type == .water // Only check against water entries
+                            abs(entry.amount - amount) < 0.01 && // Within 0.01 oz/ml
+                            entry.type == .water // Only check against water entries
                     }
 
                     if !isDuplicate {
@@ -609,8 +609,8 @@ class HydrationManager: ObservableObject {
                     // Historical import uses more flexible duplicate check
                     let isDuplicate = self.drinkEntries.contains { entry in
                         abs(entry.date.timeIntervalSince(date)) < 300 && // Within 5 minutes (flexible for historical)
-                        abs(entry.amount - amount) < 0.02 && // Within 0.02 oz/ml (account for conversion rounding)
-                        entry.type == .water
+                            abs(entry.amount - amount) < 0.02 && // Within 0.02 oz/ml (account for conversion rounding)
+                            entry.type == .water
                     }
 
                     if !isDuplicate {

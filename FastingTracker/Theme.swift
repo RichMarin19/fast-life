@@ -424,4 +424,3 @@ extension Color {
 extension LinearGradient {
     static let fl = FLTheme.Gradients.self
 }
-

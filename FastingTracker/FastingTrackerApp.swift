@@ -146,7 +146,6 @@ struct MainTabView: View {
     }
 }
 
-
 // MARK: - LazyView Wrapper for Tab Content Optimization
 
 /// Defers view rendering until first access (lazy loading)

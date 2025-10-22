@@ -991,7 +991,6 @@ class NotificationManager: NSObject, UNUserNotificationCenterDelegate {
             AppLogger.debug("Notification debug completed", category: AppLogger.notifications)
         }
     }
-
 }
 
 // MARK: - UNUserNotificationCenterDelegate Implementation

@@ -61,7 +61,7 @@ struct TrackerScreenShell<Content: View>: View {
 
     var body: some View {
         // 🔍 FORENSIC: Log TrackerScreenShell render
-        let _ = AppLogger.info("⏱️ TrackerScreenShell.body rendering (gradientStyle: \(gradientStyle == .luxury ? "luxury" : "none"))", category: AppLogger.ui)
+        _ = AppLogger.info("⏱️ TrackerScreenShell.body rendering (gradientStyle: \(gradientStyle == .luxury ? "luxury" : "none"))", category: AppLogger.ui)
 
         return ZStack {
             // Optional luxury gradient background
@@ -144,8 +144,8 @@ private struct TrackerTitleView: View {
     private var isLuxuryMode: Bool {
         // In luxury mode, TrackerScreenShell passes same color for all three
         titleColor1 == Theme.ColorToken.textPrimary &&
-        titleColor2 == Theme.ColorToken.textPrimary &&
-        titleColor3 == Theme.ColorToken.textPrimary
+            titleColor2 == Theme.ColorToken.textPrimary &&
+            titleColor3 == Theme.ColorToken.textPrimary
     }
 
     var body: some View {

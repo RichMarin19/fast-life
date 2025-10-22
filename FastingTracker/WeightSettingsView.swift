@@ -627,7 +627,7 @@ struct WeightSettingsView: View {
         // Create test context for weight reminders - FORCE testing conditions
         let testLastActivity = Calendar.current.date(byAdding: .day, value: -2, to: Date())!
         let context = BehavioralContext(
-            currentStreak: weightManager.weightEntries.count > 0 ? 5 : 0,
+            currentStreak: !weightManager.weightEntries.isEmpty ? 5 : 0,
             recentPattern: "consistent",
             timeOfDay: Date(),
             dataValue: weightManager.weightEntries.first?.weight ?? 150.0,

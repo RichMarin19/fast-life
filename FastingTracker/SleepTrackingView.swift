@@ -45,7 +45,7 @@ struct SleepTrackingView: View {
                     dataType: .sleep,
                     onConnect: {
                         AppLogger.info("HealthKit nudge - requesting sleep authorization", category: AppLogger.healthKit)
-                        HealthKitManager.shared.requestSleepAuthorization { success, error in
+                        HealthKitManager.shared.requestSleepAuthorization { success, _ in
                             DispatchQueue.main.async {
                                 if success {
                                     AppLogger.info("Sleep authorization granted from nudge", category: AppLogger.healthKit)
@@ -83,114 +83,114 @@ struct SleepTrackingView: View {
                     sleepManager: sleepManager
                 )
             } else {
-            // Sleep Progress Ring
-            ZStack {
-                // Background ring
-                Circle()
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 20)
-                    .frame(width: 250, height: 250)
-
-                // Sleep progress ring
-                if let lastNight = sleepManager.lastNightSleep {
-                    let sleepHours = lastNight.duration / 3600
-                    let progress = min(sleepHours / recommendedSleep, 1.0)
-
+                // Sleep Progress Ring
+                ZStack {
+                    // Background ring
                     Circle()
-                        .trim(from: 0, to: progress)
-                        .stroke(
-                            sleepHours >= recommendedSleep ? Color.green : Color.purple,
-                            style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                        )
+                        .stroke(Color.gray.opacity(0.3), lineWidth: 20)
                         .frame(width: 250, height: 250)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 0.5), value: progress)
-                }
 
-                VStack(spacing: 12) {
-                    Image(systemName: "bed.double.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(.purple)
+                    // Sleep progress ring
+                    if let lastNight = sleepManager.lastNightSleep {
+                        let sleepHours = lastNight.duration / 3600
+                        let progress = min(sleepHours / recommendedSleep, 1.0)
 
-                    // Last night's sleep
-                    VStack(spacing: 4) {
-                        Text("Last Night")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-
-                        if let lastNight = sleepManager.lastNightSleep {
-                            Text(String(format: "%.1f hrs", lastNight.duration / 3600))
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
-                        } else {
-                            Text("No data")
-                                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                                .foregroundColor(.secondary)
-                        }
+                        Circle()
+                            .trim(from: 0, to: progress)
+                            .stroke(
+                                sleepHours >= recommendedSleep ? Color.green : Color.purple,
+                                style: StrokeStyle(lineWidth: 20, lineCap: .round)
+                            )
+                            .frame(width: 250, height: 250)
+                            .rotationEffect(.degrees(-90))
+                            .animation(.linear(duration: 0.5), value: progress)
                     }
 
-                    // Recommended
-                    VStack(spacing: 4) {
-                        Text("Goal")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text("\(Int(recommendedSleep)) hrs")
-                            .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    VStack(spacing: 12) {
+                        Image(systemName: "bed.double.fill")
+                            .font(.system(size: 40))
                             .foregroundColor(.purple)
-                    }
-                }
-            }
 
-            // Sleep Stats
-            if let avgSleep = sleepManager.averageSleepHours {
-                HStack(spacing: 40) {
-                    VStack(spacing: 8) {
-                        Text("7-Day Avg")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text(String(format: "%.1f hrs", avgSleep))
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                    }
-
-                    if let trend = sleepManager.sleepTrend {
-                        VStack(spacing: 8) {
-                            Text("Trend")
+                        // Last night's sleep
+                        VStack(spacing: 4) {
+                            Text("Last Night")
                                 .font(.caption)
                                 .foregroundColor(.secondary)
-                            HStack(spacing: 4) {
-                                Image(systemName: trend >= 0 ? "arrow.up.right" : "arrow.down.right")
+
+                            if let lastNight = sleepManager.lastNightSleep {
+                                Text(String(format: "%.1f hrs", lastNight.duration / 3600))
+                                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                            } else {
+                                Text("No data")
+                                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+
+                        // Recommended
+                        VStack(spacing: 4) {
+                            Text("Goal")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text("\(Int(recommendedSleep)) hrs")
+                                .font(.system(size: 24, weight: .semibold, design: .rounded))
+                                .foregroundColor(.purple)
+                        }
+                    }
+                }
+
+                // Sleep Stats
+                if let avgSleep = sleepManager.averageSleepHours {
+                    HStack(spacing: 40) {
+                        VStack(spacing: 8) {
+                            Text("7-Day Avg")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(String(format: "%.1f hrs", avgSleep))
+                                .font(.title3)
+                                .fontWeight(.semibold)
+                        }
+
+                        if let trend = sleepManager.sleepTrend {
+                            VStack(spacing: 8) {
+                                Text("Trend")
                                     .font(.caption)
-                                    .foregroundColor(trend >= 0 ? .green : .red)
-                                Text(String(format: "%.1f hrs", abs(trend)))
-                                    .font(.title3)
-                                    .fontWeight(.semibold)
-                                    .foregroundColor(trend >= 0 ? .green : .red)
+                                    .foregroundColor(.secondary)
+                                HStack(spacing: 4) {
+                                    Image(systemName: trend >= 0 ? "arrow.up.right" : "arrow.down.right")
+                                        .font(.caption)
+                                        .foregroundColor(trend >= 0 ? .green : .red)
+                                    Text(String(format: "%.1f hrs", abs(trend)))
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(trend >= 0 ? .green : .red)
+                                }
                             }
                         }
                     }
+                    .padding(.bottom, 10)
                 }
-                .padding(.bottom, 10)
-            }
 
-            // Add Sleep Button (positioned above charts for better UX flow)
-            Button(action: {
-                showingAddSleep = true
-            }) {
-                Text("Log Sleep")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.purple)
-                    .cornerRadius(8)
-            }
-            .padding(.horizontal, 40)
-            .padding(.bottom, 20)
-            .accessibilityLabel("Log sleep entry")
+                // Add Sleep Button (positioned above charts for better UX flow)
+                Button(action: {
+                    showingAddSleep = true
+                }) {
+                    Text("Log Sleep")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.purple)
+                        .cornerRadius(8)
+                }
+                .padding(.horizontal, 40)
+                .padding(.bottom, 20)
+                .accessibilityLabel("Log sleep entry")
 
-            // Sleep Optimization Charts (More user-friendly than Apple Health)
-            // Following Apple 2025 industry standard: display charts with basic data, not just detailed stages
-            if let lastNight = sleepManager.lastNightSleep {
-                VStack(spacing: 20) {
+                // Sleep Optimization Charts (More user-friendly than Apple Health)
+                // Following Apple 2025 industry standard: display charts with basic data, not just detailed stages
+                if let lastNight = sleepManager.lastNightSleep {
+                    VStack(spacing: 20) {
                         // Show stage breakdown chart only when detailed stage data exists
                         if !lastNight.stages.isEmpty {
                             // Sleep Stage Breakdown Chart (Pie chart with quality score)
@@ -287,8 +287,8 @@ struct SleepTrackingView: View {
                     .padding(.bottom, 20)
                 }
 
-            Spacer()
-                .frame(height: 20)
+                Spacer()
+                    .frame(height: 20)
             }
         }
         .sheet(isPresented: $showingAddSleep) {
@@ -347,7 +347,7 @@ struct EmptySleepStateView: View {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                     // Request sleep permissions immediately when user wants to sync sleep data
                     AppLogger.info("EmptyState: Sync button tapped - requesting sleep authorization", category: AppLogger.healthKit)
-                    HealthKitManager.shared.requestSleepAuthorization { success, error in
+                    HealthKitManager.shared.requestSleepAuthorization { success, _ in
                         if success {
                             AppLogger.info("EmptyState: Sleep authorization granted - starting sync", category: AppLogger.healthKit)
                             DispatchQueue.main.async {

@@ -526,31 +526,19 @@ struct SleepTrendChart: View {
 
         // Deep sleep (25 points)
         let deepPercentage = stages.deep / totalDuration
-        if deepPercentage >= 0.20 { score += 25 }
-        else if deepPercentage >= 0.15 { score += 20 }
-        else if deepPercentage >= 0.10 { score += 15 }
-        else { score += 10 }
+        if deepPercentage >= 0.20 { score += 25 } else if deepPercentage >= 0.15 { score += 20 } else if deepPercentage >= 0.10 { score += 15 } else { score += 10 }
 
         // REM sleep (25 points)
         let remPercentage = stages.rem / totalDuration
-        if remPercentage >= 0.20 { score += 25 }
-        else if remPercentage >= 0.15 { score += 20 }
-        else if remPercentage >= 0.10 { score += 15 }
-        else { score += 10 }
+        if remPercentage >= 0.20 { score += 25 } else if remPercentage >= 0.15 { score += 20 } else if remPercentage >= 0.10 { score += 15 } else { score += 10 }
 
         // Sleep efficiency (25 points)
         let awakePercentage = stages.awake / totalDuration
-        if awakePercentage <= 0.05 { score += 25 }
-        else if awakePercentage <= 0.10 { score += 20 }
-        else if awakePercentage <= 0.15 { score += 15 }
-        else { score += 10 }
+        if awakePercentage <= 0.05 { score += 25 } else if awakePercentage <= 0.10 { score += 20 } else if awakePercentage <= 0.15 { score += 15 } else { score += 10 }
 
         // Duration (25 points)
         let hours = totalDuration / 3600
-        if hours >= 7 && hours <= 9 { score += 25 }
-        else if hours >= 6 && hours <= 10 { score += 20 }
-        else if hours >= 5 && hours <= 11 { score += 15 }
-        else { score += 10 }
+        if hours >= 7 && hours <= 9 { score += 25 } else if hours >= 6 && hours <= 10 { score += 20 } else if hours >= 5 && hours <= 11 { score += 15 } else { score += 10 }
 
         return min(score, 100)
     }

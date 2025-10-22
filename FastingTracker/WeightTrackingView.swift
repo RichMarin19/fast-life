@@ -38,7 +38,7 @@ struct WeightTrackingView: View {
                     dataType: .weight,
                     onConnect: {
                         AppLogger.info("HealthKit nudge - requesting weight authorization", category: AppLogger.healthKit)
-                        HealthKitManager.shared.requestWeightAuthorization { success, error in
+                        HealthKitManager.shared.requestWeightAuthorization { success, _ in
                             DispatchQueue.main.async {
                                 if success {
                                     AppLogger.info("Weight authorization granted from nudge", category: AppLogger.healthKit)
@@ -81,7 +81,7 @@ struct WeightTrackingView: View {
 
     var body: some View {
         // 🔍 FORENSIC: Log body render
-        let _ = AppLogger.info("⏱️ WeightTrackingView.body rendering", category: AppLogger.ui)
+        _ = AppLogger.info("⏱️ WeightTrackingView.body rendering", category: AppLogger.ui)
 
         return TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),
@@ -353,7 +353,7 @@ struct EmptyWeightStateView: View {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                     // Request weight permissions immediately when user wants to sync weight data
                     AppLogger.info("EmptyState: Sync button tapped - requesting weight authorization", category: AppLogger.healthKit)
-                    HealthKitManager.shared.requestWeightAuthorization { success, error in
+                    HealthKitManager.shared.requestWeightAuthorization { success, _ in
                         if success {
                             AppLogger.info("EmptyState: Weight authorization granted - starting sync", category: AppLogger.healthKit)
                             DispatchQueue.main.async {
@@ -383,9 +383,6 @@ struct EmptyWeightStateView: View {
 
     // Removed: handleHealthDataSelection - no longer needed with direct authorization
 }
-
-
-
 
 // MARK: - Tracker Card Drop Delegate (Layer 5)
 
@@ -430,9 +427,6 @@ struct TrackerCardDropDelegate: DropDelegate {
 }
 
 // MARK: - View Modifier for Conditional X-Axis Scale
-
-
-
 
 #Preview {
     WeightTrackingView()

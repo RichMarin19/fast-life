@@ -72,17 +72,17 @@ struct HubView: View {
                         sleepManager: sleepManager,
                         moodManager: moodManager
                     )
-                        .onDrag {
-                            // SwiftUI Drag & Drop API - Long press to drag, tap to navigate
-                            // Reference: https://developer.apple.com/documentation/swiftui/view/ondrag(_:)
-                            self.draggedTracker = tracker
-                            return NSItemProvider(object: tracker.rawValue as NSString)
-                        }
-                        .onDrop(of: [.text], delegate: TrackerDropDelegate(
-                            tracker: tracker,
-                            trackerOrder: $trackerOrder,
-                            draggedTracker: $draggedTracker
-                        ))
+                    .onDrag {
+                        // SwiftUI Drag & Drop API - Long press to drag, tap to navigate
+                        // Reference: https://developer.apple.com/documentation/swiftui/view/ondrag(_:)
+                        self.draggedTracker = tracker
+                        return NSItemProvider(object: tracker.rawValue as NSString)
+                    }
+                    .onDrop(of: [.text], delegate: TrackerDropDelegate(
+                        tracker: tracker,
+                        trackerOrder: $trackerOrder,
+                        draggedTracker: $draggedTracker
+                    ))
                 }
             }
             .padding(.horizontal)
@@ -435,7 +435,7 @@ struct TrackerSummaryCard: View {
         } else {
             // Compact regular card - content-compensated padding
             return (tracker == .hydration || tracker == .weight || tracker == .sleep) ? 25 :
-                   tracker == .mood ? 15 : 20
+                tracker == .mood ? 15 : 20
         }
     }
 
@@ -582,7 +582,7 @@ struct TrackerSummaryCard: View {
                 // Hero card treatment - only Main Focus gets teal overlay
                 RoundedRectangle(cornerRadius: 16)
                     .fill(tracker == trackerOrder.first ?
-                          Color(hex: "#1ABC9C").opacity(0.25) : Color.clear)
+                            Color(hex: "#1ABC9C").opacity(0.25) : Color.clear)
             )
             .overlay(
                 RoundedRectangle(cornerRadius: 16)
@@ -895,7 +895,6 @@ struct TrackerSummaryCard: View {
         }
     }
 
-
     // MARK: - Mood & Energy Stability Progress Ring with Behavioral Icons
     // Following North Star pattern with 6 lifestyle factor icons positioned around ring
     @ViewBuilder
@@ -955,7 +954,7 @@ struct TrackerSummaryCard: View {
             (icon: "☀️", angle: 270.0)   // Sunlight (left)
         ]
 
-        ForEach(Array(behaviors.enumerated()), id: \.offset) { index, behavior in
+        ForEach(Array(behaviors.enumerated()), id: \.offset) { _, behavior in
             let angle = behavior.angle - 90.0 // -90 to start at top like Weight card
             let x = dynamicRadius * cos(angle * .pi / 180)
             let y = dynamicRadius * sin(angle * .pi / 180)
@@ -1385,7 +1384,7 @@ struct TrackerSummaryCard: View {
                 ("☀️", 300)     // Daily habit - consistent hydration
             ]
 
-            ForEach(Array(hydrationBehaviors.enumerated()), id: \.offset) { index, behavior in
+            ForEach(Array(hydrationBehaviors.enumerated()), id: \.offset) { _, behavior in
                 let angle = behavior.angle - 90.0 // Start at top like North Star
                 let x = dynamicRadius * cos(angle * .pi / 180)
                 let y = dynamicRadius * sin(angle * .pi / 180)
@@ -1633,7 +1632,7 @@ struct TrackerSummaryCard: View {
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.7))
                         }
-                                            } else {
+                    } else {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("-- lbs")
                                 .font(.title)
@@ -1643,7 +1642,7 @@ struct TrackerSummaryCard: View {
                                 .font(.caption)
                                 .foregroundColor(.white.opacity(0.7))
                         }
-                                            }
+                    }
                 }
             }
 
@@ -1666,7 +1665,7 @@ struct TrackerSummaryCard: View {
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.7))
                     }
-                                    }
+                }
             }
 
         case .hydration:
@@ -1688,7 +1687,7 @@ struct TrackerSummaryCard: View {
                             .font(.caption)
                             .foregroundColor(.white.opacity(0.7))
                     }
-                                    }
+                }
             }
 
         case .mood:
@@ -1713,7 +1712,7 @@ struct TrackerSummaryCard: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(Color(hex: "#1ABC9C"))
                         }
-                                            } else {
+                    } else {
                         VStack(alignment: .trailing, spacing: 2) {
                             Text("-- m")
                                 .font(.title)
@@ -1724,7 +1723,7 @@ struct TrackerSummaryCard: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(Color(hex: "#1ABC9C"))
                         }
-                                            }
+                    }
                 }
             }
 
@@ -1776,7 +1775,7 @@ struct TrackerSummaryCard: View {
             )
     }
 
-// MARK: - Simple Display Value for Non-Featured Trackers
+    // MARK: - Simple Display Value for Non-Featured Trackers
     private func simpleDisplayValue(for tracker: TrackerType) -> String {
         switch tracker {
         case .fasting:
@@ -1820,7 +1819,6 @@ struct TrackerSummaryCard: View {
     }
 }
 
-
 // MARK: - FastingProgressRing (Extracted from ContentView for consistency)
 struct FastingProgressRing: View {
     let progress: Double
@@ -1852,15 +1850,15 @@ struct FastingProgressRing: View {
                     .trim(from: 0, to: progress)
                     .stroke(
                         isActive ?
-                        AngularGradient(
-                            gradient: Gradient(colors: progressGradientColors),
-                            center: .center,
-                            startAngle: .degrees(0),
-                            endAngle: .degrees(360)
-                        ) : AngularGradient(
-                            gradient: Gradient(colors: [Color.gray, Color.gray]),
-                            center: .center
-                        ),
+                            AngularGradient(
+                                gradient: Gradient(colors: progressGradientColors),
+                                center: .center,
+                                startAngle: .degrees(0),
+                                endAngle: .degrees(360)
+                            ) : AngularGradient(
+                                gradient: Gradient(colors: [Color.gray, Color.gray]),
+                                center: .center
+                            ),
                         style: StrokeStyle(lineWidth: 6, lineCap: .round)
                     )
                     .frame(width: size, height: size)
@@ -1972,7 +1970,7 @@ struct WeightProgressRing: View {
             ("❤️", 300)     // Mood
         ]
 
-        ForEach(Array(behaviors.enumerated()), id: \.offset) { index, behavior in
+        ForEach(Array(behaviors.enumerated()), id: \.offset) { _, behavior in
             let angle = behavior.angle - 90.0 // -90 to start at top like FastingProgressRing
             let x = dynamicRadius * cos(angle * .pi / 180)
             let y = dynamicRadius * sin(angle * .pi / 180)
@@ -2062,7 +2060,7 @@ struct SleepRegularityRing: View {
             ("🌙", 300)     // Sleep quality - new 6th icon for symmetry
         ]
 
-        ForEach(Array(sleepBehaviors.enumerated()), id: \.offset) { index, behavior in
+        ForEach(Array(sleepBehaviors.enumerated()), id: \.offset) { _, behavior in
             let angle = behavior.angle - 90.0 // -90 to start at top like North Star
             let x = dynamicRadius * cos(angle * .pi / 180)
             let y = dynamicRadius * sin(angle * .pi / 180)
@@ -2103,7 +2101,7 @@ extension Color {
             .sRGB,
             red: Double(r) / 255,
             green: Double(g) / 255,
-            blue:  Double(b) / 255,
+            blue: Double(b) / 255,
             opacity: Double(a) / 255
         )
     }

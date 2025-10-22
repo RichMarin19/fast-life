@@ -6,7 +6,7 @@ import HealthKit
 class SleepManager: ObservableObject {
     @Published var sleepEntries: [SleepEntry] = []
     @Published var syncWithHealthKit: Bool = true
-    @Published var syncMessage: String? = nil
+    @Published var syncMessage: String?
 
     // MARK: - Dependencies (Protocol-Based for Testability)
     // Phase 2 of MVVM Strategy: Dependency Injection
@@ -243,7 +243,7 @@ class SleepManager: ObservableObject {
             healthKit.deleteSleep(
                 bedTime: entry.bedTime,
                 wakeTime: entry.wakeTime,
-                completion: { [weak self] success, error in
+                completion: { [weak self] success, _ in
                     // Re-enable observer after HealthKit operation completes
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         self?.isSuppressingObserver = false
@@ -295,7 +295,7 @@ class SleepManager: ObservableObject {
                 // Reference: https://developer.apple.com/documentation/healthkit/hkobject/1614183-startdate
                 let isDuplicate = self.sleepEntries.contains(where: {
                     abs($0.bedTime.timeIntervalSince(hkEntry.bedTime)) < 60 && // Within 1 minute
-                    abs($0.wakeTime.timeIntervalSince(hkEntry.wakeTime)) < 60   // Within 1 minute
+                        abs($0.wakeTime.timeIntervalSince(hkEntry.wakeTime)) < 60   // Within 1 minute
                 })
 
                 if !isDuplicate {
@@ -349,7 +349,7 @@ class SleepManager: ObservableObject {
                 // Check if this Fast LIFe entry still exists in current HealthKit data
                 let stillExistsInHealthKit = healthKitEntries.contains { healthKitEntry in
                     abs(fastLifeEntry.bedTime.timeIntervalSince(healthKitEntry.bedTime)) < 60 && // Within 1 minute
-                    abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60   // Within 1 minute
+                        abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60   // Within 1 minute
                 }
 
                 if !stillExistsInHealthKit {
@@ -363,7 +363,7 @@ class SleepManager: ObservableObject {
             let entriesToAdd = healthKitEntries.filter { healthKitEntry in
                 let alreadyExists = self.sleepEntries.contains { fastLifeEntry in
                     abs(fastLifeEntry.bedTime.timeIntervalSince(healthKitEntry.bedTime)) < 60 && // Within 1 minute
-                    abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60   // Within 1 minute
+                        abs(fastLifeEntry.wakeTime.timeIntervalSince(healthKitEntry.wakeTime)) < 60   // Within 1 minute
                 }
 
                 if !alreadyExists {
@@ -452,7 +452,7 @@ class SleepManager: ObservableObject {
         // Create observer query for sleep data
         guard let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) else { return }
 
-        let query = HKObserverQuery(sampleType: sleepType, predicate: nil) { [weak self] query, completionHandler, error in
+        let query = HKObserverQuery(sampleType: sleepType, predicate: nil) { [weak self] _, completionHandler, error in
             if let error = error {
                 AppLogger.error("Sleep observer query error", category: AppLogger.sleep, error: error)
                 completionHandler()
@@ -587,7 +587,7 @@ class SleepManager: ObservableObject {
             // Find and remove matching sleep entry (time-based matching with 1-minute tolerance)
             if let index = sleepEntries.firstIndex(where: { entry in
                 abs(entry.bedTime.timeIntervalSince(bedTimeValue)) < 60 &&
-                abs(entry.wakeTime.timeIntervalSince(wakeTimeValue)) < 60
+                    abs(entry.wakeTime.timeIntervalSince(wakeTimeValue)) < 60
             }) {
                 let removedEntry = sleepEntries.remove(at: index)
                 deletedCount += 1

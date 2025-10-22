@@ -8,7 +8,6 @@ import SwiftUI
 @MainActor
 final class BehavioralNotificationScheduler: ObservableObject {
 
-
     // MARK: - Core Dependencies
     private let notificationCenter = UNUserNotificationCenter.current()
 
@@ -164,7 +163,6 @@ final class BehavioralNotificationScheduler: ObservableObject {
             }
 
             AppLogger.notifications.info("Scheduled behavioral notification - ID: \(identifier), Title: \(content.title), Tracker: \(NotificationIdentifierBuilder.extractTrackerType(from: identifier)?.rawValue ?? "unknown")")
-
         } catch {
             AppLogger.notifications.error("Failed to schedule notification: \(error.localizedDescription))")
         }
@@ -312,7 +310,6 @@ final class BehavioralNotificationScheduler: ObservableObject {
             }
 
             return granted
-
         } catch {
             AppLogger.error("Failed to request notification permissions", category: AppLogger.notifications, error: error)
             return false
@@ -324,9 +321,7 @@ final class BehavioralNotificationScheduler: ObservableObject {
         let settings = await self.notificationCenter.notificationSettings()
         return settings.authorizationStatus
     }
-
 }
 
 // MARK: - Supporting Types
 // BehavioralTrigger moved to BehavioralNotificationRule.swift to avoid circular dependency
-

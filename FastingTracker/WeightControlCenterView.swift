@@ -1210,7 +1210,7 @@ struct WeightControlCenterView: View {
 
                     // List of opted-out items
                     // Layer 3: Each item has .id() for ScrollViewReader targeting
-                    ForEach(Array(optedOutItems.enumerated()), id: \.element.id) { index, item in
+                    ForEach(Array(optedOutItems.enumerated()), id: \.element.id) { _, item in
                         let isHighlighted = viewModel.highlightedItemID == item.id
 
                         HStack(spacing: 8) {
@@ -1545,7 +1545,6 @@ struct WeightControlCenterView: View {
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: Theme.ColorToken.shadowCardOnDark, radius: 16, x: 0, y: 8)
     }
-
 }
 
 // MARK: - Drag & Drop Delegate (Hub pattern)

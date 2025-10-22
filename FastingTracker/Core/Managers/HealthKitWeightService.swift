@@ -53,7 +53,7 @@ class HealthKitWeightService {
             predicate: predicate,
             anchor: savedAnchor,
             limit: HKObjectQueryNoLimit
-        ) { [weak self] query, addedObjects, deletedObjects, newAnchor, error in
+        ) { [weak self] _, addedObjects, deletedObjects, newAnchor, error in
 
             if let error = error {
                 let errorMessage = self?.handleHealthKitError(error, operation: "fetch weight data (anchored)") ?? "Unknown error"
@@ -109,7 +109,7 @@ class HealthKitWeightService {
             end: date
         )
 
-        healthStore.save(weightSample) { [weak self] success, error in
+        healthStore.save(weightSample) { [weak self] _, error in
             if let error = error {
                 AppLogger.error("Failed to save weight to HealthKit", category: AppLogger.healthKit, error: error)
                 completion(false)
@@ -144,7 +144,7 @@ class HealthKitWeightService {
                 return
             }
 
-            self?.healthStore.delete(sample) { success, error in
+            self?.healthStore.delete(sample) { _, error in
                 if let error = error {
                     AppLogger.error("Failed to delete weight from HealthKit", category: AppLogger.healthKit, error: error)
                     DispatchQueue.main.async { completion(false) }

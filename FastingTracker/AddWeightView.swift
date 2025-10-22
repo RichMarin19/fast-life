@@ -84,7 +84,7 @@ struct AddWeightView: View {
         }
 
         // Validate BMI if provided
-        var bmiValue: Double? = nil
+        var bmiValue: Double?
         if !bmi.isEmpty {
             guard let parsedBMI = Double(bmi.trimmingCharacters(in: .whitespaces)),
                   parsedBMI > 0 && parsedBMI < 100 else {
@@ -96,7 +96,7 @@ struct AddWeightView: View {
         }
 
         // Validate body fat if provided
-        var bodyFatValue: Double? = nil
+        var bodyFatValue: Double?
         if !bodyFat.isEmpty {
             guard let parsedBodyFat = Double(bodyFat.trimmingCharacters(in: .whitespaces)),
                   parsedBodyFat > 0 && parsedBodyFat < 100 else {

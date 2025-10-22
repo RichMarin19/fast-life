@@ -21,324 +21,324 @@ struct ContentView: View {
                     Spacer()
                         .frame(height: 30)
 
-                // HealthKit Nudge for first-time users who skipped onboarding
-                // Following Apple HIG: Important information at top of screen
-                // Industry standard: Contextual permissions above primary content
-                if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .fasting) {
-                    FastingHealthKitNudgeView(
-                        onConnect: {
-                            // CORRECTED FLOW: Request basic HealthKit authorization first
-                            // Following Apple HIG: "Request permission immediately before you need it"
-                            requestBasicHealthKitAccess()
-                        },
-                        onDismiss: {
-                            // Temporary dismiss - will show again in 5 visits
-                            nudgeManager.dismissNudge(for: .fasting)
-                            showHealthKitNudge = false
-                        },
-                        onPermanentDismiss: {
-                            // Permanent dismiss - never show again
-                            nudgeManager.permanentlyDismissTimerNudge()
-                            showHealthKitNudge = false
-                        }
-                    )
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
-                }
+                    // HealthKit Nudge for first-time users who skipped onboarding
+                    // Following Apple HIG: Important information at top of screen
+                    // Industry standard: Contextual permissions above primary content
+                    if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .fasting) {
+                        FastingHealthKitNudgeView(
+                            onConnect: {
+                                // CORRECTED FLOW: Request basic HealthKit authorization first
+                                // Following Apple HIG: "Request permission immediately before you need it"
+                                requestBasicHealthKitAccess()
+                            },
+                            onDismiss: {
+                                // Temporary dismiss - will show again in 5 visits
+                                nudgeManager.dismissNudge(for: .fasting)
+                                showHealthKitNudge = false
+                            },
+                            onPermanentDismiss: {
+                                // Permanent dismiss - never show again
+                                nudgeManager.permanentlyDismissTimerNudge()
+                                showHealthKitNudge = false
+                            }
+                        )
+                        .padding(.horizontal)
+                        .padding(.bottom, 8)
+                    }
 
                     // Fast LIFe Title
-                HStack(spacing: 0) {
-                    Text("Fast L")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(Color("FLPrimary"))
-                    Text("IF")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(Color("FLSuccess"))
-                    Text("e")
-                        .font(.system(size: 72, weight: .bold, design: .rounded))
-                        .foregroundColor(Color("FLSecondary"))
-                }
-
-                Spacer()
-                    .frame(height: showHealthKitNudge && nudgeManager.shouldShowNudge(for: .fasting) ? 20 : 50)
-
-                // Progress Ring with Educational Stage Icons
-                ZStack {
-                    // Educational stage icons positioned around the circle
-                    ForEach(FastingStage.relevantStages(for: fastingManager.fastingGoalHours)) { stage in
-                        let midpointHour = Double(stage.startHour + stage.endHour) / 2.0
-                        let angle = (midpointHour / 24.0) * 360.0 - 90.0 // -90 to start at top
-                        let radius: CGFloat = 160
-                        let x = radius * cos(angle * .pi / 180)
-                        let y = radius * sin(angle * .pi / 180)
-
-                        Button(action: {
-                            selectedStage = stage
-                        }) {
-                            Text(stage.icon)
-                                .font(.system(size: 36))
-                                .background(
-                                    Circle()
-                                        .fill(Color.white)
-                                        .frame(width: 50, height: 50)
-                                        .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                                )
-                        }
-                        .offset(x: x, y: y)
-                    }
-
-                    // Timer Circle
-                    ZStack {
-                    Circle()
-                        .stroke(Color.gray.opacity(0.3), lineWidth: 20)
-                        .frame(width: 250, height: 250)
-
-                    Circle()
-                        .trim(from: 0, to: fastingManager.progress)
-                        .stroke(
-                            fastingManager.isActive ?
-                            AngularGradient(
-                                gradient: Gradient(colors: progressGradientColors),
-                                center: .center,
-                                startAngle: .degrees(0),
-                                endAngle: .degrees(360)
-                            ) : AngularGradient(
-                                gradient: Gradient(colors: [Color.gray, Color.gray]),
-                                center: .center
-                            ),
-                            style: StrokeStyle(lineWidth: 20, lineCap: .round)
-                        )
-                        .frame(width: 250, height: 250)
-                        .rotationEffect(.degrees(-90))
-                        .animation(.linear(duration: 1), value: fastingManager.progress)
-
-                    VStack(spacing: 12) {
-                        Image(systemName: "clock")
-                            .font(.system(size: 40))
-                            .foregroundColor(fastingManager.isActive ? .blue : .gray)
-
-                        // Elapsed Time - Tappable to edit
-                        Button(action: {
-                            if fastingManager.isActive {
-                                showingEditStartTime = true
-                            }
-                        }) {
-                            VStack(spacing: 4) {
-                                Text("Fasting")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(formattedElapsedTime)
-                                    .font(.system(size: 32, weight: .bold, design: .monospaced))
-                                    .foregroundColor(fastingManager.isActive ? .primary : .gray)
-                            }
-                        }
-                        .buttonStyle(.plain)
-                        .disabled(!fastingManager.isActive)
-
-                        // Countdown Time
-                        VStack(spacing: 4) {
-                            Text("Remaining")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(formattedRemainingTime)
-                                .font(.system(size: 28, weight: .semibold, design: .monospaced))
-                                .foregroundColor(fastingManager.isActive ? progressColor : .gray)
-                        }
-                    }
-                    }
-                }
-
-                // Progress Percentage
-                Text("\(Int(fastingManager.progress * 100))%")
-                    .font(.title2)
-                    .foregroundColor(.secondary)
-                    .padding(.top, 10)
-                    .padding(.bottom, 40)
-
-                // Streak Display
-                if fastingManager.currentStreak > 0 {
-                    HStack(spacing: 6) {
-                        Image(systemName: "flame.fill")
-                            .foregroundColor(.orange)
-                        Text("\(fastingManager.currentStreak) day\(fastingManager.currentStreak == 1 ? "" : "s") streak")
-                            .font(.headline)
-                            .foregroundColor(.orange)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-                    .background(Color.orange.opacity(0.1))
-                    .cornerRadius(8)
-                }
-
-                // Goal Display - Styled like Weight Tracker for consistency
-                // Per Apple HIG: Use consistent design patterns across features
-                // Reference: https://developer.apple.com/design/human-interface-guidelines/consistency
-                Button(action: {
-                    showingGoalSettings = true
-                }) {
-                    HStack(spacing: 10) {
-                        // 🎯 Target emoji for visual excitement
-                        Text("🎯")
-                            .font(.system(size: 28))
-
-                        // Goal label and value - COMPACT but still EXCITING!
-                        (Text("GOAL: ")
-                            .font(.system(size: 32, weight: .heavy, design: .rounded))
+                    HStack(spacing: 0) {
+                        Text("Fast L")
+                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .foregroundColor(Color("FLPrimary"))
+                        Text("IF")
+                            .font(.system(size: 72, weight: .bold, design: .rounded))
                             .foregroundColor(Color("FLSuccess"))
-                        + Text("\(Int(fastingManager.fastingGoalHours))h")
-                            .font(.system(size: 32, weight: .heavy, design: .rounded))
-                            .foregroundColor(Color("FLSuccess")))
-
-                        // Gear icon visual indicator that this is editable
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(Color("FLWarning"))
+                        Text("e")
+                            .font(.system(size: 72, weight: .bold, design: .rounded))
+                            .foregroundColor(Color("FLSecondary"))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-                    .background(
-                        // Subtle green background for extra pop
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color("FLSuccess").opacity(0.08))
-                    )
-                    .overlay(
-                        // Green border for emphasis
-                        RoundedRectangle(cornerRadius: 12)
-                            .strokeBorder(Color("FLSuccess").opacity(0.3), lineWidth: 2)
-                    )
-                }
-                .buttonStyle(.plain)
-                .padding(.bottom, 8)  // Reduced from 15 to 8 - raises button area
 
-                // Buttons
-                if fastingManager.isActive {
-                    // Start Time Display with Edit (inline style like competitor)
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Color.blue)
-                            .frame(width: 8, height: 8)
-                        Text("Start")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                    Spacer()
+                        .frame(height: showHealthKitNudge && nudgeManager.shouldShowNudge(for: .fasting) ? 20 : 50)
 
-                        Spacer()
+                    // Progress Ring with Educational Stage Icons
+                    ZStack {
+                        // Educational stage icons positioned around the circle
+                        ForEach(FastingStage.relevantStages(for: fastingManager.fastingGoalHours)) { stage in
+                            let midpointHour = Double(stage.startHour + stage.endHour) / 2.0
+                            let angle = (midpointHour / 24.0) * 360.0 - 90.0 // -90 to start at top
+                            let radius: CGFloat = 160
+                            let x = radius * cos(angle * .pi / 180)
+                            let y = radius * sin(angle * .pi / 180)
 
-                        Button(action: {
-                            showingEditStartTime = true
-                        }) {
-                            HStack(spacing: 8) {
-                                Text(formatStartTimeDisplay())
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                Image(systemName: "pencil")
-                                    .font(.subheadline)
+                            Button(action: {
+                                selectedStage = stage
+                            }) {
+                                Text(stage.icon)
+                                    .font(.system(size: 36))
+                                    .background(
+                                        Circle()
+                                            .fill(Color.white)
+                                            .frame(width: 50, height: 50)
+                                            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                                    )
                             }
-                            .foregroundColor(.primary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(Color.blue.opacity(0.1))
-                            .cornerRadius(8)
+                            .offset(x: x, y: y)
+                        }
+
+                        // Timer Circle
+                        ZStack {
+                            Circle()
+                                .stroke(Color.gray.opacity(0.3), lineWidth: 20)
+                                .frame(width: 250, height: 250)
+
+                            Circle()
+                                .trim(from: 0, to: fastingManager.progress)
+                                .stroke(
+                                    fastingManager.isActive ?
+                                        AngularGradient(
+                                            gradient: Gradient(colors: progressGradientColors),
+                                            center: .center,
+                                            startAngle: .degrees(0),
+                                            endAngle: .degrees(360)
+                                        ) : AngularGradient(
+                                            gradient: Gradient(colors: [Color.gray, Color.gray]),
+                                            center: .center
+                                        ),
+                                    style: StrokeStyle(lineWidth: 20, lineCap: .round)
+                                )
+                                .frame(width: 250, height: 250)
+                                .rotationEffect(.degrees(-90))
+                                .animation(.linear(duration: 1), value: fastingManager.progress)
+
+                            VStack(spacing: 12) {
+                                Image(systemName: "clock")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(fastingManager.isActive ? .blue : .gray)
+
+                                // Elapsed Time - Tappable to edit
+                                Button(action: {
+                                    if fastingManager.isActive {
+                                        showingEditStartTime = true
+                                    }
+                                }) {
+                                    VStack(spacing: 4) {
+                                        Text("Fasting")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text(formattedElapsedTime)
+                                            .font(.system(size: 32, weight: .bold, design: .monospaced))
+                                            .foregroundColor(fastingManager.isActive ? .primary : .gray)
+                                    }
+                                }
+                                .buttonStyle(.plain)
+                                .disabled(!fastingManager.isActive)
+
+                                // Countdown Time
+                                VStack(spacing: 4) {
+                                    Text("Remaining")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(formattedRemainingTime)
+                                        .font(.system(size: 28, weight: .semibold, design: .monospaced))
+                                        .foregroundColor(fastingManager.isActive ? progressColor : .gray)
+                                }
+                            }
                         }
                     }
-                    .padding(.horizontal, 40)
 
-                    // Goal End Time Display
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Color.green)
-                            .frame(width: 8, height: 8)
-                        Text("Goal End")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                    // Progress Percentage
+                    Text("\(Int(fastingManager.progress * 100))%")
+                        .font(.title2)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 10)
+                        .padding(.bottom, 40)
 
-                        Spacer()
+                    // Streak Display
+                    if fastingManager.currentStreak > 0 {
+                        HStack(spacing: 6) {
+                            Image(systemName: "flame.fill")
+                                .foregroundColor(.orange)
+                            Text("\(fastingManager.currentStreak) day\(fastingManager.currentStreak == 1 ? "" : "s") streak")
+                                .font(.headline)
+                                .foregroundColor(.orange)
+                        }
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.orange.opacity(0.1))
+                        .cornerRadius(8)
+                    }
 
-                        HStack(spacing: 8) {
-                            Text(formatGoalEndTimeDisplay())
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .foregroundColor(.primary)
+                    // Goal Display - Styled like Weight Tracker for consistency
+                    // Per Apple HIG: Use consistent design patterns across features
+                    // Reference: https://developer.apple.com/design/human-interface-guidelines/consistency
+                    Button(action: {
+                        showingGoalSettings = true
+                    }) {
+                        HStack(spacing: 10) {
+                            // 🎯 Target emoji for visual excitement
+                            Text("🎯")
+                                .font(.system(size: 28))
+
+                            // Goal label and value - COMPACT but still EXCITING!
+                            (Text("GOAL: ")
+                                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                                .foregroundColor(Color("FLSuccess"))
+                                + Text("\(Int(fastingManager.fastingGoalHours))h")
+                                .font(.system(size: 32, weight: .heavy, design: .rounded))
+                                .foregroundColor(Color("FLSuccess")))
+
+                            // Gear icon visual indicator that this is editable
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 24))
+                                .foregroundColor(Color("FLWarning"))
                         }
                         .padding(.horizontal, 16)
                         .padding(.vertical, 8)
-                        .background(Color("FLWarning"))
-                        .cornerRadius(8)
+                        .background(
+                            // Subtle green background for extra pop
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color("FLSuccess").opacity(0.08))
+                        )
+                        .overlay(
+                            // Green border for emphasis
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(Color("FLSuccess").opacity(0.3), lineWidth: 2)
+                        )
                     }
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 5)
+                    .buttonStyle(.plain)
+                    .padding(.bottom, 8)  // Reduced from 15 to 8 - raises button area
 
-                    // Stop Fast Button
-                    Button(action: {
-                        showingStopConfirmation = true
-                    }) {
-                        Text("Stop Fast")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.red)
-                            .cornerRadius(8)
-                    }
-                    .padding(.horizontal, 40)
-                } else {
-                    // Start Fast Button
-                    Button(action: {
-                        fastingManager.startFast()
-                    }) {
-                        Text("Start Fast")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color("FLSuccess"))
-                            .cornerRadius(8)
-                    }
-                    .padding(.horizontal, 40)
-                }
+                    // Buttons
+                    if fastingManager.isActive {
+                        // Start Time Display with Edit (inline style like competitor)
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 8, height: 8)
+                            Text("Start")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
 
-                // MARK: - Embedded History Content (like Weight Tracker pattern)
+                            Spacer()
 
-                if !fastingManager.fastingHistory.isEmpty {
-                    // Calendar View (FIRST - Visual Streak!)
-                    StreakCalendarView(selectedDate: $selectedDate)
-                        .environmentObject(fastingManager)
-                        .padding()
-
-                    // Lifetime Stats Cards
-                    TotalStatsView()
-                        .environmentObject(fastingManager)
-                        .padding()
-
-                    // Progress Chart
-                    FastingGraphView()
-                        .environmentObject(fastingManager)
-                        .padding()
-
-                    // Recent Fasts List
-                    VStack(spacing: 0) {
-                        Text("Recent Fasts")
-                            .font(.headline)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal)
-                            .padding(.bottom, 10)
-
-                        ForEach(fastingManager.fastingHistory.filter { $0.isComplete }) { session in
-                            HistoryRowView(session: session)
-                                .padding(.horizontal)
-                                .padding(.vertical, 8)
-                                .contentShape(RoundedRectangle(cornerRadius: 12))
-                                .onTapGesture {
-                                    selectedDate = session.startTime
+                            Button(action: {
+                                showingEditStartTime = true
+                            }) {
+                                HStack(spacing: 8) {
+                                    Text(formatStartTimeDisplay())
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                    Image(systemName: "pencil")
+                                        .font(.subheadline)
                                 }
-                            Divider()
-                                .padding(.horizontal)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 16)
+                                .padding(.vertical, 8)
+                                .background(Color.blue.opacity(0.1))
+                                .cornerRadius(8)
+                            }
                         }
+                        .padding(.horizontal, 40)
+
+                        // Goal End Time Display
+                        HStack(spacing: 6) {
+                            Circle()
+                                .fill(Color.green)
+                                .frame(width: 8, height: 8)
+                            Text("Goal End")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+
+                            Spacer()
+
+                            HStack(spacing: 8) {
+                                Text(formatGoalEndTimeDisplay())
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 8)
+                            .background(Color("FLWarning"))
+                            .cornerRadius(8)
+                        }
+                        .padding(.horizontal, 40)
+                        .padding(.bottom, 5)
+
+                        // Stop Fast Button
+                        Button(action: {
+                            showingStopConfirmation = true
+                        }) {
+                            Text("Stop Fast")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.red)
+                                .cornerRadius(8)
+                        }
+                        .padding(.horizontal, 40)
+                    } else {
+                        // Start Fast Button
+                        Button(action: {
+                            fastingManager.startFast()
+                        }) {
+                            Text("Start Fast")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color("FLSuccess"))
+                                .cornerRadius(8)
+                        }
+                        .padding(.horizontal, 40)
                     }
-                    .padding(.bottom, 20)
+
+                    // MARK: - Embedded History Content (like Weight Tracker pattern)
+
+                    if !fastingManager.fastingHistory.isEmpty {
+                        // Calendar View (FIRST - Visual Streak!)
+                        StreakCalendarView(selectedDate: $selectedDate)
+                            .environmentObject(fastingManager)
+                            .padding()
+
+                        // Lifetime Stats Cards
+                        TotalStatsView()
+                            .environmentObject(fastingManager)
+                            .padding()
+
+                        // Progress Chart
+                        FastingGraphView()
+                            .environmentObject(fastingManager)
+                            .padding()
+
+                        // Recent Fasts List
+                        VStack(spacing: 0) {
+                            Text("Recent Fasts")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal)
+                                .padding(.bottom, 10)
+
+                            ForEach(fastingManager.fastingHistory.filter { $0.isComplete }) { session in
+                                HistoryRowView(session: session)
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    .contentShape(RoundedRectangle(cornerRadius: 12))
+                                    .onTapGesture {
+                                        selectedDate = session.startTime
+                                    }
+                                Divider()
+                                    .padding(.horizontal)
+                            }
+                        }
+                        .padding(.bottom, 20)
+                    }
                 }
-            }
             }
             .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
@@ -593,7 +593,7 @@ struct ContentView: View {
     private func syncFutureFastingData() {
         Log.debug("📱 ContentView: Starting sync future fasting data from nudge", category: .general)
 
-        HealthKitManager.shared.requestFastingAuthorization { success, error in
+        HealthKitManager.shared.requestFastingAuthorization { success, _ in
             DispatchQueue.main.async {
                 if success {
                     Log.debug("✅ ContentView: Fasting authorization granted - syncing future data only", category: .general)
@@ -621,7 +621,7 @@ struct ContentView: View {
         AppLogger.info("Requesting basic HealthKit authorization before sync options", category: AppLogger.healthKit)
 
         // Request basic workout write permission (minimum needed for fasting sync)
-        HealthKitManager.shared.requestFastingAuthorization { success, error in
+        HealthKitManager.shared.requestFastingAuthorization { success, _ in
             DispatchQueue.main.async {
                 if success {
                     AppLogger.info("Basic HealthKit authorization granted - showing sync options", category: AppLogger.healthKit)
@@ -1518,7 +1518,6 @@ struct EditStartTimeView: View {
     }
 }
 
-
 // MARK: - Fasting Sync Options View
 
 /// Sync options modal for fasting HealthKit integration
@@ -1613,7 +1612,6 @@ struct FastingSyncOptionsView: View {
         }
     }
 }
-
 
 // MARK: - Fasting HealthKit Nudge View
 

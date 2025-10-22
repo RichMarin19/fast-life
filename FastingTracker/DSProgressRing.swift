@@ -102,7 +102,7 @@ struct DSProgressRing: View {
         self.animationDuration = animationDuration
         self._animateProgress = animateProgress
     }
-    
+
     /// Safely extract the first color from a LinearGradient definition (best-effort)
     private static func firstGradientColor(from gradient: LinearGradient) -> Color? {
         // Attempt to infer a color by sampling the gradient via a small Rectangle render if needed
@@ -294,7 +294,7 @@ extension Color {
             .sRGB,
             red: Double(r) / 255,
             green: Double(g) / 255,
-            blue:  Double(b) / 255,
+            blue: Double(b) / 255,
             opacity: Double(a) / 255
         )
     }

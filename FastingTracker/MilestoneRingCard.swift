@@ -42,73 +42,73 @@ struct MilestoneRingCard: View {
             // PURE CONTENT - No styling! DSCard provides padding, background, shadow
             VStack(spacing: 16) {
                 // LAYER 1: Stats row ABOVE ring
-            HStack(spacing: 8) {
-                // Left: Start
-                VStack(spacing: 2) {
-                    Text("Start")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                    Text(leftStat)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Theme.ColorToken.textPrimary)
+                HStack(spacing: 8) {
+                    // Left: Start
+                    VStack(spacing: 2) {
+                        Text("Start")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Theme.ColorToken.textSecondary)
+                        Text(leftStat)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Theme.ColorToken.textPrimary)
+                    }
+
+                    Spacer()
+
+                    // Center: Progress
+                    VStack(spacing: 2) {
+                        Text("Progress")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Theme.ColorToken.textSecondary)
+                        Text(midStat)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Theme.ColorToken.textPrimary)
+                    }
+
+                    Spacer()
+
+                    // Right: To Goal
+                    VStack(spacing: 2) {
+                        Text("To Goal")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(Theme.ColorToken.textSecondary)
+                        Text(rightStat)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Theme.ColorToken.textPrimary)
+                    }
                 }
+                .padding(.horizontal, 8)
 
-                Spacer()
+                // LAYER 2: BIGGER circular ring in center
+                // v1.2d: Replaced duplicated ring code with DSProgressRing component
+                // Industry Pattern: Apple Watch Activity Rings
+                // Extracted to eliminate ~60-80 lines of duplication across CircularTrendRingCard + MilestoneRingCard
+                ZStack {
+                    DSProgressRing(
+                        progress: progress,
+                        size: 260,
+                        strokeWidth: 18,
+                        progressColor: Theme.ColorToken.accentPrimary,
+                        trackColor: Theme.ColorToken.dividerDark,
+                        glowIntensity: 0.30,
+                        enableGlow: true,
+                        enableHalo: false,  // No halo for milestone ring (simpler design)
+                        animationDuration: 0.25,
+                        animateProgress: $animateProgress
+                    )
 
-                // Center: Progress
-                VStack(spacing: 2) {
-                    Text("Progress")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                    Text(midStat)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Theme.ColorToken.textPrimary)
+                    // Center content
+                    VStack(spacing: 4) {
+                        Text(centerValue)
+                            .font(.system(size: 48, weight: .semibold))
+                            .foregroundColor(Theme.ColorToken.textPrimary)
+
+                        Text(dateText)
+                            .font(.system(size: 13, weight: .regular))
+                            .foregroundColor(Theme.ColorToken.textSecondary)
+                    }
                 }
-
-                Spacer()
-
-                // Right: To Goal
-                VStack(spacing: 2) {
-                    Text("To Goal")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                    Text(rightStat)
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(Theme.ColorToken.textPrimary)
-                }
-            }
-            .padding(.horizontal, 8)
-
-            // LAYER 2: BIGGER circular ring in center
-            // v1.2d: Replaced duplicated ring code with DSProgressRing component
-            // Industry Pattern: Apple Watch Activity Rings
-            // Extracted to eliminate ~60-80 lines of duplication across CircularTrendRingCard + MilestoneRingCard
-            ZStack {
-                DSProgressRing(
-                    progress: progress,
-                    size: 260,
-                    strokeWidth: 18,
-                    progressColor: Theme.ColorToken.accentPrimary,
-                    trackColor: Theme.ColorToken.dividerDark,
-                    glowIntensity: 0.30,
-                    enableGlow: true,
-                    enableHalo: false,  // No halo for milestone ring (simpler design)
-                    animationDuration: 0.25,
-                    animateProgress: $animateProgress
-                )
-
-                // Center content
-                VStack(spacing: 4) {
-                    Text(centerValue)
-                        .font(.system(size: 48, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textPrimary)
-
-                    Text(dateText)
-                        .font(.system(size: 13, weight: .regular))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                }
-            }
-            .frame(height: 260)  // Bigger ring (was 220)
+                .frame(height: 260)  // Bigger ring (was 220)
 
                 // LAYER 3: Milestone dots BELOW ring
                 VStack(spacing: 8) {
@@ -169,4 +169,3 @@ struct MilestoneRingCard: View {
         .padding(.horizontal, 20)
     }
 }
-

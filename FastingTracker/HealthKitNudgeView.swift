@@ -1,4 +1,3 @@
-
 import SwiftUI
 
 /// Contextual nudge for users who skipped HealthKit during onboarding

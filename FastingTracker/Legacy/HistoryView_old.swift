@@ -306,7 +306,7 @@ struct FastingGraphView: View {
     @State private var showGoalLine = true
     @State private var customStartDate = Date(timeIntervalSinceNow: -30*24*60*60)
     @State private var customEndDate = Date()
-    @State private var selectedDataPoint: ChartDataPoint? = nil
+    @State private var selectedDataPoint: ChartDataPoint?
 
     // Navigation state for each time range
     @State private var selectedWeekOffset: Int = 0  // 0 = current week, -1 = last week, etc.
@@ -455,115 +455,115 @@ struct FastingGraphView: View {
             .frame(maxWidth: .infinity)
             .frame(height: 220)
         } else {
-                Chart {
-                    // Goal line
-                    if showGoalLine {
-                        RuleMark(y: .value("Goal", fastingManager.fastingGoalHours))
-                            .foregroundStyle(Color("FLSecondary").opacity(0.5))
-                            .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
-                            .annotation(position: .top, alignment: .trailing) {
-                                Text("Goal: \(Int(fastingManager.fastingGoalHours))h")
-                                    .font(.caption2)
-                                    .foregroundColor(Color("FLSecondary"))
-                                    .padding(.horizontal, 6)
-                                    .padding(.vertical, 2)
-                                    .background(Color.white.opacity(0.9))
-                                    .cornerRadius(8)
-                            }
-                    }
-
-                    // Selection indicator line
-                    if let selected = selectedDataPoint {
-                        RuleMark(x: .value("Selected", selected.date))
-                            .foregroundStyle(Color("FLPrimary").opacity(0.3))
-                            .lineStyle(StrokeStyle(lineWidth: 2))
-                            .zIndex(-1)
-                    }
-
-                    // Line with gradient
-                    ForEach(chartData) { dataPoint in
-                        LineMark(
-                            x: .value("Date", dataPoint.date),
-                            y: .value("Hours", dataPoint.hours)
-                        )
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [Color("FLSuccess"), Color("FLSuccess")],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .interpolationMethod(.catmullRom)
-                        .lineStyle(StrokeStyle(lineWidth: 3))
-                    }
-
-                    // Data points
-                    ForEach(chartData) { dataPoint in
-                        PointMark(
-                            x: .value("Date", dataPoint.date),
-                            y: .value("Hours", dataPoint.hours)
-                        )
-                        .foregroundStyle(dataPoint.metGoal ? Color("FLSuccess") : Color.orange)
-                        .symbolSize(dataPoint.date == selectedDataPoint?.date ? 120 : 80)
-                    }
-                }
-                .chartYScale(domain: 0...24)
-                .chartXScale(domain: getXAxisDomain())
-                .chartXAxis {
-                    AxisMarks(values: getXAxisValues()) { value in
-                        AxisGridLine()
-                        AxisTick()
-                        if selectedRange == .year {
-                            AxisValueLabel(format: .dateTime.month(.abbreviated))
-                        } else if selectedRange == .month {
-                            AxisValueLabel {
-                                if let date = value.as(Date.self) {
-                                    let day = Calendar.current.component(.day, from: date)
-                                    Text("\(day)")
-                                        .font(.caption2)
-                                }
-                            }
-                        } else {
-                            AxisValueLabel(format: .dateTime.month(.abbreviated).day())
+            Chart {
+                // Goal line
+                if showGoalLine {
+                    RuleMark(y: .value("Goal", fastingManager.fastingGoalHours))
+                        .foregroundStyle(Color("FLSecondary").opacity(0.5))
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                        .annotation(position: .top, alignment: .trailing) {
+                            Text("Goal: \(Int(fastingManager.fastingGoalHours))h")
+                                .font(.caption2)
+                                .foregroundColor(Color("FLSecondary"))
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.white.opacity(0.9))
+                                .cornerRadius(8)
                         }
-                    }
                 }
-                .chartYAxis {
-                    AxisMarks(position: .leading, values: [0, 4, 8, 12, 16, 20, 24]) { value in
-                        AxisGridLine()
+
+                // Selection indicator line
+                if let selected = selectedDataPoint {
+                    RuleMark(x: .value("Selected", selected.date))
+                        .foregroundStyle(Color("FLPrimary").opacity(0.3))
+                        .lineStyle(StrokeStyle(lineWidth: 2))
+                        .zIndex(-1)
+                }
+
+                // Line with gradient
+                ForEach(chartData) { dataPoint in
+                    LineMark(
+                        x: .value("Date", dataPoint.date),
+                        y: .value("Hours", dataPoint.hours)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [Color("FLSuccess"), Color("FLSuccess")],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+                    .lineStyle(StrokeStyle(lineWidth: 3))
+                }
+
+                // Data points
+                ForEach(chartData) { dataPoint in
+                    PointMark(
+                        x: .value("Date", dataPoint.date),
+                        y: .value("Hours", dataPoint.hours)
+                    )
+                    .foregroundStyle(dataPoint.metGoal ? Color("FLSuccess") : Color.orange)
+                    .symbolSize(dataPoint.date == selectedDataPoint?.date ? 120 : 80)
+                }
+            }
+            .chartYScale(domain: 0...24)
+            .chartXScale(domain: getXAxisDomain())
+            .chartXAxis {
+                AxisMarks(values: getXAxisValues()) { value in
+                    AxisGridLine()
+                    AxisTick()
+                    if selectedRange == .year {
+                        AxisValueLabel(format: .dateTime.month(.abbreviated))
+                    } else if selectedRange == .month {
                         AxisValueLabel {
-                            if let hours = value.as(Double.self) {
-                                Text("\(Int(hours))h")
+                            if let date = value.as(Date.self) {
+                                let day = Calendar.current.component(.day, from: date)
+                                Text("\(day)")
                                     .font(.caption2)
                             }
                         }
+                    } else {
+                        AxisValueLabel(format: .dateTime.month(.abbreviated).day())
                     }
                 }
-                .chartOverlay { proxy in
-                    GeometryReader { geometry in
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(.clear)
-                            .contentShape(RoundedRectangle(cornerRadius: 8))
-                            .gesture(
-                                DragGesture(minimumDistance: 0)
-                                    .onChanged { value in
-                                        guard let plotFrame = proxy.plotFrame else { return }
-                                        let x = value.location.x - geometry[plotFrame].origin.x
-                                        if let date: Date = proxy.value(atX: x) {
-                                            if let dataPoint = chartData.first(where: {
-                                                Calendar.current.isDate($0.date, inSameDayAs: date)
-                                            }) {
-                                                selectedDataPoint = dataPoint
-                                            }
+            }
+            .chartYAxis {
+                AxisMarks(position: .leading, values: [0, 4, 8, 12, 16, 20, 24]) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let hours = value.as(Double.self) {
+                            Text("\(Int(hours))h")
+                                .font(.caption2)
+                        }
+                    }
+                }
+            }
+            .chartOverlay { proxy in
+                GeometryReader { geometry in
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.clear)
+                        .contentShape(RoundedRectangle(cornerRadius: 8))
+                        .gesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged { value in
+                                    guard let plotFrame = proxy.plotFrame else { return }
+                                    let x = value.location.x - geometry[plotFrame].origin.x
+                                    if let date: Date = proxy.value(atX: x) {
+                                        if let dataPoint = chartData.first(where: {
+                                            Calendar.current.isDate($0.date, inSameDayAs: date)
+                                        }) {
+                                            selectedDataPoint = dataPoint
                                         }
                                     }
-                                    .onEnded { _ in
-                                        // Keep selection visible after tap
-                                    }
-                            )
-                    }
+                                }
+                                .onEnded { _ in
+                                    // Keep selection visible after tap
+                                }
+                        )
                 }
-                .frame(height: 220)
+            }
+            .frame(height: 220)
         }
     }
 
@@ -1056,7 +1056,7 @@ struct StreakCalendarView: View {
             VStack(spacing: 12) {
                 // Weekday headers
                 HStack(spacing: 8) {
-                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { index, day in
+                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
                         Text(day)
                             .font(.caption)
                             .fontWeight(.semibold)
@@ -1202,8 +1202,8 @@ struct CalendarDayView: View {
             // Background
             RoundedRectangle(cornerRadius: 8)
                 .fill(dayStatus == .goalMet ? Color.orange.opacity(0.1) :
-                      dayStatus == .incomplete ? Color.red.opacity(0.1) :
-                      Color.gray.opacity(0.1))
+                        dayStatus == .incomplete ? Color.red.opacity(0.1) :
+                        Color.gray.opacity(0.1))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
                         .stroke(isToday() ? Color("FLPrimary") : Color.clear, lineWidth: 2)

@@ -1,282 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 import Foundation
 import Combine
 import HealthKit
@@ -498,7 +219,7 @@ class WeightManager: ObservableObject {
         let isDuplicate = weightEntries.contains(where: {
             // Check ANY existing entry (Manual OR HealthKit) to prevent bidirectional duplicates
             abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
-            abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
+                abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
         })
 
         guard !isDuplicate else {
@@ -527,7 +248,7 @@ class WeightManager: ObservableObject {
             // FIXED: Check across ALL sources, not just manual (Industry standard pattern)
             // This prevents Manual vs HealthKit duplicates that were causing the issue
             abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
-            abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
+                abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
         })
     }
 
@@ -554,28 +275,28 @@ class WeightManager: ObservableObject {
                 // Track newly added entries for accurate reporting
                 var newlyAddedCount = 0
 
-            // Merge HealthKit entries with local entries
-            for hkEntry in healthKitEntries {
-                // Check if we already have this exact entry (by date AND time, not just day)
-                // FIXED: Check across ALL sources to prevent Manual vs HealthKit duplicates
-                // Following Apple HealthKit best practices for duplicate detection
-                // Reference: https://developer.apple.com/documentation/healthkit/about_the_healthkit_framework
-                let isDuplicate = self.weightEntries.contains(where: {
-                    // Check ANY existing entry (Manual OR HealthKit) to prevent bidirectional duplicates
-                    abs($0.date.timeIntervalSince(hkEntry.date)) < 60 && // Within 1 minute
-                    abs($0.weight - hkEntry.weight) < 0.1 // Within 0.1 lbs (≈0.045 kg)
-                })
+                // Merge HealthKit entries with local entries
+                for hkEntry in healthKitEntries {
+                    // Check if we already have this exact entry (by date AND time, not just day)
+                    // FIXED: Check across ALL sources to prevent Manual vs HealthKit duplicates
+                    // Following Apple HealthKit best practices for duplicate detection
+                    // Reference: https://developer.apple.com/documentation/healthkit/about_the_healthkit_framework
+                    let isDuplicate = self.weightEntries.contains(where: {
+                        // Check ANY existing entry (Manual OR HealthKit) to prevent bidirectional duplicates
+                        abs($0.date.timeIntervalSince(hkEntry.date)) < 60 && // Within 1 minute
+                            abs($0.weight - hkEntry.weight) < 0.1 // Within 0.1 lbs (≈0.045 kg)
+                    })
 
-                if !isDuplicate {
-                    // Add new HealthKit entry (allows multiple per day)
-                    self.weightEntries.append(hkEntry)
-                    newlyAddedCount += 1
+                    if !isDuplicate {
+                        // Add new HealthKit entry (allows multiple per day)
+                        self.weightEntries.append(hkEntry)
+                        newlyAddedCount += 1
+                    }
                 }
-            }
 
-            // Sort by date (most recent first)
-            self.weightEntries.sort { $0.date > $1.date }
-            self.saveWeightEntries()
+                // Sort by date (most recent first)
+                self.weightEntries.sort { $0.date > $1.date }
+                self.saveWeightEntries()
 
                 // Report actual sync results
                 AppLogger.info("HealthKit sync completed: \(newlyAddedCount) new weight entries added", category: AppLogger.weightTracking)
@@ -614,7 +335,7 @@ class WeightManager: ObservableObject {
                         // Check if entry already exists across ANY source (Manual OR HealthKit)
                         // Following Apple HealthKit historical sync best practices
                         abs($0.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes (more flexible for historical)
-                        abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (≈0.09 kg) account for rounding
+                            abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (≈0.09 kg) account for rounding
                     })
 
                     if !isDuplicate {
@@ -801,7 +522,7 @@ class WeightManager: ObservableObject {
         // Create observer query for weight data
         guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else { return }
 
-        let query = HKObserverQuery(sampleType: weightType, predicate: nil) { [weak self] query, completionHandler, error in
+        let query = HKObserverQuery(sampleType: weightType, predicate: nil) { [weak self] _, completionHandler, error in
             if let error = error {
                 AppLogger.error("Weight observer query error", category: AppLogger.weightTracking, error: error)
                 completionHandler()
@@ -898,7 +619,6 @@ class WeightManager: ObservableObject {
         }
     }
 
-
     // MARK: - HealthKit Deletion Handling
 
     /// Handle weight deletions from HealthKit
@@ -923,8 +643,8 @@ class WeightManager: ObservableObject {
             // Following established patterns from syncFromHealthKit method
             weightEntries.removeAll { entry in
                 entry.source == .healthKit &&
-                abs(entry.date.timeIntervalSince(dateValue)) < 60 && // Within 1 minute
-                abs(entry.weight - weightValue) < 0.1 // Within 0.1 lbs
+                    abs(entry.date.timeIntervalSince(dateValue)) < 60 && // Within 1 minute
+                    abs(entry.weight - weightValue) < 0.1 // Within 0.1 lbs
             }
             deletedCount += 1
         }
