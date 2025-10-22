@@ -477,6 +477,233 @@ DSCard(surface: Theme.ColorToken.surfaceIce) { }
 
 ---
 
+## 🚨 CRITICAL TECHNICAL DEBT DISCOVERED (October 21, 2025)
+
+**Phase v1.4 Planning - Drag-to-Reorder Cards Discovery:**
+
+During Phase v1.4 planning (implementing drag-to-reorder for Progress Story cards in "Your LIFe Journey"), a **critical architectural duplication** was discovered:
+
+### **The Problem: Duplicate Card Management Systems**
+
+**Two separate managers doing the EXACT same job:**
+
+1. **TrackerCardManager** (`/FastingTracker/TrackerCardManager.swift`)
+   - Manages main tracker cards (Current Weight, Chart, Stats, History, Milestone)
+   - Has `reorderCards(from: Int, to: Int)` method ✅
+   - Has visibility management (hide/show) ✅
+   - Has persistence (UserDefaults with JSON) ✅
+   - Has `@Published` state for reactive UI ✅
+
+2. **ProgressStoryCardManager** (`/FastingTracker/ProgressStoryCardManager.swift`)
+   - Manages Progress Story cards (7-Day, 30-Day, Banner, Recap, Did You Know, Coach Bar, Reflection)
+   - **MISSING** `reorderCards()` method ❌
+   - Has visibility management (hide/show) ✅
+   - Has persistence (UserDefaults with JSON) ✅
+   - Has `@Published` state for reactive UI ✅
+
+**Why This Violates Our Standards:**
+- ❌ Violates DRY (Don't Repeat Yourself) - duplicate logic
+- ❌ Violates SSOT (Single Source of Truth) - two managers for same functionality
+- ❌ Maintenance hell - update one, forget the other → bugs
+- ❌ Not how industry leaders do it (Apple/Google/Stripe use unified systems)
+- ❌ Contradicts our v1.3 standardization efforts (we just unified everything!)
+
+**Code Evidence:**
+```swift
+// TrackerCardManager.swift lines 141-158 - Has reorderCards() ✅
+func reorderCards(from sourceIndex: Int, to destinationIndex: Int) {
+    guard sourceIndex != destinationIndex,
+          sourceIndex < cardPreferences.count,
+          destinationIndex < cardPreferences.count else {
+        return
+    }
+
+    let movedCard = cardPreferences.remove(at: sourceIndex)
+    cardPreferences.insert(movedCard, at: destinationIndex)
+
+    for (index, _) in cardPreferences.enumerated() {
+        cardPreferences[index].sortOrder = index
+    }
+
+    saveCardPreferences()
+}
+
+// ProgressStoryCardManager.swift - Missing reorderCards() ❌
+// Only has visibility management, no reorder functionality
+```
+
+### **Impact on Phase v1.4:**
+
+**Original Plan (WRONG):**
+- Add `reorderCards()` to ProgressStoryCardManager
+- Implement drag-and-drop for Progress Story cards
+- Continue with duplicate systems
+
+**This would make the problem WORSE** - we'd be adding functionality to a duplicate system instead of fixing the root cause.
+
+### **Architectural Decision: Unify Card Managers (ADR-001)**
+
+**Date:** October 21, 2025
+**Status:** Approved
+**Decision Maker:** Rich Marin (Product Owner)
+**Implementer:** Claude Code (AI Development Lead)
+
+**Decision:** Create a **generic unified CardManager** that handles BOTH tracker cards AND Progress Story cards using Swift generics (Apple/Google/Stripe pattern).
+
+**Rationale:**
+1. **Industry Standard:** Apple Health uses ONE card management system, not multiple
+2. **DRY Principle:** Write `reorderCards()` once, both systems get it
+3. **SSOT Principle:** One implementation = one source of truth
+4. **Maintainability:** Fix bug once, add feature once, test once
+5. **v1.3 Alignment:** We just spent 10 phases standardizing - can't have duplicate systems
+6. **Future-Proof:** Works for all 5 trackers (Weight, Fasting, Hydration, Sleep, Mood)
+
+**Architecture:**
+```swift
+// SINGLE SOURCE OF TRUTH - Generic Card Manager
+@MainActor
+class CardManager<CardType: CardTypeProtocol>: ObservableObject {
+    @Published private(set) var cardPreferences: [CardPreference<CardType>] = []
+
+    func isCardVisible(_ cardType: CardType) -> Bool { /* ... */ }
+    func hideCard(_ cardType: CardType) { /* ... */ }
+    func reorderCards(from: Int, to: Int) { /* ... */ }  // ✅ ONE implementation
+    func getVisibleCardsInOrder() -> [CardType] { /* ... */ }
+    // ... all shared logic ONCE
+}
+
+// CardTypeProtocol - Requirements for card types
+protocol CardTypeProtocol: Hashable, CaseIterable, RawRepresentable where RawValue == String {
+    var displayName: String { get }
+}
+
+// Then instantiate for different card types:
+let trackerCardManager = CardManager<TrackerCardType>()      // Main tracker cards
+let progressStoryCardManager = CardManager<ProgressStoryCardType>()  // Progress Story cards
+```
+
+**Benefits:**
+- ✅ ONE implementation of `reorderCards()` - add once, works everywhere
+- ✅ ONE implementation of visibility management
+- ✅ ONE implementation of persistence logic
+- ✅ Fix bug once, both systems benefit
+- ✅ Add feature once (like expand/collapse), both systems get it
+- ✅ Test once, deploy everywhere
+- ✅ This is how Apple/Google/Stripe do it
+
+**Migration Plan:**
+
+**Phase v1.4a: Unify Card Managers (NEW - Do FIRST)**
+1. Create `CardTypeProtocol` (defines requirements for card types)
+2. Create generic `CardManager<CardType>` with ALL shared logic
+3. Make `TrackerCardType` conform to `CardTypeProtocol`
+4. Make `ProgressStoryCardType` conform to `CardTypeProtocol`
+5. Replace `TrackerCardManager` with `CardManager<TrackerCardType>`
+6. Replace `ProgressStoryCardManager` with `CardManager<ProgressStoryCardType>`
+7. Update all call sites (WeightTrackingView, WeightComponents, etc.)
+8. Test build (0 errors, 0 warnings)
+9. Manual QA - verify all cards still work (visibility, persistence)
+
+**Phase v1.4b: Drag-to-Reorder Implementation (Do SECOND)**
+1. Add Edit/Done button to "Your LIFe Journey" header
+2. Implement SwiftUI drag-and-drop logic (.onDrag/.onDrop)
+3. Lock Coach Bar at top (not reorderable)
+4. Add haptic feedback on drag start/end
+5. Test build (0 errors, 0 warnings)
+6. Manual QA - verify drag-and-drop works perfectly
+
+**Why This Order:**
+- Fix foundation BEFORE adding features (industry principle)
+- Add `reorderCards()` once to unified manager → both systems get it automatically
+- Prevents making duplicate systems worse
+- Professional approach (Apple/Google/Stripe always fix architecture first)
+
+**Estimated Effort:**
+- Phase v1.4a (Unification): 2-3 hours
+- Phase v1.4b (Drag-to-Reorder): 2 hours
+- **Total:** 4-5 hours (vs. 2 hours for quick & dirty approach)
+
+**Long-Term Savings:**
+- Future card features: Add once instead of twice (50% time saved)
+- Bug fixes: Fix once instead of hunting duplicates (70% time saved)
+- Code reviews: Review one system instead of two (50% time saved)
+- **ROI:** Pays for itself after 3-4 future features
+
+**Documentation Requirements:**
+- Update STANDARDIZATION-ROADMAP (this document) ✅
+- Create/Update HANDOFF-PHASE-v1.4.md with unification plan
+- Update ReadMeFirst.md with Phase v1.4a status
+- Document CardTypeProtocol contract
+- Document migration steps for future reference
+
+**Success Criteria:**
+- ✅ ONE CardManager implementation (generic)
+- ✅ TrackerCardManager removed (replaced with CardManager<TrackerCardType>)
+- ✅ ProgressStoryCardManager removed (replaced with CardManager<ProgressStoryCardType>)
+- ✅ All call sites updated
+- ✅ Build succeeds (0 errors, 0 warnings)
+- ✅ All cards still work (visibility, persistence, ordering)
+- ✅ Drag-and-drop works for Progress Story cards
+- ✅ No duplicate logic remaining
+
+**Industry Validation:**
+- ✅ **Apple Health:** Single card management system with different card types
+- ✅ **Google Calendar:** Generic manager for events/tasks/reminders
+- ✅ **Stripe Dashboard:** Generic component manager with typed variants
+- ✅ **SwiftUI:** Generic State<T> management (same pattern we're using)
+
+**Lesson Learned:**
+- Poor documentation allowed duplicate systems to exist without flagging
+- Always audit for duplication BEFORE adding features
+- If you find duplicate logic, STOP and fix architecture first
+- Never add features to duplicate systems - unify first, then enhance
+
+**Status:** 🚧 IN PROGRESS (Phase v1.4a - Unification)
+**Next:** Create HANDOFF-PHASE-v1.4.md with implementation details
+
+### **🔮 FUTURE PHASE: v1.4c - Control Center Card Unification**
+
+**Critical Discovery (October 21, 2025):**
+During Phase v1.4a planning, we discovered **THREE separate card management systems**, not two:
+1. TrackerCardManager (main tracker cards)
+2. ProgressStoryCardManager (Progress Story cards)
+3. **Control Center custom system** (ControlCenterCardType with custom CardDropDelegate)
+
+**Current State:**
+- Control Center has working drag-and-drop (WeightControlCenterView.swift lines 1744-1776)
+- Uses custom `@AppStorage("weightControlCenterCardOrder")` for persistence
+- Uses custom `CardDropDelegate` for drag-and-drop logic
+- Has expand/collapse state management (lines 1326-1360)
+
+**Phase v1.4c Goal:**
+Migrate Control Center cards to use unified CardManager for complete app-wide consistency.
+
+**Why Not Now (Simple Method First):**
+- Phase v1.4a: Unify TrackerCardManager + ProgressStoryCardManager (prove the pattern)
+- Phase v1.4b: Implement drag-and-drop for Progress Story cards (validate it works)
+- **Phase v1.4c**: Migrate Control Center (after pattern is proven and stable)
+- Following "never change working code" - Control Center drag-and-drop works, don't break it yet
+
+**Phase v1.4c Tasks (Future):**
+1. Make ControlCenterCardType conform to CardTypeProtocol
+2. Replace Control Center's custom CardDropDelegate with unified CardManager
+3. Migrate `@AppStorage("weightControlCenterCardOrder")` to CardManager persistence
+4. Remove duplicate drag-and-drop code (lines 1744-1776)
+5. Test Control Center drag-and-drop still works
+6. Verify expand/collapse state preserved
+
+**Benefits:**
+- ✅ ONE card management system for ENTIRE app (3 → 1)
+- ✅ Control Center gets free features (visibility management, future enhancements)
+- ✅ Zero duplicate drag-and-drop code
+- ✅ Consistent behavior across all card types
+
+**Estimated Effort:** 1-2 hours (after Phase v1.4a/v1.4b complete)
+
+**Status:** ⏳ DEFERRED (will start after Phase v1.4b completion)
+
+---
+
 #### **Opportunity 1.3: Empty Component Extraction Candidates**
 
 Per UNIVERSAL_STANDARDIZATION_ARCHITECTURE.md, these Level 3 components are planned:

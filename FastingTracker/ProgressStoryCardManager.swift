@@ -17,7 +17,7 @@ class ProgressStoryCardManager: ObservableObject {
 
     /// All Progress Story card preferences
     /// Published for reactive UI updates
-    @Published private(set) var cardPreferences: [ProgressStoryCardPreference] = []
+    @Published private(set) var cardPreferences: [LegacyProgressStoryCardPreference] = []
 
     // MARK: - Private Properties
 
@@ -50,7 +50,7 @@ class ProgressStoryCardManager: ObservableObject {
         } else {
             // Create new preference if it doesn't exist
             let sortOrder = cardPreferences.count
-            let newPreference = ProgressStoryCardPreference(
+            let newPreference = LegacyProgressStoryCardPreference(
                 cardType: cardType,
                 isVisible: isVisible,
                 sortOrder: sortOrder
@@ -103,7 +103,7 @@ class ProgressStoryCardManager: ObservableObject {
     /// Load card preferences from UserDefaults
     private func loadCardPreferences() {
         guard let data = userDefaults.data(forKey: cardPreferencesKey),
-              let decoded = try? JSONDecoder().decode([ProgressStoryCardPreference].self, from: data) else {
+              let decoded = try? JSONDecoder().decode([LegacyProgressStoryCardPreference].self, from: data) else {
             // No saved preferences - initialize with defaults
             initializeDefaults()
             return
@@ -128,7 +128,7 @@ class ProgressStoryCardManager: ObservableObject {
     /// Initialize default preferences for all Progress Story cards
     private func initializeDefaults() {
         cardPreferences = ProgressStoryCardType.allCases.enumerated().map { (index, cardType) in
-            return ProgressStoryCardPreference(
+            return LegacyProgressStoryCardPreference(
                 cardType: cardType,
                 isVisible: true,
                 sortOrder: index
@@ -145,7 +145,7 @@ class ProgressStoryCardManager: ObservableObject {
         for cardType in ProgressStoryCardType.allCases {
             if !cardPreferences.contains(where: { $0.id == cardType.rawValue }) {
                 // New card type - add with default preferences
-                let newPreference = ProgressStoryCardPreference(
+                let newPreference = LegacyProgressStoryCardPreference(
                     cardType: cardType,
                     isVisible: true,
                     sortOrder: cardPreferences.count

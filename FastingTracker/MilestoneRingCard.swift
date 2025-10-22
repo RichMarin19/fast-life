@@ -23,7 +23,7 @@ struct MilestoneRingCard: View {
     let rightStat: String           // e.g., "34.2 to go"
     let totalMilestones: Int        // Total milestone count
     let completedMilestones: Int    // How many completed
-    let cardManager: TrackerCardManager  // Card manager for visibility control
+    let cardManager: CardManager<TrackerCardType>  // Card manager for visibility control
 
     @State private var animateProgress: Bool = true
 
@@ -164,7 +164,7 @@ struct MilestoneRingCard: View {
             rightStat: "34.2 to go",
             totalMilestones: 10,
             completedMilestones: 6,
-            cardManager: TrackerCardManager.shared
+            cardManager: TrackerCards.shared
         )
         .padding(.horizontal, 20)
     }

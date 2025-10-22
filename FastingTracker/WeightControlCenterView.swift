@@ -73,6 +73,13 @@ enum TrackerCardType: String, Codable, CaseIterable, Identifiable {
     // All visibility state goes through TrackerCardManager.shared.isCardVisible()
 }
 
+// MARK: - TrackerCardType + CardTypeProtocol
+
+extension TrackerCardType: CardTypeProtocol {
+    // displayName already exists (lines 52-60)
+    // No additional implementation needed - already conforms!
+}
+
 /// Progress Story card types that can be hidden/shown
 /// Used in Control Center for managing Progress Story card visibility
 /// Industry Pattern: Same as TrackerCardType - enum registry for feature toggles
@@ -110,6 +117,13 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
         case .didYouKnow: return "Educational weight loss tip"
         }
     }
+}
+
+// MARK: - ProgressStoryCardType + CardTypeProtocol
+
+extension ProgressStoryCardType: CardTypeProtocol {
+    // displayName already exists (lines 97-106)
+    // No additional implementation needed - already conforms!
 }
 
 /// Shared opt-out manager accessible from anywhere in the app
@@ -213,11 +227,11 @@ struct WeightControlCenterView: View {
     // Observe ContentOptOutManager for reactive UI updates
     @ObservedObject private var optOutManager = ContentOptOutManager.shared
 
-    // Observe TrackerCardManager for card visibility (Single Source of Truth)
-    @ObservedObject private var cardManager = TrackerCardManager.shared
+    // Observe unified CardManager for tracker card visibility (Single Source of Truth)
+    @ObservedObject private var cardManager = TrackerCards.shared
 
-    // Observe ProgressStoryCardManager for Progress Story card visibility (Single Source of Truth)
-    @ObservedObject private var progressStoryCardManager = ProgressStoryCardManager.shared
+    // Observe unified CardManager for Progress Story card visibility (Single Source of Truth)
+    @ObservedObject private var progressStoryCardManager = ProgressStoryCards.shared
 
     // Card order persistence - default: Goals → Notifications → Insights → Sync → History → Experience
     @AppStorage("weightControlCenterCardOrder") private var cardOrderData: Data = Data()

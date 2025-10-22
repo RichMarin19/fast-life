@@ -146,7 +146,7 @@ extension DSCard {
         cardType: TrackerCardType,
         title: String? = nil,
         subtitle: String? = nil,
-        cardManager: TrackerCardManager,  // Must be passed explicitly due to @MainActor isolation
+        cardManager: CardManager<TrackerCardType>,  // Must be passed explicitly due to @MainActor isolation
         canExpand: Bool = false,
         canReorder: Bool = false,
         @ViewBuilder content: () -> Content

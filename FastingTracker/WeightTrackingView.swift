@@ -6,7 +6,7 @@ struct WeightTrackingView: View {
     @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
     @ObservedObject private var healthKitManager = HealthKitManager.shared
     @ObservedObject private var nudgeManager = HealthKitNudgeManager.shared
-    @ObservedObject private var cardManager = TrackerCardManager.shared  // Layer 3: Card visibility management
+    @ObservedObject private var cardManager = TrackerCards.shared  // Layer 3: Card visibility management
 
     // Layer 5: Drag-to-reorder state
     @State private var draggedCard: TrackerCardType?
@@ -393,7 +393,7 @@ struct EmptyWeightStateView: View {
 struct TrackerCardDropDelegate: DropDelegate {
     let card: TrackerCardType
     @Binding var draggedCard: TrackerCardType?
-    let cardManager: TrackerCardManager
+    let cardManager: CardManager<TrackerCardType>
 
     func performDrop(info: DropInfo) -> Bool {
         guard let draggedCard = draggedCard else { return false }

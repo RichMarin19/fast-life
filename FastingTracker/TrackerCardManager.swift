@@ -17,7 +17,7 @@ class TrackerCardManager: ObservableObject {
 
     /// All card preferences across the app
     /// Published for reactive UI updates
-    @Published private(set) var cardPreferences: [CardPreference] = []
+    @Published private(set) var cardPreferences: [LegacyTrackerCardPreference] = []
 
     // MARK: - Private Properties
 
@@ -66,7 +66,7 @@ class TrackerCardManager: ObservableObject {
         } else {
             // Create new preference if it doesn't exist
             let sortOrder = cardPreferences.count
-            let newPreference = CardPreference(
+            let newPreference = LegacyTrackerCardPreference(
                 cardType: cardType,
                 isVisible: isVisible,
                 isExpanded: true,
@@ -108,7 +108,7 @@ class TrackerCardManager: ObservableObject {
         } else {
             // Create new preference if it doesn't exist
             let sortOrder = cardPreferences.count
-            let newPreference = CardPreference(
+            let newPreference = LegacyTrackerCardPreference(
                 cardType: cardType,
                 isVisible: true,
                 isExpanded: isExpanded,
@@ -182,7 +182,7 @@ class TrackerCardManager: ObservableObject {
     /// Load card preferences from UserDefaults
     private func loadCardPreferences() {
         guard let data = userDefaults.data(forKey: cardPreferencesKey),
-              let decoded = try? JSONDecoder().decode([CardPreference].self, from: data) else {
+              let decoded = try? JSONDecoder().decode([LegacyTrackerCardPreference].self, from: data) else {
             // No saved preferences - initialize with defaults
             initializeDefaults()
             return
@@ -213,7 +213,7 @@ class TrackerCardManager: ObservableObject {
                 legacyVisible = userDefaults.object(forKey: legacyKey) as? Bool ?? true
             }
 
-            return CardPreference(
+            return LegacyTrackerCardPreference(
                 cardType: cardType,
                 isVisible: legacyVisible,
                 isExpanded: true,
@@ -236,7 +236,7 @@ class TrackerCardManager: ObservableObject {
                     legacyVisible = userDefaults.object(forKey: legacyKey) as? Bool ?? true
                 }
 
-                let newPreference = CardPreference(
+                let newPreference = LegacyTrackerCardPreference(
                     cardType: cardType,
                     isVisible: legacyVisible,
                     isExpanded: true,

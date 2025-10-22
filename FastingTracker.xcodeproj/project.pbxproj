@@ -71,6 +71,8 @@
 		52F578882EA804ED0042727E /* DSProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578872EA804ED0042727E /* DSProgressRing.swift */; };
 		52F5788A2EA80CFB0042727E /* DSBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578892EA80CFB0042727E /* DSBanner.swift */; };
 		52F5788C2EA816F50042727E /* DSCoachBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788B2EA816F50042727E /* DSCoachBar.swift */; };
+		52F5788F2EA861470042727E /* CardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788D2EA861470042727E /* CardManager.swift */; };
+		52F578902EA861470042727E /* CardTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788E2EA861470042727E /* CardTypeProtocol.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -171,6 +173,8 @@
 		52F578872EA804ED0042727E /* DSProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSProgressRing.swift; sourceTree = "<group>"; };
 		52F578892EA80CFB0042727E /* DSBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSBanner.swift; sourceTree = "<group>"; };
 		52F5788B2EA816F50042727E /* DSCoachBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSCoachBar.swift; sourceTree = "<group>"; };
+		52F5788D2EA861470042727E /* CardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardManager.swift; sourceTree = "<group>"; };
+		52F5788E2EA861470042727E /* CardTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardTypeProtocol.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -227,6 +231,8 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52F5788D2EA861470042727E /* CardManager.swift */,
+				52F5788E2EA861470042727E /* CardTypeProtocol.swift */,
 				52F5788B2EA816F50042727E /* DSCoachBar.swift */,
 				52F578892EA80CFB0042727E /* DSBanner.swift */,
 				52F578872EA804ED0042727E /* DSProgressRing.swift */,
@@ -494,6 +500,8 @@
 				FC005001000000000000001 /* UI/Components/FastingGraphView.swift in Sources */,
 				FC006001000000000000001 /* UI/Components/TotalStatsView.swift in Sources */,
 				FC007001000000000000001 /* UI/Components/AddEditFastView.swift in Sources */,
+				52F5788F2EA861470042727E /* CardManager.swift in Sources */,
+				52F578902EA861470042727E /* CardTypeProtocol.swift in Sources */,
 				TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */,
 				525A7C972EA329A200E724F4 /* MilestoneRingCard.swift in Sources */,
 				HRM01001000000000000001 /* Core/Managers/HeartRateManager.swift in Sources */,

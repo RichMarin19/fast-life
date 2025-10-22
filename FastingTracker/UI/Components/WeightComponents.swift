@@ -423,7 +423,7 @@ struct WeightTrendsView: View {
     @ObservedObject private var optOutManager = ContentOptOutManager.shared
 
     // Progress Story Card Manager for master toggle visibility control
-    @ObservedObject private var progressStoryCardManager = ProgressStoryCardManager.shared
+    @ObservedObject private var progressStoryCardManager = ProgressStoryCards.shared
 
     // Content IDs for opt-out tracking
     private let contentID_ProgressStory = "progress_story_v1"             // Global (toolbar button)
@@ -576,6 +576,9 @@ struct WeightTrendsView: View {
     @Environment(\.accessibilityReduceMotion) var reduceMotion  // v1.1: Respect Reduce Motion
     @State private var moodAnimate = false  // v1.1: Mood background micro-drift animation
 
+    // Phase v1.4b: Drag-to-Reorder State (following existing pattern - no Edit button)
+    @State private var draggedCard: ProgressStoryCardType?  // Currently dragged card
+
     // MARK: - Adaptive Mood Overlay (v1.1)
 
     /// Returns adaptive mood gradient overlay based on trend state
@@ -650,7 +653,7 @@ struct WeightTrendsView: View {
 
                 ScrollView {
                     VStack(spacing: 20) {
-                        // HEADER: Title + Subtitle per UI/UX spec (v1.2: spacing 16pt → 20pt)
+                        // HEADER: Title + Subtitle
                         // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
                         VStack(spacing: 4) {
                             // TITLE: Your LIFe Journey (luxury gradient)
@@ -668,7 +671,7 @@ struct WeightTrendsView: View {
                                         endPoint: .trailing
                                     )
                                 )
-                                .frame(maxWidth: .infinity, alignment: .center)  // Centered
+                                .frame(maxWidth: .infinity)
 
                             // SUBTITLE: Motivational tagline
                             // Font: SF Pro Display 15pt, weight 400, italic (per spec §4)
@@ -703,130 +706,125 @@ struct WeightTrendsView: View {
                         }
 
                         // STACKED LAYOUT v1.1: Narrative flow top-to-bottom
+                        // Phase v1.4b Layer 3 & 4: Drag-and-drop reordering with ForEach
 
-                        // 1. 7-DAY CARD (full-width) - CIRCULAR TREND RING
-                        // Universal Ice standard: All Progress Story cards use surfaceIce for visual consistency
-                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
-                        if progressStoryCardManager.isCardVisible(.sevenDay) && !optOutManager.isContentOptedOut(id: contentID_7Day) {
-                            CircularTrendRingCard(
-                                periodLabel: "7 DAYS",
-                                delta: calculateDelta(days: 7),
-                                surface: Theme.ColorToken.surfaceIce,
-                                onHide: {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
-                                        progressStoryCardManager.hideCard(.sevenDay)
-                                    }
-                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                }
-                            )
-                            .opacity(isAnimating ? 1 : 0)
-                            .offset(y: isAnimating ? 0 : 20)
-                            .animation(.easeInOut(duration: 0.4).delay(0.1), value: isAnimating)
-                        }
+                        // REORDERABLE CARDS (exclude Coach Bar)
+                        let visibleCards = progressStoryCardManager.getVisibleCardsInOrder()
+                        let reorderableCards = visibleCards.filter { $0 != .coachBar }
 
-                        // 2. MOTIVATIONAL BANNER (based on 7d trend)
+                        // Precompute values for banner (outside ForEach)
                         let delta7d = calculateDelta(days: 7) ?? 0
                         let state7d = trendState(for: delta7d)
                         let bannerText = banner7Text(for: state7d)
                         let bannerAccent = bannerAccentColor(for: state7d)
 
-                        // 2. MOTIVATIONAL BANNER
-                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
-                        if progressStoryCardManager.isCardVisible(.banner) && !optOutManager.isContentOptedOut(id: contentID_Banner) {
-                            ProgressBanner(text: bannerText, accent: bannerAccent, onHide: {
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
-                                    progressStoryCardManager.hideCard(.banner)
-                                }
-                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                            })
-                            .opacity(isAnimating ? 1 : 0)
-                            .offset(y: isAnimating ? 0 : 20)
-                            .animation(.easeInOut(duration: 0.4).delay(0.2), value: isAnimating)
-                        }
-
-                        // 3. 30-DAY CARD (full-width) - CIRCULAR TREND RING
-                        // Universal Ice standard: All Progress Story cards use surfaceIce for visual consistency
-                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
-                        if progressStoryCardManager.isCardVisible(.thirtyDay) && !optOutManager.isContentOptedOut(id: contentID_30Day) {
-                            CircularTrendRingCard(
-                                periodLabel: "30 DAYS",
-                                delta: calculateDelta(days: 30),
-                                surface: Theme.ColorToken.surfaceIce,
-                                onHide: {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
-                                        progressStoryCardManager.hideCard(.thirtyDay)
+                        ForEach(reorderableCards.indices, id: \.self) { index in
+                            let cardType = reorderableCards[index]
+                            Group {
+                                // Render card based on type
+                                switch cardType {
+                                case .sevenDay:
+                                    if !optOutManager.isContentOptedOut(id: contentID_7Day) {
+                                        CircularTrendRingCard(
+                                            periodLabel: "7 DAYS",
+                                            delta: calculateDelta(days: 7),
+                                            surface: Theme.ColorToken.surfaceIce,
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.sevenDay)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
                                     }
-                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                }
-                            )
-                            .opacity(isAnimating ? 1 : 0)
-                            .offset(y: isAnimating ? 0 : 20)
-                            .animation(.easeInOut(duration: 0.4).delay(0.3), value: isAnimating)
-                        }
 
-                        // 3.5. REFLECTION NUDGE (v1.2b/v1.2c) - Below 30-day card, behavioral prompt
-                        // Per v1.2 spec D.3: Rotate random prompt, tap triggers micro-plan (stub)
-                        // v1.2c: Upgraded to dual visibility system (ProgressStoryCardManager + ContentOptOutManager)
-                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
-                        if progressStoryCardManager.isCardVisible(.reflection) && !optOutManager.isContentOptedOut(id: contentID_ReflectionNudge) {
-                            ReflectionNudge(
-                                onHide: {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        // Hide via ProgressStoryCardManager (shows in "Your Progress Journey" section)
-                                        progressStoryCardManager.hideCard(.reflection)
+                                case .banner:
+                                    if !optOutManager.isContentOptedOut(id: contentID_Banner) {
+                                        ProgressBanner(text: bannerText, accent: bannerAccent, onHide: {
+                                            withAnimation(.easeInOut(duration: 0.25)) {
+                                                progressStoryCardManager.hideCard(.banner)
+                                            }
+                                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                        })
                                     }
-                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                },
-                                onTap: {
-                                    // v1.2b: Stub for micro-plan Coach prompt (functional later)
-                                    // TODO: Trigger Coach prompt modal
-                                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                                }
-                            )
-                            .opacity(isAnimating ? 1 : 0)
-                            .offset(y: isAnimating ? 0 : 20)
-                            .animation(.easeInOut(duration: 0.4).delay(0.35), value: isAnimating)
-                        }
 
-                        // 4. RECAP ROW (Net Δ | Streak | Entries)
-                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
-                        if progressStoryCardManager.isCardVisible(.recap) && !optOutManager.isContentOptedOut(id: contentID_Recap) {
-                            RecapRow(
-                                netDelta: netDelta30d,
-                                bestStreak: bestStreak,
-                                entries: totalEntries,
-                                onHide: {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
-                                        progressStoryCardManager.hideCard(.recap)
+                                case .thirtyDay:
+                                    if !optOutManager.isContentOptedOut(id: contentID_30Day) {
+                                        CircularTrendRingCard(
+                                            periodLabel: "30 DAYS",
+                                            delta: calculateDelta(days: 30),
+                                            surface: Theme.ColorToken.surfaceIce,
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.thirtyDay)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
                                     }
-                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                                }
-                            )
-                            .opacity(isAnimating ? 1 : 0)
-                            .offset(y: isAnimating ? 0 : 20)
-                            .animation(.easeInOut(duration: 0.4).delay(0.4), value: isAnimating)
-                        }
 
-                        // 5. DID YOU KNOW BANNER (optional - show if user has 5+ entries)
-                        // Check BOTH: Master toggle (ProgressStoryCardManager) AND individual opt-out (ContentOptOutManager)
-                        if totalEntries >= 5 && progressStoryCardManager.isCardVisible(.didYouKnow) && !optOutManager.isContentOptedOut(id: contentID_Tip) {
-                            DidYouKnowBanner(
-                                text: randomDidYouKnowTip(),
-                                onHide: {
-                                    withAnimation(.easeInOut(duration: 0.25)) {
-                                        // Hide via ProgressStoryCardManager (shows in Progress Summaries section)
-                                        progressStoryCardManager.hideCard(.didYouKnow)
+                                case .reflection:
+                                    if !optOutManager.isContentOptedOut(id: contentID_ReflectionNudge) {
+                                        ReflectionNudge(
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.reflection)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            },
+                                            onTap: {
+                                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                            }
+                                        )
                                     }
-                                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+                                case .recap:
+                                    if !optOutManager.isContentOptedOut(id: contentID_Recap) {
+                                        RecapRow(
+                                            netDelta: netDelta30d,
+                                            bestStreak: bestStreak,
+                                            entries: totalEntries,
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.recap)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
+                                    }
+
+                                case .didYouKnow:
+                                    if totalEntries >= 5 && !optOutManager.isContentOptedOut(id: contentID_Tip) {
+                                        DidYouKnowBanner(
+                                            text: randomDidYouKnowTip(),
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.didYouKnow)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
+                                    }
+
+                                case .coachBar:
+                                    EmptyView()  // Coach Bar rendered separately, never in ForEach
                                 }
-                            )
+                            }
+                            // Phase v1.4b: Drag-and-drop modifiers applied at Group level (matching Control Center + Weight Tracker pattern)
+                            // CRITICAL FIX: Applying .onDrag() to Group (not individual cards) prevents LightCard button from blocking gesture
+                            .onDrag {
+                                draggedCard = cardType
+                                return NSItemProvider(object: cardType.rawValue as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: ProgressStoryCardDropDelegate(
+                                cardType: cardType,
+                                visibleCards: reorderableCards,
+                                draggedCard: $draggedCard,
+                                cardManager: progressStoryCardManager
+                            ))
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : 20)
-                            .animation(.easeInOut(duration: 0.4).delay(0.5), value: isAnimating)
+                            .animation(.easeInOut(duration: 0.4).delay(Double(index) * 0.1 + 0.1), value: isAnimating)
                         }
 
                         // 6. FOOTER CELEBRATION (optional - motivational message)
@@ -939,33 +937,31 @@ struct LightCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Top row: eye.slash icon (top-RIGHT) for hiding card
-            // Matches DSCardHeader pattern (DSCardHeader.swift line 108-116)
-            HStack {
-                Spacer()
-
+        // Content with standard padding (matching DSBanner pattern)
+        content
+            .padding(16)  // 16pt - iOS standard
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .topTrailing) {
+                // Eye.slash button (positioned as overlay, matching DSBanner pattern)
+                // CRITICAL: Using .overlay() instead of ZStack allows drag gestures to pass through content
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
-                        .font(DSTypography.cardTitle)
+                        .font(.system(size: 14, weight: .semibold))  // Matching DSBanner font size
                         .foregroundColor(Theme.ColorToken.textSecondary)
                         .frame(width: 44, height: 44)  // Apple HIG tap target
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Hide card")
             }
-
-            content
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
-                )
-                .shadow(color: Theme.ColorToken.shadowCard, radius: 10, x: 0, y: 6)
-        )
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
+                    )
+                    .shadow(color: Theme.ColorToken.shadowCard, radius: 10, x: 0, y: 6)
+            )
     }
 }
 
@@ -1697,3 +1693,36 @@ struct TrendCard: View {
         }
     }
 }
+
+// MARK: - Drag-and-Drop Delegate (Phase v1.4b Layer 4)
+
+/// ProgressStoryCardDropDelegate - Handles drop events for reordering Progress Story cards
+/// Per Phase v1.4b: Apple Health Edit button pattern with SwiftUI official drag-and-drop API
+/// Triggers CardManager.reorderCards(from:to:) when user drops a card on another card
+struct ProgressStoryCardDropDelegate: DropDelegate {
+    let cardType: ProgressStoryCardType
+    let visibleCards: [ProgressStoryCardType]
+    @Binding var draggedCard: ProgressStoryCardType?
+    let cardManager: CardManager<ProgressStoryCardType>
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let draggedCard = draggedCard else { return false }
+
+        // Find indices in visible cards array (NOT enum raw values!)
+        guard let sourceIndex = visibleCards.firstIndex(of: draggedCard),
+              let destinationIndex = visibleCards.firstIndex(of: cardType) else {
+            return false
+        }
+
+        // Reorder using unified CardManager (Phase v1.4a)
+        // This automatically updates sortOrder and persists to UserDefaults
+        cardManager.reorderCards(from: sourceIndex, to: destinationIndex)
+
+        // Haptic feedback on drop (medium style = card placement confirmation)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+        self.draggedCard = nil
+        return true
+    }
+}
+

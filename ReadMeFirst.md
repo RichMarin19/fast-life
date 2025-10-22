@@ -22,12 +22,18 @@ This document is your **single source of truth** for:
 
 **CRITICAL RULE:** Always update this section BEFORE and AFTER any work.
 
-### Current Phase: v1.3 (Standardization & Card Migration)
+### Current Phase: v1.4b (Drag-to-Reorder Cards - "Your LIFe Journey")
 
 **Phase Versioning Rules:**
-- ✅ Sequential only: v1.3a → v1.3b → v1.3c ... → v1.3z → v1.4a
+- ✅ Sequential only: v1.3a → v1.3b → v1.3c ... → v1.3z → v1.4
 - ❌ NEVER skip phases or jump versions
 - ✅ Update this gameplan EVERY TIME a phase completes
+
+**✅ Phase v1.4a COMPLETE:**
+Unified TrackerCardManager + ProgressStoryCardManager into single generic CardManager<CardType>. Eliminated duplicate code, achieved 0 errors/0 warnings build. Architecture now follows Apple/Google/Stripe patterns.
+
+**✅ Phase v1.4b COMPLETE:**
+Enabled drag-to-reorder for Progress Story cards in "Your LIFe Journey" using always-on drag pattern (no Edit button). Standardized drag-and-drop across all implementations (Control Center, Weight Tracker, Progress Story). Single Source of Truth achieved.
 
 ---
 
@@ -58,11 +64,26 @@ This document is your **single source of truth** for:
 
 ---
 
-### 🔄 PENDING PHASES (v1.3 Series)
+### ✅ COMPLETED PHASES (v1.4a Series)
 
-**ALL PHASES COMPLETE!** ✅
+| Phase | Name | Status | Commit | Date |
+|-------|------|--------|--------|------|
+| v1.4a | Card Manager Unification (Architecture Fix) | ✅ DONE | TBD | Oct 21, 2025 |
+| v1.4b | Drag-to-Reorder Cards ("Your LIFe Journey") | ✅ DONE | TBD | Oct 21, 2025 |
 
-Weight Tracker is now 100% standardized and ready to be the North Star template.
+### 🔄 PENDING PHASES (v1.4c Series)
+
+| Phase | Name | Status | Priority |
+|-------|------|--------|----------|
+| v1.4c | Control Center Card Unification | ⏳ DEFERRED | MEDIUM |
+
+**Phase v1.4a Goal:** Unify TrackerCardManager + ProgressStoryCardManager into single generic CardManager (fix duplicate systems)
+
+**Phase v1.4b Goal:** Enable users to reorder Progress Story cards via drag-and-drop (Apple Health pattern)
+
+**Phase v1.4c Goal:** Migrate Control Center cards to use unified CardManager (complete app-wide consistency - deferred until v1.4a/v1.4b proven)
+
+**Critical Discovery:** App has **THREE** separate card management systems (TrackerCardManager, ProgressStoryCardManager, Control Center custom system). Phase v1.4a/v1.4b unifies first two. Phase v1.4c will unify Control Center after pattern is proven stable.
 
 ---
 
@@ -86,7 +107,7 @@ When completing a phase:
 
 ### 🎯 WHAT TO DO NEXT
 
-**Current Status:** Phase v1.3j COMPLETE ✅ 🎉 **WEIGHT TRACKER 100% DONE!**
+**Current Status:** Phase v1.4b COMPLETE ✅ **Drag-to-Reorder Cards ("Your LIFe Journey")**
 
 **🏆 ALL v1.3 PHASES COMPLETE (10 phases total):**
 - ✅ v1.3 - DSCoachBar Extraction
@@ -100,18 +121,30 @@ When completing a phase:
 - ✅ v1.3i - Current Weight Card → DSCard
 - ✅ v1.3j - Typography Migration (Weight Tracker)
 
-**🎯 Weight Tracker is now the perfect North Star template!**
-- All cards use DSCard universal container
-- All colors use Theme.ColorToken
-- All spacing uses DSSpacing
-- All typography uses DSTypography
-- Build succeeds: 0 errors, 0 warnings
-- Ready to replicate for Fasting/Hydration/Sleep/Mood trackers
+**✅ Phase v1.4a COMPLETE:**
+1. ✅ Update ReadMeFirst.md MASTER GAMEPLAN
+2. ✅ Update STANDARDIZATION-ROADMAP with ADR-001
+3. ✅ Create HANDOFF-PHASE-v1.4.md with full plan
+4. ✅ Update ReadMeFirst.md with Phase v1.4a status
+5. ✅ Create CardTypeProtocol for unified card management
+6. ✅ Create generic CardManager<CardType> with all shared logic
+7. ✅ Make TrackerCardType conform to CardTypeProtocol
+8. ✅ Make ProgressStoryCardType conform to CardTypeProtocol
+9. ✅ Replace TrackerCardManager with unified CardManager
+10. ✅ Replace ProgressStoryCardManager with unified CardManager
+11. ✅ Test build after unification (0 errors, 0 warnings)
+12. ✅ Manual QA testing - verify all cards still work
 
-**Next Recommended Action:**
-1. Plan Phase v1.4 (start replicating Weight Tracker pattern to other trackers)
-2. Review and celebrate progress
-3. User testing and feedback collection
+**✅ Phase v1.4b COMPLETE:**
+1. ✅ Add drag state variable (`draggedCard: ProgressStoryCardType?`)
+2. ✅ Implement SwiftUI drag-and-drop logic (.onDrag/.onDrop) - always-on pattern
+3. ✅ Lock Coach Bar at top (not reorderable)
+4. ✅ Add haptic feedback on drop
+5. ✅ Test build (0 errors, 0 warnings)
+6. ✅ Pattern matches Control Center and Weight Tracker (no Edit button)
+7. ✅ Documentation updated to reflect correct pattern
+
+**Phase v1.4b Result:** Drag-and-drop now standardized across ALL implementations (Control Center, Weight Tracker, Progress Story) using always-on drag pattern without Edit button toggle. Single Source of Truth achieved.
 
 ---
 
@@ -734,8 +767,60 @@ cardManager.hideCard(.milestone)
 - Always wrap cards in `DSCard`
 - Always use `TrackerCardManager` for visibility
 - Always extract duplicated code to components
-- Always test on device + simulator
+- **Always test on physical device** (user preference - no simulators)
 - Always ask before major changes
+
+---
+
+## 📱 TESTING POLICY
+
+**Industry Standard**: Use BOTH simulator (fast iteration) AND physical device (final validation).
+
+### Two-Stage Testing Strategy
+
+**Stage 1: Simulator Testing (Development)**
+- ✅ Fast build verification during active coding
+- ✅ UI layout and design token verification
+- ✅ Quick debugging in controlled environment
+- ✅ Multiple iOS version testing
+
+**Build Command (Simulator):**
+```bash
+# Use any available simulator for quick testing
+xcodebuild build -scheme FastingTracker -destination 'platform=iOS Simulator,name=iPhone 16 Pro'
+```
+
+**Stage 2: Physical Device Testing (Validation) - REQUIRED**
+- ✅ **CRITICAL**: Always test on physical device before marking work complete
+- ✅ Drag-and-drop gestures (behave differently than simulator!)
+- ✅ Haptic feedback verification
+- ✅ Real-world performance, memory, battery behavior
+- ✅ User (Rich) final acceptance testing on actual iPhone
+
+**Build Command (Physical Device):**
+```bash
+xcodebuild clean build -scheme FastingTracker -destination 'generic/platform=iOS'
+```
+
+### Testing Workflow
+
+1. **During Development**: Use simulator for quick build checks
+2. **After Code Complete**: Build for physical device (0 errors, 0 warnings)
+3. **Final Validation**: User tests on physical iPhone
+4. **Only mark complete** after physical device testing passes
+
+### Why Both?
+
+**Simulator** = Speed (fast iteration)
+**Physical Device** = Truth (real user experience)
+
+**Examples of what simulator CANNOT test accurately:**
+- Drag-and-drop gestures with long-press
+- Haptic feedback intensity/timing
+- Memory pressure and thermal throttling
+- Cellular network behavior
+- Battery drain
+- Real touch input (vs mouse simulation)
 
 ---
 
@@ -758,6 +843,20 @@ cardManager.hideCard(.milestone)
 **Maintainer**: Claude Code (AI Development Lead)
 
 **This is a living document. Update it when patterns change.**
+
+---
+
+## 📊 DAILY SESSION RECORDS
+
+Track time spent and tokens used for each development day.
+
+| Date | Duration | Tokens Used | % Budget | Major Accomplishments | Status |
+|------|----------|-------------|----------|----------------------|--------|
+| Oct 21, 2025 | ~11 hours (10:04 AM - 9:02 PM) | 113,637 | 56.8% | Phase v1.4a Complete - Card Manager Unification. Created generic CardManager<CardType>, solved Swift generic limitations, achieved 0 errors/0 warnings build. | ✅ DONE |
+
+### Session Detail Links
+- See `SESSION-RECORDS.md` for detailed breakdown of each session
+- Includes technical challenges solved, build iterations, and learning outcomes
 
 ---
 

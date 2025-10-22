@@ -29,7 +29,7 @@ struct UniversalCardContainer<Content: View>: View {
     let title: String?
 
     /// Card manager for state
-    @ObservedObject private var cardManager = TrackerCardManager.shared
+    @ObservedObject private var cardManager = TrackerCards.shared
 
     // MARK: - Initialization
 
