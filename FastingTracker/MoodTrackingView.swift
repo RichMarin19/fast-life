@@ -81,6 +81,7 @@ struct MoodTrackingView: View {
                     Image(systemName: "plus.circle.fill")
                         .foregroundColor(.orange)
                 }
+                .accessibilityLabel("Add mood and energy entry")
             }
         }
         .sheet(isPresented: $showingAddEntry) {

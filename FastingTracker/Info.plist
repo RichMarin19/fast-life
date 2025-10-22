@@ -47,7 +47,7 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Fast LIFe needs permission to notify you when your fasting goal is complete.</string>
+	<string>Fast LIFe needs permission to send helpful reminders for your fasting goals and daily weigh-ins to help you stay on track.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Fast LIFe</string>
 	<key>NSHealthShareUsageDescription</key>

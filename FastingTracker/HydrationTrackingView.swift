@@ -20,6 +20,17 @@ struct HydrationTrackingView: View {
                 Spacer()
                     .frame(height: 20)
 
+                // Empty State - show when no drinks logged
+                if hydrationManager.drinkEntries.isEmpty {
+                    EmptyHydrationStateView(
+                        showingDrinkPicker: $showingDrinkPicker,
+                        selectedDrinkType: $selectedDrinkType,
+                        healthKitManager: HealthKitManager.shared,
+                        hydrationManager: hydrationManager
+                    )
+                    .padding(.top, 40)
+                } else {
+
                 // HealthKit Nudge for first-time users who skipped onboarding
                 // Following Lose It app pattern - contextual banner with single Connect action
                 if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .hydration) {
@@ -136,6 +147,7 @@ struct HydrationTrackingView: View {
                             .foregroundColor(.cyan)
                     }
                 }
+                .accessibilityLabel("Edit daily hydration goal")
                 .padding(.bottom, 10)
 
                 Spacer()
@@ -159,6 +171,7 @@ struct HydrationTrackingView: View {
                                 showingDrinkPicker = true
                             }
                         )
+                        .accessibilityLabel("Log water intake")
 
                         // Coffee Button
                         DrinkButton(
@@ -169,6 +182,7 @@ struct HydrationTrackingView: View {
                                 showingDrinkPicker = true
                             }
                         )
+                        .accessibilityLabel("Log coffee intake")
 
                         // Tea Button
                         DrinkButton(
@@ -179,6 +193,7 @@ struct HydrationTrackingView: View {
                                 showingDrinkPicker = true
                             }
                         )
+                        .accessibilityLabel("Log tea intake")
                     }
                     .padding(.horizontal, 40)
                 }
@@ -205,6 +220,7 @@ struct HydrationTrackingView: View {
 
                 Spacer()
                     .frame(height: 20)
+                }
             }
         }
         .navigationTitle("Hydration Tracker")
@@ -235,6 +251,7 @@ struct HydrationTrackingView: View {
                         .font(.caption)
                         .foregroundColor(.cyan)
                 }
+                .accessibilityLabel("Sync hydration data with Apple Health")
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -242,6 +259,7 @@ struct HydrationTrackingView: View {
                     Image(systemName: "chart.bar.fill")
                         .foregroundColor(.cyan)
                 }
+                .accessibilityLabel("View hydration history and statistics")
             }
         }
         .sheet(isPresented: $showingGoalSettings) {
@@ -269,6 +287,8 @@ struct HydrationTrackingView: View {
                     }
                 }
             }
+            .accessibilityLabel("Import all historical hydration data from Apple Health")
+
             Button("Future Data Only") {
                 // Request authorization and sync only future entries
                 HealthKitManager.shared.requestHydrationAuthorization { success, error in
@@ -282,7 +302,10 @@ struct HydrationTrackingView: View {
                     }
                 }
             }
+            .accessibilityLabel("Sync only future hydration data from Apple Health")
+
             Button("Cancel", role: .cancel) { }
+            .accessibilityLabel("Cancel hydration sync import")
         } message: {
             Text("Choose how to sync your hydration data with Apple Health. You can import all your historical hydration entries or start fresh with only future entries.")
         }
@@ -359,6 +382,7 @@ struct DrinkHistoryRow: View {
                     .font(.subheadline)
                     .foregroundColor(.red)
             }
+            .accessibilityLabel("Delete this drink entry")
         }
         .padding()
         .background(Color(.systemBackground))
@@ -421,6 +445,7 @@ struct HydrationGoalSettingsView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityLabel("Cancel hydration goal changes")
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
@@ -429,6 +454,7 @@ struct HydrationGoalSettingsView: View {
                         }
                         dismiss()
                     }
+                    .accessibilityLabel("Save hydration goal")
                 }
             }
         }
@@ -511,6 +537,7 @@ struct DrinkAmountPickerView: View {
                                     )
                                     .cornerRadius(12)
                                 }
+                                .accessibilityLabel("Select amount, \(Int(amount)) ounces")
                             }
 
                             // Custom Amount
@@ -561,6 +588,7 @@ struct DrinkAmountPickerView: View {
                         .background(drinkColor)
                         .cornerRadius(12)
                 }
+                .accessibilityLabel("Add \(drinkType.rawValue) to today's log")
                 .padding(.horizontal)
                 .padding(.bottom)
             }
@@ -571,9 +599,83 @@ struct DrinkAmountPickerView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityLabel("Cancel drink selection")
                 }
             }
         }
+    }
+}
+
+// MARK: - Empty State View
+// Following EmptyWeightStateView and EmptySleepStateView pattern for consistency
+// Industry Pattern: Material Design Empty States + Apple HIG Onboarding
+
+struct EmptyHydrationStateView: View {
+    @Binding var showingDrinkPicker: Bool
+    @Binding var selectedDrinkType: DrinkType
+    let healthKitManager: HealthKitManager
+    let hydrationManager: HydrationManager
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "drop.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.cyan)
+
+            Text("No Hydration Data Yet")
+                .font(.title3)
+                .foregroundColor(.secondary)
+
+            Text("Log your first drink or sync with Apple Health")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            VStack(spacing: 12) {
+                Button(action: {
+                    selectedDrinkType = .water
+                    showingDrinkPicker = true
+                }) {
+                    Label("Log Water Manually", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.cyan)
+                        .cornerRadius(8)
+                }
+                .accessibilityLabel("Log water intake manually")
+
+                Button(action: {
+                    // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
+                    // Request hydration permissions immediately when user wants to sync hydration data
+                    AppLogger.info("EmptyState: Sync button tapped - requesting hydration authorization", category: AppLogger.healthKit)
+                    HealthKitManager.shared.requestHydrationAuthorization { success, error in
+                        if success {
+                            AppLogger.info("EmptyState: Hydration authorization granted - starting sync", category: AppLogger.healthKit)
+                            DispatchQueue.main.async {
+                                hydrationManager.syncFromHealthKit()
+                            }
+                        } else {
+                            AppLogger.info("EmptyState: Hydration authorization denied", category: AppLogger.healthKit)
+                        }
+                    }
+                }) {
+                    Label("Sync with Apple Health", systemImage: "heart.fill")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color("FLSuccess"))
+                        .cornerRadius(8)
+                }
+                .accessibilityLabel("Sync hydration data with Apple Health")
+            }
+            .padding(.horizontal, 40)
+        }
+        .frame(maxHeight: .infinity)
+        .padding(.top, 60)
     }
 }
 

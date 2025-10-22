@@ -38,6 +38,7 @@ struct SleepHistoryRow: View {
                     .font(.subheadline)
                     .foregroundColor(.red)
             }
+            .accessibilityLabel("Delete this sleep entry")
         }
         .padding()
         .background(Color(.systemBackground))
@@ -73,7 +74,9 @@ struct AddSleepView: View {
             Form {
                 Section(header: Text("Sleep Times")) {
                     DatePicker("Bed Time", selection: $bedTime, displayedComponents: [.date, .hourAndMinute])
+                        .accessibilityLabel("Select bed time")
                     DatePicker("Wake Time", selection: $wakeTime, displayedComponents: [.date, .hourAndMinute])
+                        .accessibilityLabel("Select wake time")
                 }
 
                 Section(header: Text("Sleep Duration")) {
@@ -102,6 +105,7 @@ struct AddSleepView: View {
                         }
                     }
                     .pickerStyle(.menu)
+                    .accessibilityLabel("Rate sleep quality from 1 to 5 stars")
                 }
             }
             .navigationTitle("Log Sleep")
@@ -111,6 +115,7 @@ struct AddSleepView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityLabel("Cancel sleep entry")
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
@@ -124,6 +129,7 @@ struct AddSleepView: View {
                         dismiss()
                     }
                     .disabled(wakeTime <= bedTime)
+                    .accessibilityLabel("Save sleep entry")
                 }
             }
         }
@@ -155,14 +161,14 @@ struct SleepSyncSettingsView: View {
                             if newValue {
                                 // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                                 // Request sleep permissions immediately when user enables sleep sync
-                                print("📱 SleepTrackingView: Requesting sleep authorization directly")
+                                Log.debug("📱 SleepTrackingView: Requesting sleep authorization directly", category: .general)
                                 HealthKitManager.shared.requestSleepAuthorization { success, error in
                                     DispatchQueue.main.async {
                                         if success {
-                                            print("✅ SleepTrackingView: Sleep authorization granted - enabling sync")
+                                            Log.debug("✅ SleepTrackingView: Sleep authorization granted - enabling sync", category: .general)
                                             sleepManager.setSyncPreference(true)
                                         } else {
-                                            print("❌ SleepTrackingView: Sleep authorization denied")
+                                            Log.debug("❌ SleepTrackingView: Sleep authorization denied", category: .general)
                                             sleepManager.setSyncPreference(false)
                                         }
                                     }
@@ -172,6 +178,7 @@ struct SleepSyncSettingsView: View {
                             }
                         }
                     ))
+                    .accessibilityLabel("Toggle sync sleep data with Apple Health")
                 }
 
                 if sleepManager.syncWithHealthKit {
@@ -199,6 +206,7 @@ struct SleepSyncSettingsView: View {
                             }
                         }
                         .disabled(isSyncing)
+                        .accessibilityLabel("Sync sleep data from Apple Health now")
                     }
                 }
 
@@ -221,6 +229,7 @@ struct SleepSyncSettingsView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .accessibilityLabel("Close sleep settings")
                 }
             }
             .alert("Import Sleep Data", isPresented: $showingSyncConfirmation) {
@@ -229,15 +238,19 @@ struct SleepSyncSettingsView: View {
                 Button("Import All Historical Data") {
                     performHistoricalSync()
                 }
+                .accessibilityLabel("Import all historical sleep data from Apple Health")
                 Button("Future Data Only") {
                     performFutureSync()
                 }
+                .accessibilityLabel("Sync only future sleep data from Apple Health")
                 Button("Cancel", role: .cancel) { }
+                .accessibilityLabel("Cancel sleep sync import")
             } message: {
                 Text("Choose how to sync your sleep data with Apple Health. You can import all your historical sleep entries or start fresh with only future entries.")
             }
             .alert("Sync Status", isPresented: $showingSyncAlert) {
                 Button("OK") { }
+                .accessibilityLabel("Dismiss sleep sync status")
             } message: {
                 Text(syncMessage)
             }
@@ -446,6 +459,7 @@ struct SleepTimelineChart: View {
                         .font(.title2)
                         .foregroundColor(.secondary)
                 }
+                .accessibilityLabel("View sleep stage information")
             }
 
             // Timeline bars (4 rows like Apple Health)
@@ -608,6 +622,7 @@ struct StageSummaryTab: View {
                         .fill(isSelected ? Color(.systemGray6) : Color.clear)
                 )
         }
+        .accessibilityLabel("View \(title.lowercased()) sleep summary")
     }
 }
 

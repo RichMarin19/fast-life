@@ -359,6 +359,7 @@ struct AddEditHydrationView: View {
                                                     .stroke(dailyGoalOunces == goal && !isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
                                             )
                                     }
+                                    .accessibilityLabel("Set daily hydration goal to \(Int(goal)) ounces")
                                 }
                             }
 
@@ -383,6 +384,7 @@ struct AddEditHydrationView: View {
                                             .stroke(isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
                                     )
                             }
+                            .accessibilityLabel("Enter custom daily hydration goal")
 
                             if isCustomGoal {
                                 HStack(spacing: 8) {
@@ -408,6 +410,7 @@ struct AddEditHydrationView: View {
                                                 }
                                                 .foregroundColor(.cyan)
                                                 .fontWeight(.semibold)
+                                                .accessibilityLabel("Dismiss keyboard")
                                             }
                                         }
                                     Text("oz")
@@ -433,6 +436,7 @@ struct AddEditHydrationView: View {
                     Button("Cancel") {
                         dismiss()
                     }
+                    .accessibilityLabel("Cancel hydration entry")
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
@@ -440,6 +444,7 @@ struct AddEditHydrationView: View {
                         dismiss()
                     }
                     .disabled(!hasValidInput())
+                    .accessibilityLabel("Save hydration entry")
                 }
             }
             .onAppear {

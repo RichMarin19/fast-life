@@ -76,6 +76,13 @@ struct SleepTrackingView: View {
             nudge: healthKitNudgeView,
             settingsAction: { showingSyncSettings = true }  // Matching gear icon functionality
         ) {
+            if sleepManager.sleepEntries.isEmpty {
+                EmptySleepStateView(
+                    showingAddSleep: $showingAddSleep,
+                    healthKitManager: HealthKitManager.shared,
+                    sleepManager: sleepManager
+                )
+            } else {
             // Sleep Progress Ring
             ZStack {
                 // Background ring
@@ -178,6 +185,7 @@ struct SleepTrackingView: View {
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 20)
+            .accessibilityLabel("Log sleep entry")
 
             // Sleep Optimization Charts (More user-friendly than Apple Health)
             // Following Apple 2025 industry standard: display charts with basic data, not just detailed stages
@@ -221,6 +229,7 @@ struct SleepTrackingView: View {
                                         .background(Color.purple.opacity(0.1))
                                         .cornerRadius(8)
                                     }
+                                    .accessibilityLabel("Select sleep chart time range")
                                 }
                                 .padding(.horizontal, 40)
                                 .padding(.bottom, 12)
@@ -280,6 +289,7 @@ struct SleepTrackingView: View {
 
             Spacer()
                 .frame(height: 20)
+            }
         }
         .sheet(isPresented: $showingAddSleep) {
             AddSleepView(sleepManager: sleepManager)
@@ -293,6 +303,75 @@ struct SleepTrackingView: View {
                 AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
             }
         }
+    }
+}
+
+// MARK: - Empty State View
+// Following EmptyWeightStateView pattern for consistency
+// Industry Pattern: Material Design Empty States + Apple HIG Onboarding
+
+struct EmptySleepStateView: View {
+    @Binding var showingAddSleep: Bool
+    let healthKitManager: HealthKitManager
+    let sleepManager: SleepManager
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Image(systemName: "bed.double.fill")
+                .font(.system(size: 60))
+                .foregroundColor(.purple)
+
+            Text("No Sleep Data Yet")
+                .font(.title3)
+                .foregroundColor(.secondary)
+
+            Text("Log your first sleep entry or sync with Apple Health")
+                .font(.subheadline)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            VStack(spacing: 12) {
+                Button(action: { showingAddSleep = true }) {
+                    Label("Log Sleep Manually", systemImage: "plus.circle.fill")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.purple)
+                        .cornerRadius(8)
+                }
+                .accessibilityLabel("Log sleep entry manually")
+
+                Button(action: {
+                    // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
+                    // Request sleep permissions immediately when user wants to sync sleep data
+                    AppLogger.info("EmptyState: Sync button tapped - requesting sleep authorization", category: AppLogger.healthKit)
+                    HealthKitManager.shared.requestSleepAuthorization { success, error in
+                        if success {
+                            AppLogger.info("EmptyState: Sleep authorization granted - starting sync", category: AppLogger.healthKit)
+                            DispatchQueue.main.async {
+                                sleepManager.syncFromHealthKit()
+                            }
+                        } else {
+                            AppLogger.info("EmptyState: Sleep authorization denied", category: AppLogger.healthKit)
+                        }
+                    }
+                }) {
+                    Label("Sync with Apple Health", systemImage: "heart.fill")
+                        .font(.headline)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color("FLSuccess"))
+                        .cornerRadius(8)
+                }
+                .accessibilityLabel("Sync sleep data with Apple Health")
+            }
+            .padding(.horizontal, 40)
+        }
+        .frame(maxHeight: .infinity)
+        .padding(.top, 60)
     }
 }
 

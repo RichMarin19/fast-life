@@ -206,6 +206,7 @@ struct WeightHistoryListView: View {
                         } label: {
                             Label("Delete", systemImage: "trash")
                         }
+                        .accessibilityLabel("Delete this weight entry")
                     }
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
@@ -267,12 +268,16 @@ struct WeightHistoryRow: View {
             Button(role: .destructive, action: { showingDeleteAlert = true }) {
                 Label("Delete", systemImage: "trash")
             }
+            .accessibilityLabel("Delete weight entry")
         }
         .alert("Delete Weight Entry", isPresented: $showingDeleteAlert) {
             Button("Cancel", role: .cancel) { }
+            .accessibilityLabel("Cancel weight entry deletion")
+
             Button("Delete", role: .destructive) {
                 weightManager.deleteWeightEntry(entry)
             }
+            .accessibilityLabel("Confirm weight entry deletion")
         } message: {
             Text("Are you sure you want to delete this weight entry?")
         }
@@ -373,6 +378,7 @@ struct FirstTimeWeightSetupView: View {
                             .background(Color("FLPrimary"))
                             .cornerRadius(8)
                     }
+                    .accessibilityLabel("Save weight setup and continue")
                     .padding(.horizontal)
                     .padding(.top, 20)
 
@@ -915,6 +921,7 @@ struct WeightTrendsView: View {
                     Button("Done") {
                         dismiss()
                     }
+                    .accessibilityLabel("Close weight trends view")
                 }
             }
         }
@@ -1506,8 +1513,8 @@ struct ReflectionNudge: View {
             }
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Reflection prompt: \(reflectionPrompt)")
-        .accessibilityHint("Tap to respond")
+        .accessibilityLabel("Respond to reflection prompt")
+        .accessibilityHint("Double tap to respond to: \(reflectionPrompt)")
     }
 }
 

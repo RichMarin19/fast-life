@@ -347,6 +347,7 @@ struct EmptyWeightStateView: View {
                         .background(Color("FLPrimary"))
                         .cornerRadius(8)
                 }
+                .accessibilityLabel("Add weight entry manually")
 
                 Button(action: {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
@@ -371,6 +372,7 @@ struct EmptyWeightStateView: View {
                         .background(Color("FLSuccess"))
                         .cornerRadius(8)
                 }
+                .accessibilityLabel("Sync weight data with Apple Health")
             }
             .padding(.horizontal, 40)
         }

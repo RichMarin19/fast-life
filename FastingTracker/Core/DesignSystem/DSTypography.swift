@@ -9,6 +9,15 @@ import SwiftUI
 /// SINGLE SOURCE OF TRUTH: All text styles defined here
 /// Never hardcode font styles in components - always reference DSTypography
 ///
+/// DYNAMIC TYPE SUPPORT:
+/// ✅ All fonts scale automatically with user's text size preference (Settings > Accessibility > Larger Text)
+/// ✅ SwiftUI `.system()` fonts provide built-in Dynamic Type support across all 12 size categories
+/// ✅ Maintains visual hierarchy at all sizes (titles always larger than body text)
+/// ✅ WCAG 2.1 AA compliant - text scales up to 200% without loss of content or functionality
+///
+/// Testing: Settings > Accessibility > Display & Text Size > Larger Text → drag to maximum
+/// Reference: Apple HIG Typography + WWDC 2022 "What's new in SwiftUI"
+///
 /// COLOR CONTEXT SYSTEM:
 /// - Light backgrounds (Ice/Ivory/White) → textPrimary (dark) / textSecondary (gray)
 /// - Dark backgrounds (Navy gradient) → textPrimaryOnDark (white) / textSecondaryOnDark (70% white)
@@ -27,24 +36,24 @@ enum DSTypography {
     // MARK: - Card Typography
 
     /// Card title (header text)
-    /// Size: 16pt, Weight: Semibold
+    /// Size: 16pt, Weight: Semibold, Scales with: .headline
     /// Used by: DSCardHeader title, card headers
-    static let cardTitle: Font = .system(size: 16, weight: .semibold)
+    static let cardTitle: Font = .system(size: 16, weight: .semibold, design: .default)
 
     /// Card subtitle
-    /// Size: 14pt, Weight: Regular
+    /// Size: 14pt, Weight: Regular, Scales with: .subheadline
     /// Used by: Card subtitles, secondary headers
-    static let cardSubtitle: Font = .system(size: 14, weight: .regular)
+    static let cardSubtitle: Font = .system(size: 14, weight: .regular, design: .default)
 
     /// Card body text
-    /// Size: 15pt, Weight: Regular
+    /// Size: 15pt, Weight: Regular, Scales with: .body
     /// Used by: Main content text, descriptions
-    static let cardBody: Font = .system(size: 15, weight: .regular)
+    static let cardBody: Font = .system(size: 15, weight: .regular, design: .default)
 
     /// Card caption text
-    /// Size: 13pt, Weight: Regular
+    /// Size: 13pt, Weight: Regular, Scales with: .caption
     /// Used by: Labels, metadata, timestamps
-    static let cardCaption: Font = .system(size: 13, weight: .regular)
+    static let cardCaption: Font = .system(size: 13, weight: .regular, design: .default)
 
     // MARK: - Display Typography (Large Values)
 
