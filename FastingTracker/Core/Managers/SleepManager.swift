@@ -8,6 +8,10 @@ class SleepManager: ObservableObject {
     @Published var syncWithHealthKit: Bool = true
     @Published var syncMessage: String? = nil
 
+    // MARK: - Dependencies (Protocol-Based for Testability)
+    // Phase 2 of MVVM Strategy: Dependency Injection
+    private let healthKit: HealthKitManagerProtocol
+
     // MARK: - AppSettings Integration
     // Following Apple single source of truth pattern for global settings
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
@@ -23,7 +27,16 @@ class SleepManager: ObservableObject {
     // NOTE: nonisolated for thread-safe access from HealthKit background contexts
     private nonisolated(unsafe) var isSuppressingObserver: Bool = false
 
-    init() {
+    /// Production init (convenience) - backward compatible
+    convenience init() {
+        self.init(healthKit: HealthKitManager.shared)
+    }
+
+    /// Test init - protocol injection for mocking
+    /// Phase 2 of MVVM Strategy: Enable testability
+    init(healthKit: HealthKitManagerProtocol) {
+        self.healthKit = healthKit
+
         loadSleepEntries()
         loadSyncPreference()
 
@@ -33,7 +46,7 @@ class SleepManager: ObservableObject {
         // Reference: https://developer.apple.com/documentation/healthkit/setting_up_healthkit
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isSleepAuthorized() {
+        if syncWithHealthKit && healthKit.isSleepAuthorized() {
             setupHealthKitObserver()
         }
 
@@ -49,7 +62,7 @@ class SleepManager: ObservableObject {
     deinit {
         // Clean up observer when manager is deallocated
         if let query = observerQuery {
-            HealthKitManager.shared.stopObservingSleep(query: query)
+            healthKit.stopObservingSleep(query: query)
         }
 
         // Remove deletion notification observer (Apple standard cleanup)
@@ -107,7 +120,7 @@ class SleepManager: ObservableObject {
             isSuppressingObserver = true
 
             AppLogger.info("Syncing manual sleep entry to HealthKit", category: AppLogger.sleep)
-            HealthKitManager.shared.saveSleep(
+            healthKit.saveSleep(
                 bedTime: entry.bedTime,
                 wakeTime: entry.wakeTime,
                 completion: { [weak self] success, error in
@@ -227,7 +240,7 @@ class SleepManager: ObservableObject {
             isSuppressingObserver = true
 
             AppLogger.info("Attempting HealthKit deletion with observer suppression", category: AppLogger.sleep)
-            HealthKitManager.shared.deleteSleep(
+            healthKit.deleteSleep(
                 bedTime: entry.bedTime,
                 wakeTime: entry.wakeTime,
                 completion: { [weak self] success, error in
@@ -265,7 +278,7 @@ class SleepManager: ObservableObject {
             return // Cannot sync without valid start date
         }
 
-        HealthKitManager.shared.fetchSleepData(startDate: start, resetAnchor: false) { [weak self] healthKitEntries in
+        healthKit.fetchSleepData(startDate: start, resetAnchor: false) { [weak self] healthKitEntries in
             guard let self = self else { return }
 
             AppLogger.info("Fetched \(healthKitEntries.count) sleep entries from HealthKit", category: AppLogger.sleep)
@@ -317,7 +330,7 @@ class SleepManager: ObservableObject {
 
         AppLogger.info("Starting manual sleep sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.sleep)
 
-        HealthKitManager.shared.fetchSleepData(startDate: startDate, resetAnchor: true) { [weak self] healthKitEntries in
+        healthKit.fetchSleepData(startDate: startDate, resetAnchor: true) { [weak self] healthKitEntries in
             guard let self = self else {
                 DispatchQueue.main.async {
                     completion(0, NSError(domain: "SleepManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "SleepManager instance deallocated"]))
@@ -396,12 +409,12 @@ class SleepManager: ObservableObject {
             // BLOCKER 5 FIX: Request SLEEP authorization only (not all permissions)
             // Per Apple best practices: Request permissions only when needed, per domain
             // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-            let isAuthorized = HealthKitManager.shared.isSleepAuthorized()
+            let isAuthorized = healthKit.isSleepAuthorized()
             AppLogger.info("Sleep authorization status: \(isAuthorized ? "granted" : "denied")", category: AppLogger.sleep)
 
             if !isAuthorized {
                 AppLogger.info("Requesting sleep authorization", category: AppLogger.sleep)
-                HealthKitManager.shared.requestSleepAuthorization { success, error in
+                healthKit.requestSleepAuthorization { success, error in
                     if success {
                         AppLogger.info("Sleep authorization granted, syncing from HealthKit", category: AppLogger.sleep)
                         self.syncFromHealthKit()
@@ -419,7 +432,7 @@ class SleepManager: ObservableObject {
             AppLogger.info("Sleep sync disabled, stopping HealthKit observer", category: AppLogger.sleep)
             // Stop observing when sync is disabled
             if let query = observerQuery {
-                HealthKitManager.shared.stopObservingSleep(query: query)
+                healthKit.stopObservingSleep(query: query)
                 observerQuery = nil
             }
         }
@@ -429,11 +442,11 @@ class SleepManager: ObservableObject {
 
     private func setupHealthKitObserver() {
         // Only setup observer if sync is enabled and authorized (check sleep-specific authorization)
-        guard syncWithHealthKit && HealthKitManager.shared.isSleepAuthorized() else { return }
+        guard syncWithHealthKit && healthKit.isSleepAuthorized() else { return }
 
         // Remove existing observer if any
         if let existingQuery = observerQuery {
-            HealthKitManager.shared.stopObservingSleep(query: existingQuery)
+            healthKit.stopObservingSleep(query: existingQuery)
         }
 
         // Create observer query for sleep data
@@ -466,7 +479,7 @@ class SleepManager: ObservableObject {
         }
 
         observerQuery = query
-        HealthKitManager.shared.startObservingSleep(query: query)
+        healthKit.startObservingSleep(query: query)
     }
 
     // MARK: - Statistics

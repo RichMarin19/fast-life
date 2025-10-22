@@ -5,6 +5,10 @@ import Combine
 class MoodManager: ObservableObject {
     @Published var moodEntries: [MoodEntry] = []
 
+    // MARK: - Dependencies (Protocol-Based for Testability)
+    // Phase 2 of MVVM Strategy: Dependency Injection
+    private let healthKit: HealthKitManagerProtocol
+
     private let userDefaults = UserDefaults.standard
     private let moodEntriesKey = "moodEntries"
 
@@ -20,12 +24,21 @@ class MoodManager: ObservableObject {
     /// Observer query for automatic HealthKit sync
     private var observerQuery: Any? // HKObserverQuery type-erased
 
-    init() {
+    /// Production init (convenience) - backward compatible
+    convenience init() {
+        self.init(healthKit: HealthKitManager.shared)
+    }
+
+    /// Test init - protocol injection for mocking
+    /// Phase 2 of MVVM Strategy: Enable testability
+    init(healthKit: HealthKitManagerProtocol) {
+        self.healthKit = healthKit
+
         loadMoodEntries()
         loadSyncPreference()
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isMindfulnessAuthorized() {
+        if syncWithHealthKit && healthKit.isMindfulnessAuthorized() {
             startObservingHealthKit()
         }
     }
@@ -72,7 +85,7 @@ class MoodManager: ObservableObject {
             // Observer suppression prevents infinite sync loops
             isSuppressingObserver = true
 
-            HealthKitManager.shared.saveMoodAsMindfulness(
+            healthKit.saveMoodAsMindfulness(
                 moodLevel: clampedMood,
                 energyLevel: clampedEnergy,
                 notes: notes,
@@ -240,7 +253,7 @@ class MoodManager: ObservableObject {
             return
         }
 
-        guard HealthKitManager.shared.isMindfulnessAuthorized() else {
+        guard healthKit.isMindfulnessAuthorized() else {
             AppLogger.warning("HealthKit not authorized for mindfulness/mood sync", category: AppLogger.mood)
             DispatchQueue.main.async {
                 completion?(0, NSError(domain: "MoodManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit not authorized"]))
@@ -262,7 +275,7 @@ class MoodManager: ObservableObject {
 
         AppLogger.info("Starting mood sync from HealthKit Mindfulness sessions", category: AppLogger.mood)
 
-        HealthKitManager.shared.fetchMoodFromMindfulness(startDate: fromDate) { [weak self] moodEntries in
+        healthKit.fetchMoodFromMindfulness(startDate: fromDate) { [weak self] moodEntries in
             guard let self = self else {
                 DispatchQueue.main.async {
                     completion?(0, NSError(domain: "MoodManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "MoodManager deallocated"]))
@@ -319,7 +332,7 @@ class MoodManager: ObservableObject {
 
         AppLogger.info("Starting historical mood sync from HealthKit Mindfulness from \(startDate)", category: AppLogger.mood)
 
-        HealthKitManager.shared.fetchMoodFromMindfulness(startDate: startDate) { [weak self] moodEntries in
+        healthKit.fetchMoodFromMindfulness(startDate: startDate) { [weak self] moodEntries in
             guard let self = self else {
                 DispatchQueue.main.async {
                     completion(0, NSError(domain: "MoodManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "MoodManager instance deallocated"]))
@@ -376,7 +389,7 @@ class MoodManager: ObservableObject {
 
         AppLogger.info("Starting manual mood sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.mood)
 
-        HealthKitManager.shared.fetchMoodFromMindfulness(startDate: startDate) { [weak self] moodEntries in
+        healthKit.fetchMoodFromMindfulness(startDate: startDate) { [weak self] moodEntries in
             guard let self = self else {
                 DispatchQueue.main.async {
                     completion(0, NSError(domain: "MoodManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "MoodManager instance deallocated"]))
@@ -446,13 +459,13 @@ class MoodManager: ObservableObject {
 
     /// Start observing HealthKit for automatic mood sync (Universal Pattern)
     func startObservingHealthKit() {
-        guard syncWithHealthKit && HealthKitManager.shared.isMindfulnessAuthorized() else {
+        guard syncWithHealthKit && healthKit.isMindfulnessAuthorized() else {
             AppLogger.info("Mood HealthKit observer not started - sync disabled or not authorized", category: AppLogger.mood)
             return
         }
 
         // Start observing Mindfulness data changes for mood sync
-        HealthKitManager.shared.startObservingMindfulness { [weak self] in
+        healthKit.startObservingMindfulness { [weak self] in
             guard let self = self else { return }
 
             // Industry Standard: All @Published property updates must be on main thread
@@ -473,7 +486,7 @@ class MoodManager: ObservableObject {
 
     /// Stop observing HealthKit (Universal Pattern)
     func stopObservingHealthKit() {
-        HealthKitManager.shared.stopObservingMindfulness()
+        healthKit.stopObservingMindfulness()
         observerQuery = nil
         AppLogger.info("Mood HealthKit observer stopped", category: AppLogger.mood)
     }
@@ -487,8 +500,8 @@ class MoodManager: ObservableObject {
 
         if enabled {
             // Request Mindfulness authorization for mood sync
-            if !HealthKitManager.shared.isMindfulnessAuthorized() {
-                HealthKitManager.shared.requestMindfulnessAuthorization { [weak self] success, error in
+            if !healthKit.isMindfulnessAuthorized() {
+                healthKit.requestMindfulnessAuthorization { [weak self] success, error in
                     DispatchQueue.main.async {
                         if success {
                             AppLogger.info("Mindfulness authorization granted for mood sync, syncing from HealthKit", category: AppLogger.mood)

@@ -7,7 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		64CC58D93BD04E0D8FCC2158 /* WeightControlCenterViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1055DD385A43DF9F1B794F /* WeightControlCenterViewModelTests.swift */; };
+
+		F4F93B43921641AA962215FC /* MockWeightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDE2EAF44FE473AB92A972C /* MockWeightManager.swift */; };
+		0FDE1CBC1535492AA96737B0 /* WeightChartViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9935A2172B8845D3B22FA03A /* WeightChartViewModelTests.swift */; };
+
 		A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */; };
+		DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */; };
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
 		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* SleepEntry.swift */; };
@@ -108,6 +114,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		9C1055DD385A43DF9F1B794F /* WeightControlCenterViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightControlCenterViewModelTests.swift; sourceTree = "<group>"; };
+
+		8BDE2EAF44FE473AB92A972C /* MockWeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWeightManager.swift; sourceTree = "<group>"; };
+		9935A2172B8845D3B22FA03A /* WeightChartViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartViewModelTests.swift; sourceTree = "<group>"; };
+
 		38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationIdentifierBuilder.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
@@ -130,6 +141,7 @@
 		5289E0712E8D5F6500254E70 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
 		5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
 		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
+		00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
 		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackingView.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
@@ -305,6 +317,7 @@
 				5289E0712E8D5F6500254E70 /* WeightEntry.swift */,
 				5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */,
 				7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */,
+				00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */,
 				5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */,
 				5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */,
 				5289E06C2E8D0DAD00254E70 /* UI/InsightsView.swift */,
@@ -432,6 +445,7 @@
 				52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
 				A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */,
+				DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */,
 				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
 				52B2CFC32E94EE630061FCFF /* AppLogger.swift in Sources */,
 				5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */,

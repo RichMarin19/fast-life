@@ -67,6 +67,10 @@ class HydrationManager: ObservableObject {
     @Published var currentStreak: Int = 0
     @Published var longestStreak: Int = 0
 
+    // MARK: - Dependencies (Protocol-Based for Testability)
+    // Phase 2 of MVVM Strategy: Dependency Injection
+    private let healthKit: HealthKitManagerProtocol
+
     // MARK: - Unit Preference Integration
     // Following Apple single source of truth pattern for global settings
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
@@ -83,7 +87,18 @@ class HydrationManager: ObservableObject {
     private let syncPreferenceKey = "hydrationSyncWithHealthKit"
     private let hasCompletedInitialImportKey = "hydrationHasCompletedInitialImport"
 
-    init() {
+    // MARK: - Initialization
+
+    /// Production init (convenience) - backward compatible
+    convenience init() {
+        self.init(healthKit: HealthKitManager.shared)
+    }
+
+    /// Test init - protocol injection for mocking
+    /// Phase 2 of MVVM Strategy: Enable testability
+    init(healthKit: HealthKitManagerProtocol) {
+        self.healthKit = healthKit
+
         loadDrinkEntries()
         loadDailyGoal()
         loadStreak()
@@ -94,7 +109,7 @@ class HydrationManager: ObservableObject {
         calculateStreakFromHistory()
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isHydrationAuthorized() {
+        if syncWithHealthKit && healthKit.isHydrationAuthorized() {
             startObservingHealthKit()
         }
     }
@@ -120,9 +135,8 @@ class HydrationManager: ObservableObject {
             // Observer suppression prevents infinite sync loops
             isSuppressingObserver = true
 
-            let healthKitManager = HealthKitManager.shared
-            if healthKitManager.isHydrationAuthorized() {
-                healthKitManager.saveWater(amount: entry.amount, date: entry.date) { [weak self] success, error in
+            if healthKit.isHydrationAuthorized() {
+                healthKit.saveWater(amount: entry.amount, date: entry.date) { [weak self] success, error in
                     // Re-enable observer after HealthKit write completes
                     DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                         self?.isSuppressingObserver = false
@@ -428,9 +442,7 @@ class HydrationManager: ObservableObject {
     // MARK: - HealthKit Sync
 
     func syncToHealthKit() {
-        let healthKitManager = HealthKitManager.shared
-
-        guard healthKitManager.isWaterAuthorized() else {
+        guard healthKit.isWaterAuthorized() else {
             AppLogger.warning("HealthKit not authorized for water, cannot sync hydration", category: AppLogger.hydration)
             return
         }
@@ -454,7 +466,7 @@ class HydrationManager: ObservableObject {
 
         for entry in newEntries {
             dispatchGroup.enter()
-            healthKitManager.saveWater(amount: entry.amount, date: entry.date) { success, error in
+            healthKit.saveWater(amount: entry.amount, date: entry.date) { success, error in
                 if let error = error {
                     AppLogger.error("Failed to export drink to HealthKit", category: AppLogger.hydration, error: error)
                 } else if success {
@@ -507,7 +519,7 @@ class HydrationManager: ObservableObject {
             return
         }
 
-        guard HealthKitManager.shared.isHydrationAuthorized() else {
+        guard healthKit.isHydrationAuthorized() else {
             AppLogger.warning("HealthKit not authorized for hydration sync", category: AppLogger.hydration)
             DispatchQueue.main.async {
                 completion?(0, NSError(domain: "HydrationManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit not authorized"]))
@@ -529,7 +541,7 @@ class HydrationManager: ObservableObject {
 
         AppLogger.info("Starting hydration sync from HealthKit", category: AppLogger.hydration)
 
-        HealthKitManager.shared.fetchWaterData(startDate: fromDate) { [weak self] waterData in
+        healthKit.fetchWaterData(startDate: fromDate) { [weak self] waterData in
             guard let self = self else {
                 completion?(0, NSError(domain: "HydrationManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "HydrationManager deallocated"]))
                 return
@@ -700,7 +712,7 @@ class HydrationManager: ObservableObject {
         }
 
         // Start observing hydration data changes
-        HealthKitManager.shared.startObservingHydration { [weak self] in
+        healthKit.startObservingHydration { [weak self] in
             guard let self = self else { return }
 
             // Industry Standard: All @Published property updates must be on main thread
@@ -723,7 +735,7 @@ class HydrationManager: ObservableObject {
     func stopObservingHealthKit() {
         // Stop the observer query if it exists
         if let query = observerQuery as? HKObserverQuery {
-            HealthKitManager.shared.stopObservingHydration(query: query)
+            healthKit.stopObservingHydration(query: query)
         }
         observerQuery = nil
         AppLogger.info("Hydration HealthKit observer stopped", category: AppLogger.hydration)
@@ -738,8 +750,8 @@ class HydrationManager: ObservableObject {
 
         if enabled {
             // Request authorization and start observing if not already authorized
-            if !HealthKitManager.shared.isHydrationAuthorized() {
-                HealthKitManager.shared.requestHydrationAuthorization { [weak self] success, error in
+            if !healthKit.isHydrationAuthorized() {
+                healthKit.requestHydrationAuthorization { [weak self] success, error in
                     DispatchQueue.main.async {
                         if success {
                             AppLogger.info("Hydration authorization granted, syncing from HealthKit", category: AppLogger.hydration)

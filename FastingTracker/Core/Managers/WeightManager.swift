@@ -286,6 +286,12 @@ class WeightManager: ObservableObject {
     @Published var weightEntries: [WeightEntry] = []
     @Published var syncWithHealthKit: Bool = true
 
+    // MARK: - Dependencies (Protocol-Based for Testability)
+    // Phase 2 of MVVM Strategy: Dependency Injection
+    // Following Apple's protocol-oriented programming patterns
+    private let healthKit: HealthKitManagerProtocol
+    private let dataStore: DataStore
+
     // MARK: - Unit Preference Integration
     // Following Apple single source of truth pattern for global settings
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
@@ -301,8 +307,23 @@ class WeightManager: ObservableObject {
     // NOTE: nonisolated for thread-safe access from HealthKit background contexts
     private nonisolated(unsafe) var isSuppressingObserver: Bool = false
 
+    // MARK: - Initialization
 
-    init() {
+    /// Production init (convenience) - backward compatible
+    /// Uses singleton instances for existing code
+    convenience init() {
+        self.init(
+            healthKit: HealthKitManager.shared,
+            dataStore: AppDataStore.shared
+        )
+    }
+
+    /// Test init - protocol injection for mocking
+    /// Phase 2 of MVVM Strategy: Enable testability
+    init(healthKit: HealthKitManagerProtocol, dataStore: DataStore) {
+        self.healthKit = healthKit
+        self.dataStore = dataStore
+
         loadWeightEntries()
         loadSyncPreference()
 
@@ -312,7 +333,7 @@ class WeightManager: ObservableObject {
         // Reference: https://developer.apple.com/documentation/healthkit/setting_up_healthkit
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isWeightAuthorized() {
+        if syncWithHealthKit && healthKit.isWeightAuthorized() {
             setupHealthKitObserver()
         }
 
@@ -328,7 +349,7 @@ class WeightManager: ObservableObject {
     deinit {
         // Clean up observer when manager is deallocated
         if let query = observerQuery {
-            HealthKitManager.shared.stopObserving(query: query)
+            healthKit.stopObserving(query: query)
         }
 
         // Remove deletion notification observer (Apple standard cleanup)
@@ -355,7 +376,7 @@ class WeightManager: ObservableObject {
             // Following MyFitnessPal pattern: Manual → HealthKit should not trigger HealthKit → Manual
             isSuppressingObserver = true
 
-            HealthKitManager.shared.saveWeight(weight: entry.weight, bmi: entry.bmi, bodyFat: entry.bodyFat, date: entry.date) { [weak self] success, error in
+            healthKit.saveWeight(weight: entry.weight, bmi: entry.bmi, bodyFat: entry.bodyFat, date: entry.date) { [weak self] success, error in
                 // Re-enable observer after a brief delay to ensure HealthKit write completes
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     self?.isSuppressingObserver = false
@@ -388,7 +409,7 @@ class WeightManager: ObservableObject {
 
             if let healthKitUUID = entry.healthKitUUID {
                 // PRECISE DELETION: Use UUID for exact sample targeting (Apple best practice)
-                HealthKitManager.shared.deleteWeightByUUID(healthKitUUID) { success, error in
+                healthKit.deleteWeightByUUID(healthKitUUID) { success, error in
                     if !success {
                         AppLogger.error("Failed to delete HealthKit sample by UUID during bidirectional sync", category: AppLogger.weightTracking, error: error)
                         // Record precise deletion failure for production debugging
@@ -410,10 +431,10 @@ class WeightManager: ObservableObject {
                 AppLogger.info("No stored UUID - querying HealthKit to find sample for precise deletion", category: AppLogger.weightTracking)
 
                 // Query HealthKit to find the exact sample by date/weight match
-                HealthKitManager.shared.findWeightSampleUUID(date: entry.date, weight: entry.weight) { uuid in
+                healthKit.findWeightSampleUUID(date: entry.date, weight: entry.weight) { [weak self] uuid in
                     if let foundUUID = uuid {
                         AppLogger.info("Found HealthKit UUID via query - proceeding with precise deletion", category: AppLogger.weightTracking)
-                        HealthKitManager.shared.deleteWeightByUUID(foundUUID) { success, error in
+                        self?.healthKit.deleteWeightByUUID(foundUUID) { success, error in
                             if !success {
                                 AppLogger.error("Failed to delete HealthKit sample by queried UUID", category: AppLogger.weightTracking, error: error)
                             } else {
@@ -517,7 +538,7 @@ class WeightManager: ObservableObject {
         // Industry Standard: Use same wide date range as manual sync to ensure identical results
         let start = startDate ?? Calendar.current.date(byAdding: .year, value: -10, to: Date())!
 
-        HealthKitManager.shared.fetchWeightData(startDate: start, resetAnchor: false) { [weak self] healthKitEntries in
+        healthKit.fetchWeightData(startDate: start, endDate: Date(), resetAnchor: false) { [weak self] healthKitEntries in
             guard let self = self else {
                 completion?(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
                 return
@@ -569,7 +590,7 @@ class WeightManager: ObservableObject {
 
         AppLogger.info("Starting historical weight sync from \(startDate)", category: AppLogger.weightTracking)
 
-        HealthKitManager.shared.fetchWeightDataHistorical(startDate: startDate) { [weak self] healthKitEntries in
+        healthKit.fetchWeightDataHistorical(startDate: startDate) { [weak self] healthKitEntries in
             guard let self = self else {
                 completion(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
                 return
@@ -621,7 +642,7 @@ class WeightManager: ObservableObject {
 
         AppLogger.info("Starting manual sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.weightTracking)
 
-        HealthKitManager.shared.fetchWeightData(startDate: startDate, resetAnchor: true) { [weak self] healthKitEntries in
+        healthKit.fetchWeightData(startDate: startDate, endDate: Date(), resetAnchor: true) { [weak self] healthKitEntries in
             guard let self = self else {
                 completion(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
                 return
@@ -718,12 +739,12 @@ class WeightManager: ObservableObject {
             // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
             // Per Apple best practices: Request permissions only when needed, per domain
             // Reference: https://developer.apple.com/documentation/healthkit/protecting_user_privacy
-            let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
+            let isAuthorized = healthKit.isWeightAuthorized()
             AppLogger.info("Weight-specific HealthKit authorization status: \(isAuthorized ? "granted" : "denied")", category: AppLogger.weightTracking)
 
             if !isAuthorized {
                 AppLogger.info("Requesting weight-specific HealthKit authorization", category: AppLogger.weightTracking)
-                HealthKitManager.shared.requestWeightAuthorization { success, error in
+                healthKit.requestWeightAuthorization { success, error in
                     if success {
                         AppLogger.info("Weight-specific HealthKit authorization granted, setting up observer", category: AppLogger.weightTracking)
                         // INDUSTRY STANDARD FIX: Don't trigger sync from Model layer
@@ -751,7 +772,7 @@ class WeightManager: ObservableObject {
             AppLogger.info("Weight sync disabled, stopping HealthKit observer", category: AppLogger.weightTracking)
             // Stop observing when sync is disabled
             if let query = observerQuery {
-                HealthKitManager.shared.stopObserving(query: query)
+                healthKit.stopObserving(query: query)
                 observerQuery = nil
             }
         }
@@ -762,14 +783,14 @@ class WeightManager: ObservableObject {
     private func setupHealthKitObserver() {
         // Only setup observer if sync is enabled and specifically authorized for weight data
         // Following Apple HealthKit best practices: observers need specific data type authorization
-        guard syncWithHealthKit && HealthKitManager.shared.isWeightAuthorized() else {
+        guard syncWithHealthKit && healthKit.isWeightAuthorized() else {
             AppLogger.info("Weight observer not set up - sync disabled or not authorized for weight data", category: AppLogger.weightTracking)
             return
         }
 
         // Remove existing observer if any
         if let existingQuery = observerQuery {
-            HealthKitManager.shared.stopObserving(query: existingQuery)
+            healthKit.stopObserving(query: existingQuery)
         }
 
         // Create observer query for weight data
@@ -802,7 +823,7 @@ class WeightManager: ObservableObject {
         }
 
         observerQuery = query
-        HealthKitManager.shared.startObserving(query: query)
+        healthKit.startObserving(query: query)
         AppLogger.info("Weight HealthKit observer started successfully - automatic sync enabled", category: AppLogger.weightTracking)
     }
 

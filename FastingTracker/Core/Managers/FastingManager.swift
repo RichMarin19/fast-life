@@ -10,8 +10,12 @@ class FastingManager: ObservableObject {
     @Published var currentStreak: Int = 0
     @Published var longestStreak: Int = 0
 
+    // MARK: - Dependencies (Protocol-Based for Testability)
+    // Phase 2 of MVVM Strategy: Dependency Injection
+    private let healthKit: HealthKitManagerProtocol
+    private let dataStore: DataStore
+
     private var timer: AnyCancellable?
-    private let dataStore: DataStore = AppDataStore.shared
     private let currentSessionKey = "currentFastingSession"
     private let historyKey = "fastingHistory"
     private let goalKey = "fastingGoalHours"
@@ -35,7 +39,22 @@ class FastingManager: ObservableObject {
     // Reference: https://developer.apple.com/documentation/dispatch/dispatchqueue
     private let historyQueue = DispatchQueue(label: "com.fastlife.historyQueue", qos: .userInitiated)
 
-    init() {
+    // MARK: - Initialization
+
+    /// Production init (convenience) - backward compatible
+    convenience init() {
+        self.init(
+            healthKit: HealthKitManager.shared,
+            dataStore: AppDataStore.shared
+        )
+    }
+
+    /// Test init - protocol injection for mocking
+    /// Phase 2 of MVVM Strategy: Enable testability
+    init(healthKit: HealthKitManagerProtocol, dataStore: DataStore) {
+        self.healthKit = healthKit
+        self.dataStore = dataStore
+
         // CRITICAL: Only load data needed for Timer tab (first screen)
         // History loading deferred to loadHistoryAsync() to avoid blocking app launch
         // Per Apple: "Defer work that isn't critical to launch"
@@ -53,7 +72,7 @@ class FastingManager: ObservableObject {
         }
 
         // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && HealthKitManager.shared.isFastingAuthorized() {
+        if syncWithHealthKit && healthKit.isFastingAuthorized() {
             startObservingHealthKit()
         }
 
@@ -619,7 +638,7 @@ class FastingManager: ObservableObject {
             return
         }
 
-        guard HealthKitManager.shared.isFastingAuthorized() else {
+        guard healthKit.isFastingAuthorized() else {
             AppLogger.warning("HealthKit not authorized for fasting sync", category: AppLogger.fasting)
             DispatchQueue.main.async {
                 completion?(0, NSError(domain: "FastingManager", code: 1, userInfo: [NSLocalizedDescriptionKey: "HealthKit not authorized"]))
@@ -641,7 +660,7 @@ class FastingManager: ObservableObject {
 
         AppLogger.info("Starting fasting sync from HealthKit", category: AppLogger.fasting)
 
-        HealthKitManager.shared.fetchFastingSessions(startDate: fromDate) { [weak self] (fastingSessions: [FastingSession]) in
+        healthKit.fetchFastingSessions(startDate: fromDate) { [weak self] (fastingSessions: [FastingSession]) in
             guard let self = self else {
                 DispatchQueue.main.async {
                     completion?(0, NSError(domain: "FastingManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "FastingManager deallocated"]))
@@ -701,7 +720,7 @@ class FastingManager: ObservableObject {
 
         AppLogger.info("Starting historical fasting sync from HealthKit from \(startDate)", category: AppLogger.fasting)
 
-        HealthKitManager.shared.fetchFastingSessions(startDate: startDate) { [weak self] (fastingSessions: [FastingSession]) in
+        healthKit.fetchFastingSessions(startDate: startDate) { [weak self] (fastingSessions: [FastingSession]) in
             guard let self = self else {
                 DispatchQueue.main.async {
                     completion(0, NSError(domain: "FastingManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "FastingManager instance deallocated"]))
@@ -760,7 +779,7 @@ class FastingManager: ObservableObject {
 
         AppLogger.info("Starting manual fasting sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.fasting)
 
-        HealthKitManager.shared.fetchFastingSessions(startDate: startDate) { [weak self] (fastingSessions: [FastingSession]) in
+        healthKit.fetchFastingSessions(startDate: startDate) { [weak self] (fastingSessions: [FastingSession]) in
             guard let self = self else {
                 DispatchQueue.main.async {
                     completion(0, NSError(domain: "FastingManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "FastingManager instance deallocated"]))
@@ -838,7 +857,7 @@ class FastingManager: ObservableObject {
         }
 
         // Start observing fasting data changes
-        HealthKitManager.shared.startObservingFasting { [weak self] in
+        healthKit.startObservingFasting { [weak self] in
             guard let self = self else { return }
 
             // Industry Standard: All @Published property updates must be on main thread
@@ -859,7 +878,7 @@ class FastingManager: ObservableObject {
 
     /// Stop observing HealthKit (Universal Pattern)
     func stopObservingHealthKit() {
-        HealthKitManager.shared.stopObservingFasting()
+        healthKit.stopObservingFasting()
         observerQuery = nil
         AppLogger.info("Fasting HealthKit observer stopped", category: AppLogger.fasting)
     }
@@ -873,8 +892,8 @@ class FastingManager: ObservableObject {
 
         if enabled {
             // Request fasting authorization
-            if !HealthKitManager.shared.isFastingAuthorized() {
-                HealthKitManager.shared.requestFastingAuthorization { [weak self] success, error in
+            if !healthKit.isFastingAuthorized() {
+                healthKit.requestFastingAuthorization { [weak self] success, error in
                     DispatchQueue.main.async {
                         if success {
                             AppLogger.info("Fasting authorization granted, syncing from HealthKit", category: AppLogger.fasting)
@@ -913,14 +932,14 @@ class FastingManager: ObservableObject {
 
     /// Sync active session to HealthKit when starting/stopping fasting
     private func syncActiveSessionToHealthKit() {
-        guard syncWithHealthKit && HealthKitManager.shared.isFastingAuthorized() else { return }
+        guard syncWithHealthKit && healthKit.isFastingAuthorized() else { return }
 
         // Observer suppression prevents infinite sync loops
         isSuppressingObserver = true
 
         if let session = currentSession {
             // Save current session to HealthKit
-            HealthKitManager.shared.saveFastingSession(session) { [weak self] success, error in
+            healthKit.saveFastingSession(session) { [weak self] success, error in
                 // Re-enable observer after HealthKit write completes
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     self?.isSuppressingObserver = false
