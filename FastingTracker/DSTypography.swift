@@ -144,6 +144,48 @@ enum DSTypography {
     /// Used by: Timestamps, metadata in lists
     static let listCaption: Font = .system(size: 12, weight: .regular)
 
+    // MARK: - Additional Typography (Phase v1.5)
+
+    /// Screen title (large)
+    /// Size: 34pt, Weight: Bold
+    /// Used by: Control Center title, main screen headers
+    static let screenTitle: Font = .system(size: 34, weight: .bold)
+
+    /// Hero display (40pt)
+    /// Size: 40pt, Weight: Semibold
+    /// Used by: Large emphasis numbers, trend card values
+    static let displayHero: Font = .system(size: 40, weight: .semibold)
+
+    /// Icon button text
+    /// Size: 14pt, Weight: Semibold
+    /// Used by: Icon button labels, small action buttons
+    static let iconButton: Font = .system(size: 14, weight: .semibold)
+
+    /// Pill label (rounded)
+    /// Size: 11pt, Weight: Bold, Design: Rounded
+    /// Used by: Badge labels, status pills
+    static let pillLabel: Font = .system(size: 11, weight: .bold, design: .rounded)
+
+    /// Period label (rounded)
+    /// Size: 12pt, Weight: Semibold, Design: Rounded
+    /// Used by: Period markers, time labels
+    static let periodLabel: Font = .system(size: 12, weight: .semibold, design: .rounded)
+
+    /// Secondary label (medium weight)
+    /// Size: 13pt, Weight: Medium
+    /// Used by: Secondary text with emphasis
+    static let labelSecondary: Font = .system(size: 13, weight: .medium)
+
+    /// Subtitle emphasized
+    /// Size: 17pt, Weight: Regular
+    /// Used by: Emphasized subtitle text
+    static let subtitleEmphasized: Font = .system(size: 17, weight: .regular)
+
+    /// Subtitle large
+    /// Size: 18pt, Weight: Medium
+    /// Used by: Large subtitle text with emphasis
+    static let subtitleLarge: Font = .system(size: 18, weight: .medium)
+
     // MARK: - Helper Methods
 
     /// Get monospacedDigit variant for numbers (prevents width jumping)

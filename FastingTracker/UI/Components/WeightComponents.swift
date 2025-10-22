@@ -946,7 +946,7 @@ struct LightCard<Content: View>: View {
                 // CRITICAL: Using .overlay() instead of ZStack allows drag gestures to pass through content
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
-                        .font(.system(size: 14, weight: .semibold))  // Matching DSBanner font size
+                        .font(DSTypography.iconButton)  // Matching DSBanner font size
                         .foregroundColor(Theme.ColorToken.textSecondary)
                         .frame(width: 44, height: 44)  // Apple HIG tap target
                 }
@@ -1262,7 +1262,7 @@ struct CircularTrendRingCard: View {
                 // TAG + PERIOD LABEL
                 HStack(spacing: 8) {
                     Text(tag)
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(DSTypography.pillLabel)
                         .foregroundColor(Theme.ColorToken.textPrimary)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
@@ -1272,13 +1272,13 @@ struct CircularTrendRingCard: View {
                         )
 
                     Text(periodLabel)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(DSTypography.labelSecondary)
                         .foregroundColor(Theme.ColorToken.textSecondary)
                 }
 
                 // MICROCOPY (motivational message)
                 Text(microcopy)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(DSTypography.iconButton)
                     .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
@@ -1345,11 +1345,11 @@ struct TrendCardFull: View {
                 // Primary number + unit
                 HStack(alignment: .lastTextBaseline, spacing: 8) {
                     Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
-                        .font(.system(size: 40, weight: .semibold))
+                        .font(DSTypography.displayHero)
                         .foregroundColor(Theme.ColorToken.textPrimary)
 
                     Text("lbs")
-                        .font(.system(size: 16, weight: .regular))
+                        .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textSecondary)
 
                     Spacer()
@@ -1358,7 +1358,7 @@ struct TrendCardFull: View {
                 // Tag + Period label
                 HStack(spacing: 8) {
                     Text(tag)
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(DSTypography.statLabel)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(accent.opacity(0.18))
@@ -1366,7 +1366,7 @@ struct TrendCardFull: View {
                         .foregroundColor(accent)
 
                     Text(periodLabel)
-                        .font(.system(size: 12, weight: .regular))
+                        .font(DSTypography.listCaption)
                         .foregroundColor(Theme.ColorToken.textSecondary)
 
                     Spacer()
@@ -1374,7 +1374,7 @@ struct TrendCardFull: View {
                     // Chevron disclosure
                     Image(systemName: "chevron.right")
                         .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
-                        .font(.system(size: 12))
+                        .font(DSTypography.listCaption)
                 }
             }
         }
@@ -1416,7 +1416,7 @@ struct RecapRow: View {
             HStack(spacing: 12) {
                 // Net delta
                 Label(netText, systemImage: "chart.line.uptrend.xyaxis")
-                    .font(.system(size: 14, weight: .regular))
+                    .font(DSTypography.cardSubtitle)
                     .foregroundColor(Theme.ColorToken.textPrimary)
 
                 Spacer()
@@ -1424,7 +1424,7 @@ struct RecapRow: View {
                 // Best streak (v1.2b: with badge dot when new best achieved)
                 ZStack(alignment: .topTrailing) {
                     Label("\(bestStreak)‑day streak", systemImage: "flame.fill")
-                        .font(.system(size: 14, weight: .regular))
+                        .font(DSTypography.cardSubtitle)
                         .foregroundColor(Theme.ColorToken.textPrimary)
 
                     // NEW BEST BADGE (v1.2b) - Small dot overlay when new best streak achieved
@@ -1444,7 +1444,7 @@ struct RecapRow: View {
 
                 // Total entries
                 Label("\(entries) entries", systemImage: "square.and.pencil")
-                    .font(.system(size: 14, weight: .regular))
+                    .font(DSTypography.cardSubtitle)
                     .foregroundColor(Theme.ColorToken.textPrimary)
             }
         }
@@ -1489,7 +1489,7 @@ struct ReflectionNudge: View {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkle")
                         .foregroundColor(Theme.ColorToken.accentGold)
-                        .font(.system(size: 16))
+                        .font(DSTypography.listTitle)
 
                     Text(reflectionPrompt)
                         .font(DSTypography.cardBody)
@@ -1501,7 +1501,7 @@ struct ReflectionNudge: View {
                     // Chevron disclosure (indicates tappable)
                     Image(systemName: "chevron.right")
                         .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.6))
-                        .font(.system(size: 12))
+                        .font(DSTypography.listCaption)
                 }
             }
         }
@@ -1524,7 +1524,7 @@ struct DidYouKnowBanner: View {
             HStack(spacing: 12) {
                 Image(systemName: "lightbulb")
                     .foregroundColor(Theme.ColorToken.accentInfo)
-                    .font(.system(size: 16))
+                    .font(DSTypography.listTitle)
 
                 Text(text)
                     .font(DSTypography.cardBody)
@@ -1547,13 +1547,13 @@ struct TrendCard: View {
             if let trend = trend {
                 // Top: Celebration emoji (EXCITING!)
                 Text(trendEmoji(for: trend))
-                    .font(.system(size: 40))
+                    .font(DSTypography.displayHero)
                     .padding(.top, 8)
 
                 // Middle: HUGE number + lbs (IMPACTFUL!)
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
                     Text(String(format: "%.1f", trend.amount))
-                        .font(.system(size: 60, weight: .heavy, design: .rounded))
+                        .font(DSTypography.displayXXL)
                         .foregroundColor(.white)
                     Text("lbs")
                         .font(DSTypography.statValueSmall)
@@ -1562,7 +1562,7 @@ struct TrendCard: View {
 
                 // Status pill (like weight lost pill!)
                 Text(trend.isLoss ? "LOST" : "GAINED")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(DSTypography.pillLabel)
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
@@ -1573,21 +1573,21 @@ struct TrendCard: View {
 
                 // Period label (clear but subtle)
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(DSTypography.periodLabel)
                     .foregroundColor(.white.opacity(0.8))
                     .padding(.bottom, 4)
             } else {
                 // No data state
                 Text("📊")
-                    .font(.system(size: 40))
+                    .font(DSTypography.displayHero)
                     .padding(.top, 8)
 
                 Text("--")
-                    .font(.system(size: 60, weight: .heavy, design: .rounded))
+                    .font(DSTypography.displayXXL)
                     .foregroundColor(.white.opacity(0.6))
 
                 Text("NO DATA")
-                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .font(DSTypography.pillLabel)
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
@@ -1597,7 +1597,7 @@ struct TrendCard: View {
                     )
 
                 Text(title)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(DSTypography.periodLabel)
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.bottom, 4)
             }

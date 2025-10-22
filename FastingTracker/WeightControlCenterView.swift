@@ -339,7 +339,7 @@ struct WeightControlCenterView: View {
                     // UX/UI Fix #3: Match Weight Tracker title size (34pt)
                     // Issue #1: Center title + apply Weight Tracker cyan gradient styling
                     Text("Control Center")
-                        .font(.system(size: 34, weight: .bold))
+                        .font(DSTypography.screenTitle)
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
@@ -359,11 +359,11 @@ struct WeightControlCenterView: View {
                     // UX/UI Fix #4: Increased subtitle font sizes for accessibility
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Customize your Weight Tracker experience.")
-                            .font(.system(size: 18, weight: .medium))  // Increased from 17
+                            .font(DSTypography.subtitleLarge)  // Increased from 17
                             .foregroundColor(Theme.ColorToken.textSecondary)
 
                         Text("Drag cards to reorder.")
-                            .font(.system(size: 17, weight: .regular))  // Increased from 16
+                            .font(DSTypography.subtitleEmphasized)  // Increased from 16
                             .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -498,11 +498,11 @@ struct WeightControlCenterView: View {
                 // Card icon
                 Image(systemName: cardType.icon)
                     .foregroundColor(Theme.ColorToken.accentPrimary)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(DSTypography.displayS)
 
                 // Card title
                 Text(cardType.title)
-                    .font(.system(size: 20, weight: .bold))
+                    .font(DSTypography.displaySRounded)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
 
                 Spacer()
@@ -526,7 +526,7 @@ struct WeightControlCenterView: View {
                             showingRestoreAllAlert = true
                         }) {
                             Text("\(totalOptOutCount)")
-                                .font(.system(size: 14, weight: .bold))
+                                .font(DSTypography.iconButton)
                                 .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                                 .frame(minWidth: 24, minHeight: 24)
                                 .background(
@@ -558,7 +558,7 @@ struct WeightControlCenterView: View {
                     }
                 }) {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(DSTypography.cardTitle)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
                 .buttonStyle(.plain)
@@ -606,7 +606,7 @@ struct WeightControlCenterView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Benefit micro-explainer (Sprint 1)
             Text("Tracking your weight helps you see progress from the inside out — long before it shows in the mirror.")
-                .font(.system(size: 14, weight: .medium))
+                .font(DSTypography.iconButton)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -617,10 +617,10 @@ struct WeightControlCenterView: View {
             Toggle(isOn: $showGoalLine) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Show Goal Line on Chart")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     Text("Display your target weight on the progress chart")
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
             }
@@ -635,7 +635,7 @@ struct WeightControlCenterView: View {
                 VStack(alignment: .center, spacing: 8) {
                     // "Goal Weight" label - natural width
                     Text("Goal Weight")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(DSTypography.iconButton)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
                     // Compact teal container - matches gold pill size
@@ -643,7 +643,7 @@ struct WeightControlCenterView: View {
                     HStack(spacing: 4) {
                         TextField("Enter goal", text: $weightGoalString)
                             .keyboardType(.decimalPad)
-                            .font(.system(size: 24, weight: .bold))
+                            .font(DSTypography.displayM)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                             .multilineTextAlignment(.center)
                             .monospacedDigit()  // Sprint 1: Prevents jitter when digits change
@@ -654,7 +654,7 @@ struct WeightControlCenterView: View {
                             }
 
                         Text("lbs")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(DSTypography.statValueSmall)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                             .accessibilityHidden(true)  // Sprint 1: Avoid redundant "lbs" announcement
                     }
@@ -678,10 +678,10 @@ struct WeightControlCenterView: View {
                         if toGo > 0 {
                             HStack(spacing: 8) {
                                 Image(systemName: "target")
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(DSTypography.iconButton)
                                     .foregroundColor(Theme.ColorToken.accentGold)
                                 Text("\(String(format: "%.1f", toGo)) lbs to go")
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(DSTypography.cardTitle)
                                     .foregroundColor(Theme.ColorToken.accentGold)
                             }
                             .padding(.horizontal, 16)
@@ -711,7 +711,7 @@ struct WeightControlCenterView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Sprint 1: Remove "coming soon" vaporware feel
             Text("Personalized nudges to build daily streaks.")
-                .font(.system(size: 16, weight: .medium))
+                .font(DSTypography.listTitle)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
             // TODO: Add notification toggles, quiet hours, smart reminders
@@ -725,7 +725,7 @@ struct WeightControlCenterView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Sprint 1: Remove "coming soon" vaporware feel
             Text("Smart tips based on your trends.")
-                .font(.system(size: 16, weight: .medium))
+                .font(DSTypography.listTitle)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
             // TODO: Add contextual micro-lessons
@@ -741,17 +741,17 @@ struct WeightControlCenterView: View {
             Toggle(isOn: $localSyncEnabled) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Sync with Apple Health")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     // Sprint 1: Benefit copy - multi-line format (1 sentence per line)
                     Text("Auto-import your weight from Apple Health.")
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     Text("No manual entry.")
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     Text(hasHealthKitPermission ? "Ready to sync" : "Not synced")
-                        .font(.system(size: 12))
+                        .font(DSTypography.listCaption)
                         .foregroundColor(hasHealthKitPermission ? Theme.ColorToken.accentPrimary : Theme.ColorToken.textSecondaryOnDark)
                 }
             }
@@ -782,10 +782,10 @@ struct WeightControlCenterView: View {
                                 .tint(Theme.ColorToken.textPrimaryOnDark)
                         } else {
                             Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 16, weight: .semibold))
+                                .font(DSTypography.cardTitle)
                         }
                         Text(isSyncing ? "Syncing..." : "Sync Now")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(DSTypography.cardTitle)
                     }
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     .frame(maxWidth: .infinity)
@@ -805,7 +805,7 @@ struct WeightControlCenterView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(Theme.ColorToken.stateWarning)
                     Text(permissionStatusMessage)
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
             } else if !lastSyncStatus.isEmpty {
@@ -813,7 +813,7 @@ struct WeightControlCenterView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Theme.ColorToken.accentPrimary)
                     Text(lastSyncStatus)
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
             }
@@ -824,9 +824,9 @@ struct WeightControlCenterView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "lock.shield.fill")
                         .foregroundColor(Theme.ColorToken.accentInfo)
-                        .font(.system(size: 12))
+                        .font(DSTypography.listCaption)
                     Text("Your data is secure & up-to-date")
-                        .font(.system(size: 12, weight: .medium))
+                        .font(DSTypography.statLabel)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
                 .padding(DSSpacing.cardSmallSpacing)
@@ -845,7 +845,7 @@ struct WeightControlCenterView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Sprint 1: Benefit copy - explain why history matters
             Text("Review and manage your weight entries.")
-                .font(.system(size: 16, weight: .medium))
+                .font(DSTypography.listTitle)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
             // Show weight history list (reusing existing component)
@@ -859,7 +859,7 @@ struct WeightControlCenterView: View {
         VStack(alignment: .leading, spacing: 16) {
             // Subtitle: Purpose of this card
             Text("Control which tips, nudges, and summaries you see (Opt-outs live here).")
-                .font(.system(size: 14, weight: .medium))
+                .font(DSTypography.iconButton)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -930,9 +930,9 @@ struct WeightControlCenterView: View {
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.clockwise")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(DSTypography.cardTitle)
                         Text("Restore All")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(DSTypography.cardTitle)
                     }
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     .frame(maxWidth: .infinity)
@@ -954,10 +954,10 @@ struct WeightControlCenterView: View {
             Toggle(isOn: isOn) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     Text(description)
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
             }
@@ -969,7 +969,7 @@ struct WeightControlCenterView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     // "Individual opt-outs" header
                     Text("Individual opt-outs:")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(DSTypography.statLabel)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
                         .padding(.leading, 16)
                         .padding(.top, 4)
@@ -981,15 +981,15 @@ struct WeightControlCenterView: View {
 
                         HStack(spacing: 8) {
                             Image(systemName: "minus.circle.fill")
-                                .font(.system(size: 14))
+                                .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.stateWarning)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(item.displayText)
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(DSTypography.labelSecondary)
                                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                                 Text("Opted out \(item.timestamp.formatted(date: .abbreviated, time: .omitted))")
-                                    .font(.system(size: 11))
+                                    .font(DSTypography.pillLabel)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.6))
                             }
 
@@ -1000,7 +1000,7 @@ struct WeightControlCenterView: View {
                                 optOutManager.optInContent(id: item.id)
                             }) {
                                 Text("Restore")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(DSTypography.statLabel)
                                     .foregroundColor(Theme.ColorToken.accentPrimary)
                             }
                         }
@@ -1058,10 +1058,10 @@ struct WeightControlCenterView: View {
             )) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Weight Tracker Cards")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     Text("Manage which cards appear on your tracker")
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
             }
@@ -1076,7 +1076,7 @@ struct WeightControlCenterView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     // "Hidden cards" header
                     Text("Hidden cards:")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(DSTypography.statLabel)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
                         .padding(.leading, 16)
                         .padding(.top, 4)
@@ -1085,15 +1085,15 @@ struct WeightControlCenterView: View {
                     ForEach(hiddenCards) { cardType in
                         HStack(spacing: 8) {
                             Image(systemName: "eye.slash.fill")
-                                .font(.system(size: 14))
+                                .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.stateWarning)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(cardType.displayName)
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(DSTypography.labelSecondary)
                                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                                 Text(cardType.description)
-                                    .font(.system(size: 11))
+                                    .font(DSTypography.pillLabel)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.6))
                             }
 
@@ -1104,7 +1104,7 @@ struct WeightControlCenterView: View {
                                 cardManager.showCard(cardType)
                             }) {
                                 Text("Restore")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(DSTypography.statLabel)
                                     .foregroundColor(Theme.ColorToken.accentPrimary)
                             }
                         }
@@ -1149,10 +1149,10 @@ struct WeightControlCenterView: View {
             )) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Your Progress Journey")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     Text("Weekly recaps showing trends and wins")
-                        .font(.system(size: 13))
+                        .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
             }
@@ -1167,7 +1167,7 @@ struct WeightControlCenterView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     // "Hidden cards" header
                     Text("Hidden cards:")
-                        .font(.system(size: 12, weight: .semibold))
+                        .font(DSTypography.statLabel)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
                         .padding(.leading, 16)
                         .padding(.top, 4)
@@ -1176,15 +1176,15 @@ struct WeightControlCenterView: View {
                     ForEach(hiddenCards) { cardType in
                         HStack(spacing: 8) {
                             Image(systemName: "eye.slash.fill")
-                                .font(.system(size: 14))
+                                .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.stateWarning)
 
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(cardType.displayName)
-                                    .font(.system(size: 13, weight: .medium))
+                                    .font(DSTypography.labelSecondary)
                                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                                 Text(cardType.description)
-                                    .font(.system(size: 11))
+                                    .font(DSTypography.pillLabel)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.6))
                             }
 
@@ -1195,7 +1195,7 @@ struct WeightControlCenterView: View {
                                 progressStoryCardManager.showCard(cardType)
                             }) {
                                 Text("Restore")
-                                    .font(.system(size: 12, weight: .semibold))
+                                    .font(DSTypography.statLabel)
                                     .foregroundColor(Theme.ColorToken.accentPrimary)
                             }
                         }
@@ -1254,10 +1254,10 @@ struct WeightControlCenterView: View {
             HStack(spacing: 12) {
                 Image(systemName: "info.circle.fill")
                     .foregroundColor(Theme.ColorToken.accentInfo)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(DSTypography.displayS)
 
                 Text("About")
-                    .font(.system(size: 20, weight: .bold))
+                    .font(DSTypography.displaySRounded)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
 
                 Spacer()
@@ -1274,7 +1274,7 @@ struct WeightControlCenterView: View {
                     }
                 }) {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(DSTypography.cardTitle)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
                 .buttonStyle(.plain)
@@ -1291,11 +1291,11 @@ struct WeightControlCenterView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Text("Total Entries")
-                            .font(.system(size: 16))
+                            .font(DSTypography.listTitle)
                             .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                         Spacer()
                         Text("\(weightManager.weightEntries.count)")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(DSTypography.cardTitle)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     }
 
@@ -1307,21 +1307,21 @@ struct WeightControlCenterView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             HStack {
                                 Text("Tracking Since")
-                                    .font(.system(size: 16))
+                                    .font(DSTypography.listTitle)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                                 Spacer()
                                 Text(oldest.date.formatted(date: .abbreviated, time: .omitted))
-                                    .font(.system(size: 16, weight: .semibold))
+                                    .font(DSTypography.cardTitle)
                                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                             }
 
                             // Identity badge
                             HStack(spacing: 6) {
                                 Image(systemName: "star.fill")
-                                    .font(.system(size: 11))
+                                    .font(DSTypography.pillLabel)
                                     .foregroundColor(Theme.ColorToken.accentGold)
                                 Text("You've logged \(weightManager.weightEntries.count) entries since \(Calendar.current.component(.year, from: oldest.date))")
-                                    .font(.system(size: 12, weight: .medium))
+                                    .font(DSTypography.statLabel)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                             }
                             .padding(.top, 4)
