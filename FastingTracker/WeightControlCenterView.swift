@@ -217,107 +217,27 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
 /// Weight Control Center - Premium card-based settings with reorderable cards
 /// Reference: FAST-LIFe_Control_Center_Vision.md
 /// Behavioral psychology: User personalization (IKEA effect)
+/// Pattern: MVVM (ViewModel handles state and business logic)
 struct WeightControlCenterView: View {
     @Environment(\.dismiss) var dismiss
-    @ObservedObject var weightManager: WeightManager
-    @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
+    @StateObject private var viewModel: WeightControlCenterViewModel
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
 
-    // Observe ContentOptOutManager for reactive UI updates
-    @ObservedObject private var optOutManager = ContentOptOutManager.shared
+    // MARK: - Initialization
 
-    // Observe unified CardManager for tracker card visibility (Single Source of Truth)
-    @ObservedObject private var cardManager = TrackerCards.shared
-
-    // Observe unified CardManager for Progress Story card visibility (Single Source of Truth)
-    @ObservedObject private var progressStoryCardManager = ProgressStoryCards.shared
-
-    // Card order persistence - default: Goals → Notifications → Insights → Sync → History → Experience
-    @AppStorage("weightControlCenterCardOrder") private var cardOrderData: Data = Data()
-    @State private var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .experience]
-
-    // Drag and drop state (Hub pattern)
-    @State private var draggedCard: ControlCenterCardType?
-
-    // Layer 4: Expand/collapse state for Control Center cards
-    @AppStorage("controlCenterExpandedCards") private var expandedCardsData: Data = Data()
-    @State private var expandedCards: Set<String> = []
-
-    // Badge interaction: Track current highlighted item for cycling through opted-out content
-    @State private var currentHighlightedItemIndex: Int = 0
-    @State private var highlightedItemID: String? = nil  // Track which item to highlight by ID
-    @State private var scrollViewProxy: ScrollViewProxy?
-    @State private var badgeScale: CGFloat = 1.0  // Layer 6: Badge bounce animation
-
-    // Weight goal editing
-    @State private var weightGoalString: String = ""
-
-    // Sync state (from original WeightSettingsView)
-    @State private var localSyncEnabled: Bool = true
-    @State private var userSyncPreference: Bool = true
-    @State private var isSyncing: Bool = false
-    @State private var showingSyncAlert: Bool = false
-    @State private var syncMessage: String = ""
-    @State private var hasHealthKitPermission: Bool = false
-    @State private var permissionStatusMessage: String = ""
-    @State private var canEnableSync: Bool = true
-    @State private var lastSyncStatus: String = ""
-    @State private var showingWeightSyncDetails: Bool = false
-    @State private var showingSyncPreferenceDialog: Bool = false
-
-    // User experience opt-out preferences (Manage My Experience card)
-    // Reference: Fast_LIFe_Control_Center_Gameplan.md §3
-    @AppStorage("experienceOptOut_trackerCards") private var optOutTrackerCards: Bool = false
-    @AppStorage("experienceOptOut_educationalInsights") private var optOutEducationalInsights: Bool = false
-    @AppStorage("experienceOptOut_behavioralNudges") private var optOutBehavioralNudges: Bool = false
-    @AppStorage("experienceOptOut_motivationalMessages") private var optOutMotivationalMessages: Bool = false
-    @AppStorage("experienceOptOut_progressSummaries") private var optOutProgressSummaries: Bool = false
-
-    // Granular opt-out system: Individual content items
-    // Stores list of ContentItem objects that user has opted out of
-    @AppStorage("optedOutContentItems") private var optedOutContentData: Data = Data()
-    @State private var optedOutContentItems: [ContentItem] = []
-
-    // UserDefaults keys
-    private let userDefaults = UserDefaults.standard
-    private let hasCompletedInitialImportKey = "weightHasCompletedInitialImport"
-
-    // Restore all confirmation alert
-    @State private var showingRestoreAllAlert = false
-
-    // MARK: - Computed Properties
-
-    /// Determines if the floating "Restore All" button should be shown
-    /// Shows when ANY content is hidden or opted out:
-    /// - Category opt-outs (Weight Tracker Cards, Educational Insights, Behavioral Nudges, etc.)
-    /// - Individual content opt-outs (specific tips, nudges, messages, summaries)
-    /// - Hidden tracker cards (Milestone, Chart, Stats, History)
-    /// - Hidden Progress Story cards (7-Day, 30-Day, Banner, Recap, Did You Know)
-    ///
-    /// Scalable: Automatically handles new categories without code changes
-    private var shouldShowRestoreButton: Bool {
-        // 1. Check category opt-outs (Weight Tracker Cards + Content Categories)
-        let hasCategoryOptOuts = optOutTrackerCards ||
-                                 optOutEducationalInsights ||
-                                 optOutBehavioralNudges ||
-                                 optOutMotivationalMessages ||
-                                 optOutProgressSummaries
-
-        // 2. Check individual content opt-outs
-        let hasIndividualOptOuts = !optOutManager.optedOutContentItems.isEmpty
-
-        // 3. Check hidden tracker cards (via TrackerCardManager - Single Source of Truth)
-        let hasHiddenTrackerCards = TrackerCardType.allCases.contains { cardType in
-            !cardManager.isCardVisible(cardType)
-        }
-
-        // 4. Check hidden Progress Story cards (via ProgressStoryCardManager - Single Source of Truth)
-        let hasHiddenProgressStoryCards = ProgressStoryCardType.allCases.contains { cardType in
-            !progressStoryCardManager.isCardVisible(cardType)
-        }
-
-        return hasCategoryOptOuts || hasIndividualOptOuts || hasHiddenTrackerCards || hasHiddenProgressStoryCards
+    init(weightManager: WeightManager,
+         showGoalLine: Binding<Bool>,
+         weightGoal: Binding<Double>) {
+        // TEMPORARY: Using temporary BehavioralNotificationScheduler instance
+        // The real instance is passed via .environmentObject in WeightTrackingView.swift:139
+        // This temporary instance is only used for ViewModel initialization and won't be used
+        _viewModel = StateObject(wrappedValue: WeightControlCenterViewModel(
+            weightManager: weightManager,
+            behavioralScheduler: BehavioralNotificationScheduler()
+        ))
+        _showGoalLine = showGoalLine
+        _weightGoal = weightGoal
     }
 
     var body: some View {
@@ -378,18 +298,18 @@ struct WeightControlCenterView: View {
                 ScrollView {
                     ScrollViewReader { proxy in
                         LazyVStack(spacing: 12) {
-                            ForEach(cardOrder) { cardType in
+                            ForEach(viewModel.cardOrder) { cardType in
                                 cardView(for: cardType)
                                     .onDrag {
                                         // Hub pattern: NSItemProvider for drag/drop
-                                        self.draggedCard = cardType
+                                        viewModel.draggedCard = cardType
                                         return NSItemProvider(object: cardType.rawValue as NSString)
                                     }
                                     .onDrop(of: [.text], delegate: CardDropDelegate(
                                         card: cardType,
-                                        cardOrder: $cardOrder,
-                                        draggedCard: $draggedCard,
-                                        saveAction: saveCardOrder
+                                        cardOrder: $viewModel.cardOrder,
+                                        draggedCard: $viewModel.draggedCard,
+                                        saveAction: viewModel.saveCardOrder
                                     ))
                             }
 
@@ -400,7 +320,7 @@ struct WeightControlCenterView: View {
                         .padding(.top, 8)
                         .onAppear {
                             // Capture ScrollViewProxy for badge interaction
-                            scrollViewProxy = proxy
+                            viewModel.scrollViewProxy = proxy
                         }
                     }
                 }
@@ -414,7 +334,7 @@ struct WeightControlCenterView: View {
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                     // Update weight goal if valid
-                    if let newGoal = Double(weightGoalString), newGoal > 0 {
+                    if let newGoal = Double(viewModel.weightGoalString), newGoal > 0 {
                         weightGoal = newGoal
                     }
                     dismiss()
@@ -434,22 +354,22 @@ struct WeightControlCenterView: View {
             }
         }
         .onAppear {
-            loadCardOrder()
-            loadExpandedCards()  // Layer 4: Load expansion state
-            loadOptedOutContent()  // Load opted-out content items
-            weightGoalString = String(format: "%.1f", weightGoal)
-            userSyncPreference = weightManager.syncWithHealthKit
-            updatePermissionStatus()
-            loadLastSyncStatus()
-            updateToggleState()
+            viewModel.loadCardOrder()
+            viewModel.loadExpandedCards()
+            viewModel.loadOptedOutContent()
+            viewModel.weightGoalString = String(format: "%.1f", weightGoal)
+            viewModel.userSyncPreference = viewModel.weightManager.syncWithHealthKit
+            viewModel.updatePermissionStatus()
+            viewModel.loadLastSyncStatus()
+            viewModel.updateToggleState()
         }
-        .alert("Sync Status", isPresented: $showingSyncAlert) {
-            if syncMessage.contains("Permission denied") || syncMessage.contains("enable weight access") {
+        .alert("Sync Status", isPresented: $viewModel.showingSyncAlert) {
+            if viewModel.syncMessage.contains("Permission denied") || viewModel.syncMessage.contains("enable weight access") {
                 let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
 
                 if authStatus == .notDetermined {
                     Button("Try Again") {
-                        syncWithHealthKit()
+                        viewModel.syncWithHealthKit()
                     }
                 } else {
                     Button("OK") { }
@@ -459,26 +379,26 @@ struct WeightControlCenterView: View {
                 Button("OK", role: .cancel) { }
             }
         } message: {
-            Text(syncMessage)
+            Text(viewModel.syncMessage)
         }
-        .alert("Import Weight Data", isPresented: $showingSyncPreferenceDialog) {
+        .alert("Import Weight Data", isPresented: $viewModel.showingSyncPreferenceDialog) {
             Button("Import All Historical Data") {
-                performHistoricalSync()
+                viewModel.performHistoricalSync()
             }
             Button("Future Data Only") {
-                performFutureOnlySync()
+                viewModel.performFutureOnlySync()
             }
             Button("Cancel", role: .cancel) {
-                userSyncPreference = false
-                localSyncEnabled = false
-                updateToggleState()
+                viewModel.userSyncPreference = false
+                viewModel.localSyncEnabled = false
+                viewModel.updateToggleState()
             }
         } message: {
             Text("Choose how to sync your weight data with Apple Health. You can import all your historical weight entries or start fresh with only future entries.")
         }
-        .alert("Restore All Content", isPresented: $showingRestoreAllAlert) {
+        .alert("Restore All Content", isPresented: $viewModel.showingRestoreAllAlert) {
             Button("Yes, Restore All", role: .destructive) {
-                restoreAllToDefault()
+                viewModel.restoreAllToDefault()
             }
             Button("Cancel", role: .cancel) { }
         } message: {
@@ -490,7 +410,7 @@ struct WeightControlCenterView: View {
 
     @ViewBuilder
     private func cardView(for cardType: ControlCenterCardType) -> some View {
-        let isExpanded = isCardExpanded(cardType)
+        let isExpanded = viewModel.isCardExpanded(cardType)
 
         VStack(spacing: 0) {
             // Card Header (Hub pattern - no visible drag handle, long-press to drag)
@@ -510,20 +430,20 @@ struct WeightControlCenterView: View {
                 // Badge for Manage My Experience card showing count of opted-out categories + items + hidden cards
                 // Interactive: Tapping cycles through opted-out items with smooth scroll
                 if cardType == .experience {
-                    let categoryOptOutCount = [optOutTrackerCards, optOutEducationalInsights, optOutBehavioralNudges, optOutMotivationalMessages, optOutProgressSummaries].filter({ $0 }).count
-                    let individualOptOutCount = optOutManager.optedOutContentItems.count
+                    let categoryOptOutCount = [viewModel.optOutTrackerCards, viewModel.optOutEducationalInsights, viewModel.optOutBehavioralNudges, viewModel.optOutMotivationalMessages, viewModel.optOutProgressSummaries].filter({ $0 }).count
+                    let individualOptOutCount = viewModel.optOutManager.optedOutContentItems.count
                     let hiddenTrackerCardsCount = TrackerCardType.allCases.filter { cardType in
-                        !cardManager.isCardVisible(cardType)
+                        !viewModel.cardManager.isCardVisible(cardType)
                     }.count
                     let hiddenProgressStoryCardsCount = ProgressStoryCardType.allCases.filter { cardType in
-                        !progressStoryCardManager.isCardVisible(cardType)
+                        !viewModel.progressStoryCardManager.isCardVisible(cardType)
                     }.count
                     let totalOptOutCount = categoryOptOutCount + individualOptOutCount + hiddenTrackerCardsCount + hiddenProgressStoryCardsCount
 
                     if totalOptOutCount > 0 {
                         Button(action: {
                             // Show restore all confirmation alert
-                            showingRestoreAllAlert = true
+                            viewModel.showingRestoreAllAlert = true
                         }) {
                             Text("\(totalOptOutCount)")
                                 .font(DSTypography.iconButton)
@@ -535,8 +455,8 @@ struct WeightControlCenterView: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                        .scaleEffect(badgeScale)  // Layer 6: Bounce animation
-                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: badgeScale)
+                        .scaleEffect(viewModel.badgeScale)  // Layer 6: Bounce animation
+                        .animation(.spring(response: 0.3, dampingFraction: 0.6), value: viewModel.badgeScale)
                         .accessibilityLabel("\(totalOptOutCount) \(totalOptOutCount == 1 ? "item" : "items") opted out")
                         .accessibilityHint("Tap to restore all hidden content")
                         .onAppear {
@@ -554,7 +474,7 @@ struct WeightControlCenterView: View {
                 // Layer 4: Chevron expand/collapse button
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        toggleCardExpansion(cardType)
+                        viewModel.toggleCardExpansion(cardType)
                     }
                 }) {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
@@ -641,16 +561,16 @@ struct WeightControlCenterView: View {
                     // Compact teal container - matches gold pill size
                     // "150.0" perfectly centered under "Goal Weight" label
                     HStack(spacing: 4) {
-                        TextField("Enter goal", text: $weightGoalString)
+                        TextField("Enter goal", text: $viewModel.weightGoalString)
                             .keyboardType(.decimalPad)
                             .font(DSTypography.displayM)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                             .multilineTextAlignment(.center)
                             .monospacedDigit()  // Sprint 1: Prevents jitter when digits change
                             .fixedSize()  // Shrink to content width
-                            .onChange(of: weightGoalString) { _, newValue in
+                            .onChange(of: viewModel.weightGoalString) { _, newValue in
                                 // UX/UI Fix #2: Restrict to one decimal place, max 999.9
-                                formatWeightGoalInput(newValue)
+                                viewModel.formatWeightGoalInput(newValue)
                             }
 
                         Text("lbs")
@@ -659,7 +579,7 @@ struct WeightControlCenterView: View {
                             .accessibilityHidden(true)  // Sprint 1: Avoid redundant "lbs" announcement
                     }
                     .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Goal weight \(weightGoalString) pounds")
+                    .accessibilityLabel("Goal weight \(viewModel.weightGoalString) pounds")
                     .accessibilityHint("Double tap to edit")
                     .padding(.leading, 28)  // Shift entire HStack right to center "150.0"
                     .padding(.trailing, 16)
@@ -671,9 +591,9 @@ struct WeightControlCenterView: View {
                     // REFINEMENT #3: Enhanced progress metric with pill background
                     // Behavioral Science: Goal gradient effect + visual reward
                     // Issue #3: Centered horizontally
-                    if let goal = Double(weightGoalString),
+                    if let goal = Double(viewModel.weightGoalString),
                        goal > 0,
-                       let currentWeight = weightManager.latestWeight?.weight {
+                       let currentWeight = viewModel.weightManager.latestWeight?.weight {
                         let toGo = currentWeight - goal
                         if toGo > 0 {
                             HStack(spacing: 8) {
@@ -738,7 +658,7 @@ struct WeightControlCenterView: View {
     private var syncCardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Sync toggle
-            Toggle(isOn: $localSyncEnabled) {
+            Toggle(isOn: $viewModel.localSyncEnabled) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Sync with Apple Health")
                         .font(DSTypography.listTitle)
@@ -750,41 +670,41 @@ struct WeightControlCenterView: View {
                     Text("No manual entry.")
                         .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
-                    Text(hasHealthKitPermission ? "Ready to sync" : "Not synced")
+                    Text(viewModel.hasHealthKitPermission ? "Ready to sync" : "Not synced")
                         .font(DSTypography.listCaption)
-                        .foregroundColor(hasHealthKitPermission ? Theme.ColorToken.accentPrimary : Theme.ColorToken.textSecondaryOnDark)
+                        .foregroundColor(viewModel.hasHealthKitPermission ? Theme.ColorToken.accentPrimary : Theme.ColorToken.textSecondaryOnDark)
                 }
             }
             .tint(Theme.ColorToken.accentPrimary)
-            .disabled(!canEnableSync)
-            .onChange(of: localSyncEnabled) { _, newValue in
-                userSyncPreference = newValue
-                if canEnableSync {
-                    weightManager.setSyncPreference(newValue)
+            .disabled(!viewModel.canEnableSync)
+            .onChange(of: viewModel.localSyncEnabled) { _, newValue in
+                viewModel.userSyncPreference = newValue
+                if viewModel.canEnableSync {
+                    viewModel.weightManager.setSyncPreference(newValue)
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    updatePermissionStatus()
-                    updateToggleState()
+                    viewModel.updatePermissionStatus()
+                    viewModel.updateToggleState()
                 }
             }
 
-            if localSyncEnabled {
+            if viewModel.localSyncEnabled {
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
 
                 // Sync button
                 Button(action: {
-                    syncWithHealthKit()
+                    viewModel.syncWithHealthKit()
                 }) {
                     HStack(spacing: 8) {
-                        if isSyncing {
+                        if viewModel.isSyncing {
                             ProgressView()
                                 .tint(Theme.ColorToken.textPrimaryOnDark)
                         } else {
                             Image(systemName: "arrow.triangle.2.circlepath")
                                 .font(DSTypography.cardTitle)
                         }
-                        Text(isSyncing ? "Syncing..." : "Sync Now")
+                        Text(viewModel.isSyncing ? "Syncing..." : "Sync Now")
                             .font(DSTypography.cardTitle)
                     }
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -795,24 +715,24 @@ struct WeightControlCenterView: View {
                             .fill(Theme.ColorToken.accentPrimary)
                     )
                 }
-                .disabled(isSyncing || !hasHealthKitPermission)
-                .opacity((isSyncing || !hasHealthKitPermission) ? 0.5 : 1.0)
+                .disabled(viewModel.isSyncing || !viewModel.hasHealthKitPermission)
+                .opacity((viewModel.isSyncing || !viewModel.hasHealthKitPermission) ? 0.5 : 1.0)
             }
 
             // Status message
-            if !hasHealthKitPermission {
+            if !viewModel.hasHealthKitPermission {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(Theme.ColorToken.stateWarning)
-                    Text(permissionStatusMessage)
+                    Text(viewModel.permissionStatusMessage)
                         .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
-            } else if !lastSyncStatus.isEmpty {
+            } else if !viewModel.lastSyncStatus.isEmpty {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Theme.ColorToken.accentPrimary)
-                    Text(lastSyncStatus)
+                    Text(viewModel.lastSyncStatus)
                         .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
@@ -820,7 +740,7 @@ struct WeightControlCenterView: View {
 
             // Behavioral insight: Trust badge
             // Issue #4: Centered horizontally
-            if hasHealthKitPermission && localSyncEnabled {
+            if viewModel.hasHealthKitPermission && viewModel.localSyncEnabled {
                 HStack(spacing: 8) {
                     Image(systemName: "lock.shield.fill")
                         .foregroundColor(Theme.ColorToken.accentInfo)
@@ -849,7 +769,7 @@ struct WeightControlCenterView: View {
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
             // Show weight history list (reusing existing component)
-            WeightHistoryListView(weightManager: weightManager)
+            WeightHistoryListView(weightManager: viewModel.weightManager)
         }
     }
 
@@ -875,8 +795,8 @@ struct WeightControlCenterView: View {
             // Educational Insights Toggle (Category-level control)
             categoryToggle(
                 isOn: Binding(
-                    get: { !self.optOutEducationalInsights },
-                    set: { self.optOutEducationalInsights = !$0 }
+                    get: { !viewModel.optOutEducationalInsights },
+                    set: { viewModel.optOutEducationalInsights = !$0; viewModel.saveExperienceOptOuts() }
                 ),
                 title: "Educational Insights",
                 description: "Learn about weight tracking science and best practices",
@@ -889,8 +809,8 @@ struct WeightControlCenterView: View {
             // Behavioral Nudges Toggle (Category-level control)
             categoryToggle(
                 isOn: Binding(
-                    get: { !self.optOutBehavioralNudges },
-                    set: { self.optOutBehavioralNudges = !$0 }
+                    get: { !viewModel.optOutBehavioralNudges },
+                    set: { viewModel.optOutBehavioralNudges = !$0; viewModel.saveExperienceOptOuts() }
                 ),
                 title: "Behavioral Nudges",
                 description: "Gentle reminders to log weight and build streaks",
@@ -903,8 +823,8 @@ struct WeightControlCenterView: View {
             // Motivational Messages Toggle (Category-level control)
             categoryToggle(
                 isOn: Binding(
-                    get: { !self.optOutMotivationalMessages },
-                    set: { self.optOutMotivationalMessages = !$0 }
+                    get: { !viewModel.optOutMotivationalMessages },
+                    set: { viewModel.optOutMotivationalMessages = !$0; viewModel.saveExperienceOptOuts() }
                 ),
                 title: "Motivational Messages",
                 description: "Encouragement when you hit milestones or new lows",
@@ -920,13 +840,13 @@ struct WeightControlCenterView: View {
             // Floating "Restore All" button
             // Shows when ANY content is hidden: categories, individual items, or tracker cards
             // Triggers confirmation alert (same as badge)
-            if shouldShowRestoreButton {
+            if viewModel.shouldShowRestoreButton {
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
 
                 Button(action: {
                     // Show confirmation alert (same behavior as badge)
-                    showingRestoreAllAlert = true
+                    viewModel.showingRestoreAllAlert = true
                 }) {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.clockwise")
@@ -964,7 +884,7 @@ struct WeightControlCenterView: View {
             .tint(Theme.ColorToken.accentPrimary)
 
             // Show individual opted-out items for this category (if any)
-            let optedOutItems = optOutManager.optedOutContentItems.filter { $0.category == category }
+            let optedOutItems = viewModel.optOutManager.optedOutContentItems.filter { $0.category == category }
             if !optedOutItems.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     // "Individual opt-outs" header
@@ -977,7 +897,7 @@ struct WeightControlCenterView: View {
                     // List of opted-out items
                     // Layer 3: Each item has .id() for ScrollViewReader targeting
                     ForEach(Array(optedOutItems.enumerated()), id: \.element.id) { index, item in
-                        let isHighlighted = highlightedItemID == item.id
+                        let isHighlighted = viewModel.highlightedItemID == item.id
 
                         HStack(spacing: 8) {
                             Image(systemName: "minus.circle.fill")
@@ -997,7 +917,7 @@ struct WeightControlCenterView: View {
 
                             // Restore button for individual item
                             Button(action: {
-                                optOutManager.optInContent(id: item.id)
+                                viewModel.optOutManager.optInContent(id: item.id)
                             }) {
                                 Text("Restore")
                                     .font(DSTypography.statLabel)
@@ -1041,19 +961,20 @@ struct WeightControlCenterView: View {
             Toggle(isOn: Binding(
                 get: {
                     // Toggle is ON if ALL cards are visible
-                    TrackerCardType.allCases.allSatisfy { cardManager.isCardVisible($0) }
+                    TrackerCardType.allCases.allSatisfy { viewModel.cardManager.isCardVisible($0) }
                 },
                 set: { newValue in
                     // When toggle changes: Show or hide ALL 5 cards
                     for cardType in TrackerCardType.allCases {
                         if newValue {
-                            cardManager.showCard(cardType)
+                            viewModel.cardManager.showCard(cardType)
                         } else {
-                            cardManager.hideCard(cardType)
+                            viewModel.cardManager.hideCard(cardType)
                         }
                     }
                     // Also update legacy @AppStorage flag (for backwards compatibility)
-                    self.optOutTrackerCards = !newValue
+                    viewModel.optOutTrackerCards = !newValue
+                    viewModel.saveExperienceOptOuts()
                 }
             )) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -1069,7 +990,7 @@ struct WeightControlCenterView: View {
 
             // Show hidden tracker cards (if any) - via TrackerCardManager (Single Source of Truth)
             let hiddenCards = TrackerCardType.allCases.filter { cardType in
-                !cardManager.isCardVisible(cardType)
+                !viewModel.cardManager.isCardVisible(cardType)
             }
 
             if !hiddenCards.isEmpty {
@@ -1101,7 +1022,7 @@ struct WeightControlCenterView: View {
 
                             // Restore button for individual card (via TrackerCardManager)
                             Button(action: {
-                                cardManager.showCard(cardType)
+                                viewModel.cardManager.showCard(cardType)
                             }) {
                                 Text("Restore")
                                     .font(DSTypography.statLabel)
@@ -1132,19 +1053,20 @@ struct WeightControlCenterView: View {
             Toggle(isOn: Binding(
                 get: {
                     // Toggle is ON if ALL Progress Story cards are visible
-                    ProgressStoryCardType.allCases.allSatisfy { progressStoryCardManager.isCardVisible($0) }
+                    ProgressStoryCardType.allCases.allSatisfy { viewModel.progressStoryCardManager.isCardVisible($0) }
                 },
                 set: { newValue in
                     // When toggle changes: Show or hide ALL 5 Progress Story cards
                     for cardType in ProgressStoryCardType.allCases {
                         if newValue {
-                            progressStoryCardManager.showCard(cardType)
+                            viewModel.progressStoryCardManager.showCard(cardType)
                         } else {
-                            progressStoryCardManager.hideCard(cardType)
+                            viewModel.progressStoryCardManager.hideCard(cardType)
                         }
                     }
                     // Also update legacy @AppStorage flag (for backwards compatibility)
-                    self.optOutProgressSummaries = !newValue
+                    viewModel.optOutProgressSummaries = !newValue
+                    viewModel.saveExperienceOptOuts()
                 }
             )) {
                 VStack(alignment: .leading, spacing: 4) {
@@ -1160,7 +1082,7 @@ struct WeightControlCenterView: View {
 
             // Show hidden Progress Story cards (if any) - via ProgressStoryCardManager (Single Source of Truth)
             let hiddenCards = ProgressStoryCardType.allCases.filter { cardType in
-                !progressStoryCardManager.isCardVisible(cardType)
+                !viewModel.progressStoryCardManager.isCardVisible(cardType)
             }
 
             if !hiddenCards.isEmpty {
@@ -1192,7 +1114,7 @@ struct WeightControlCenterView: View {
 
                             // Restore button for individual card (via ProgressStoryCardManager)
                             Button(action: {
-                                progressStoryCardManager.showCard(cardType)
+                                viewModel.progressStoryCardManager.showCard(cardType)
                             }) {
                                 Text("Restore")
                                     .font(DSTypography.statLabel)
@@ -1214,40 +1136,13 @@ struct WeightControlCenterView: View {
 
     // MARK: - Restore All Functionality
 
-    /// Restore all content to default state
-    /// Restores: Hidden tracker cards, hidden Progress Story cards, category opt-outs, individual opt-outs
-    private func restoreAllToDefault() {
-        // 1. Restore all tracker cards (show all) via TrackerCardManager
-        for cardType in TrackerCardType.allCases {
-            cardManager.showCard(cardType)
-        }
-
-        // 2. Restore all Progress Story cards (show all) via ProgressStoryCardManager
-        for cardType in ProgressStoryCardType.allCases {
-            progressStoryCardManager.showCard(cardType)
-        }
-
-        // 3. Restore all category opt-outs (turn all ON)
-        optOutTrackerCards = false
-        optOutEducationalInsights = false
-        optOutBehavioralNudges = false
-        optOutMotivationalMessages = false
-        optOutProgressSummaries = false
-
-        // 4. Clear all individual opt-outs
-        optOutManager.optedOutContentItems.removeAll()
-        if let encoded = try? JSONEncoder().encode([ContentItem]()) {
-            optedOutContentData = encoded
-        }
-
-        // Haptic feedback for confirmation
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-    }
+    // REMOVED: restoreAllToDefault - now in ViewModel
+    // All restore functionality moved to viewModel.restoreAllToDefault()
 
     // MARK: - About Card (Fixed at Bottom)
 
     private var aboutCard: some View {
-        let isExpanded = expandedCards.contains("about")
+        let isExpanded = viewModel.expandedCards.contains("about")
 
         return VStack(spacing: 0) {
             // Card Header
@@ -1265,12 +1160,12 @@ struct WeightControlCenterView: View {
                 // Layer 4: Chevron expand/collapse button
                 Button(action: {
                     withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        if expandedCards.contains("about") {
-                            expandedCards.remove("about")
+                        if viewModel.expandedCards.contains("about") {
+                            viewModel.expandedCards.remove("about")
                         } else {
-                            expandedCards.insert("about")
+                            viewModel.expandedCards.insert("about")
                         }
-                        saveExpandedCards()
+                        viewModel.saveExpandedCards()
                     }
                 }) {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
@@ -1294,13 +1189,13 @@ struct WeightControlCenterView: View {
                             .font(DSTypography.listTitle)
                             .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                         Spacer()
-                        Text("\(weightManager.weightEntries.count)")
+                        Text("\(viewModel.weightManager.weightEntries.count)")
                             .font(DSTypography.cardTitle)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     }
 
                     // Behavioral insight: Identity reinforcement
-                    if let oldest = weightManager.weightEntries.sorted(by: { $0.date < $1.date }).first {
+                    if let oldest = viewModel.weightManager.weightEntries.sorted(by: { $0.date < $1.date }).first {
                         Divider()
                             .background(Theme.ColorToken.dividerOnDark)
 
@@ -1320,7 +1215,7 @@ struct WeightControlCenterView: View {
                                 Image(systemName: "star.fill")
                                     .font(DSTypography.pillLabel)
                                     .foregroundColor(Theme.ColorToken.accentGold)
-                                Text("You've logged \(weightManager.weightEntries.count) entries since \(Calendar.current.component(.year, from: oldest.date))")
+                                Text("You've logged \(viewModel.weightManager.weightEntries.count) entries since \(Calendar.current.component(.year, from: oldest.date))")
                                     .font(DSTypography.statLabel)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                             }
@@ -1337,419 +1232,6 @@ struct WeightControlCenterView: View {
         .shadow(color: Theme.ColorToken.shadowCardOnDark, radius: 16, x: 0, y: 8)
     }
 
-    // MARK: - Layer 4: Expansion State Management
-
-    /// Check if a card is currently expanded
-    private func isCardExpanded(_ cardType: ControlCenterCardType) -> Bool {
-        return expandedCards.contains(cardType.rawValue)
-    }
-
-    /// Toggle expansion state for a card
-    private func toggleCardExpansion(_ cardType: ControlCenterCardType) {
-        if expandedCards.contains(cardType.rawValue) {
-            expandedCards.remove(cardType.rawValue)
-        } else {
-            expandedCards.insert(cardType.rawValue)
-        }
-        saveExpandedCards()
-    }
-
-    /// Load expanded cards from UserDefaults
-    private func loadExpandedCards() {
-        if let decoded = try? JSONDecoder().decode(Set<String>.self, from: expandedCardsData) {
-            expandedCards = decoded
-        } else {
-            // Default: All cards expanded on first launch
-            expandedCards = Set(ControlCenterCardType.allCases.map { $0.rawValue })
-            expandedCards.insert("about")  // About card also expanded by default
-            saveExpandedCards()
-        }
-    }
-
-    /// Save expanded cards to UserDefaults
-    private func saveExpandedCards() {
-        if let encoded = try? JSONEncoder().encode(expandedCards) {
-            expandedCardsData = encoded
-        }
-    }
-
-    // MARK: - Card Order Persistence
-
-    private func loadCardOrder() {
-        if let decoded = try? JSONDecoder().decode([ControlCenterCardType].self, from: cardOrderData) {
-            var migratedOrder = decoded
-            var needsMigration = false
-
-            // Migration: Add .history card if it's missing from saved order
-            if !migratedOrder.contains(.history) {
-                // Insert History before Experience (matches default order)
-                if let experienceIndex = migratedOrder.firstIndex(of: .experience) {
-                    migratedOrder.insert(.history, at: experienceIndex)
-                } else {
-                    // Fallback: append to end if Experience not found
-                    migratedOrder.append(.history)
-                }
-                needsMigration = true
-            }
-
-            // Migration: Add .experience card if it's missing from saved order
-            if !migratedOrder.contains(.experience) {
-                // Append Experience card to end of existing order
-                migratedOrder.append(.experience)
-                needsMigration = true
-            }
-
-            cardOrder = migratedOrder
-
-            // Save the migrated order if changes were made
-            if needsMigration {
-                saveCardOrder()
-            }
-        } else {
-            // Default order: Goals → Notifications → Insights → Sync → History → Experience
-            cardOrder = [.goals, .notifications, .insights, .sync, .history, .experience]
-        }
-    }
-
-    private func saveCardOrder() {
-        if let encoded = try? JSONEncoder().encode(cardOrder) {
-            cardOrderData = encoded
-        }
-    }
-
-    // MARK: - Sync Logic (From Original WeightSettingsView)
-
-    private func syncWithHealthKit() {
-        isSyncing = true
-
-        let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
-
-        if !isAuthorized {
-            HealthKitManager.shared.requestWeightAuthorization { success, error in
-                if success {
-                    DispatchQueue.main.async {
-                        self.isSyncing = false
-                        if self.hasCompletedInitialImport() {
-                            self.performSync()
-                        } else {
-                            self.showingSyncPreferenceDialog = true
-                        }
-                    }
-                } else {
-                    isSyncing = false
-                    syncMessage = error?.localizedDescription ?? "HealthKit authorization required. Enable weight access in Settings."
-                    showingSyncAlert = true
-                }
-            }
-        } else {
-            if hasCompletedInitialImport() {
-                performSync()
-            } else {
-                isSyncing = false
-                showingSyncPreferenceDialog = true
-            }
-        }
-    }
-
-    private func updatePermissionStatus() {
-        hasHealthKitPermission = HealthKitManager.shared.isWeightAuthorized()
-        let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
-
-        canEnableSync = (authStatus != .sharingDenied)
-
-        if hasHealthKitPermission {
-            permissionStatusMessage = "When enabled, weight entries will sync automatically."
-        } else {
-            if authStatus == .notDetermined {
-                permissionStatusMessage = "Tap 'Sync Now' to set up Apple Health integration."
-            } else {
-                permissionStatusMessage = "Permission denied. Enable in Settings → Privacy → Health."
-            }
-        }
-    }
-
-    private func updateToggleState() {
-        if hasHealthKitPermission {
-            localSyncEnabled = userSyncPreference
-        } else {
-            localSyncEnabled = false
-        }
-    }
-
-    private func loadLastSyncStatus() {
-        if let lastSyncDate = HealthKitManager.shared.lastWeightSyncDate {
-            let formatter = DateFormatter()
-            formatter.dateStyle = .none
-            formatter.timeStyle = .short
-
-            let timeString = formatter.string(from: lastSyncDate)
-
-            if HealthKitManager.shared.lastWeightSyncError != nil {
-                lastSyncStatus = "Last sync failed at \(timeString)"
-            } else {
-                if Calendar.current.isDateInToday(lastSyncDate) {
-                    lastSyncStatus = "Last synced today at \(timeString)"
-                } else {
-                    formatter.dateStyle = .short
-                    lastSyncStatus = "Last synced \(formatter.string(from: lastSyncDate))"
-                }
-            }
-        } else {
-            lastSyncStatus = ""
-        }
-    }
-
-    private func performSync() {
-        let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
-
-        weightManager.syncFromHealthKitWithReset(startDate: startDate) { syncedCount, error in
-            DispatchQueue.main.async {
-                isSyncing = false
-
-                if let error = error {
-                    syncMessage = error.localizedDescription
-                    showingSyncAlert = true
-                } else {
-                    if syncedCount > 0 {
-                        syncMessage = "Successfully synced \(syncedCount) new weight entries from Apple Health."
-                    } else {
-                        let hasPermission = HealthKitManager.shared.isWeightAuthorized()
-                        if hasPermission {
-                            syncMessage = "Weight data is up to date. No new entries found in Apple Health."
-                        } else {
-                            syncMessage = "Permission denied. To enable weight sync, go to Settings → Privacy → Health."
-                        }
-                    }
-                    showingSyncAlert = true
-
-                    updatePermissionStatus()
-                    loadLastSyncStatus()
-                    updateToggleState()
-
-                    if hasHealthKitPermission && userSyncPreference {
-                        weightManager.setSyncPreference(true)
-                    }
-                }
-            }
-        }
-    }
-
-    private func performHistoricalSync() {
-        markInitialImportCompleted()
-        isSyncing = true
-
-        let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
-
-        weightManager.syncFromHealthKitHistorical(startDate: startDate) { syncedCount, error in
-            DispatchQueue.main.async {
-                self.isSyncing = false
-
-                if let error = error {
-                    self.syncMessage = "Failed to import historical weight data: \(error.localizedDescription)"
-                    self.showingSyncAlert = true
-                } else {
-                    if syncedCount > 0 {
-                        self.syncMessage = "Successfully imported \(syncedCount) weight entries from your Apple Health history."
-                    } else {
-                        self.syncMessage = "All weight data is already up to date. No new historical entries found."
-                    }
-                    self.showingSyncAlert = true
-
-                    if self.hasHealthKitPermission {
-                        self.weightManager.setSyncPreference(true)
-                        self.userSyncPreference = true
-                        self.updatePermissionStatus()
-                        self.loadLastSyncStatus()
-                        self.updateToggleState()
-                    }
-                }
-            }
-        }
-    }
-
-    private func performFutureOnlySync() {
-        markInitialImportCompleted()
-
-        syncMessage = "Weight sync enabled. Only new weight entries will be synced going forward."
-        showingSyncAlert = true
-
-        if hasHealthKitPermission {
-            weightManager.setSyncPreference(true)
-            userSyncPreference = true
-            updatePermissionStatus()
-            loadLastSyncStatus()
-            updateToggleState()
-        }
-    }
-
-    private func hasCompletedInitialImport() -> Bool {
-        return userDefaults.bool(forKey: hasCompletedInitialImportKey)
-    }
-
-    private func markInitialImportCompleted() {
-        userDefaults.set(true, forKey: hasCompletedInitialImportKey)
-        userDefaults.synchronize()
-    }
-
-    // MARK: - Weight Goal Input Formatting
-
-    /// Format weight goal input to one decimal place, max 999.9
-    /// UX/UI Fix #2: Industry standard for health apps
-    private func formatWeightGoalInput(_ input: String) {
-        var formatted = input
-
-        // Remove any non-numeric characters except decimal point
-        formatted = formatted.filter { $0.isNumber || $0 == "." }
-
-        // Ensure only one decimal point
-        let components = formatted.components(separatedBy: ".")
-        if components.count > 2 {
-            formatted = components[0] + "." + components[1...].joined()
-        }
-
-        // Limit to one decimal place
-        if let dotIndex = formatted.firstIndex(of: ".") {
-            let afterDot = formatted.suffix(from: formatted.index(after: dotIndex))
-            if afterDot.count > 1 {
-                formatted = String(formatted.prefix(upTo: formatted.index(dotIndex, offsetBy: 2)))
-            }
-        }
-
-        // Enforce max value 999.9
-        if let value = Double(formatted), value > 999.9 {
-            formatted = "999.9"
-        }
-
-        // Limit integer part to 3 digits
-        if let dotIndex = formatted.firstIndex(of: ".") {
-            let beforeDot = formatted.prefix(upTo: dotIndex)
-            if beforeDot.count > 3 {
-                formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
-            }
-        } else {
-            if formatted.count > 3 {
-                formatted = String(formatted.prefix(3))
-            }
-        }
-
-        // Update if changed
-        if formatted != input {
-            weightGoalString = formatted
-        }
-    }
-
-    // MARK: - Badge Interaction: Cycle Through Opted-Out Items
-
-    /// Get opted-out items in visual top-to-bottom display order
-    /// Matches the exact order items appear on screen in category sections
-    private var visuallyOrderedOptedOutItems: [ContentItem] {
-        // Define category display order (matches UI layout top-to-bottom)
-        let categoryOrder: [ContentCategory] = [
-            .educationalInsights,
-            .behavioralNudges,
-            .motivationalMessages,
-            .progressSummaries
-        ]
-
-        // Build array in visual order by iterating through categories
-        var orderedItems: [ContentItem] = []
-        for category in categoryOrder {
-            let itemsInCategory = optOutManager.optedOutContentItems.filter { $0.category == category }
-            orderedItems.append(contentsOf: itemsInCategory)
-        }
-
-        return orderedItems
-    }
-
-    /// Cycle to next opted-out item when badge is tapped
-    /// Industry pattern: Instagram stories badge, Spotify playlist scroll
-    private func cycleToNextOptedOutItem() {
-        // Get all opted-out items in visual top-to-bottom order
-        let allOptedOutItems = visuallyOrderedOptedOutItems
-
-        guard !allOptedOutItems.isEmpty else { return }
-
-        // Get the target item to scroll to (use CURRENT index, don't increment yet)
-        let targetItem = allOptedOutItems[currentHighlightedItemIndex]
-
-        // Layer 3: Smooth scroll to target item with animation
-        guard let proxy = scrollViewProxy else { return }
-
-        withAnimation(.easeInOut(duration: 0.35)) {
-            proxy.scrollTo(targetItem.id, anchor: .center)
-        }
-
-        // Layer 4: Set highlighted item ID for gold border
-        highlightedItemID = targetItem.id
-
-        // Auto-reset highlight after 1 second
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            withAnimation {
-                highlightedItemID = nil
-            }
-        }
-
-        // Layer 5: Haptic feedback - Light tap for premium feel
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-
-        // Layer 6: Badge bounce animation (1.0 → 1.15 → 1.0)
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            badgeScale = 1.15
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                badgeScale = 1.0
-            }
-        }
-
-        // Increment index for NEXT tap (after scrolling to current item)
-        currentHighlightedItemIndex = (currentHighlightedItemIndex + 1) % allOptedOutItems.count
-    }
-
-    // MARK: - Opt-Out System Helper Functions
-
-    /// Load opted-out content items from @AppStorage
-    private func loadOptedOutContent() {
-        if let decoded = try? JSONDecoder().decode([ContentItem].self, from: optedOutContentData) {
-            optedOutContentItems = decoded
-        }
-    }
-
-    /// Save opted-out content items to @AppStorage
-    private func saveOptedOutContent() {
-        if let encoded = try? JSONEncoder().encode(optedOutContentItems) {
-            optedOutContentData = encoded
-        }
-    }
-
-    /// Opt out of specific content item
-    /// - Parameters:
-    ///   - id: Unique identifier for the content
-    ///   - category: Content category (educational, behavioral, motivational, progress)
-    ///   - text: Display text shown in Manage My Experience
-    func optOutContent(id: String, category: ContentCategory, text: String) {
-        let newItem = ContentItem(id: id, category: category, displayText: text)
-
-        // Check if already opted out
-        if !optedOutContentItems.contains(where: { $0.id == id }) {
-            optedOutContentItems.append(newItem)
-            saveOptedOutContent()
-        }
-    }
-
-    /// Opt back in to specific content item
-    /// - Parameter id: Unique identifier for the content
-    func optInContent(id: String) {
-        optedOutContentItems.removeAll { $0.id == id }
-        saveOptedOutContent()
-    }
-
-    /// Check if specific content is opted out
-    /// - Parameter id: Unique identifier for the content
-    /// - Returns: True if user has opted out of this content
-    func isContentOptedOut(id: String) -> Bool {
-        return optedOutContentItems.contains(where: { $0.id == id })
-    }
 }
 
 // MARK: - Drag & Drop Delegate (Hub pattern)

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */; };
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
 		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* SleepEntry.swift */; };
@@ -128,6 +129,7 @@
 		5289E0702E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitManager.swift; sourceTree = "<group>"; };
 		5289E0712E8D5F6500254E70 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
 		5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
+		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
 		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackingView.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
@@ -302,6 +304,7 @@
 				5289E0802E8D700100254E70 /* HydrationTrackingView.swift */,
 				5289E0712E8D5F6500254E70 /* WeightEntry.swift */,
 				5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */,
+				7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */,
 				5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */,
 				5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */,
 				5289E06C2E8D0DAD00254E70 /* UI/InsightsView.swift */,
@@ -428,6 +431,7 @@
 				5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */,
 				52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
+				A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */,
 				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
 				52B2CFC32E94EE630061FCFF /* AppLogger.swift in Sources */,
 				5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */,
