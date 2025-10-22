@@ -53,9 +53,9 @@ import SwiftUI
             } label: {
                 HStack(spacing: 4) {
                     Image(systemName: "eye.slash")
-                        .font(.system(size: 14))
+                        .font(DSTypography.cardSubtitle)
                     Text("Don't show again")
-                        .font(.system(size: 14))
+                        .font(DSTypography.cardSubtitle)
                 }
                 .foregroundColor(.secondary)
             }
@@ -296,7 +296,7 @@ struct FirstTimeWeightSetupView: View {
                     // Header
                     VStack(spacing: 12) {
                         Image(systemName: "scalemass.fill")
-                            .font(.system(size: 60))
+                            .font(DSTypography.displayXXL)
                             .foregroundColor(Color("FLPrimary"))
 
                         Text("Welcome to Weight Tracking")
@@ -321,7 +321,7 @@ struct FirstTimeWeightSetupView: View {
                         HStack {
                             TextField("Enter weight", text: $currentWeightString)
                                 .keyboardType(.decimalPad)
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .font(DSTypography.statValueLarge)
                                 .multilineTextAlignment(.center)
                                 .padding()
                                 .background(Color(.systemGray6))
@@ -343,7 +343,7 @@ struct FirstTimeWeightSetupView: View {
                         HStack {
                             TextField("Enter goal", text: $goalWeightString)
                                 .keyboardType(.decimalPad)
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .font(DSTypography.statValueLarge)
                                 .multilineTextAlignment(.center)
                                 .padding()
                                 .background(Color(.systemGray6))
@@ -657,7 +657,7 @@ struct WeightTrendsView: View {
                             // Font: SF Pro Rounded 34pt (matching app standard, not spec's 28pt)
                             // Gradient: Theme.ColorToken.accentInfo → accentPrimary (blue→emerald)
                             Text("Your LIFe Journey")
-                                .font(.system(size: 34, weight: .bold, design: .rounded))
+                                .font(DSTypography.displayLRounded)
                                 .foregroundStyle(
                                     LinearGradient(
                                         colors: [
@@ -674,7 +674,7 @@ struct WeightTrendsView: View {
                             // Font: SF Pro Display 15pt, weight 400, italic (per spec §4)
                             // v1.2: Changed to white for better visibility on gradient background
                             Text("Progress you can feel — one choice at a time.")
-                                .font(.system(size: 15, weight: .regular, design: .default))
+                                .font(DSTypography.cardBody)
                                 .italic()
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity, alignment: .center)  // Centered
@@ -836,7 +836,7 @@ struct WeightTrendsView: View {
                         // Standard: Dark background = light text, proper punctuation
                         if totalEntries >= 1 {
                             Text("You're showing up. That's what builds your LIFe!")
-                                .font(.system(size: 15, weight: .medium, design: .rounded))
+                                .font(DSTypography.cardBody)
                                 .foregroundColor(.white.opacity(0.8))
                                 .italic()
                                 .multilineTextAlignment(.center)
@@ -882,9 +882,9 @@ struct WeightTrendsView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "eye.slash")
-                                .font(.system(size: 14, weight: .semibold))
+                                .font(DSTypography.cardSubtitle)
                             Text("Don't show again")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(DSTypography.cardSubtitle)
                         }
                         .foregroundColor(.secondary)
                         .padding(.horizontal, 12)
@@ -947,7 +947,7 @@ struct LightCard<Content: View>: View {
 
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(DSTypography.cardTitle)
                         .foregroundColor(Theme.ColorToken.textSecondary)
                         .frame(width: 44, height: 44)  // Apple HIG tap target
                 }
@@ -1069,7 +1069,7 @@ struct ProgressBanner: View {
     var body: some View {
         DSBanner(ice: onHide) {
             Text(text)
-                .font(.system(size: 18, weight: .semibold, design: .rounded))
+                .font(DSTypography.statValueSmall)
                 .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
                 .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -1236,11 +1236,11 @@ struct CircularTrendRingCard: View {
                     VStack(spacing: 4) {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
-                                .font(.system(size: 32, weight: .bold, design: .rounded))
+                                .font(DSTypography.statValueLarge)
                                 .foregroundColor(Theme.ColorToken.textPrimary)
 
                             Text("lbs")
-                                .font(.system(size: 14, weight: .medium))
+                                .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.textSecondary)
                         }
 
@@ -1250,11 +1250,11 @@ struct CircularTrendRingCard: View {
                         if delta != nil {
                             HStack(spacing: 4) {
                                 Image(systemName: emotionIcon(for: state))
-                                    .font(.system(size: 20, weight: .semibold))
+                                    .font(DSTypography.displayS)
                                     .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
 
                                 Text(emotionLabel(for: state))
-                                    .font(.system(size: 14, weight: .semibold))
+                                    .font(DSTypography.cardSubtitle)
                                     .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
                             }
                         }
@@ -1496,7 +1496,7 @@ struct ReflectionNudge: View {
                         .font(.system(size: 16))
 
                     Text(reflectionPrompt)
-                        .font(.system(size: 15, weight: .medium))
+                        .font(DSTypography.cardBody)
                         .foregroundColor(Theme.ColorToken.textPrimary)
                         .italic()
 
@@ -1531,7 +1531,7 @@ struct DidYouKnowBanner: View {
                     .font(.system(size: 16))
 
                 Text(text)
-                    .font(.system(size: 15, weight: .regular))
+                    .font(DSTypography.cardBody)
                     .foregroundColor(Theme.ColorToken.textPrimary)
 
                 Spacer()
@@ -1560,7 +1560,7 @@ struct TrendCard: View {
                         .font(.system(size: 60, weight: .heavy, design: .rounded))
                         .foregroundColor(.white)
                     Text("lbs")
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .font(DSTypography.statValueSmall)
                         .foregroundColor(.white.opacity(0.9))
                 }
 

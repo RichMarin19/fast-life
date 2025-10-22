@@ -125,7 +125,7 @@ struct CurrentWeightCard: View {
                 VStack(spacing: 6) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text("\(weightManager.displayWeight(for: latest), specifier: "%.1f")")
-                            .font(.system(size: 48, weight: .bold))
+                            .font(DSTypography.displayXL)
                             .foregroundColor(Color("FLPrimary"))
                         Text("lbs")
                             .font(.title2)
@@ -245,7 +245,7 @@ struct CircularProgressRing: View {
         VStack(spacing: 16) {
             // Title
             Text("Your Progress Journey")
-                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .font(DSTypography.displayM)
                 .foregroundColor(.primary)
 
             // Circular Progress Ring (WIDER!)
@@ -275,16 +275,16 @@ struct CircularProgressRing: View {
                 VStack(spacing: 4) {
                     // Milestone emoji (dynamic based on percentage)
                     Text(milestoneEmoji(for: percentage))
-                        .font(.system(size: 36))
+                        .font(DSTypography.displayL)
 
                     // Large percentage
                     Text("\(percentage, specifier: "%.0f")%")
-                        .font(.system(size: 44, weight: .heavy, design: .rounded))
+                        .font(DSTypography.displayXLRounded)
                         .foregroundColor(progressColor(for: percentage))
 
                     // "COMPLETE" label
                     Text("COMPLETE")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .font(DSTypography.statLabel)
                         .foregroundColor(.secondary)
                         .tracking(1)
                 }
@@ -295,10 +295,10 @@ struct CircularProgressRing: View {
                 // Weight Lost (left)
                 VStack(spacing: 2) {
                     Text("\((weightLost), specifier: "%.1f") \("lbs")")
-                        .font(.system(size: 18, weight: .bold, design: .rounded))
+                        .font(DSTypography.statValueSmall)
                         .foregroundColor(Color("FLSuccess"))
                     Text("LOST")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .font(DSTypography.listCaption)
                         .foregroundColor(.secondary)
                         .tracking(0.5)
                 }
@@ -312,10 +312,10 @@ struct CircularProgressRing: View {
                 if let toGo = weightToGo, toGo > 0 {
                     VStack(spacing: 2) {
                         Text("\((toGo), specifier: "%.1f") \("lbs")")
-                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .font(DSTypography.statValueSmall)
                             .foregroundColor(.orange)
                         Text("TO GO")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                            .font(DSTypography.listCaption)
                             .foregroundColor(.secondary)
                             .tracking(0.5)
                     }
@@ -339,7 +339,7 @@ struct CircularProgressRing: View {
 
                 // Progress text
                 Text("\(milestonesCompleted(for: percentage)) OF 10 MILESTONES COMPLETE")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(DSTypography.statLabel)
                     .foregroundColor(.secondary)
                     .tracking(0.5)
             }
@@ -417,10 +417,10 @@ struct MotivationBanner: View {
             Image(systemName: isPositive ? "chart.line.uptrend.xyaxis" : "heart.fill")
                 .renderingMode(.template)
                 .foregroundColor(Theme.ColorToken.accentPrimary)
-                .font(.system(size: 20, weight: .medium))
+                .font(DSTypography.displayS)
 
             Text(message)
-                .font(.system(size: 16, weight: .medium))
+                .font(DSTypography.cardTitle)
                 .foregroundColor(Theme.ColorToken.accentPrimary)
 
             Spacer(minLength: 0)
@@ -451,10 +451,10 @@ struct GoalBadge: View {
             Image(systemName: "flag.fill")
                 .renderingMode(.template)
                 .foregroundColor(Theme.ColorToken.accentPrimary)
-                .font(.system(size: 20, weight: .semibold))
+                .font(DSTypography.displayS)
 
             Text("GOAL: \(goalText)")
-                .font(.system(size: 18, weight: .semibold))
+                .font(DSTypography.statValueSmall)
                 .foregroundColor(Theme.ColorToken.accentPrimary)
 
             Spacer(minLength: 0)
