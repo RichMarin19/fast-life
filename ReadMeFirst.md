@@ -6,6 +6,28 @@
 
 ---
 
+## ⚠️ CRITICAL: FOR AI CONTINUATION SESSIONS
+
+**IF YOU ARE STARTING A NEW SESSION AFTER COMPRESSION:**
+
+1. **READ POST-COMPRESSION-RESTORATION-PROMPT.md FIRST** (before doing anything else)
+2. **ASK USER**: "Is Weight Tracker perfect and ready to be the North Star template?"
+3. **WAIT FOR CONFIRMATION** before suggesting next steps
+4. **DO NOT** assume documentation reflects current reality
+5. **DO NOT** suggest moving to other trackers until user confirms Weight Tracker is perfect
+
+**Why This Matters**:
+- Weight Tracker is the template for all 5 trackers
+- If it's not perfect, we repeat mistakes 4 more times
+- User has emphasized this priority multiple times
+- Documentation may lag behind actual status
+
+**File Location**: `/Users/richmarin/Desktop/FastingTracker/POST-COMPRESSION-RESTORATION-PROMPT.md`
+
+**Copy-Paste Instructions**: See POST-COMPRESSION-RESTORATION-PROMPT.md for the exact prompt to use after every compression.
+
+---
+
 ## 🎯 PURPOSE
 
 This document is your **single source of truth** for:

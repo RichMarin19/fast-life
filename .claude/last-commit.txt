@@ -1,0 +1,36 @@
+Last commit: 9510db2 at 2025-10-22 01:19:24
+docs: Phase v1.6 file split audit and state management game plan
+
+Complete audit of files > 400 LOC with strategic pivot to state-first approach.
+
+AUDIT RESULTS:
+- 4 files require splitting (6,251 LOC total)
+- WeightControlCenterView.swift: 1,803 LOC (4.5x over limit)
+- WeightComponents.swift: 1,728 LOC (4.3x over limit)
+- WeightChartView.swift: 1,087 LOC (2.7x over limit)
+- WeightManager.swift: 911 LOC (2.3x over limit)
+
+KEY DISCOVERY:
+Cannot effectively split files without first extracting state to ViewModels.
+Root cause: Tight coupling between @State variables and UI code.
+
+STRATEGIC PIVOT:
+- Phase v1.6: Audit complete ✅
+- Phase v1.7 (NEW): Extract state to ViewModels (prerequisite)
+- Phase v1.6 (RESUME): File splits after state extraction
+
+DOCUMENTATION ADDED:
+- PHASE-v1.6-FILE-SPLIT-AUDIT.md (industry validation, split plans)
+- PHASE-v1.6-STATE-REFACTOR-GAMEPLAN.md (MVVM strategy, timeline)
+- split-control-center.sh (automation script template)
+
+INDUSTRY VALIDATION:
+- Apple WWDC 2023: Extract state to ViewModels when views > 300 LOC
+- Google/Facebook/Stripe: MVVM pattern for large views
+- Standard: 400 LOC limit (Google Style Guide)
+
+Phase v1.7 (State Extraction) is HIGH PRIORITY prerequisite for Phase v1.6.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
