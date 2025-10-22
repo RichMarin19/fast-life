@@ -473,27 +473,28 @@ class WeightControlCenterViewModel: ObservableObject {
             }
         }
 
-        // Enforce max value 999.9
-        if let value = Double(formatted), value > 999.9 {
+        // Check max value BEFORE limiting digits (for values like "1500.0")
+        let hasDecimal = formatted.contains(".")
+        let valueBeforeLimiting = Double(formatted) ?? 0
+        if hasDecimal && valueBeforeLimiting > 999.9 {
             formatted = "999.9"
-        }
-
-        // Limit integer part to 3 digits
-        if let dotIndex = formatted.firstIndex(of: ".") {
-            let beforeDot = formatted.prefix(upTo: dotIndex)
-            if beforeDot.count > 3 {
-                formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
-            }
         } else {
-            if formatted.count > 3 {
-                formatted = String(formatted.prefix(3))
+            // Only apply digit limiting if we didn't already cap to 999.9
+            // Limit integer part to 3 digits (for values like "12345")
+            if let dotIndex = formatted.firstIndex(of: ".") {
+                let beforeDot = formatted.prefix(upTo: dotIndex)
+                if beforeDot.count > 3 {
+                    formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
+                }
+            } else {
+                if formatted.count > 3 {
+                    formatted = String(formatted.prefix(3))
+                }
             }
         }
 
-        // Update if changed
-        if formatted != input {
-            weightGoalString = formatted
-        }
+        // Always update to ensure consistent state
+        weightGoalString = formatted
     }
 
     // MARK: - Badge Interaction: Cycle Through Opted-Out Items
@@ -506,10 +507,13 @@ class WeightControlCenterViewModel: ObservableObject {
 
         guard !allOptedOutItems.isEmpty else { return }
 
-        // Get the target item to scroll to (use CURRENT index, don't increment yet)
+        // Get the target item to scroll to (use CURRENT index before incrementing)
         let targetItem = allOptedOutItems[currentHighlightedItemIndex]
 
-        // Layer 3: Smooth scroll to target item with animation
+        // Increment index BEFORE UI operations (so tests can verify immediately)
+        currentHighlightedItemIndex = (currentHighlightedItemIndex + 1) % allOptedOutItems.count
+
+        // Layer 3: Smooth scroll to target item with animation (only if proxy exists)
         guard let proxy = scrollViewProxy else { return }
 
         withAnimation(.easeInOut(duration: 0.35)) {
@@ -544,9 +548,6 @@ class WeightControlCenterViewModel: ObservableObject {
                 }
             }
         }
-
-        // Increment index for NEXT tap (after scrolling to current item)
-        currentHighlightedItemIndex = (currentHighlightedItemIndex + 1) % allOptedOutItems.count
     }
 
     // MARK: - Opt-Out System Helper Functions

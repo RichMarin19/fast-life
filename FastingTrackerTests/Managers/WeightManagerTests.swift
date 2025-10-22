@@ -16,9 +16,15 @@ final class WeightManagerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        // Clear UserDefaults for clean test state
+        if let bundleID = Bundle.main.bundleIdentifier {
+            UserDefaults.standard.removePersistentDomain(forName: bundleID)
+        }
         weightManager = WeightManager()
         // Clear any existing entries for clean tests
         weightManager.weightEntries.removeAll()
+        // Disable HealthKit sync for faster, isolated unit tests
+        weightManager.syncWithHealthKit = false
     }
 
     override func tearDown() {
@@ -35,9 +41,14 @@ final class WeightManagerTests: XCTestCase {
         // When
         weightManager.addWeightEntry(entry)
 
-        // Then
-        XCTAssertEqual(weightManager.weightEntries.count, 1)
-        XCTAssertEqual(weightManager.weightEntries.first?.weight, 150.0)
+        // Then - wait for async addition (WeightManager uses DispatchQueue.main.async)
+        let expectation = XCTestExpectation(description: "Entry added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertEqual(self.weightManager.weightEntries.count, 1)
+            XCTAssertEqual(self.weightManager.weightEntries.first?.weight, 150.0)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testAddWeightEntry_SortsNewestFirst() {
@@ -49,10 +60,15 @@ final class WeightManagerTests: XCTestCase {
         weightManager.addWeightEntry(older)
         weightManager.addWeightEntry(newer)
 
-        // Then
-        XCTAssertEqual(weightManager.weightEntries.count, 2)
-        XCTAssertEqual(weightManager.weightEntries.first?.weight, 149.0) // Newer entry first
-        XCTAssertEqual(weightManager.weightEntries.last?.weight, 150.0)
+        // Then - wait for async additions
+        let expectation = XCTestExpectation(description: "Entries sorted")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertEqual(self.weightManager.weightEntries.count, 2)
+            XCTAssertEqual(self.weightManager.weightEntries.first?.weight, 149.0) // Newer entry first
+            XCTAssertEqual(self.weightManager.weightEntries.last?.weight, 150.0)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testAddWeightEntry_AllowsMultipleEntriesPerDay() {
@@ -64,8 +80,13 @@ final class WeightManagerTests: XCTestCase {
         weightManager.addWeightEntry(morning)
         weightManager.addWeightEntry(evening)
 
-        // Then
-        XCTAssertEqual(weightManager.weightEntries.count, 2)
+        // Then - wait for async additions
+        let expectation = XCTestExpectation(description: "Multiple entries added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertEqual(self.weightManager.weightEntries.count, 2)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     // MARK: - Delete Weight Entry Tests
@@ -74,18 +95,25 @@ final class WeightManagerTests: XCTestCase {
         // Given
         let entry = WeightEntry(date: Date(), weight: 150.0, source: .manual)
         weightManager.addWeightEntry(entry)
-        XCTAssertEqual(weightManager.weightEntries.count, 1)
+
+        // Wait for async addition to complete first
+        let addExpectation = XCTestExpectation(description: "Entry added")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertEqual(self.weightManager.weightEntries.count, 1)
+            addExpectation.fulfill()
+        }
+        wait(for: [addExpectation], timeout: 1.0)
 
         // When
         weightManager.deleteWeightEntry(entry)
 
         // Then - wait for async deletion
-        let expectation = XCTestExpectation(description: "Entry deleted")
+        let deleteExpectation = XCTestExpectation(description: "Entry deleted")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
             XCTAssertEqual(self.weightManager.weightEntries.count, 0)
-            expectation.fulfill()
+            deleteExpectation.fulfill()
         }
-        wait(for: [expectation], timeout: 1.0)
+        wait(for: [deleteExpectation], timeout: 1.0)
     }
 
     // MARK: - Duplicate Detection Tests
@@ -95,8 +123,13 @@ final class WeightManagerTests: XCTestCase {
         let existingEntry = WeightEntry(date: Date(), weight: 150.0, source: .manual)
         weightManager.addWeightEntry(existingEntry)
 
-        // When/Then
-        XCTAssertTrue(weightManager.wouldCreateDuplicate(weight: 150.0, date: Date()))
+        // When/Then - wait for async addition before checking
+        let expectation = XCTestExpectation(description: "Duplicate detected")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertTrue(self.weightManager.wouldCreateDuplicate(weight: 150.0, date: Date()))
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testWouldCreateDuplicate_AllowsDifferentWeight() {
@@ -122,8 +155,14 @@ final class WeightManagerTests: XCTestCase {
         let healthKitEntry = WeightEntry(date: Date(), weight: 150.0, source: .healthKit)
         weightManager.addWeightEntry(healthKitEntry)
 
-        // When/Then - Manual entry with same weight should be detected as duplicate
-        XCTAssertTrue(weightManager.wouldCreateDuplicate(weight: 150.0, date: Date()))
+        // When/Then - wait for async addition before checking
+        let expectation = XCTestExpectation(description: "Cross-source duplicate detected")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            // Manual entry with same weight should be detected as duplicate
+            XCTAssertTrue(self.weightManager.wouldCreateDuplicate(weight: 150.0, date: Date()))
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     // MARK: - Unit Conversion Tests
@@ -160,11 +199,14 @@ final class WeightManagerTests: XCTestCase {
         weightManager.addWeightEntry(older)
         weightManager.addWeightEntry(newer)
 
-        // When
-        let latest = weightManager.latestWeight
-
-        // Then
-        XCTAssertEqual(latest?.weight, 149.0)
+        // When/Then - wait for async additions
+        let expectation = XCTestExpectation(description: "Latest weight retrieved")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let latest = self.weightManager.latestWeight
+            XCTAssertEqual(latest?.weight, 149.0)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testLatestWeight_ReturnsNilWhenEmpty() {
@@ -188,12 +230,16 @@ final class WeightManagerTests: XCTestCase {
             weightManager.addWeightEntry(entry)
         }
 
-        // When
-        let trend = weightManager.weightTrend
-
-        // Then - should show negative trend (weight loss)
-        XCTAssertNotNil(trend)
-        XCTAssertLessThan(trend!, 0) // Weight decreased
+        // When/Then - wait for all async additions
+        let expectation = XCTestExpectation(description: "Trend calculated")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            let trend = self.weightManager.weightTrend
+            // Should show negative trend (weight loss)
+            XCTAssertNotNil(trend)
+            XCTAssertLessThan(trend!, 0) // Weight decreased
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testWeightTrend_ReturnsNilWithInsufficientData() {
@@ -214,12 +260,15 @@ final class WeightManagerTests: XCTestCase {
         weightManager.addWeightEntry(WeightEntry(date: Date().minusDays(1), weight: 152.0, source: .manual))
         weightManager.addWeightEntry(WeightEntry(date: Date().minusDays(2), weight: 148.0, source: .manual))
 
-        // When
-        let average = weightManager.averageWeight
-
-        // Then
-        XCTAssertNotNil(average)
-        XCTAssertEqualWithin(average!, 150.0, percent: 0.01) // Average should be 150
+        // When/Then - wait for async additions
+        let expectation = XCTestExpectation(description: "Average calculated")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            let average = self.weightManager.averageWeight
+            XCTAssertNotNil(average)
+            self.XCTAssertEqualWithin(average!, 150.0, percent: 0.01) // Average should be 150
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testAverageWeight_ReturnsNilWhenEmpty() {
@@ -238,15 +287,18 @@ final class WeightManagerTests: XCTestCase {
         let startWeight = 150.0
         let currentWeight = 147.0
 
-        weightManager.addWeightEntry(WeightEntry(date: startDate, weight: startWeight, source: .manual))
-        weightManager.addWeightEntry(WeightEntry(date: Date(), weight: currentWeight, source: .manual))
+        // Add entries synchronously by directly accessing weightEntries
+        // This avoids async timing issues in the test
+        weightManager.weightEntries.append(WeightEntry(date: startDate, weight: startWeight, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: currentWeight, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
 
-        // When
+        // When - calculate weight change
         let change = weightManager.weightChange(since: startDate)
 
         // Then
-        XCTAssertNotNil(change)
-        XCTAssertEqualWithin(change!, -3.0, percent: 0.01) // Lost 3 lbs
+        XCTAssertNotNil(change, "Weight change should not be nil when entries exist")
+        XCTAssertEqual(change!, -3.0, accuracy: 0.01, "Expected weight loss of 3 lbs")
     }
 
     func testWeightChange_ReturnsNilWhenNoHistoricalData() {
@@ -283,9 +335,14 @@ final class WeightManagerTests: XCTestCase {
         // When
         weightManager.addWeightEntry(extremeEntry)
 
-        // Then
-        XCTAssertEqual(weightManager.weightEntries.count, 1)
-        XCTAssertEqual(weightManager.latestWeight?.weight, 500.0)
+        // Then - wait for async addition
+        let expectation = XCTestExpectation(description: "Extreme value handled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertEqual(self.weightManager.weightEntries.count, 1)
+            XCTAssertEqual(self.weightManager.latestWeight?.weight, 500.0)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 
     func testAddWeightEntry_HandlesLowValues() {
@@ -295,8 +352,13 @@ final class WeightManagerTests: XCTestCase {
         // When
         weightManager.addWeightEntry(lowEntry)
 
-        // Then
-        XCTAssertEqual(weightManager.weightEntries.count, 1)
-        XCTAssertEqual(weightManager.latestWeight?.weight, 50.0)
+        // Then - wait for async addition
+        let expectation = XCTestExpectation(description: "Low value handled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertEqual(self.weightManager.weightEntries.count, 1)
+            XCTAssertEqual(self.weightManager.latestWeight?.weight, 50.0)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
     }
 }

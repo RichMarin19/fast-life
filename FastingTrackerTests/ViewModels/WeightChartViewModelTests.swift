@@ -397,7 +397,8 @@ final class WeightChartViewModelTests: XCTestCase {
 
     func testXAxisDomain_MonthView_ExtendsByOneDay() {
         // Given: Month view with single entry
-        let today = Date()
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
         let entry = WeightEntry(date: today, weight: 150.0, source: .manual)
         mockWeightManager.setTestData([entry])
         sut.selectedTimeRange = .month
@@ -408,9 +409,12 @@ final class WeightChartViewModelTests: XCTestCase {
         // Then: Should extend 1 day on each side
         XCTAssertNotNil(domain)
         if let domain = domain {
-            let calendar = Calendar.current
-            let daysBefore = calendar.dateComponents([.day], from: domain.lowerBound, to: today).day ?? 0
-            let daysAfter = calendar.dateComponents([.day], from: today, to: domain.upperBound).day ?? 0
+            // Normalize domain bounds to start of day for comparison
+            let lowerBoundDay = calendar.startOfDay(for: domain.lowerBound)
+            let upperBoundDay = calendar.startOfDay(for: domain.upperBound)
+
+            let daysBefore = calendar.dateComponents([.day], from: lowerBoundDay, to: today).day ?? 0
+            let daysAfter = calendar.dateComponents([.day], from: today, to: upperBoundDay).day ?? 0
 
             XCTAssertEqual(daysBefore, 1)
             XCTAssertEqual(daysAfter, 1)

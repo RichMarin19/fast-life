@@ -152,10 +152,12 @@ class WeightChartViewModel: ObservableObject {
         switch selectedTimeRange {
         case .day:
             // Day view: Show hour (e.g., "12a", "3p", "6p")
-            // Using narrow format for compact display
+            // Using narrow format for compact display - just hour + a/p
             let formatter = DateFormatter()
             formatter.dateFormat = "ha"
-            return formatter.string(from: date).lowercased()
+            let fullString = formatter.string(from: date).lowercased()
+            // Strip the 'm' from "am"/"pm" to get compact "a"/"p"
+            return fullString.replacingOccurrences(of: "m", with: "")
 
         case .week:
             // Week view: Show narrow month + day (e.g., "S 24", "O 1")
