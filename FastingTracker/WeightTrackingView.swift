@@ -324,27 +324,27 @@ struct EmptyWeightStateView: View {
     var body: some View {
         VStack(spacing: 20) {
             Image(systemName: "scalemass")
-                .font(.system(size: 60))
-                .foregroundColor(.gray)
+                .font(DSTypography.displayXXL)
+                .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.6))
 
             Text("No Weight Data Yet")
-                .font(.title3)
-                .foregroundColor(.secondary)
+                .font(DSTypography.displayM)
+                .foregroundColor(Theme.ColorToken.textSecondary)
 
             Text("Add your first weight entry or sync with Apple Health")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
+                .font(DSTypography.cardBody)
+                .foregroundColor(Theme.ColorToken.textSecondary)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
 
             VStack(spacing: 12) {
                 Button(action: { showingAddWeight = true }) {
                     Label("Add Weight Manually", systemImage: "plus.circle.fill")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(DSTypography.buttonPrimary)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color("FLPrimary"))
+                        .background(Theme.ColorToken.accentPrimary)
                         .cornerRadius(8)
                 }
                 .accessibilityLabel("Add weight entry manually")
@@ -365,11 +365,11 @@ struct EmptyWeightStateView: View {
                     }
                 }) {
                     Label("Sync with Apple Health", systemImage: "heart.fill")
-                        .font(.headline)
-                        .foregroundColor(.white)
+                        .font(DSTypography.buttonPrimary)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(Color("FLSuccess"))
+                        .background(Theme.ColorToken.stateSuccess)
                         .cornerRadius(8)
                 }
                 .accessibilityLabel("Sync weight data with Apple Health")
