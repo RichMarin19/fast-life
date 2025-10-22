@@ -8,6 +8,11 @@ import SwiftUI
 @MainActor
 final class BehavioralNotificationScheduler: ObservableObject {
 
+    // MARK: - Singleton Instance
+    /// Shared singleton instance following Apple Foundation pattern (URLSession.shared, NotificationCenter.default)
+    /// Industry Standard: Apple - "Use singletons for shared system resources"
+    static let shared = BehavioralNotificationScheduler()
+
     // MARK: - Core Dependencies
     private let notificationCenter = UNUserNotificationCenter.current()
 

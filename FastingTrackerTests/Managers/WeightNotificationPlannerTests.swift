@@ -109,7 +109,7 @@ final class WeightNotificationPlannerTests: XCTestCase {
 
         let quietStart = makeTime(hour: 21, minute: 0) // 9 PM
         let quietEnd = makeTime(hour: 7, minute: 0)    // 7 AM
-        let quietHours = quietStart..<quietEnd
+        let quietHours = WeightQuietHours(start: quietStart, end: quietEnd)
 
         // When: Scheduling with quiet hours
         let plan = WeightNotificationPlanner.nextPlan(
@@ -132,7 +132,7 @@ final class WeightNotificationPlannerTests: XCTestCase {
 
         let quietStart = makeTime(hour: 13, minute: 0) // 1 PM
         let quietEnd = makeTime(hour: 15, minute: 0)   // 3 PM
-        let quietHours = quietStart..<quietEnd
+        let quietHours = WeightQuietHours(start: quietStart, end: quietEnd)
 
         // When: Scheduling with quiet hours
         let plan = WeightNotificationPlanner.nextPlan(
@@ -155,7 +155,7 @@ final class WeightNotificationPlannerTests: XCTestCase {
 
         let quietStart = makeTime(hour: 21, minute: 0) // 9 PM
         let quietEnd = makeTime(hour: 6, minute: 0)    // 6 AM
-        let quietHours = quietStart..<quietEnd
+        let quietHours = WeightQuietHours(start: quietStart, end: quietEnd)
 
         // When: Scheduling with quiet hours
         let plan = WeightNotificationPlanner.nextPlan(
@@ -174,13 +174,13 @@ final class WeightNotificationPlannerTests: XCTestCase {
     // MARK: - Skip Weekdays Tests
 
     func testSkipsSunday() {
-        // Given: Current time is Saturday 6:00 AM
+        // Given: Current time is Saturday 8:00 AM (past preferred time)
         // Sunday is weekday 1 in Calendar
-        let now = makeDate(year: 2025, month: 10, day: 25, hour: 6, minute: 0) // Saturday
+        let now = makeDate(year: 2025, month: 10, day: 25, hour: 8, minute: 0) // Saturday
         let preferred = makeTime(hour: 7, minute: 30)
         let skipWeekdays: Set<Int> = [1] // Skip Sunday
 
-        // When: Scheduling would normally be Sunday
+        // When: Scheduling would normally be Sunday (next day after Saturday)
         let plan = WeightNotificationPlanner.nextPlan(
             from: now,
             preferred: preferred,
@@ -188,7 +188,7 @@ final class WeightNotificationPlannerTests: XCTestCase {
             skipWeekdays: skipWeekdays
         )
 
-        // Then: Should schedule for Monday instead
+        // Then: Should schedule for Monday instead (skipping Sunday)
         XCTAssertNotNil(plan)
         XCTAssertEqual(plan?.id, "weight-2025-10-27") // Monday
     }
@@ -301,7 +301,7 @@ final class WeightNotificationPlannerTests: XCTestCase {
         // Given: Quiet hours 9 PM - 7 AM
         let quietStart = makeTime(hour: 21, minute: 0)
         let quietEnd = makeTime(hour: 7, minute: 0)
-        let quietHours = quietStart..<quietEnd
+        let quietHours = WeightQuietHours(start: quietStart, end: quietEnd)
 
         // When: Checking various times
         let midnight = makeDate(year: 2025, month: 10, day: 23, hour: 0, minute: 0)
@@ -320,7 +320,7 @@ final class WeightNotificationPlannerTests: XCTestCase {
         // Given: Quiet hours 1 PM - 3 PM
         let quietStart = makeTime(hour: 13, minute: 0)
         let quietEnd = makeTime(hour: 15, minute: 0)
-        let quietHours = quietStart..<quietEnd
+        let quietHours = WeightQuietHours(start: quietStart, end: quietEnd)
 
         // When: Checking various times
         let noon = makeDate(year: 2025, month: 10, day: 23, hour: 12, minute: 0)

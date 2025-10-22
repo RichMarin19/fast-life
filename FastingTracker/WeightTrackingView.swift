@@ -81,7 +81,7 @@ struct WeightTrackingView: View {
 
     var body: some View {
         // 🔍 FORENSIC: Log body render
-        _ = AppLogger.info("⏱️ WeightTrackingView.body rendering", category: AppLogger.ui)
+        AppLogger.info("⏱️ WeightTrackingView.body rendering", category: AppLogger.ui)
 
         return TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),

@@ -205,6 +205,25 @@
 #### D.2: Testing Infrastructure (Week 2)
 **Duration:** 5-7 days (foundational work)
 
+**Status Update (Oct 22, 2025 - Session 2):**
+- ✅ **Test configuration blockers RESOLVED** - 105 tests compile and execute
+  - Fixed BehavioralNotificationScheduler.shared singleton pattern
+  - Fixed MockWeightManager initialization to use designated initializer
+  - Fixed WeightNotificationPlannerTests to use WeightQuietHours struct
+- ✅ **Major async timing fixes completed** - Fixed 12 WeightManager tests
+  - Added proper XCTestExpectation handling for async operations
+  - Fixed testDeleteWeightEntry to wait for addition before deletion
+  - All WeightManager async tests now properly synchronized
+- ✅ **Test logic fixes** - Fixed testSkipsSunday time logic
+- ✅ **Current test status:** **97 passing, 8 failing** (92.4% pass rate)
+  - Up from 85 passing, 20 failing (81% pass rate)
+  - **12 tests fixed in this session** (+14% improvement)
+- 🎯 **Remaining 8 failures** - Implementation/expectation issues to investigate:
+  - 1 WeightManagerTests (testWeightChange_CalculatesCorrectly)
+  - 2 WeightChartViewModelTests (xAxisDomain, xAxisLabel)
+  - 5 WeightControlCenterViewModelTests (formatWeightGoalInput, cycleToNextOptedOutItem)
+- 🎯 **Next:** Investigate remaining 8 test failures and achieve 100% pass rate
+
 **Tasks:**
 - [ ] **Unit Test Foundation** (3 days)
   - Create test targets in Xcode

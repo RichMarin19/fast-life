@@ -3,15 +3,11 @@ import Combine
 @testable import Fast_lIFe
 
 /// Mock WeightManager for unit testing ViewModels
-/// Industry Pattern: Mock objects for isolated unit testing
-/// Reference: Apple WWDC 2017 "Testing in Xcode" - Mock Dependencies
+/// Industry Pattern: Subclass-based mocking for testability
+/// Reference: Apple WWDC 2017 "Testing in Xcode" - Subclass or protocol for mocks
+/// Follows "simplest method first" principle: Subclassing avoids complex dependency injection
 @MainActor
-class MockWeightManager: ObservableObject {
-    // MARK: - Published Properties (match WeightManager interface)
-
-    @Published var weightEntries: [WeightEntry] = []
-    @Published var syncWithHealthKit: Bool = false
-
+class MockWeightManager: WeightManager {
     // MARK: - Test Control Properties
 
     var addWeightEntryCalled = false
@@ -19,90 +15,57 @@ class MockWeightManager: ObservableObject {
     var lastAddedEntry: WeightEntry?
     var lastDeletedEntry: WeightEntry?
 
-    // MARK: - Mock Unit Conversion (matches WeightManager)
+    // MARK: - Initialization
+    // Uses WeightManager's convenience init() which handles all dependencies via singletons
+    // Following Apple testing pattern: Leverage parent class initialization for simplicity
 
-    private let appSettings = AppSettings.shared
-
-    func displayWeight(for entry: WeightEntry) -> Double {
-        return appSettings.weightUnit.fromPounds(entry.weight)
+    init() {
+        // Call parent's convenience init which uses HealthKitManager.shared and AppDataStore.shared
+        super.init(
+            healthKit: HealthKitManager.shared,
+            dataStore: AppDataStore.shared
+        )
+        // Start with empty state for clean test environment
+        self.weightEntries = []
+        self.syncWithHealthKit = false
     }
 
-    func convertToInternalUnit(_ value: Double) -> Double {
-        return appSettings.weightUnit.toPounds(value)
-    }
+    // MARK: - Override Methods for Testing (track calls for verification)
 
-    var currentUnitAbbreviation: String {
-        return appSettings.weightUnit.abbreviation
-    }
-
-    var currentUnitDisplayName: String {
-        return appSettings.weightUnit.displayName
-    }
-
-    func convertWeightToDisplayUnit(_ weightInPounds: Double) -> Double {
-        return appSettings.weightUnit.fromPounds(weightInPounds)
-    }
-
-    // MARK: - Mock Methods (track calls for verification)
-
-    func addWeightEntry(_ entry: WeightEntry) {
+    override func addWeightEntry(_ entry: WeightEntry) {
         addWeightEntryCalled = true
         lastAddedEntry = entry
+
+        // Simplified version without HealthKit sync for testing
         weightEntries.append(entry)
         weightEntries.sort { $0.date > $1.date }
     }
 
-    func deleteWeightEntry(_ entry: WeightEntry) {
+    override func deleteWeightEntry(_ entry: WeightEntry) {
         deleteWeightEntryCalled = true
         lastDeletedEntry = entry
+
+        // Simplified version without HealthKit deletion for testing
         weightEntries.removeAll { $0.id == entry.id }
     }
 
-    func addWeightEntryInPreferredUnit(weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, date: Date = Date()) {
-        let weightInPounds = appSettings.weightUnit.toPounds(weight)
-        let entry = WeightEntry(date: date, weight: weightInPounds, bmi: bmi, bodyFat: bodyFat, source: .manual)
-        addWeightEntry(entry)
+    // MARK: - Override HealthKit Methods (No-op for testing)
+    // Industry Pattern: Override external dependencies to prevent side effects
+    // Reference: Apple WWDC 2017 "Testing in Xcode" - Stub external dependencies
+
+    override func syncFromHealthKitHistorical(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
+        // No-op: Tests don't verify HealthKit sync logic
+        completion(0, nil)
     }
 
-    func wouldCreateDuplicate(weight: Double, date: Date = Date()) -> Bool {
-        let weightInPounds = appSettings.weightUnit.toPounds(weight)
-        return weightEntries.contains(where: {
-            abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
-                abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
-        })
+    override func syncFromHealthKitWithReset(startDate: Date, completion: @escaping (Int, Error?) -> Void) {
+        // No-op: Tests don't verify HealthKit sync logic
+        completion(0, nil)
     }
 
-    // MARK: - Statistics (simplified for testing)
-
-    var latestWeight: WeightEntry? {
-        weightEntries.first
-    }
-
-    var weightTrend: Double? {
-        guard weightEntries.count >= 2 else { return nil }
-        let recentEntries = Array(weightEntries.prefix(7))
-        guard recentEntries.count >= 2 else { return nil }
-        return recentEntries.first!.weight - recentEntries.last!.weight
-    }
-
-    var averageWeight: Double? {
-        guard !weightEntries.isEmpty else { return nil }
-        let sum = weightEntries.map { $0.weight }.reduce(0.0, +)
-        return sum / Double(weightEntries.count)
-    }
-
-    func weightChange(since date: Date) -> Double? {
-        guard let latestEntry = latestWeight else { return nil }
-        let calendar = Calendar.current
-
-        for entry in weightEntries.reversed() {
-            let comparison = calendar.compare(entry.date, to: date, toGranularity: .day)
-            if comparison == .orderedAscending || comparison == .orderedSame {
-                return latestEntry.weight - entry.weight
-            }
-        }
-
-        return nil
+    override func setSyncPreference(_ enabled: Bool) {
+        // Simplified: Just update the property without triggering HealthKit authorization
+        syncWithHealthKit = enabled
     }
 
     // MARK: - Test Helper Methods

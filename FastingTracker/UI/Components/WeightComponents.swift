@@ -78,11 +78,11 @@ struct WeightStatsView: View {
     @ObservedObject var weightManager: WeightManager
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DSSpacing.cardElementSpacing) {
             // REMOVED: "Statistics" header - DSCard now provides title in header
             // Following Universal Standardization Architecture pattern
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DSSpacing.cardElementSpacing) {
                 WeightChangeStatCard(
                     title: "7-Day Change",
                     weightChange: weightManager.weightChange(since: Calendar.current.date(byAdding: .day, value: -7, to: Date())!)
@@ -124,24 +124,24 @@ struct StatCard: View {
     let color: Color
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DSSpacing.cardSmallSpacing) {
             Image(systemName: icon)
-                .font(.title2)
+                .font(DSTypography.displayS)
                 .foregroundColor(color)
 
             Text(value)
-                .font(.title3)
+                .font(DSTypography.statValueMedium)
                 .fontWeight(.bold)
 
             Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(DSTypography.listCaption)
+                .foregroundColor(Theme.ColorToken.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(8)
+        .padding(DSSpacing.cardPadding)
+        .background(Theme.ColorToken.cardAlt)
+        .cornerRadius(DSSpacing.cardSmallSpacing)
     }
 }
 
@@ -150,43 +150,43 @@ struct WeightChangeStatCard: View {
     let weightChange: Double?
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DSSpacing.cardSmallSpacing) {
             if let change = weightChange {
                 // Arrow icon based on gain/loss
                 Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                    .font(.title2)
-                    .foregroundColor(change >= 0 ? .red : .green)
+                    .font(DSTypography.displayS)
+                    .foregroundColor(change >= 0 ? Theme.ColorToken.stateError : Theme.ColorToken.stateSuccess)
 
                 // Weight change value with arrow
-                HStack(spacing: 4) {
+                HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text(String(format: "%.1f \("lbs")", (abs(change))))
-                        .font(.title3)
+                        .font(DSTypography.statValueMedium)
                         .fontWeight(.bold)
                     Image(systemName: change >= 0 ? "arrow.up" : "arrow.down")
-                        .font(.title3)
+                        .font(DSTypography.statValueMedium)
                         .fontWeight(.bold)
                 }
-                .foregroundColor(change >= 0 ? .red : .green)
+                .foregroundColor(change >= 0 ? Theme.ColorToken.stateError : Theme.ColorToken.stateSuccess)
             } else {
                 Image(systemName: "calendar")
-                    .font(.title2)
-                    .foregroundColor(.gray)
+                    .font(DSTypography.displayS)
+                    .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.6))
 
                 Text("N/A")
-                    .font(.title3)
+                    .font(DSTypography.statValueMedium)
                     .fontWeight(.bold)
-                    .foregroundColor(.gray)
+                    .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.6))
             }
 
             Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(DSTypography.listCaption)
+                .foregroundColor(Theme.ColorToken.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .cornerRadius(8)
+        .padding(DSSpacing.cardPadding)
+        .background(Theme.ColorToken.cardAlt)
+        .cornerRadius(DSSpacing.cardSmallSpacing)
     }
 }
 
@@ -194,7 +194,7 @@ struct WeightHistoryListView: View {
     @ObservedObject var weightManager: WeightManager
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: DSSpacing.cardElementSpacing) {
             // REMOVED: "Weight History" header - DSCard now provides title in header
             // Following Universal Standardization Architecture pattern
 
@@ -225,32 +225,32 @@ struct WeightHistoryRow: View {
 
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 4) {
+            VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
+                HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text(entry.date, style: .date)
-                        .font(.headline)
+                        .font(DSTypography.cardTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     Text("•")
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     Text(entry.date, style: .time)
-                        .font(.subheadline)
+                        .font(DSTypography.cardBody)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
 
-                HStack(spacing: 8) {
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
                     Text(entry.source.rawValue)
-                        .font(.caption)
+                        .font(DSTypography.listCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
                     if let bmi = entry.bmi {
                         Text("BMI: \(bmi, specifier: "%.1f")")
-                            .font(.caption)
+                            .font(DSTypography.listCaption)
                             .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     }
 
                     if let bodyFat = entry.bodyFat {
                         Text("BF: \(bodyFat, specifier: "%.1f")%")
-                            .font(.caption)
+                            .font(DSTypography.listCaption)
                             .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                     }
                 }
@@ -259,7 +259,7 @@ struct WeightHistoryRow: View {
             Spacer()
 
             Text("\(weightManager.displayWeight(for: entry), specifier: "%.1f") \("lbs")")
-                .font(.title3)
+                .font(DSTypography.statValueMedium)
                 .fontWeight(.semibold)
                 .foregroundColor(Theme.ColorToken.accentPrimary)
         }
@@ -299,64 +299,64 @@ struct FirstTimeWeightSetupView: View {
             ScrollView {
                 VStack(spacing: 32) {
                     // Header
-                    VStack(spacing: 12) {
+                    VStack(spacing: DSSpacing.cardElementSpacing) {
                         Image(systemName: "scalemass.fill")
                             .font(DSTypography.displayXXL)
-                            .foregroundColor(Color("FLPrimary"))
+                            .foregroundColor(Theme.ColorToken.accentPrimary)
 
                         Text("Welcome to Weight Tracking")
-                            .font(.title2)
+                            .font(DSTypography.displayM)
                             .fontWeight(.bold)
                             .multilineTextAlignment(.center)
 
                         Text("Let's get started by setting up your weight goals")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .font(DSTypography.cardBody)
+                            .foregroundColor(Theme.ColorToken.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal)
                     }
                     .padding(.top, 40)
 
                     // Current Weight Input
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                         Text("Current Weight")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                            .font(DSTypography.cardTitle)
+                            .foregroundColor(Theme.ColorToken.textPrimary)
 
                         HStack {
                             TextField("Enter weight", text: $currentWeightString)
                                 .keyboardType(.decimalPad)
                                 .font(DSTypography.statValueLarge)
                                 .multilineTextAlignment(.center)
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
+                                .padding(DSSpacing.cardPadding)
+                                .background(Theme.ColorToken.cardAlt)
+                                .cornerRadius(DSSpacing.cardSmallSpacing)
 
                             Text("lbs")
-                                .font(.title3)
-                                .foregroundColor(.secondary)
+                                .font(DSTypography.displayS)
+                                .foregroundColor(Theme.ColorToken.textSecondary)
                         }
                     }
                     .padding(.horizontal)
 
                     // Goal Weight Input
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                         Text("Goal Weight")
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                            .font(DSTypography.cardTitle)
+                            .foregroundColor(Theme.ColorToken.textPrimary)
 
                         HStack {
                             TextField("Enter goal", text: $goalWeightString)
                                 .keyboardType(.decimalPad)
                                 .font(DSTypography.statValueLarge)
                                 .multilineTextAlignment(.center)
-                                .padding()
-                                .background(Color(.systemGray6))
-                                .cornerRadius(8)
+                                .padding(DSSpacing.cardPadding)
+                                .background(Theme.ColorToken.cardAlt)
+                                .cornerRadius(DSSpacing.cardSmallSpacing)
 
                             Text("lbs")
-                                .font(.title3)
-                                .foregroundColor(.secondary)
+                                .font(DSTypography.displayS)
+                                .foregroundColor(Theme.ColorToken.textSecondary)
                         }
                     }
                     .padding(.horizontal)
@@ -364,23 +364,23 @@ struct FirstTimeWeightSetupView: View {
                     // Error message
                     if showError {
                         Text("Please enter valid weights")
-                            .font(.caption)
-                            .foregroundColor(.red)
+                            .font(DSTypography.listCaption)
+                            .foregroundColor(Theme.ColorToken.stateError)
                     }
 
                     // Get Started Button
                     Button(action: saveAndContinue) {
                         Text("Get Started")
-                            .font(.headline)
-                            .foregroundColor(.white)
+                            .font(DSTypography.buttonPrimary)
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                             .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color("FLPrimary"))
-                            .cornerRadius(8)
+                            .padding(DSSpacing.cardPadding)
+                            .background(Theme.ColorToken.accentPrimary)
+                            .cornerRadius(DSSpacing.cardSmallSpacing)
                     }
                     .accessibilityLabel("Save weight setup and continue")
                     .padding(.horizontal)
-                    .padding(.top, 20)
+                    .padding(.top, DSSpacing.cardSectionSpacing)
 
                     Spacer()
                 }
@@ -658,10 +658,10 @@ struct WeightTrendsView: View {
                     )
 
                 ScrollView {
-                    VStack(spacing: 20) {
+                    VStack(spacing: DSSpacing.cardSectionSpacing) {
                         // HEADER: Title + Subtitle
                         // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
-                        VStack(spacing: 4) {
+                        VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
                             // TITLE: Your LIFe Journey (luxury gradient)
                             // Font: SF Pro Rounded 34pt (matching app standard, not spec's 28pt)
                             // Gradient: Theme.ColorToken.accentInfo → accentPrimary (blue→emerald)
@@ -689,8 +689,8 @@ struct WeightTrendsView: View {
                                 .frame(maxWidth: .infinity, alignment: .center)  // Centered
                                 .multilineTextAlignment(.center)
                         }
-                        .padding(.top, 8)
-                        .padding(.bottom, 8)
+                        .padding(.top, DSSpacing.cardSmallSpacing)
+                        .padding(.bottom, DSSpacing.cardSmallSpacing)
 
                         // COACH BAR (v1.2) - State-based micro-copy under subtitle with hide functionality
                         // Per v1.2 spec: Accent background, white text, eye.slash hide button
@@ -705,7 +705,7 @@ struct WeightTrendsView: View {
                                 }
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             })
-                            .padding(.bottom, 8)
+                            .padding(.bottom, DSSpacing.cardSmallSpacing)
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : 20)
                             .animation(.easeInOut(duration: 0.4).delay(0.05), value: isAnimating)
@@ -850,8 +850,8 @@ struct WeightTrendsView: View {
                                 .animation(.easeInOut(duration: 0.6).delay(0.6), value: isAnimating)
                         }
                     }
-                    .padding(.horizontal, 16)  // Consistent 16pt horizontal rhythm
-                    .padding(.vertical, 16)
+                    .padding(.horizontal, DSSpacing.cardPadding)  // Consistent 16pt horizontal rhythm
+                    .padding(.vertical, DSSpacing.cardPadding)
                 }
             }
             .navigationTitle("Weight Trends")
@@ -890,8 +890,8 @@ struct WeightTrendsView: View {
                             Text("Don't show again")
                                 .font(DSTypography.cardSubtitle)
                         }
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 12)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                        .padding(.horizontal, DSSpacing.cardElementSpacing)
                         .padding(.vertical, 6)
                         .background(
                             // Layer 1: Subtle gradient border (10-15% opacity) = luxury feel
@@ -1203,7 +1203,7 @@ struct CircularTrendRingCard: View {
 
     var body: some View {
         LightCard(surface: surface, onHide: onHide) {
-            VStack(spacing: 20) {
+            VStack(spacing: DSSpacing.cardSectionSpacing) {
                 // CIRCULAR PROGRESS RING
                 // v1.2: Centered horizontally (user requirement: all center icons/imagery centered by default)
                 ZStack {
@@ -1236,8 +1236,8 @@ struct CircularTrendRingCard: View {
                     )
 
                     // Center content - Weight change value
-                    VStack(spacing: 4) {
-                        HStack(alignment: .firstTextBaseline, spacing: 4) {
+                    VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
+                        HStack(alignment: .firstTextBaseline, spacing: DSSpacing.cardExtraSmallSpacing) {
                             Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
                                 .font(DSTypography.statValueLarge)
                                 .foregroundColor(Theme.ColorToken.textPrimary)
@@ -1251,7 +1251,7 @@ struct CircularTrendRingCard: View {
                         // Per v1.2 spec C.3: Enhanced sizes for better legibility
                         // Icon: 20pt, Label: 14pt semibold
                         if delta != nil {
-                            HStack(spacing: 4) {
+                            HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
                                 Image(systemName: emotionIcon(for: state))
                                     .font(DSTypography.displayS)
                                     .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
@@ -1264,10 +1264,10 @@ struct CircularTrendRingCard: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.top, 8)
+                .padding(.top, DSSpacing.cardSmallSpacing)
 
                 // TAG + PERIOD LABEL
-                HStack(spacing: 8) {
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
                     Text(tag)
                         .font(DSTypography.pillLabel)
                         .foregroundColor(Theme.ColorToken.textPrimary)
@@ -1289,9 +1289,9 @@ struct CircularTrendRingCard: View {
                     .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.85))
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, DSSpacing.cardElementSpacing)
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, DSSpacing.cardSmallSpacing)
         }
         .onAppear {
             // Trigger ring animation on appear
@@ -1342,7 +1342,7 @@ struct TrendCardFull: View {
 
     var body: some View {
         LightCard(surface: surface, onHide: onHide) {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: DSSpacing.cardElementSpacing) {
                 // Top accent bar (3pt height)
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(accent)
@@ -1350,7 +1350,7 @@ struct TrendCardFull: View {
                     .opacity(0.9)
 
                 // Primary number + unit
-                HStack(alignment: .lastTextBaseline, spacing: 8) {
+                HStack(alignment: .lastTextBaseline, spacing: DSSpacing.cardSmallSpacing) {
                     Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
                         .font(DSTypography.displayHero)
                         .foregroundColor(Theme.ColorToken.textPrimary)
@@ -1363,11 +1363,11 @@ struct TrendCardFull: View {
                 }
 
                 // Tag + Period label
-                HStack(spacing: 8) {
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
                     Text(tag)
                         .font(DSTypography.statLabel)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, DSSpacing.cardSmallSpacing)
+                        .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
                         .background(accent.opacity(0.18))
                         .clipShape(Capsule())
                         .foregroundColor(accent)
@@ -1420,7 +1420,7 @@ struct RecapRow: View {
     var body: some View {
         DSBanner(ice: onHide) {
             // Metrics row
-            HStack(spacing: 12) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
                 // Net delta
                 Label(netText, systemImage: "chart.line.uptrend.xyaxis")
                     .font(DSTypography.cardSubtitle)
@@ -1493,7 +1493,7 @@ struct ReflectionNudge: View {
     var body: some View {
         Button(action: onTap) {
             DSBanner(ice: onHide) {
-                HStack(spacing: 12) {
+                HStack(spacing: DSSpacing.cardElementSpacing) {
                     Image(systemName: "sparkle")
                         .foregroundColor(Theme.ColorToken.accentGold)
                         .font(DSTypography.listTitle)
@@ -1528,7 +1528,7 @@ struct DidYouKnowBanner: View {
 
     var body: some View {
         DSBanner(ice: onHide) {
-            HStack(spacing: 12) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
                 Image(systemName: "lightbulb")
                     .foregroundColor(Theme.ColorToken.accentInfo)
                     .font(DSTypography.listTitle)
@@ -1550,12 +1550,12 @@ struct TrendCard: View {
     let trend: (amount: Double, isLoss: Bool)?
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: DSSpacing.cardSmallSpacing) {
             if let trend = trend {
                 // Top: Celebration emoji (EXCITING!)
                 Text(trendEmoji(for: trend))
                     .font(DSTypography.displayHero)
-                    .padding(.top, 8)
+                    .padding(.top, DSSpacing.cardSmallSpacing)
 
                 // Middle: HUGE number + lbs (IMPACTFUL!)
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
@@ -1571,8 +1571,8 @@ struct TrendCard: View {
                 Text(trend.isLoss ? "LOST" : "GAINED")
                     .font(DSTypography.pillLabel)
                     .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, DSSpacing.cardElementSpacing)
+                    .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
                     .background(
                         Capsule()
                             .fill(Color.white.opacity(0.3))
@@ -1582,12 +1582,12 @@ struct TrendCard: View {
                 Text(title)
                     .font(DSTypography.periodLabel)
                     .foregroundColor(.white.opacity(0.8))
-                    .padding(.bottom, 4)
+                    .padding(.bottom, DSSpacing.cardExtraSmallSpacing)
             } else {
                 // No data state
                 Text("📊")
                     .font(DSTypography.displayHero)
-                    .padding(.top, 8)
+                    .padding(.top, DSSpacing.cardSmallSpacing)
 
                 Text("--")
                     .font(DSTypography.displayXXL)
@@ -1596,8 +1596,8 @@ struct TrendCard: View {
                 Text("NO DATA")
                     .font(DSTypography.pillLabel)
                     .foregroundColor(.white.opacity(0.6))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 4)
+                    .padding(.horizontal, DSSpacing.cardElementSpacing)
+                    .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
                     .background(
                         Capsule()
                             .fill(Color.white.opacity(0.2))
@@ -1606,12 +1606,12 @@ struct TrendCard: View {
                 Text(title)
                     .font(DSTypography.periodLabel)
                     .foregroundColor(.white.opacity(0.6))
-                    .padding(.bottom, 4)
+                    .padding(.bottom, DSSpacing.cardExtraSmallSpacing)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 20)
-        .padding(.horizontal, 16)  // Internal padding for content breathing room
+        .padding(.vertical, DSSpacing.cardSectionSpacing)
+        .padding(.horizontal, DSSpacing.cardPadding)  // Internal padding for content breathing room
         .background(
             RoundedRectangle(cornerRadius: 20)
                 .fill(cardGradient)

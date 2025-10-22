@@ -255,7 +255,7 @@ struct WeightControlCenterView: View {
 
             VStack(spacing: 0) {
                 // Header section (fixed at top)
-                VStack(spacing: 4) {
+                VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
                     // UX/UI Fix #3: Match Weight Tracker title size (34pt)
                     // Issue #1: Center title + apply Weight Tracker cyan gradient styling
                     Text("Control Center")
@@ -271,8 +271,8 @@ struct WeightControlCenterView: View {
                             )
                         )
                         .frame(maxWidth: .infinity, alignment: .center)  // Centered
-                        .padding(.horizontal, 20)
-                        .padding(.top, 8)
+                        .padding(.horizontal, DSSpacing.cardSectionSpacing)
+                        .padding(.top, DSSpacing.cardSmallSpacing)
 
                     // REFINEMENT #1: Split instructions into 2 lines
                     // Behavioral Science: Chunking for cognitive fluency
@@ -287,8 +287,8 @@ struct WeightControlCenterView: View {
                             .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
+                    .padding(.horizontal, DSSpacing.cardSectionSpacing)
+                    .padding(.bottom, DSSpacing.cardElementSpacing)
                 }
 
                 // ScrollView with reorderable cards (Hub pattern - perfect alignment)
@@ -297,7 +297,7 @@ struct WeightControlCenterView: View {
                 // Layer 3: Wrapped in ScrollViewReader for smooth scroll-to-item functionality
                 ScrollView {
                     ScrollViewReader { proxy in
-                        LazyVStack(spacing: 12) {
+                        LazyVStack(spacing: DSSpacing.cardElementSpacing) {
                             ForEach(viewModel.cardOrder) { cardType in
                                 cardView(for: cardType)
                                     .onDrag {
@@ -316,8 +316,8 @@ struct WeightControlCenterView: View {
                             // About section (fixed at bottom)
                             aboutCard
                         }
-                        .padding(.horizontal, 20)  // Single container padding (Hub pattern)
-                        .padding(.top, 8)
+                        .padding(.horizontal, DSSpacing.cardSectionSpacing)  // Single container padding (Hub pattern)
+                        .padding(.top, DSSpacing.cardSmallSpacing)
                         .onAppear {
                             // Capture ScrollViewProxy for badge interaction
                             viewModel.scrollViewProxy = proxy
@@ -414,7 +414,7 @@ struct WeightControlCenterView: View {
 
         VStack(spacing: 0) {
             // Card Header (Hub pattern - no visible drag handle, long-press to drag)
-            HStack(spacing: 12) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
                 // Card icon
                 Image(systemName: cardType.icon)
                     .foregroundColor(Theme.ColorToken.accentPrimary)
@@ -523,7 +523,7 @@ struct WeightControlCenterView: View {
     // MARK: - Goals Card
 
     private var goalsCardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
             // Benefit micro-explainer (Sprint 1)
             Text("Tracking your weight helps you see progress from the inside out — long before it shows in the mirror.")
                 .font(DSTypography.iconButton)
@@ -535,7 +535,7 @@ struct WeightControlCenterView: View {
 
             // Show goal line toggle
             Toggle(isOn: $showGoalLine) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Show Goal Line on Chart")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -552,7 +552,7 @@ struct WeightControlCenterView: View {
 
                 // Goal weight editor - Centered design with grouped value+unit
                 // UX/UI Fix #1: Value and unit grouped and centered together
-                VStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .center, spacing: DSSpacing.cardSmallSpacing) {
                     // "Goal Weight" label - natural width
                     Text("Goal Weight")
                         .font(DSTypography.iconButton)
@@ -560,7 +560,7 @@ struct WeightControlCenterView: View {
 
                     // Compact teal container - matches gold pill size
                     // "150.0" perfectly centered under "Goal Weight" label
-                    HStack(spacing: 4) {
+                    HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
                         TextField("Enter goal", text: $viewModel.weightGoalString)
                             .keyboardType(.decimalPad)
                             .font(DSTypography.displayM)
@@ -582,8 +582,8 @@ struct WeightControlCenterView: View {
                     .accessibilityLabel("Goal weight \(viewModel.weightGoalString) pounds")
                     .accessibilityHint("Double tap to edit")
                     .padding(.leading, 28)  // Shift entire HStack right to center "150.0"
-                    .padding(.trailing, 16)
-                    .padding(.vertical, 12)
+                    .padding(.trailing, DSSpacing.cardPadding)
+                    .padding(.vertical, DSSpacing.cardElementSpacing)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
@@ -596,7 +596,7 @@ struct WeightControlCenterView: View {
                        let currentWeight = viewModel.weightManager.latestWeight?.weight {
                         let toGo = currentWeight - goal
                         if toGo > 0 {
-                            HStack(spacing: 8) {
+                            HStack(spacing: DSSpacing.cardSmallSpacing) {
                                 Image(systemName: "target")
                                     .font(DSTypography.iconButton)
                                     .foregroundColor(Theme.ColorToken.accentGold)
@@ -604,8 +604,8 @@ struct WeightControlCenterView: View {
                                     .font(DSTypography.cardTitle)
                                     .foregroundColor(Theme.ColorToken.accentGold)
                             }
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 12)
+                            .padding(.horizontal, DSSpacing.cardPadding)
+                            .padding(.vertical, DSSpacing.cardElementSpacing)
                             .background(
                                 Capsule()
                                     .fill(Theme.ColorToken.accentGold.opacity(0.15))
@@ -616,7 +616,7 @@ struct WeightControlCenterView: View {
                             )
                             .shadow(color: Theme.ColorToken.accentGold.opacity(0.2), radius: 8, x: 0, y: 4)
                             .frame(maxWidth: .infinity)  // Center horizontally
-                            .padding(.top, 12)
+                            .padding(.top, DSSpacing.cardElementSpacing)
                         }
                     }
                 }
@@ -628,7 +628,7 @@ struct WeightControlCenterView: View {
     // MARK: - Notifications Card
 
     private var notificationsCardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
             // PHASE 2A: Weight Tracker Daily Reminders
             // Following technical plan: fastlife_notifications_plan.md
             // Simple daily reminder (v1), tone system deferred to v1.1+
@@ -644,7 +644,7 @@ struct WeightControlCenterView: View {
 
             // Enable Weight Reminders Toggle
             Toggle(isOn: $viewModel.weightRemindersEnabled) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Enable Weight Reminders")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -665,7 +665,7 @@ struct WeightControlCenterView: View {
                     .background(Theme.ColorToken.dividerOnDark)
 
                 // Timing Mode Picker
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                     Text("Timing")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -695,7 +695,7 @@ struct WeightControlCenterView: View {
                 // Conditional input based on timing mode
                 if viewModel.timingMode == .specificTime {
                     // Specific Time: DatePicker
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                         Text("Reminder Time")
                             .font(DSTypography.listTitle)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -715,7 +715,7 @@ struct WeightControlCenterView: View {
                     }
                 } else {
                     // Before Fasting Goal / After Waking Up: Minutes input
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                         Text(viewModel.timingMode == .beforeFastingGoal ? "Minutes Before Fasting Goal" : "Minutes After Waking Up")
                             .font(DSTypography.listTitle)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -736,7 +736,7 @@ struct WeightControlCenterView: View {
 
                 // Quiet Hours Toggle
                 Toggle(isOn: $viewModel.quietHoursEnabled) {
-                    VStack(alignment: .leading, spacing: 4) {
+                    VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                         Text("Quiet Hours")
                             .font(DSTypography.listTitle)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -753,8 +753,8 @@ struct WeightControlCenterView: View {
 
                 // Quiet Hours Time Pickers (only show when enabled)
                 if viewModel.quietHoursEnabled {
-                    HStack(spacing: 16) {
-                        VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: DSSpacing.cardPadding) {
+                        VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                             Text("Start")
                                 .font(DSTypography.cardCaption)
                                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
@@ -773,7 +773,7 @@ struct WeightControlCenterView: View {
                             }
                         }
 
-                        VStack(alignment: .leading, spacing: 4) {
+                        VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                             Text("End")
                                 .font(DSTypography.cardCaption)
                                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
@@ -799,11 +799,11 @@ struct WeightControlCenterView: View {
 
                 // Skip Days Disclosure Group
                 DisclosureGroup("Skip Days") {
-                    VStack(alignment: .leading, spacing: 8) {
+                    VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                         Text("Don't send reminders on these days")
                             .font(DSTypography.cardCaption)
                             .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
-                            .padding(.bottom, 4)
+                            .padding(.bottom, DSSpacing.cardExtraSmallSpacing)
 
                         ForEach(viewModel.weekdays, id: \.number) { day in
                             Toggle(isOn: Binding(
@@ -825,7 +825,7 @@ struct WeightControlCenterView: View {
                             .accessibilityLabel("Skip weight reminders on \(day.name)")
                         }
                     }
-                    .padding(.top, 8)
+                    .padding(.top, DSSpacing.cardSmallSpacing)
                 }
                 .font(DSTypography.listTitle)
                 .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -839,7 +839,7 @@ struct WeightControlCenterView: View {
 
             // "Did You Know" Toggle
             Toggle(isOn: $viewModel.didYouKnowEnabled) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Did You Know")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -855,7 +855,7 @@ struct WeightControlCenterView: View {
 
             // Frequency picker (only show when enabled)
             if viewModel.didYouKnowEnabled {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Frequency")
                         .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
@@ -878,7 +878,7 @@ struct WeightControlCenterView: View {
 
             // "Motivational" Toggle
             Toggle(isOn: $viewModel.motivationalEnabled) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Motivational")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -894,7 +894,7 @@ struct WeightControlCenterView: View {
 
             // Frequency picker (only show when enabled)
             if viewModel.motivationalEnabled {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Frequency")
                         .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
@@ -917,7 +917,7 @@ struct WeightControlCenterView: View {
 
             // "Action Steps" Toggle
             Toggle(isOn: $viewModel.actionStepsEnabled) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Action Steps")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -933,7 +933,7 @@ struct WeightControlCenterView: View {
 
             // Frequency picker (only show when enabled)
             if viewModel.actionStepsEnabled {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Frequency")
                         .font(DSTypography.cardCaption)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
@@ -956,7 +956,7 @@ struct WeightControlCenterView: View {
     // MARK: - Insights Card
 
     private var insightsCardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
             // Sprint 1: Remove "coming soon" vaporware feel
             Text("Smart tips based on your trends.")
                 .font(DSTypography.listTitle)
@@ -970,10 +970,10 @@ struct WeightControlCenterView: View {
     // MARK: - Sync Card
 
     private var syncCardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
             // Sync toggle
             Toggle(isOn: $viewModel.localSyncEnabled) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Sync with Apple Health")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -1010,7 +1010,7 @@ struct WeightControlCenterView: View {
                 Button(action: {
                     viewModel.syncWithHealthKit()
                 }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: DSSpacing.cardSmallSpacing) {
                         if viewModel.isSyncing {
                             ProgressView()
                                 .tint(Theme.ColorToken.textPrimaryOnDark)
@@ -1035,7 +1035,7 @@ struct WeightControlCenterView: View {
 
             // Status message
             if !viewModel.hasHealthKitPermission {
-                HStack(spacing: 8) {
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(Theme.ColorToken.stateWarning)
                     Text(viewModel.permissionStatusMessage)
@@ -1043,7 +1043,7 @@ struct WeightControlCenterView: View {
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
             } else if !viewModel.lastSyncStatus.isEmpty {
-                HStack(spacing: 8) {
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Theme.ColorToken.accentPrimary)
                     Text(viewModel.lastSyncStatus)
@@ -1055,7 +1055,7 @@ struct WeightControlCenterView: View {
             // Behavioral insight: Trust badge
             // Issue #4: Centered horizontally
             if viewModel.hasHealthKitPermission && viewModel.localSyncEnabled {
-                HStack(spacing: 8) {
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
                     Image(systemName: "lock.shield.fill")
                         .foregroundColor(Theme.ColorToken.accentInfo)
                         .font(DSTypography.listCaption)
@@ -1076,7 +1076,7 @@ struct WeightControlCenterView: View {
     // MARK: - History Card
 
     private var historyCardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
             // Sprint 1: Benefit copy - explain why history matters
             Text("Review and manage your weight entries.")
                 .font(DSTypography.listTitle)
@@ -1090,7 +1090,7 @@ struct WeightControlCenterView: View {
     // MARK: - Manage My Experience Card
 
     private var experienceCardContent: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
             // Subtitle: Purpose of this card
             Text("Control which tips, nudges, and summaries you see (Opt-outs live here).")
                 .font(DSTypography.iconButton)
@@ -1162,7 +1162,7 @@ struct WeightControlCenterView: View {
                     // Show confirmation alert (same behavior as badge)
                     viewModel.showingRestoreAllAlert = true
                 }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: DSSpacing.cardSmallSpacing) {
                         Image(systemName: "arrow.clockwise")
                             .font(DSTypography.cardTitle)
                         Text("Restore All")
@@ -1183,10 +1183,10 @@ struct WeightControlCenterView: View {
     // Helper view for category toggles with individual opt-out items
     @ViewBuilder
     private func categoryToggle(isOn: Binding<Bool>, title: String, description: String, category: ContentCategory) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
             // Category-level toggle
             Toggle(isOn: isOn) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text(title)
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -1200,20 +1200,20 @@ struct WeightControlCenterView: View {
             // Show individual opted-out items for this category (if any)
             let optedOutItems = viewModel.optOutManager.optedOutContentItems.filter { $0.category == category }
             if !optedOutItems.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                     // "Individual opt-outs" header
                     Text("Individual opt-outs:")
                         .font(DSTypography.statLabel)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
-                        .padding(.leading, 16)
-                        .padding(.top, 4)
+                        .padding(.leading, DSSpacing.cardPadding)
+                        .padding(.top, DSSpacing.cardExtraSmallSpacing)
 
                     // List of opted-out items
                     // Layer 3: Each item has .id() for ScrollViewReader targeting
                     ForEach(Array(optedOutItems.enumerated()), id: \.element.id) { _, item in
                         let isHighlighted = viewModel.highlightedItemID == item.id
 
-                        HStack(spacing: 8) {
+                        HStack(spacing: DSSpacing.cardSmallSpacing) {
                             Image(systemName: "minus.circle.fill")
                                 .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.stateWarning)
@@ -1238,7 +1238,7 @@ struct WeightControlCenterView: View {
                                     .foregroundColor(Theme.ColorToken.accentPrimary)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, DSSpacing.cardPadding)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
@@ -1256,7 +1256,7 @@ struct WeightControlCenterView: View {
                             x: 0,
                             y: 0
                         )
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, DSSpacing.cardSmallSpacing)
                         .id(item.id)  // Layer 3: Enable ScrollViewReader targeting
                     }
                 }
@@ -1267,7 +1267,7 @@ struct WeightControlCenterView: View {
     // Helper view for Weight Tracker Cards toggle with hidden cards list
     @ViewBuilder
     private func trackerCardsToggle() -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
             // Master toggle for ALL Weight Tracker Cards
             // When ON: Show all 5 cards | When OFF: Hide all 5 cards
             // Industry Pattern: Apple Health section-level toggles
@@ -1291,7 +1291,7 @@ struct WeightControlCenterView: View {
                     viewModel.saveExperienceOptOuts()
                 }
             )) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Weight Tracker Cards")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -1308,17 +1308,17 @@ struct WeightControlCenterView: View {
             }
 
             if !hiddenCards.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                     // "Hidden cards" header
                     Text("Hidden cards:")
                         .font(DSTypography.statLabel)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
-                        .padding(.leading, 16)
-                        .padding(.top, 4)
+                        .padding(.leading, DSSpacing.cardPadding)
+                        .padding(.top, DSSpacing.cardExtraSmallSpacing)
 
                     // List of hidden cards
                     ForEach(hiddenCards) { cardType in
-                        HStack(spacing: 8) {
+                        HStack(spacing: DSSpacing.cardSmallSpacing) {
                             Image(systemName: "eye.slash.fill")
                                 .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.stateWarning)
@@ -1343,13 +1343,13 @@ struct WeightControlCenterView: View {
                                     .foregroundColor(Theme.ColorToken.accentPrimary)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, DSSpacing.cardPadding)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Theme.ColorToken.textSecondaryOnDark.opacity(0.1))
                         )
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, DSSpacing.cardSmallSpacing)
                     }
                 }
             }
@@ -1359,7 +1359,7 @@ struct WeightControlCenterView: View {
     // Helper view for Progress Story Cards toggle with hidden cards list
     @ViewBuilder
     private func progressStoryCardsToggle() -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
             // Master toggle for ALL Progress Story Cards
             // When ON: Show all 5 cards | When OFF: Hide all 5 cards
             // Industry Pattern: Apple Health section-level toggles (same as Weight Tracker Cards)
@@ -1383,7 +1383,7 @@ struct WeightControlCenterView: View {
                     viewModel.saveExperienceOptOuts()
                 }
             )) {
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Your Progress Journey")
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -1400,17 +1400,17 @@ struct WeightControlCenterView: View {
             }
 
             if !hiddenCards.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
                     // "Hidden cards" header
                     Text("Hidden cards:")
                         .font(DSTypography.statLabel)
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.7))
-                        .padding(.leading, 16)
-                        .padding(.top, 4)
+                        .padding(.leading, DSSpacing.cardPadding)
+                        .padding(.top, DSSpacing.cardExtraSmallSpacing)
 
                     // List of hidden Progress Story cards
                     ForEach(hiddenCards) { cardType in
-                        HStack(spacing: 8) {
+                        HStack(spacing: DSSpacing.cardSmallSpacing) {
                             Image(systemName: "eye.slash.fill")
                                 .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.stateWarning)
@@ -1435,13 +1435,13 @@ struct WeightControlCenterView: View {
                                     .foregroundColor(Theme.ColorToken.accentPrimary)
                             }
                         }
-                        .padding(.horizontal, 16)
+                        .padding(.horizontal, DSSpacing.cardPadding)
                         .padding(.vertical, 6)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Theme.ColorToken.textSecondaryOnDark.opacity(0.1))
                         )
-                        .padding(.horizontal, 8)
+                        .padding(.horizontal, DSSpacing.cardSmallSpacing)
                     }
                 }
             }
@@ -1460,7 +1460,7 @@ struct WeightControlCenterView: View {
 
         return VStack(spacing: 0) {
             // Card Header
-            HStack(spacing: 12) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
                 Image(systemName: "info.circle.fill")
                     .foregroundColor(Theme.ColorToken.accentInfo)
                     .font(DSTypography.displayS)
@@ -1497,7 +1497,7 @@ struct WeightControlCenterView: View {
                     .background(Theme.ColorToken.dividerOnDark)
 
                 // About content
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: DSSpacing.cardElementSpacing) {
                     HStack {
                         Text("Total Entries")
                             .font(DSTypography.listTitle)
@@ -1533,7 +1533,7 @@ struct WeightControlCenterView: View {
                                     .font(DSTypography.statLabel)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                             }
-                            .padding(.top, 4)
+                            .padding(.top, DSSpacing.cardExtraSmallSpacing)
                         }
                     }
                 }
