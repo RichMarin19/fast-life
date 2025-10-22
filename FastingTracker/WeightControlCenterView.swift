@@ -629,13 +629,327 @@ struct WeightControlCenterView: View {
 
     private var notificationsCardContent: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Sprint 1: Remove "coming soon" vaporware feel
-            Text("Personalized nudges to build daily streaks.")
-                .font(DSTypography.listTitle)
-                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+            // PHASE 2A: Weight Tracker Daily Reminders
+            // Following technical plan: fastlife_notifications_plan.md
+            // Simple daily reminder (v1), tone system deferred to v1.1+
 
-            // TODO: Add notification toggles, quiet hours, smart reminders
-            // Reference: FAST-LIFe_Control_Center_Vision.md §B
+            // Benefit copy
+            Text("Receive daily reminders for your weigh-in routine.")
+                .font(DSTypography.iconButton)
+                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                .fixedSize(horizontal: false, vertical: true)
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // Enable Weight Reminders Toggle
+            Toggle(isOn: $viewModel.weightRemindersEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Enable Weight Reminders")
+                        .font(DSTypography.listTitle)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    Text("Get notified at your preferred time each day")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+            .tint(Theme.ColorToken.accentPrimary)
+            .accessibilityLabel("Toggle daily weight reminders")
+            .onChange(of: viewModel.weightRemindersEnabled) { _, newValue in
+                viewModel.handleReminderToggle(newValue)
+            }
+
+            // Settings (only show when enabled)
+            if viewModel.weightRemindersEnabled {
+                Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
+
+                // Timing Mode Picker
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Timing")
+                        .font(DSTypography.listTitle)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+
+                    Picker("Timing Mode", selection: $viewModel.timingMode) {
+                        ForEach(WeightControlCenterViewModel.TimingMode.allCases, id: \.self) { mode in
+                            Text(mode.rawValue).tag(mode)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .tint(Theme.ColorToken.accentCyan)
+                    .onAppear {
+                        // Apple's documented approach: Configure UISegmentedControl appearance
+                        let appearance = UISegmentedControl.appearance()
+                        appearance.setTitleTextAttributes([
+                            .foregroundColor: UIColor(Theme.ColorToken.accentCyan)
+                        ], for: .normal)
+                        appearance.setTitleTextAttributes([
+                            .foregroundColor: UIColor.white
+                        ], for: .selected)
+                    }
+                    .onChange(of: viewModel.timingMode) { _, _ in
+                        viewModel.saveTimingMode()
+                    }
+                }
+
+                // Conditional input based on timing mode
+                if viewModel.timingMode == .specificTime {
+                    // Specific Time: DatePicker
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Reminder Time")
+                            .font(DSTypography.listTitle)
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+
+                        DatePicker(
+                            "Reminder Time",
+                            selection: $viewModel.preferredReminderTime,
+                            displayedComponents: .hourAndMinute
+                        )
+                        .datePickerStyle(.compact)
+                        .labelsHidden()
+                        .colorScheme(.dark)
+                        .accessibilityLabel("Set preferred weigh-in reminder time")
+                        .onChange(of: viewModel.preferredReminderTime) { _, _ in
+                            viewModel.savePreferredTime()
+                        }
+                    }
+                } else {
+                    // Before Fasting Goal / After Waking Up: Minutes input
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(viewModel.timingMode == .beforeFastingGoal ? "Minutes Before Fasting Goal" : "Minutes After Waking Up")
+                            .font(DSTypography.listTitle)
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+
+                        Stepper(value: $viewModel.minutesOffset, in: 5...120, step: 5) {
+                            Text("\(viewModel.minutesOffset) minutes")
+                                .font(DSTypography.cardTitle)
+                                .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                        }
+                        .onChange(of: viewModel.minutesOffset) { _, _ in
+                            viewModel.saveMinutesOffset()
+                        }
+                    }
+                }
+
+                Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
+
+                // Quiet Hours Toggle
+                Toggle(isOn: $viewModel.quietHoursEnabled) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Quiet Hours")
+                            .font(DSTypography.listTitle)
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                        Text("Don't send reminders during these hours")
+                            .font(DSTypography.cardCaption)
+                            .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                    }
+                }
+                .tint(Theme.ColorToken.accentPrimary)
+                .accessibilityLabel("Toggle quiet hours for weight reminders")
+                .onChange(of: viewModel.quietHoursEnabled) { _, _ in
+                    viewModel.saveQuietHours()
+                }
+
+                // Quiet Hours Time Pickers (only show when enabled)
+                if viewModel.quietHoursEnabled {
+                    HStack(spacing: 16) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Start")
+                                .font(DSTypography.cardCaption)
+                                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+                            DatePicker(
+                                "Quiet Hours Start",
+                                selection: $viewModel.quietHoursStart,
+                                displayedComponents: .hourAndMinute
+                            )
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                            .colorScheme(.dark)
+                            .accessibilityLabel("Set quiet hours start time")
+                            .onChange(of: viewModel.quietHoursStart) { _, _ in
+                                viewModel.saveQuietHours()
+                            }
+                        }
+
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("End")
+                                .font(DSTypography.cardCaption)
+                                .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+                            DatePicker(
+                                "Quiet Hours End",
+                                selection: $viewModel.quietHoursEnd,
+                                displayedComponents: .hourAndMinute
+                            )
+                            .datePickerStyle(.compact)
+                            .labelsHidden()
+                            .colorScheme(.dark)
+                            .accessibilityLabel("Set quiet hours end time")
+                            .onChange(of: viewModel.quietHoursEnd) { _, _ in
+                                viewModel.saveQuietHours()
+                            }
+                        }
+                    }
+                }
+
+                Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
+
+                // Skip Days Disclosure Group
+                DisclosureGroup("Skip Days") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Don't send reminders on these days")
+                            .font(DSTypography.cardCaption)
+                            .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                            .padding(.bottom, 4)
+
+                        ForEach(viewModel.weekdays, id: \.number) { day in
+                            Toggle(isOn: Binding(
+                                get: { viewModel.skipWeekdays.contains(day.number) },
+                                set: { isSkipped in
+                                    if isSkipped {
+                                        viewModel.skipWeekdays.insert(day.number)
+                                    } else {
+                                        viewModel.skipWeekdays.remove(day.number)
+                                    }
+                                    viewModel.saveSkipWeekdays()
+                                }
+                            )) {
+                                Text(day.name)
+                                    .font(DSTypography.labelSecondary)
+                                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                            }
+                            .tint(Theme.ColorToken.accentPrimary)
+                            .accessibilityLabel("Skip weight reminders on \(day.name)")
+                        }
+                    }
+                    .padding(.top, 8)
+                }
+                .font(DSTypography.listTitle)
+                .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                .accentColor(Theme.ColorToken.textPrimaryOnDark)
+            }
+
+            // MARK: - Additional Notification Types (Phase 2a enhancement)
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // "Did You Know" Toggle
+            Toggle(isOn: $viewModel.didYouKnowEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Did You Know")
+                        .font(DSTypography.listTitle)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    Text("Educational facts about weight tracking")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+            .tint(Theme.ColorToken.accentPrimary)
+            .onChange(of: viewModel.didYouKnowEnabled) { _, _ in
+                viewModel.saveDidYouKnowSettings()
+            }
+
+            // Frequency picker (only show when enabled)
+            if viewModel.didYouKnowEnabled {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Frequency")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+                    Picker("Frequency", selection: $viewModel.didYouKnowFrequency) {
+                        ForEach(WeightControlCenterViewModel.NotificationFrequency.allCases, id: \.self) { frequency in
+                            Text(frequency.rawValue).tag(frequency)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .tint(Theme.ColorToken.accentCyan)
+                    .onChange(of: viewModel.didYouKnowFrequency) { _, _ in
+                        viewModel.saveDidYouKnowSettings()
+                    }
+                }
+            }
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // "Motivational" Toggle
+            Toggle(isOn: $viewModel.motivationalEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Motivational")
+                        .font(DSTypography.listTitle)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    Text("Encouragement messages to keep you going")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+            .tint(Theme.ColorToken.accentPrimary)
+            .onChange(of: viewModel.motivationalEnabled) { _, _ in
+                viewModel.saveMotivationalSettings()
+            }
+
+            // Frequency picker (only show when enabled)
+            if viewModel.motivationalEnabled {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Frequency")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+                    Picker("Frequency", selection: $viewModel.motivationalFrequency) {
+                        ForEach(WeightControlCenterViewModel.NotificationFrequency.allCases, id: \.self) { frequency in
+                            Text(frequency.rawValue).tag(frequency)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .tint(Theme.ColorToken.accentCyan)
+                    .onChange(of: viewModel.motivationalFrequency) { _, _ in
+                        viewModel.saveMotivationalSettings()
+                    }
+                }
+            }
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // "Action Steps" Toggle
+            Toggle(isOn: $viewModel.actionStepsEnabled) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Action Steps")
+                        .font(DSTypography.listTitle)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    Text("Practical tips and habit-building steps")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+            .tint(Theme.ColorToken.accentPrimary)
+            .onChange(of: viewModel.actionStepsEnabled) { _, _ in
+                viewModel.saveActionStepsSettings()
+            }
+
+            // Frequency picker (only show when enabled)
+            if viewModel.actionStepsEnabled {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Frequency")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+                    Picker("Frequency", selection: $viewModel.actionStepsFrequency) {
+                        ForEach(WeightControlCenterViewModel.NotificationFrequency.allCases, id: \.self) { frequency in
+                            Text(frequency.rawValue).tag(frequency)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .tint(Theme.ColorToken.accentCyan)
+                    .onChange(of: viewModel.actionStepsFrequency) { _, _ in
+                        viewModel.saveActionStepsSettings()
+                    }
+                }
+            }
         }
     }
 

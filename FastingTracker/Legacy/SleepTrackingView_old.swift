@@ -25,17 +25,17 @@ struct SleepTrackingView: View {
                         onConnect: {
                             // DIRECT AUTHORIZATION: Same pattern as existing sleep sync
                             // Request sleep permissions immediately when user wants to connect
-                            print("📱 SleepTrackingView: HealthKit nudge - requesting sleep authorization")
+                            Log.debug("📱 SleepTrackingView: HealthKit nudge - requesting sleep authorization", category: .general)
                             HealthKitManager.shared.requestSleepAuthorization { success, error in
                                 DispatchQueue.main.async {
                                     if success {
-                                        print("✅ SleepTrackingView: Sleep authorization granted from nudge")
+                                        Log.debug("✅ SleepTrackingView: Sleep authorization granted from nudge", category: .general)
                                         // Enable sync automatically when granted from nudge
                                         sleepManager.setSyncPreference(true)
                                         // Hide nudge after successful connection
                                         showHealthKitNudge = false
                                     } else {
-                                        print("❌ SleepTrackingView: Sleep authorization denied from nudge")
+                                        Log.debug("❌ SleepTrackingView: Sleep authorization denied from nudge", category: .general)
                                         // Still hide nudge if user denied (don't keep asking)
                                         nudgeManager.dismissNudge(for: .sleep)
                                         showHealthKitNudge = false
@@ -192,7 +192,7 @@ struct SleepTrackingView: View {
             // Following Lose It pattern - contextual reminder on first tracker access
             showHealthKitNudge = nudgeManager.shouldShowNudge(for: .sleep)
             if showHealthKitNudge {
-                print("📱 SleepTrackingView: Showing HealthKit nudge for first-time user")
+                Log.debug("📱 SleepTrackingView: Showing HealthKit nudge for first-time user", category: .general)
             }
         }
         .toolbar {
@@ -361,14 +361,14 @@ struct SleepSyncSettingsView: View {
                                 // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                                 // Request sleep permissions immediately when user enables sleep sync
                                 // UNIFIED EXPERIENCE: Same pattern as WeightTrackingView
-                                print("📱 SleepTrackingView: Requesting sleep authorization directly")
+                                Log.debug("📱 SleepTrackingView: Requesting sleep authorization directly", category: .general)
                                 HealthKitManager.shared.requestSleepAuthorization { success, error in
                                     DispatchQueue.main.async {
                                         if success {
-                                            print("✅ SleepTrackingView: Sleep authorization granted - enabling sync")
+                                            Log.debug("✅ SleepTrackingView: Sleep authorization granted - enabling sync", category: .general)
                                             sleepManager.setSyncPreference(true)
                                         } else {
-                                            print("❌ SleepTrackingView: Sleep authorization denied")
+                                            Log.debug("❌ SleepTrackingView: Sleep authorization denied", category: .general)
                                             sleepManager.setSyncPreference(false)
                                         }
                                     }

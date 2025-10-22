@@ -4,4 +4,45 @@
    <FileRef
       location = "self:">
    </FileRef>
+   <FileRef
+      location = "container:../FastingTrackerTests/FastingTrackerTests.swift">
+   </FileRef>
+   <Group
+      location = "container:../FastingTrackerTests/Fixtures"
+      name = "Fixtures">
+   </Group>
+   <Group
+      location = "container:../FastingTrackerTests/Helpers"
+      name = "Helpers">
+      <FileRef
+         location = "group:TestHelpers.swift">
+      </FileRef>
+   </Group>
+   <Group
+      location = "container:../FastingTrackerTests/Managers"
+      name = "Managers">
+      <FileRef
+         location = "group:WeightNotificationPlannerTests.swift">
+      </FileRef>
+      <FileRef
+         location = "group:WeightManagerTests.swift">
+      </FileRef>
+   </Group>
+   <Group
+      location = "container:../FastingTrackerTests/Mocks"
+      name = "Mocks">
+      <FileRef
+         location = "group:MockWeightManager.swift">
+      </FileRef>
+   </Group>
+   <Group
+      location = "container:../FastingTrackerTests/ViewModels"
+      name = "ViewModels">
+      <FileRef
+         location = "group:WeightChartViewModelTests.swift">
+      </FileRef>
+      <FileRef
+         location = "group:WeightControlCenterViewModelTests.swift">
+      </FileRef>
+   </Group>
 </Workspace>

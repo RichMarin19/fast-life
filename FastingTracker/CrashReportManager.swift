@@ -1,6 +1,8 @@
 import Foundation
 import OSLog
 import UIKit
+import Firebase
+import FirebaseCrashlytics
 
 /// Centralized crash reporting and analytics manager
 /// Following Apple best practices for production error tracking
@@ -68,8 +70,8 @@ public class CrashReportManager {
         AppLogger.info("CrashReportManager: Debug mode - crash reporting disabled", category: AppLogger.general)
         #else
         // In production, this would initialize Firebase Crashlytics
-        // FirebaseApp.configure()
-        // Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+        FirebaseApp.configure()
+        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
         AppLogger.info("CrashReportManager initialized for production", category: AppLogger.general)
         #endif
 
@@ -149,9 +151,12 @@ public class CrashReportManager {
         }
         #else
         // In production, this would record to Firebase Crashlytics
-        // Crashlytics.crashlytics().record(error: error)
-        // Crashlytics.crashlytics().setCustomKeys(context)
-        // Crashlytics.crashlytics().log("Category: \(category.rawValue)")
+        Crashlytics.crashlytics().record(error: error)
+        for (key, value) in context {
+            Crashlytics.crashlytics().setCustomValue(value, forKey: key)
+        }
+        // Note: setCustomKeys replaced with loop below
+        Crashlytics.crashlytics().log("Category: \(category.rawValue)")
         #endif
     }
 
@@ -212,7 +217,7 @@ public class CrashReportManager {
 
         #if !DEBUG
         // In production, this would log to Firebase Crashlytics
-        // Crashlytics.crashlytics().log(logMessage)
+        Crashlytics.crashlytics().log(logMessage)
         #endif
     }
 
@@ -227,7 +232,7 @@ public class CrashReportManager {
 
         #if !DEBUG
         // In production, this would set user context in Firebase Crashlytics
-        // Crashlytics.crashlytics().setUserID(hashedID)
+        Crashlytics.crashlytics().setUserID(hashedID)
         #endif
     }
 
@@ -237,7 +242,7 @@ public class CrashReportManager {
 
         #if !DEBUG
         // In production, this would set custom keys in Firebase Crashlytics
-        // Crashlytics.crashlytics().setCustomValue(value, forKey: key)
+        Crashlytics.crashlytics().setCustomValue(value, forKey: key)
         #endif
     }
 }

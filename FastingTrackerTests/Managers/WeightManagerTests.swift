@@ -7,10 +7,10 @@
 //
 
 import XCTest
-@testable import FastingTracker
+@testable import Fast_lIFe
 
 @MainActor
-final class WeightManagerTests: FastingTrackerTests {
+final class WeightManagerTests: XCTestCase {
 
     var weightManager: WeightManager!
 

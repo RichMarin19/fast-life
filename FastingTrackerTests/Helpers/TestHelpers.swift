@@ -8,7 +8,7 @@
 
 import Foundation
 import XCTest
-@testable import FastingTracker
+@testable import Fast_lIFe
 
 // MARK: - Date Helpers
 

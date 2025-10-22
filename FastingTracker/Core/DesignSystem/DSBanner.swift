@@ -229,7 +229,7 @@ extension DSBanner {
         VStack(spacing: 20) {
             // White banner (motivational)
             DSBanner(white: {
-                print("Hide white banner")
+                Log.debug("Hide white banner", category: .general)
             }) {
                 HStack(spacing: 12) {
                     Image(systemName: "chart.line.uptrend.xyaxis")
@@ -246,7 +246,7 @@ extension DSBanner {
 
             // Mint banner (educational)
             DSBanner(mint: {
-                print("Hide mint banner")
+                Log.debug("Hide mint banner", category: .general)
             }) {
                 HStack(spacing: 12) {
                     Image(systemName: "lightbulb")
@@ -263,7 +263,7 @@ extension DSBanner {
 
             // Ice banner (reflection)
             DSBanner(ice: {
-                print("Hide ice banner")
+                Log.debug("Hide ice banner", category: .general)
             }) {
                 HStack(spacing: 12) {
                     Image(systemName: "sparkle")

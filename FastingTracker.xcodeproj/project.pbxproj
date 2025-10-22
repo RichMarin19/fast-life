@@ -3,18 +3,14 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 56;
+	objectVersion = 70;
 	objects = {
 
 /* Begin PBXBuildFile section */
-		64CC58D93BD04E0D8FCC2158 /* WeightControlCenterViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C1055DD385A43DF9F1B794F /* WeightControlCenterViewModelTests.swift */; };
-
-		F4F93B43921641AA962215FC /* MockWeightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8BDE2EAF44FE473AB92A972C /* MockWeightManager.swift */; };
-		0FDE1CBC1535492AA96737B0 /* WeightChartViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9935A2172B8845D3B22FA03A /* WeightChartViewModelTests.swift */; };
-
-		A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */; };
-		DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */; };
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
+		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
+		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
+		521EEDE22EA906B5005C1074 /* GoogleService-Info 2.plist in Resources */ = {isa = PBXBuildFile; fileRef = 521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */; };
 		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* SleepEntry.swift */; };
 		5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */; };
@@ -80,6 +76,8 @@
 		52F5788C2EA816F50042727E /* DSCoachBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788B2EA816F50042727E /* DSCoachBar.swift */; };
 		52F5788F2EA861470042727E /* CardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788D2EA861470042727E /* CardManager.swift */; };
 		52F578902EA861470042727E /* CardTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788E2EA861470042727E /* CardTypeProtocol.swift */; };
+		52F578972EA8E2AD0042727E /* WeightNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */; };
+		52F578982EA8E2AD0042727E /* WeightNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -88,8 +86,10 @@
 		A1000011000000000000001 /* Core/Managers/NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012000000000000001 /* Core/Managers/NotificationManager.swift */; };
 		A1000013000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000014000000000000001 /* Assets.xcassets */; };
 		A1000031000000000000001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000032000000000000001 /* AppSettings.swift */; };
+		A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */; };
 		A62491EA2BAB48DCB3C21552 /* Core/Managers/NotificationIdentifierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */; };
 		CV001001000000000000001 /* CoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CV001002000000000000001 /* CoachView.swift */; };
+		DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */; };
 		ES001001000000000000001 /* UI/Components/EditStartTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */; };
 		FC001001000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC001002000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift */; };
 		FC002001000000000000001 /* UI/Components/EditFastTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC002002000000000000001 /* UI/Components/EditFastTimesView.swift */; };
@@ -113,14 +113,21 @@
 		TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		52F578A12EA8FD4C0042727E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A1000025000000000000001 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A1000021000000000000001;
+			remoteInfo = FastingTracker;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
-		9C1055DD385A43DF9F1B794F /* WeightControlCenterViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightControlCenterViewModelTests.swift; sourceTree = "<group>"; };
-
-		8BDE2EAF44FE473AB92A972C /* MockWeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWeightManager.swift; sourceTree = "<group>"; };
-		9935A2172B8845D3B22FA03A /* WeightChartViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartViewModelTests.swift; sourceTree = "<group>"; };
-
+		00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
 		38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationIdentifierBuilder.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
+		521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info 2.plist"; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		5243F23F2E900F440051A731 /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SleepEntry.swift; sourceTree = "<group>"; };
 		5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
@@ -140,8 +147,6 @@
 		5289E0702E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitManager.swift; sourceTree = "<group>"; };
 		5289E0712E8D5F6500254E70 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntry.swift; sourceTree = "<group>"; };
 		5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
-		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
-		00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
 		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackingView.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
@@ -189,6 +194,10 @@
 		52F5788B2EA816F50042727E /* DSCoachBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSCoachBar.swift; sourceTree = "<group>"; };
 		52F5788D2EA861470042727E /* CardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardManager.swift; sourceTree = "<group>"; };
 		52F5788E2EA861470042727E /* CardTypeProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardTypeProtocol.swift; sourceTree = "<group>"; };
+		52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightNotificationManager.swift; sourceTree = "<group>"; };
+		52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightNotificationPlanner.swift; sourceTree = "<group>"; };
+		52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FastingTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -223,11 +232,24 @@
 		TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		52F5789E2EA8FD4C0042727E /* FastingTrackerTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FastingTrackerTests; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
 /* Begin PBXFrameworksBuildPhase section */
+		52F5789A2EA8FD4C0042727E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1000017000000000000001 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */,
+				521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -238,6 +260,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000019000000000000001 /* FastingTracker */,
+				52F5789E2EA8FD4C0042727E /* FastingTrackerTests */,
 				A1000020000000000000001 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -245,6 +268,9 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */,
+				52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */,
+				521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */,
 				52F5788D2EA861470042727E /* CardManager.swift */,
 				52F5788E2EA861470042727E /* CardTypeProtocol.swift */,
 				52F5788B2EA816F50042727E /* DSCoachBar.swift */,
@@ -354,6 +380,7 @@
 			isa = PBXGroup;
 			children = (
 				A1000015000000000000001 /* Fast lIFe.app */,
+				52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -361,6 +388,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		52F5789C2EA8FD4C0042727E /* FastingTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 52F578A32EA8FD4C0042727E /* Build configuration list for PBXNativeTarget "FastingTrackerTests" */;
+			buildPhases = (
+				52F578992EA8FD4C0042727E /* Sources */,
+				52F5789A2EA8FD4C0042727E /* Frameworks */,
+				52F5789B2EA8FD4C0042727E /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				52F578A22EA8FD4C0042727E /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				52F5789E2EA8FD4C0042727E /* FastingTrackerTests */,
+			);
+			name = FastingTrackerTests;
+			packageProductDependencies = (
+			);
+			productName = FastingTrackerTests;
+			productReference = 52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		A1000021000000000000001 /* FastingTracker */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1000022000000000000001 /* Build configuration list for PBXNativeTarget "FastingTracker" */;
@@ -385,9 +435,13 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 1500;
+				LastSwiftUpdateCheck = 2600;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					52F5789C2EA8FD4C0042727E = {
+						CreatedOnToolsVersion = 26.0.1;
+						TestTargetID = A1000021000000000000001;
+					};
 					A1000021000000000000001 = {
 						CreatedOnToolsVersion = 15.0;
 					};
@@ -402,21 +456,33 @@
 				Base,
 			);
 			mainGroup = A1000018000000000000001;
+			packageReferences = (
+				521EEDDC2EA9059B005C1074 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
 			productRefGroup = A1000020000000000000001 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
 				A1000021000000000000001 /* FastingTracker */,
+				52F5789C2EA8FD4C0042727E /* FastingTrackerTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		52F5789B2EA8FD4C0042727E /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1000024000000000000001 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				A1000013000000000000001 /* Assets.xcassets in Resources */,
+				521EEDE22EA906B5005C1074 /* GoogleService-Info 2.plist in Resources */,
 				52B2CFCB2E95A9F50061FCFF /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -424,6 +490,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		52F578992EA8FD4C0042727E /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		A1000023000000000000001 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -509,6 +582,8 @@
 				GS001001000000000000001 /* UI/Components/GoalSettingsView.swift in Sources */,
 				HR001001000000000000001 /* UI/Components/HistoryRowView.swift in Sources */,
 				SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */,
+				52F578972EA8E2AD0042727E /* WeightNotificationManager.swift in Sources */,
+				52F578982EA8E2AD0042727E /* WeightNotificationPlanner.swift in Sources */,
 				FC001001000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift in Sources */,
 				5288A52F2EA44D2600806BE7 /* TrackerCardManager.swift in Sources */,
 				FC002001000000000000001 /* UI/Components/EditFastTimesView.swift in Sources */,
@@ -530,7 +605,59 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		52F578A22EA8FD4C0042727E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A1000021000000000000001 /* FastingTracker */;
+			targetProxy = 52F578A12EA8FD4C0042727E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		52F578A42EA8FD4C0042727E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QDD5ZFGK2T;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = LeadEdge360.FastingTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fast lIFe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Fast lIFe";
+			};
+			name = Debug;
+		};
+		52F578A52EA8FD4C0042727E /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = QDD5ZFGK2T;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = LeadEdge360.FastingTrackerTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = NO;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Fast lIFe.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Fast lIFe";
+			};
+			name = Release;
+		};
 		A1000027000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -717,6 +844,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		52F578A32EA8FD4C0042727E /* Build configuration list for PBXNativeTarget "FastingTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				52F578A42EA8FD4C0042727E /* Debug */,
+				52F578A52EA8FD4C0042727E /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		A1000022000000000000001 /* Build configuration list for PBXNativeTarget "FastingTracker" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -736,6 +872,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		521EEDDC2EA9059B005C1074 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.4.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 521EEDDC2EA9059B005C1074 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 521EEDDC2EA9059B005C1074 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCrashlytics;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = A1000025000000000000001 /* Project object */;
 }

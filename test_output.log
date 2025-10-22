@@ -1,0 +1,7 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild test -project FastingTracker.xcodeproj -scheme FastingTracker -destination "platform=iOS Simulator,name=iPhone 16 Pro" "-only-testing:FastingTrackerTests"
+
+2025-10-22 04:26:52.952 xcodebuild[73164:4483725] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+2025-10-22 04:26:52.958 xcodebuild[73164:4483725] Writing error result bundle to /var/folders/c5/ht4mh6gx08l8ly9g_w2s7r8r0000gn/T/ResultBundle_2025-22-10_04-26-0052.xcresult
+xcodebuild: error: Scheme FastingTracker is not currently configured for the test action.
+

@@ -14,32 +14,32 @@ class CSVImporter {
 
     /// Validates CSV file format and returns preview data
     func validateAndPreviewCSV(from url: URL) -> Result<ImportPreview, ImportError> {
-        print("\n📥 === VALIDATE & PREVIEW CSV ===")
-        print("File: \(url.lastPathComponent)")
+        Log.debug("\n📥 === VALIDATE & PREVIEW CSV ===", category: .general)
+        Log.debug("File: \(url.lastPathComponent)", category: .general)
 
         // Request access to security-scoped resource
         // Reference: https://developer.apple.com/documentation/foundation/nsurl/1417051-startaccessingsecurityscopedreso
         guard url.startAccessingSecurityScopedResource() else {
-            print("❌ Failed to access file (security-scoped resource)")
+            Log.debug("❌ Failed to access file (security-scoped resource)", category: .general)
             return .failure(.fileReadError)
         }
         defer { url.stopAccessingSecurityScopedResource() }
 
         // Read file contents
         guard let csvContent = try? String(contentsOf: url, encoding: .utf8) else {
-            print("❌ Failed to read file")
+            Log.debug("❌ Failed to read file", category: .general)
             return .failure(.fileReadError)
         }
 
-        print("✅ File read successfully (\(csvContent.count) characters)")
+        Log.debug("✅ File read successfully (\(csvContent.count) characters)", category: .general)
 
         // Parse CSV sections
         guard let sections = parseCSVSections(csvContent) else {
-            print("❌ Invalid CSV format")
+            Log.debug("❌ Invalid CSV format", category: .general)
             return .failure(.invalidFormat)
         }
 
-        print("✅ CSV format valid")
+        Log.debug("✅ CSV format valid", category: .general)
 
         // Count entries in each section
         let preview = ImportPreview(
@@ -50,42 +50,42 @@ class CSVImporter {
             moodCount: sections.moodRows.count
         )
 
-        print("📊 Preview: \(preview.fastingCount) fasts, \(preview.weightCount) weights, \(preview.hydrationCount) drinks, \(preview.sleepCount) sleeps, \(preview.moodCount) moods")
-        print("====================================\n")
+        Log.debug("📊 Preview: \(preview.fastingCount) fasts, \(preview.weightCount) weights, \(preview.hydrationCount) drinks, \(preview.sleepCount) sleeps, \(preview.moodCount) moods", category: .general)
+        Log.debug("====================================\n", category: .general)
 
         return .success(preview)
     }
 
     /// Imports data from CSV file (merge mode - skips duplicates)
     func importData(from url: URL) -> Result<ImportResult, ImportError> {
-        print("\n📥 === IMPORT DATA FROM CSV ===")
-        print("File: \(url.lastPathComponent)")
-        print("Mode: Merge (skip duplicates)")
+        Log.debug("\n📥 === IMPORT DATA FROM CSV ===", category: .general)
+        Log.debug("File: \(url.lastPathComponent)", category: .general)
+        Log.debug("Mode: Merge (skip duplicates)", category: .general)
 
         // Request access to security-scoped resource
         // Reference: https://developer.apple.com/documentation/foundation/nsurl/1417051-startaccessingsecurityscopedreso
         guard url.startAccessingSecurityScopedResource() else {
-            print("❌ Failed to access file (security-scoped resource)")
+            Log.debug("❌ Failed to access file (security-scoped resource)", category: .general)
             return .failure(.fileReadError)
         }
         defer { url.stopAccessingSecurityScopedResource() }
 
         // Read file contents
         guard let csvContent = try? String(contentsOf: url, encoding: .utf8) else {
-            print("❌ Failed to read file")
+            Log.debug("❌ Failed to read file", category: .general)
             return .failure(.fileReadError)
         }
 
         // Parse CSV sections
         guard let sections = parseCSVSections(csvContent) else {
-            print("❌ Invalid CSV format")
+            Log.debug("❌ Invalid CSV format", category: .general)
             return .failure(.invalidFormat)
         }
 
         var result = ImportResult()
 
         // Import each section
-        print("\n📊 Importing sections...")
+        Log.debug("\n📊 Importing sections...", category: .general)
 
         result.fastingImported = importFastingSessions(sections.fastingRows, skipped: &result.fastingSkipped)
         result.weightImported = importWeightEntries(sections.weightRows, skipped: &result.weightSkipped)
@@ -93,10 +93,10 @@ class CSVImporter {
         result.sleepImported = importSleepEntries(sections.sleepRows, skipped: &result.sleepSkipped)
         result.moodImported = importMoodEntries(sections.moodRows, skipped: &result.moodSkipped)
 
-        print("\n✅ Import complete!")
-        print("📈 Imported: \(result.totalImported) entries")
-        print("⏭️  Skipped: \(result.totalSkipped) duplicates")
-        print("====================================\n")
+        Log.debug("\n✅ Import complete!", category: .general)
+        Log.debug("📈 Imported: \(result.totalImported) entries", category: .general)
+        Log.debug("⏭️  Skipped: \(result.totalSkipped) duplicates", category: .general)
+        Log.debug("====================================\n", category: .general)
 
         return .success(result)
     }
@@ -150,7 +150,7 @@ class CSVImporter {
     // MARK: - Import Functions
 
     private func importFastingSessions(_ rows: [String], skipped: inout Int) -> Int {
-        print("📊 Importing fasting sessions...")
+        Log.debug("📊 Importing fasting sessions...", category: .general)
 
         guard !rows.isEmpty else { return 0 }
 
@@ -196,12 +196,12 @@ class CSVImporter {
             imported += 1
         }
 
-        print("✅ Fasting: \(imported) imported, \(skipped) skipped")
+        Log.debug("✅ Fasting: \(imported) imported, \(skipped) skipped", category: .general)
         return imported
     }
 
     private func importWeightEntries(_ rows: [String], skipped: inout Int) -> Int {
-        print("📊 Importing weight entries...")
+        Log.debug("📊 Importing weight entries...", category: .general)
 
         guard !rows.isEmpty else { return 0 }
 
@@ -238,12 +238,12 @@ class CSVImporter {
             imported += 1
         }
 
-        print("✅ Weight: \(imported) imported, \(skipped) skipped")
+        Log.debug("✅ Weight: \(imported) imported, \(skipped) skipped", category: .general)
         return imported
     }
 
     private func importDrinkEntries(_ rows: [String], skipped: inout Int) -> Int {
-        print("📊 Importing hydration entries...")
+        Log.debug("📊 Importing hydration entries...", category: .general)
 
         guard !rows.isEmpty else { return 0 }
 
@@ -280,12 +280,12 @@ class CSVImporter {
             imported += 1
         }
 
-        print("✅ Hydration: \(imported) imported, \(skipped) skipped")
+        Log.debug("✅ Hydration: \(imported) imported, \(skipped) skipped", category: .general)
         return imported
     }
 
     private func importSleepEntries(_ rows: [String], skipped: inout Int) -> Int {
-        print("📊 Importing sleep entries...")
+        Log.debug("📊 Importing sleep entries...", category: .general)
 
         guard !rows.isEmpty else { return 0 }
 
@@ -320,12 +320,12 @@ class CSVImporter {
             imported += 1
         }
 
-        print("✅ Sleep: \(imported) imported, \(skipped) skipped")
+        Log.debug("✅ Sleep: \(imported) imported, \(skipped) skipped", category: .general)
         return imported
     }
 
     private func importMoodEntries(_ rows: [String], skipped: inout Int) -> Int {
-        print("📊 Importing mood entries...")
+        Log.debug("📊 Importing mood entries...", category: .general)
 
         guard !rows.isEmpty else { return 0 }
 
@@ -361,7 +361,7 @@ class CSVImporter {
             imported += 1
         }
 
-        print("✅ Mood: \(imported) imported, \(skipped) skipped")
+        Log.debug("✅ Mood: \(imported) imported, \(skipped) skipped", category: .general)
         return imported
     }
 

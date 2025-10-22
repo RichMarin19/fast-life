@@ -1,12 +1,12 @@
 import XCTest
 import Combine
-@testable import FastingTracker
+@testable import Fast_lIFe
 
 /// Tests for WeightChartViewModel
 /// Industry Pattern: Unit tests following Apple WWDC 2017 "Testing in Xcode"
 /// Reference: WeightManagerTests proven pattern (Given-When-Then)
 @MainActor
-final class WeightChartViewModelTests: FastingTrackerTests {
+final class WeightChartViewModelTests: XCTestCase {
     var sut: WeightChartViewModel!
     var mockWeightManager: MockWeightManager!
 

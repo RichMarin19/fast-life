@@ -16,7 +16,7 @@ import SwiftUI
             cardType: .milestone,
             title: "Test: Ice Surface",
             surface: Theme.ColorToken.surfaceIce,  // 🧪 TEST: Light ice background
-            onDismiss: { print("Dismiss tapped") }
+            onDismiss: { Log.debug("Dismiss tapped", category: .general) }
         ) {
             VStack(spacing: 12) {
                 Text("✅ SUCCESS")
@@ -49,7 +49,7 @@ import SwiftUI
             cardType: .currentWeight,
             title: "Test: Default (No Surface)",
             // 🧪 TEST: No surface parameter = should be white
-            onDismiss: { print("Dismiss tapped") }
+            onDismiss: { Log.debug("Dismiss tapped", category: .general) }
         ) {
             VStack(spacing: 12) {
                 Text("✅ SUCCESS")
@@ -84,7 +84,7 @@ import SwiftUI
                     cardType: .milestone,
                     title: "Ice Surface",
                     surface: Theme.ColorToken.surfaceIce,
-                    onDismiss: { print("Ice dismissed") }
+                    onDismiss: { Log.debug("Ice dismissed", category: .general) }
                 ) {
                     Text("Light Ice/Blue")
                         .font(.system(size: 16, weight: .semibold))
@@ -96,7 +96,7 @@ import SwiftUI
                     cardType: .milestone,
                     title: "Ivory → Ice (Unified)",
                     surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard
-                    onDismiss: { print("Ivory dismissed") }
+                    onDismiss: { Log.debug("Ivory dismissed", category: .general) }
                 ) {
                     Text("Now uses Ice (Unified Standard)")
                         .font(.system(size: 16, weight: .semibold))
@@ -108,7 +108,7 @@ import SwiftUI
                     cardType: .milestone,
                     title: "Mint → Ice (Unified)",
                     surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard
-                    onDismiss: { print("Mint dismissed") }
+                    onDismiss: { Log.debug("Mint dismissed", category: .general) }
                 ) {
                     Text("Now uses Ice (Unified Standard)")
                         .font(.system(size: 16, weight: .semibold))
@@ -119,7 +119,7 @@ import SwiftUI
                 DSCard(
                     cardType: .currentWeight,
                     title: "Default (White)",
-                    onDismiss: { print("Default dismissed") }
+                    onDismiss: { Log.debug("Default dismissed", category: .general) }
                 ) {
                     Text("White Background")
                         .font(.system(size: 16, weight: .semibold))

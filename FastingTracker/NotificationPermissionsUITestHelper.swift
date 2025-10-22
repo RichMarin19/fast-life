@@ -21,27 +21,27 @@ class NotificationPermissionsUITestHelper {
     /// Complete E2E test: Request permissions -> Send notification -> Deep-link to tracker
     /// This simulates the full user journey from permission grant to tracker interaction
     static func runCompleteE2EFlow() async {
-        print("🧪 E2E UI TEST: Complete Notification Flow")
-        print("   Expert Panel Task #5: Permissions + Deep-link validation")
-        print("   Testing full user journey from permission to tracker detail\n")
+        Log.debug("🧪 E2E UI TEST: Complete Notification Flow", category: .general)
+        Log.debug("   Expert Panel Task #5: Permissions + Deep-link validation", category: .general)
+        Log.debug("   Testing full user journey from permission to tracker detail\n", category: .general)
 
         let scheduler = BehavioralNotificationScheduler()
         var currentState: PermissionTestState = .initial
 
         // STEP 1: Check initial permission state
-        print("📋 STEP 1: Initial Permission State Check")
+        Log.debug("📋 STEP 1: Initial Permission State Check", category: .general)
         let initialStatus = await scheduler.getAuthorizationStatus()
-        print("   Initial authorization: \(initialStatus.rawValue)")
+        Log.debug("   Initial authorization: \(initialStatus.rawValue)", category: .general)
         currentState = mapAuthorizationStatus(initialStatus)
 
         // STEP 2: Request permissions (simulated user action)
-        print("\n🔐 STEP 2: Request Notification Permissions")
-        print("   Simulating user tapping 'Enable Notifications' button...")
+        Log.debug("\n🔐 STEP 2: Request Notification Permissions", category: .general)
+        Log.debug("   Simulating user tapping 'Enable Notifications' button...", category: .general)
 
         let permissionGranted = await scheduler.requestPermissions()
         currentState = permissionGranted ? .granted : .denied
 
-        print("   Permission result: \(permissionGranted ? "GRANTED" : "DENIED")")
+        Log.debug("   Permission result: \(permissionGranted ? "GRANTED" : "DENIED")", category: .general)
 
         // STEP 3: Test notification scheduling based on permission result
         if permissionGranted {
@@ -58,12 +58,12 @@ class NotificationPermissionsUITestHelper {
             await testReEnableFlow(scheduler: scheduler)
         }
 
-        print("\n🎯 E2E TEST SUMMARY:")
-        print("   ✅ Permission request flow: Tested")
-        print("   ✅ Notification scheduling: Validated")
-        print("   ✅ Deep-link navigation: Simulated")
-        print("   ✅ Permission state changes: Handled")
-        print("   ✅ Full E2E user journey: COMPLETE")
+        Log.debug("\n🎯 E2E TEST SUMMARY:", category: .general)
+        Log.debug("   ✅ Permission request flow: Tested", category: .general)
+        Log.debug("   ✅ Notification scheduling: Validated", category: .general)
+        Log.debug("   ✅ Deep-link navigation: Simulated", category: .general)
+        Log.debug("   ✅ Permission state changes: Handled", category: .general)
+        Log.debug("   ✅ Full E2E user journey: COMPLETE", category: .general)
     }
 
     // MARK: - Individual Test Components
@@ -73,7 +73,7 @@ class NotificationPermissionsUITestHelper {
         scheduler: BehavioralNotificationScheduler,
         state: inout PermissionTestState
     ) async {
-        print("\n📤 STEP 3A: Notification Scheduling (Permissions Granted)")
+        Log.debug("\n📤 STEP 3A: Notification Scheduling (Permissions Granted)", category: .general)
 
         // Create test context for weight tracking (common use case)
         let context = BehavioralContext(
@@ -85,7 +85,7 @@ class NotificationPermissionsUITestHelper {
             lastActivity: Calendar.current.date(byAdding: .hour, value: -18, to: Date()) // 18 hours ago
         )
 
-        print("   Scheduling test notification for weight tracker...")
+        Log.debug("   Scheduling test notification for weight tracker...", category: .general)
         await scheduler.scheduleGuidance(
             for: .weight,
             trigger: .timeInterval(5), // 5 seconds for immediate testing
@@ -97,18 +97,18 @@ class NotificationPermissionsUITestHelper {
         let weightNotifications = pendingRequests.filter { $0.identifier.contains("weight") }
 
         if !weightNotifications.isEmpty {
-            print("   ✅ SUCCESS: Weight notification scheduled")
-            print("   Pending notifications: \(weightNotifications.count)")
+            Log.debug("   ✅ SUCCESS: Weight notification scheduled", category: .general)
+            Log.debug("   Pending notifications: \(weightNotifications.count)", category: .general)
 
             // Show notification details for verification
             if let firstNotification = weightNotifications.first {
-                print("   Notification preview:")
-                print("     - ID: \(firstNotification.identifier)")
-                print("     - Title: \(firstNotification.content.title)")
-                print("     - Body: \(firstNotification.content.body)")
+                Log.debug("   Notification preview:", category: .general)
+                Log.debug("     - ID: \(firstNotification.identifier)", category: .general)
+                Log.debug("     - Title: \(firstNotification.content.title)", category: .general)
+                Log.debug("     - Body: \(firstNotification.content.body)", category: .general)
             }
         } else {
-            print("   ❌ FAILED: No weight notifications found in queue")
+            Log.debug("   ❌ FAILED: No weight notifications found in queue", category: .general)
         }
 
         state = .granted
@@ -119,7 +119,7 @@ class NotificationPermissionsUITestHelper {
         scheduler: BehavioralNotificationScheduler,
         state: inout PermissionTestState
     ) async {
-        print("\n❌ STEP 3B: Denied Permission Handling")
+        Log.debug("\n❌ STEP 3B: Denied Permission Handling", category: .general)
 
         // Attempt to schedule notification (should be handled gracefully)
         let context = BehavioralContext(
@@ -131,58 +131,58 @@ class NotificationPermissionsUITestHelper {
             lastActivity: nil
         )
 
-        print("   Attempting to schedule notification with denied permissions...")
+        Log.debug("   Attempting to schedule notification with denied permissions...", category: .general)
         await scheduler.scheduleGuidance(
             for: .hydration,
             trigger: .immediate,
             context: context
         )
 
-        print("   ✅ VALIDATION: System handled denied permissions gracefully")
-        print("   Expected behavior: Notification not delivered, no crash")
+        Log.debug("   ✅ VALIDATION: System handled denied permissions gracefully", category: .general)
+        Log.debug("   Expected behavior: Notification not delivered, no crash", category: .general)
 
         state = .denied
     }
 
     /// Test deep-link flow from notification to tracker detail
     private static func testDeepLinkFlow(state: PermissionTestState) async {
-        print("\n🔗 STEP 4: Deep-Link Flow Simulation")
+        Log.debug("\n🔗 STEP 4: Deep-Link Flow Simulation", category: .general)
 
         guard state == .granted else {
-            print("   ⏭️ SKIPPED: Deep-link test requires granted permissions")
+            Log.debug("   ⏭️ SKIPPED: Deep-link test requires granted permissions", category: .general)
             return
         }
 
         // Simulate notification tap and deep-link extraction
         let mockNotificationIdentifier = "behavioral_weight_time_300_1697462400"
 
-        print("   Simulating notification tap...")
-        print("   Notification ID: \(mockNotificationIdentifier)")
+        Log.debug("   Simulating notification tap...", category: .general)
+        Log.debug("   Notification ID: \(mockNotificationIdentifier)", category: .general)
 
         // Extract tracker type from identifier
         let extractedTrackerType = extractTrackerTypeFromIdentifier(mockNotificationIdentifier)
-        print("   Extracted tracker type: \(extractedTrackerType.rawValue)")
+        Log.debug("   Extracted tracker type: \(extractedTrackerType.rawValue)", category: .general)
 
         // Simulate navigation to tracker detail
         await simulateTrackerDetailNavigation(trackerType: extractedTrackerType)
 
-        print("   ✅ SUCCESS: Deep-link flow validated")
+        Log.debug("   ✅ SUCCESS: Deep-link flow validated", category: .general)
     }
 
     /// Test re-enable flow (user goes to Settings and re-enables)
     private static func testReEnableFlow(scheduler: BehavioralNotificationScheduler) async {
-        print("\n🔄 STEP 5: Re-Enable Permission Flow")
+        Log.debug("\n🔄 STEP 5: Re-Enable Permission Flow", category: .general)
 
-        print("   Simulating user re-enabling notifications in iOS Settings...")
-        print("   (In real app, this would be detected on app resume)")
+        Log.debug("   Simulating user re-enabling notifications in iOS Settings...", category: .general)
+        Log.debug("   (In real app, this would be detected on app resume)", category: .general)
 
         // Check permission status again
         let newStatus = await scheduler.getAuthorizationStatus()
-        print("   Updated authorization: \(newStatus.rawValue)")
+        Log.debug("   Updated authorization: \(newStatus.rawValue)", category: .general)
 
         if newStatus == .authorized {
-            print("   ✅ SUCCESS: Re-enabled permissions detected")
-            print("   App can now schedule notifications again")
+            Log.debug("   ✅ SUCCESS: Re-enabled permissions detected", category: .general)
+            Log.debug("   App can now schedule notifications again", category: .general)
 
             // Test scheduling after re-enable
             let context = BehavioralContext(
@@ -200,9 +200,9 @@ class NotificationPermissionsUITestHelper {
                 context: context
             )
 
-            print("   ✅ VALIDATION: Post-re-enable scheduling works")
+            Log.debug("   ✅ VALIDATION: Post-re-enable scheduling works", category: .general)
         } else {
-            print("   ℹ️  NOTE: Permissions still denied (expected in test environment)")
+            Log.debug("   ℹ️  NOTE: Permissions still denied (expected in test environment)", category: .general)
         }
     }
 
@@ -210,7 +210,7 @@ class NotificationPermissionsUITestHelper {
 
     /// Simulate navigation to tracker detail screen
     private static func simulateTrackerDetailNavigation(trackerType: TrackerType) async {
-        print("   📱 UI SIMULATION: Navigate to \(trackerType.rawValue) tracker")
+        Log.debug("   📱 UI SIMULATION: Navigate to \(trackerType.rawValue) tracker", category: .general)
 
         // In a real UI test, this would:
         // 1. Check if app is in background/foreground
@@ -234,59 +234,59 @@ class NotificationPermissionsUITestHelper {
 
     /// Simulate weight tracker screen interaction
     private static func simulateWeightTrackerNavigation() async {
-        print("     → Opening Weight Tracking screen")
-        print("     → Checking for 'Add Weight' button visibility")
-        print("     → Validating recent weight entries display")
-        print("     → Confirming goal progress visualization")
+        Log.debug("     → Opening Weight Tracking screen", category: .general)
+        Log.debug("     → Checking for 'Add Weight' button visibility", category: .general)
+        Log.debug("     → Validating recent weight entries display", category: .general)
+        Log.debug("     → Confirming goal progress visualization", category: .general)
 
         // Simulate brief delay for UI animation
         try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
-        print("     ✅ Weight tracker UI validated")
+        Log.debug("     ✅ Weight tracker UI validated", category: .general)
     }
 
     /// Simulate hydration tracker screen interaction
     private static func simulateHydrationTrackerNavigation() async {
-        print("     → Opening Hydration Tracking screen")
-        print("     → Checking water intake progress bar")
-        print("     → Validating quick-add water buttons")
-        print("     → Confirming daily goal display")
+        Log.debug("     → Opening Hydration Tracking screen", category: .general)
+        Log.debug("     → Checking water intake progress bar", category: .general)
+        Log.debug("     → Validating quick-add water buttons", category: .general)
+        Log.debug("     → Confirming daily goal display", category: .general)
 
         try? await Task.sleep(nanoseconds: 500_000_000)
-        print("     ✅ Hydration tracker UI validated")
+        Log.debug("     ✅ Hydration tracker UI validated", category: .general)
     }
 
     /// Simulate sleep tracker screen interaction
     private static func simulateSleepTrackerNavigation() async {
-        print("     → Opening Sleep Tracking screen")
-        print("     → Checking sleep history chart")
-        print("     → Validating bedtime reminder settings")
-        print("     → Confirming sleep quality metrics")
+        Log.debug("     → Opening Sleep Tracking screen", category: .general)
+        Log.debug("     → Checking sleep history chart", category: .general)
+        Log.debug("     → Validating bedtime reminder settings", category: .general)
+        Log.debug("     → Confirming sleep quality metrics", category: .general)
 
         try? await Task.sleep(nanoseconds: 500_000_000)
-        print("     ✅ Sleep tracker UI validated")
+        Log.debug("     ✅ Sleep tracker UI validated", category: .general)
     }
 
     /// Simulate fasting tracker screen interaction
     private static func simulateFastingTrackerNavigation() async {
-        print("     → Opening Fasting Timer screen")
-        print("     → Checking active timer state")
-        print("     → Validating fasting stage indicators")
-        print("     → Confirming historical fast data")
+        Log.debug("     → Opening Fasting Timer screen", category: .general)
+        Log.debug("     → Checking active timer state", category: .general)
+        Log.debug("     → Validating fasting stage indicators", category: .general)
+        Log.debug("     → Confirming historical fast data", category: .general)
 
         try? await Task.sleep(nanoseconds: 500_000_000)
-        print("     ✅ Fasting tracker UI validated")
+        Log.debug("     ✅ Fasting tracker UI validated", category: .general)
     }
 
     /// Simulate mood tracker screen interaction
     private static func simulateMoodTrackerNavigation() async {
-        print("     → Opening Mood Tracking screen")
-        print("     → Checking mood entry options")
-        print("     → Validating mood history visualization")
-        print("     → Confirming correlation insights")
+        Log.debug("     → Opening Mood Tracking screen", category: .general)
+        Log.debug("     → Checking mood entry options", category: .general)
+        Log.debug("     → Validating mood history visualization", category: .general)
+        Log.debug("     → Confirming correlation insights", category: .general)
 
         try? await Task.sleep(nanoseconds: 500_000_000)
-        print("     ✅ Mood tracker UI validated")
+        Log.debug("     ✅ Mood tracker UI validated", category: .general)
     }
 
     // MARK: - Test Utility Methods
@@ -317,22 +317,22 @@ class NotificationPermissionsUITestHelper {
 
     /// Debug current notification queue state
     static func debugNotificationQueue() async {
-        print("\n🔍 NOTIFICATION QUEUE DEBUG:")
+        Log.debug("\n🔍 NOTIFICATION QUEUE DEBUG:", category: .general)
 
         let center = UNUserNotificationCenter.current()
         let pendingRequests = await center.pendingNotificationRequests()
         let deliveredNotifications = await center.deliveredNotifications()
 
-        print("   Pending notifications: \(pendingRequests.count)")
-        print("   Delivered notifications: \(deliveredNotifications.count)")
+        Log.debug("   Pending notifications: \(pendingRequests.count)", category: .general)
+        Log.debug("   Delivered notifications: \(deliveredNotifications.count)", category: .general)
 
         // Show details for behavioral notifications
         let behavioralPending = pendingRequests.filter { $0.identifier.hasPrefix("behavioral_") }
         for (index, request) in behavioralPending.enumerated() {
-            print("   [\(index + 1)] \(request.identifier)")
-            print("       Title: \(request.content.title)")
+            Log.debug("   [\(index + 1)] \(request.identifier)", category: .general)
+            Log.debug("       Title: \(request.content.title)", category: .general)
             if let trigger = request.trigger as? UNTimeIntervalNotificationTrigger {
-                print("       Fires in: \(trigger.timeInterval) seconds")
+                Log.debug("       Fires in: \(trigger.timeInterval) seconds", category: .general)
             }
         }
     }
@@ -341,10 +341,10 @@ class NotificationPermissionsUITestHelper {
 
     /// Run all UI tests for notification permissions and deep-links
     static func runAllUITests() async {
-        print("🧪 COMPREHENSIVE NOTIFICATION UI TESTING")
-        print("   Expert Panel Task #5: UI test for permissions + deep-link flow")
-        print("   Testing complete user interaction flow")
-        print("   Validating E2E notification experience\n")
+        Log.debug("🧪 COMPREHENSIVE NOTIFICATION UI TESTING", category: .general)
+        Log.debug("   Expert Panel Task #5: UI test for permissions + deep-link flow", category: .general)
+        Log.debug("   Testing complete user interaction flow", category: .general)
+        Log.debug("   Validating E2E notification experience\n", category: .general)
 
         await runCompleteE2EFlow()
 
@@ -352,41 +352,41 @@ class NotificationPermissionsUITestHelper {
         await testAuditScreenValidation()
         await testPermissionStateConsistency()
 
-        print("\n🎯 UI TEST SUMMARY:")
-        print("   ✅ E2E Permission Flow: Complete user journey tested")
-        print("   ✅ Notification Scheduling: Validated across permission states")
-        print("   ✅ Deep-Link Navigation: Tracker routing confirmed")
-        print("   ✅ Permission State Changes: Re-enable flow tested")
-        print("   ✅ UI State Consistency: Audit screen reflects reality")
+        Log.debug("\n🎯 UI TEST SUMMARY:", category: .general)
+        Log.debug("   ✅ E2E Permission Flow: Complete user journey tested", category: .general)
+        Log.debug("   ✅ Notification Scheduling: Validated across permission states", category: .general)
+        Log.debug("   ✅ Deep-Link Navigation: Tracker routing confirmed", category: .general)
+        Log.debug("   ✅ Permission State Changes: Re-enable flow tested", category: .general)
+        Log.debug("   ✅ UI State Consistency: Audit screen reflects reality", category: .general)
 
-        print("\n📋 EXPERT REVIEW CONCLUSION:")
-        print("   Complete notification user experience validated")
-        print("   Permission flow integrates seamlessly with tracker UI")
-        print("   Deep-link navigation maintains user context")
-        print("   Task #5 UI test for permissions + deep-link flow: COMPLETE ✅")
+        Log.debug("\n📋 EXPERT REVIEW CONCLUSION:", category: .general)
+        Log.debug("   Complete notification user experience validated", category: .general)
+        Log.debug("   Permission flow integrates seamlessly with tracker UI", category: .general)
+        Log.debug("   Deep-link navigation maintains user context", category: .general)
+        Log.debug("   Task #5 UI test for permissions + deep-link flow: COMPLETE ✅", category: .general)
     }
 
     /// Test that Audit screen reflects actual system state
     private static func testAuditScreenValidation() async {
-        print("\n📊 AUDIT SCREEN VALIDATION TEST")
+        Log.debug("\n📊 AUDIT SCREEN VALIDATION TEST", category: .general)
 
         let authStatus = await UNUserNotificationCenter.current().notificationSettings()
         let pendingRequests = await UNUserNotificationCenter.current().pendingNotificationRequests()
 
-        print("   System authorization: \(authStatus.authorizationStatus.rawValue)")
-        print("   Pending notifications: \(pendingRequests.count)")
+        Log.debug("   System authorization: \(authStatus.authorizationStatus.rawValue)", category: .general)
+        Log.debug("   Pending notifications: \(pendingRequests.count)", category: .general)
 
         // In a real UI test, would validate that:
         // - Audit screen shows correct permission status
         // - Scheduled notifications list matches system queue
         // - Rule configs match displayed settings
 
-        print("   ✅ VALIDATION: Audit screen would reflect system state")
+        Log.debug("   ✅ VALIDATION: Audit screen would reflect system state", category: .general)
     }
 
     /// Test permission state consistency across app lifecycle
     private static func testPermissionStateConsistency() async {
-        print("\n🔄 PERMISSION STATE CONSISTENCY TEST")
+        Log.debug("\n🔄 PERMISSION STATE CONSISTENCY TEST", category: .general)
 
         let scheduler = BehavioralNotificationScheduler()
 
@@ -394,12 +394,12 @@ class NotificationPermissionsUITestHelper {
         let status1 = await scheduler.getAuthorizationStatus()
         let status2 = await scheduler.getAuthorizationStatus()
 
-        print("   Permission check consistency: \(status1.rawValue) == \(status2.rawValue)")
+        Log.debug("   Permission check consistency: \(status1.rawValue) == \(status2.rawValue)", category: .general)
 
         if status1 == status2 {
-            print("   ✅ SUCCESS: Permission state consistent")
+            Log.debug("   ✅ SUCCESS: Permission state consistent", category: .general)
         } else {
-            print("   ❌ WARNING: Permission state inconsistent")
+            Log.debug("   ❌ WARNING: Permission state inconsistent", category: .general)
         }
     }
 }
@@ -411,9 +411,9 @@ extension NotificationPermissionsUITestHelper {
     /// Quick test for development console
     /// Usage: NotificationPermissionsUITestHelper.quickUITest()
     static func quickUITest() async {
-        print("🚀 QUICK UI TEST")
+        Log.debug("🚀 QUICK UI TEST", category: .general)
         await runAllUITests()
-        print("\n⚠️  Check Xcode console for detailed results")
+        Log.debug("\n⚠️  Check Xcode console for detailed results", category: .general)
     }
 
     /// Test just the E2E flow

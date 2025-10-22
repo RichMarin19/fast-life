@@ -53,15 +53,15 @@ class DSTBoundaryTestHelper {
     /// Test Spring Forward DST Transition (2AM -> 3AM, missing hour)
     /// Verifies Calendar.current handles missing hour gracefully
     static func testSpringForwardTransition() async {
-        print("🧪 DST TEST: Spring Forward Transition")
-        print("   Testing: March 9, 2025 at 1:59 AM -> Missing hour at 2:00 AM")
+        Log.debug("🧪 DST TEST: Spring Forward Transition", category: .general)
+        Log.debug("   Testing: March 9, 2025 at 1:59 AM -> Missing hour at 2:00 AM", category: .general)
 
         guard let testDate = Calendar.current.date(from: springForward2025) else {
-            print("   ❌ FAILED: Could not create test date")
+            Log.debug("   ❌ FAILED: Could not create test date", category: .general)
             return
         }
 
-        print("   Base time: \(formatTestDate(testDate))")
+        Log.debug("   Base time: \(formatTestDate(testDate))", category: .general)
 
         // Test scheduling 30 minutes ahead (should land in missing hour)
         await testNotificationScheduling(
@@ -84,15 +84,15 @@ class DSTBoundaryTestHelper {
     /// Test Fall Back DST Transition (2AM happens twice, extra hour)
     /// Verifies Calendar.current handles duplicate hour correctly
     static func testFallBackTransition() async {
-        print("\n🧪 DST TEST: Fall Back Transition")
-        print("   Testing: November 2, 2025 at 1:59 AM -> Extra hour at 1:00 AM")
+        Log.debug("\n🧪 DST TEST: Fall Back Transition", category: .general)
+        Log.debug("   Testing: November 2, 2025 at 1:59 AM -> Extra hour at 1:00 AM", category: .general)
 
         guard let testDate = Calendar.current.date(from: fallBack2025) else {
-            print("   ❌ FAILED: Could not create test date")
+            Log.debug("   ❌ FAILED: Could not create test date", category: .general)
             return
         }
 
-        print("   Base time: \(formatTestDate(testDate))")
+        Log.debug("   Base time: \(formatTestDate(testDate))", category: .general)
 
         // Test scheduling 30 minutes ahead (first occurrence of 2:29 AM)
         await testNotificationScheduling(
@@ -115,7 +115,7 @@ class DSTBoundaryTestHelper {
     /// Test Midnight Boundary Crossing (11:59 PM -> 12:00 AM)
     /// Verifies notifications scheduled across date boundaries work correctly
     static func testMidnightBoundary() async {
-        print("\n🧪 DST TEST: Midnight Boundary Crossing")
+        Log.debug("\n🧪 DST TEST: Midnight Boundary Crossing", category: .general)
 
         let midnightTest = DateComponents(
             timeZone: TimeZone.current, // Use phone's current timezone
@@ -127,11 +127,11 @@ class DSTBoundaryTestHelper {
         )
 
         guard let testDate = Calendar.current.date(from: midnightTest) else {
-            print("   ❌ FAILED: Could not create midnight test date")
+            Log.debug("   ❌ FAILED: Could not create midnight test date", category: .general)
             return
         }
 
-        print("   Base time: \(formatTestDate(testDate))")
+        Log.debug("   Base time: \(formatTestDate(testDate))", category: .general)
 
         // Test scheduling 5 minutes ahead (crosses midnight)
         await testNotificationScheduling(
@@ -151,7 +151,7 @@ class DSTBoundaryTestHelper {
     /// Test Cross-Timezone Travel Scenario
     /// Simulates user traveling across timezones with scheduled notifications
     static func testCrossTimezoneTravel() async {
-        print("\n🧪 DST TEST: Cross-Timezone Travel")
+        Log.debug("\n🧪 DST TEST: Cross-Timezone Travel", category: .general)
 
         // Simulate West Coast to East Coast travel
         let westCoastTime = DateComponents(
@@ -164,15 +164,15 @@ class DSTBoundaryTestHelper {
         )
 
         guard let westCoastDate = Calendar.current.date(from: westCoastTime) else {
-            print("   ❌ FAILED: Could not create West Coast test date")
+            Log.debug("   ❌ FAILED: Could not create West Coast test date", category: .general)
             return
         }
 
-        print("   West Coast time: \(formatTestDate(westCoastDate))")
+        Log.debug("   West Coast time: \(formatTestDate(westCoastDate))", category: .general)
 
         // Test Calendar.current automatic adjustment
         let eastCoastEquivalent = westCoastDate // Same instant, different display
-        print("   Phone timezone equivalent: \(formatTestDate(eastCoastEquivalent))")
+        Log.debug("   Phone timezone equivalent: \(formatTestDate(eastCoastEquivalent))", category: .general)
 
         // Test notification scheduling maintains user intent
         await testNotificationScheduling(
@@ -202,27 +202,27 @@ class DSTBoundaryTestHelper {
             lastActivity: baseDate
         )
 
-        print("   Testing +\(minutesAhead) minutes scheduling...")
-        print("   Expected: \(expectedOutcome)")
+        Log.debug("   Testing +\(minutesAhead) minutes scheduling...", category: .general)
+        Log.debug("   Expected: \(expectedOutcome)", category: .general)
 
         // Test using WeightNotificationRule as representative
         let rule = WeightNotificationRule()
         let triggerDate = rule.getNextTriggerDate(from: baseDate)
 
         if let trigger = triggerDate {
-            print("   ✅ RESULT: Scheduled for \(formatTestDate(trigger))")
+            Log.debug("   ✅ RESULT: Scheduled for \(formatTestDate(trigger))", category: .general)
 
             // Verify the scheduled time makes sense
             let timeDifference = trigger.timeIntervalSince(baseDate)
             let hoursDifference = timeDifference / 3600
 
             if hoursDifference > 0 && hoursDifference < 48 {
-                print("   ✅ VALIDATION: Time difference reasonable (\(String(format: "%.1f", hoursDifference)) hours)")
+                Log.debug("   ✅ VALIDATION: Time difference reasonable (\(String(format: "%.1f", hoursDifference)) hours)")
             } else {
-                print("   ⚠️ WARNING: Unusual time difference (\(String(format: "%.1f", hoursDifference)) hours)")
+                Log.debug("   ⚠️ WARNING: Unusual time difference (\(String(format: "%.1f", hoursDifference)) hours)")
             }
         } else {
-            print("   ❌ FAILED: Could not schedule notification")
+            Log.debug("   ❌ FAILED: Could not schedule notification", category: .general)
         }
 
         // Test with immediate trigger to verify iOS scheduling works
@@ -234,12 +234,12 @@ class DSTBoundaryTestHelper {
             context: context
         )
 
-        print("   ✅ iOS SCHEDULING: Test notification submitted to system")
+        Log.debug("   ✅ iOS SCHEDULING: Test notification submitted to system", category: .general)
     }
 
     /// Test quiet hours logic across DST transitions
     private static func testQuietHoursAcrossDST(testDate: Date, transitionType: String) {
-        print("   🌙 QUIET HOURS TEST: \(transitionType)")
+        Log.debug("   🌙 QUIET HOURS TEST: \(transitionType)", category: .general)
 
         let scheduler = BehavioralNotificationScheduler()
 
@@ -264,10 +264,10 @@ class DSTBoundaryTestHelper {
                 hour >= quietHours.start && hour < quietHours.end
             }
 
-            print("   \(timeDescription): \(formatTestDate(time)) -> Quiet: \(isQuietTime)")
+            Log.debug("   \(timeDescription): \(formatTestDate(time)) -> Quiet: \(isQuietTime)", category: .general)
         }
 
-        print("   ✅ VALIDATION: Calendar.current handles DST transitions in quiet hours logic")
+        Log.debug("   ✅ VALIDATION: Calendar.current handles DST transitions in quiet hours logic", category: .general)
     }
 
     /// Format date for test output with timezone info
@@ -283,52 +283,52 @@ class DSTBoundaryTestHelper {
     /// Run all DST boundary tests
     /// Call this method to validate DST handling in the notification system
     static func runAllDSTTests() async {
-        print("🧪 COMPREHENSIVE DST BOUNDARY TESTING")
-        print("   Using Calendar.current approach (automatic phone timezone)")
-        print("   Testing notification scheduling edge cases")
-        print("   Expert Review Task #2 Validation\n")
+        Log.debug("🧪 COMPREHENSIVE DST BOUNDARY TESTING", category: .general)
+        Log.debug("   Using Calendar.current approach (automatic phone timezone)", category: .general)
+        Log.debug("   Testing notification scheduling edge cases", category: .general)
+        Log.debug("   Expert Review Task #2 Validation\n", category: .general)
 
         await testSpringForwardTransition()
         await testFallBackTransition()
         await testMidnightBoundary()
         await testCrossTimezoneTravel()
 
-        print("\n🎯 DST TEST SUMMARY:")
-        print("   ✅ Spring Forward: Calendar.current handles missing hour")
-        print("   ✅ Fall Back: Calendar.current handles duplicate hour")
-        print("   ✅ Midnight: Calendar.current crosses date boundaries")
-        print("   ✅ Cross-Timezone: Calendar.current uses phone timezone")
-        print("   ✅ Quiet Hours: DST transitions don't break time logic")
+        Log.debug("\n🎯 DST TEST SUMMARY:", category: .general)
+        Log.debug("   ✅ Spring Forward: Calendar.current handles missing hour", category: .general)
+        Log.debug("   ✅ Fall Back: Calendar.current handles duplicate hour", category: .general)
+        Log.debug("   ✅ Midnight: Calendar.current crosses date boundaries", category: .general)
+        Log.debug("   ✅ Cross-Timezone: Calendar.current uses phone timezone", category: .general)
+        Log.debug("   ✅ Quiet Hours: DST transitions don't break time logic", category: .general)
 
-        print("\n📋 EXPERT REVIEW CONCLUSION:")
-        print("   Calendar.current approach is robust across all DST edge cases")
-        print("   Automatic phone timezone handling works as expected")
-        print("   No custom timezone logic needed - Apple's framework handles complexity")
-        print("   Task #2 DST boundary testing: COMPLETE ✅")
+        Log.debug("\n📋 EXPERT REVIEW CONCLUSION:", category: .general)
+        Log.debug("   Calendar.current approach is robust across all DST edge cases", category: .general)
+        Log.debug("   Automatic phone timezone handling works as expected", category: .general)
+        Log.debug("   No custom timezone logic needed - Apple's framework handles complexity", category: .general)
+        Log.debug("   Task #2 DST boundary testing: COMPLETE ✅", category: .general)
     }
 
     /// Verify current notification queue for DST-related issues
     static func debugCurrentNotificationQueue() async {
-        print("\n🔍 NOTIFICATION QUEUE DEBUG:")
+        Log.debug("\n🔍 NOTIFICATION QUEUE DEBUG:", category: .general)
 
         let center = UNUserNotificationCenter.current()
         let pendingRequests = await center.pendingNotificationRequests()
 
-        print("   Total pending notifications: \(pendingRequests.count)")
+        Log.debug("   Total pending notifications: \(pendingRequests.count)", category: .general)
 
         for request in pendingRequests.prefix(5) { // Show first 5 for brevity
             if let trigger = request.trigger as? UNCalendarNotificationTrigger {
                 let nextTriggerDate = trigger.nextTriggerDate()
-                print("   ID: \(request.identifier)")
-                print("   Next fire: \(nextTriggerDate.map(formatTestDate) ?? "Unknown")")
+                Log.debug("   ID: \(request.identifier)", category: .general)
+                Log.debug("   Next fire: \(nextTriggerDate.map(formatTestDate) ?? "Unknown")", category: .general)
             } else if let trigger = request.trigger as? UNTimeIntervalNotificationTrigger {
-                print("   ID: \(request.identifier)")
-                print("   Interval: \(trigger.timeInterval) seconds")
+                Log.debug("   ID: \(request.identifier)", category: .general)
+                Log.debug("   Interval: \(trigger.timeInterval) seconds", category: .general)
             }
         }
 
         if pendingRequests.count > 5 {
-            print("   ... and \(pendingRequests.count - 5) more")
+            Log.debug("   ... and \(pendingRequests.count - 5) more", category: .general)
         }
     }
 }
@@ -340,9 +340,9 @@ extension DSTBoundaryTestHelper {
     /// Quick test for development console
     /// Usage: DSTBoundaryTestHelper.quickDSTTest()
     static func quickDSTTest() async {
-        print("🚀 QUICK DST TEST")
+        Log.debug("🚀 QUICK DST TEST", category: .general)
         await runAllDSTTests()
-        print("\n⚠️  Check Xcode console for detailed results")
+        Log.debug("\n⚠️  Check Xcode console for detailed results", category: .general)
     }
 
     /// Test specific DST scenario

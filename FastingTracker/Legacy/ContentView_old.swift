@@ -346,7 +346,7 @@ struct ContentView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Settings") {
                         // TODO: Add settings functionality
-                        print("Settings tapped")
+                        Log.debug("Settings tapped", category: .general)
                     }
                 }
             }
@@ -360,7 +360,7 @@ struct ContentView: View {
                 // Following Lose It pattern - contextual reminder on main screen
                 showHealthKitNudge = nudgeManager.shouldShowNudge(for: .fasting)
                 if showHealthKitNudge {
-                    print("📱 ContentView: Showing HealthKit nudge for first-time user")
+                    Log.debug("📱 ContentView: Showing HealthKit nudge for first-time user", category: .general)
                 }
             }
             .sheet(isPresented: $showingGoalSettings) {
@@ -551,13 +551,13 @@ struct ContentView: View {
     /// Sync all historical fasting data with HealthKit
     /// Following same pattern as AdvancedView.swift comprehensive sync
     private func syncAllFastingData() {
-        print("📱 ContentView: Starting sync all fasting data from nudge")
-        print("📱 About to request fasting authorization...")
+        Log.debug("📱 ContentView: Starting sync all fasting data from nudge", category: .general)
+        Log.debug("📱 About to request fasting authorization...", category: .general)
 
         HealthKitManager.shared.requestFastingAuthorization { success, error in
             DispatchQueue.main.async {
                 if success {
-                    print("✅ ContentView: Fasting authorization granted - syncing all historical data")
+                    Log.debug("✅ ContentView: Fasting authorization granted - syncing all historical data", category: .general)
 
                     // IMPORTANT: Auto-dismiss nudge when user enables HealthKit
                     // Following Apple HIG - don't continue showing permission requests after granted
@@ -565,16 +565,16 @@ struct ContentView: View {
 
                     // Sync all completed fasting sessions to HealthKit
                     let completedSessions = fastingManager.fastingHistory.filter { $0.isComplete }
-                    print("📊 Found \(completedSessions.count) completed sessions to sync")
+                    Log.debug("📊 Found \(completedSessions.count) completed sessions to sync", category: .general)
 
                     if !completedSessions.isEmpty {
                         // Export sessions to HealthKit (same as AdvancedView logic)
                         for session in completedSessions {
                             HealthKitManager.shared.saveFastingSession(session) { success, error in
                                 if success {
-                                    print("✅ Synced session: \(session.startTime)")
+                                    Log.debug("✅ Synced session: \(session.startTime)", category: .general)
                                 } else {
-                                    print("❌ Failed to sync session: \(error?.localizedDescription ?? "Unknown error")")
+                                    AppLogger.sync.error("Failed to sync session: \(error?.localizedDescription ?? "Unknown error")")
                                 }
                             }
                         }
@@ -582,7 +582,7 @@ struct ContentView: View {
                         HealthKitManager.shared.updateFastingSyncStatus(success: true)
                     }
                 } else {
-                    print("❌ ContentView: Fasting authorization denied from nudge")
+                    Log.debug("❌ ContentView: Fasting authorization denied from nudge", category: .general)
                 }
             }
         }
@@ -591,12 +591,12 @@ struct ContentView: View {
     /// Sync future fasting data only with HealthKit
     /// Following same pattern as onboarding "Sync Future Data Only"
     private func syncFutureFastingData() {
-        print("📱 ContentView: Starting sync future fasting data from nudge")
+        Log.debug("📱 ContentView: Starting sync future fasting data from nudge", category: .general)
 
         HealthKitManager.shared.requestFastingAuthorization { success, error in
             DispatchQueue.main.async {
                 if success {
-                    print("✅ ContentView: Fasting authorization granted - syncing future data only")
+                    Log.debug("✅ ContentView: Fasting authorization granted - syncing future data only", category: .general)
 
                     // IMPORTANT: Auto-dismiss nudge when user enables HealthKit
                     // Following Apple HIG - don't continue showing permission requests after granted
@@ -606,7 +606,7 @@ struct ContentView: View {
                     // Update sync timestamp to mark sync as enabled
                     HealthKitManager.shared.updateFastingSyncStatus(success: true)
                 } else {
-                    print("❌ ContentView: Fasting authorization denied from nudge")
+                    Log.debug("❌ ContentView: Fasting authorization denied from nudge", category: .general)
                 }
             }
         }

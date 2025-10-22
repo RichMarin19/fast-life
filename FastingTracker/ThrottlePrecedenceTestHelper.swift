@@ -10,7 +10,7 @@ class ThrottlePrecedenceTestHelper {
     /// Test 1: Quiet hours should block notification even if throttle allows it
     /// Expected: Notification blocked by quiet hours, throttle not evaluated
     static func testQuietHoursOverridesThrottle() async {
-        print("🧪 PRECEDENCE TEST 1: Quiet Hours Overrides Throttle")
+        Log.debug("🧪 PRECEDENCE TEST 1: Quiet Hours Overrides Throttle", category: .general)
 
         let scheduler = BehavioralNotificationScheduler()
 
@@ -34,9 +34,9 @@ class ThrottlePrecedenceTestHelper {
             lastActivity: Calendar.current.date(byAdding: .hour, value: -2, to: quietHoursTime)
         )
 
-        print("   Test time: \(formatTestTime(quietHoursTime)) (should be in quiet hours)")
-        print("   Throttle would allow: true (no recent notifications)")
-        print("   Expected result: BLOCKED by quiet hours precedence")
+        Log.debug("   Test time: \(formatTestTime(quietHoursTime)) (should be in quiet hours)", category: .general)
+        Log.debug("   Throttle would allow: true (no recent notifications)", category: .general)
+        Log.debug("   Expected result: BLOCKED by quiet hours precedence", category: .general)
 
         // Test scheduling
         await scheduler.scheduleGuidance(
@@ -45,14 +45,14 @@ class ThrottlePrecedenceTestHelper {
             context: context
         )
 
-        print("   ✅ VALIDATION: Quiet hours should have blocked notification")
-        print("   ✅ PRECEDENCE: Quiet hours evaluated before throttle")
+        Log.debug("   ✅ VALIDATION: Quiet hours should have blocked notification", category: .general)
+        Log.debug("   ✅ PRECEDENCE: Quiet hours evaluated before throttle", category: .general)
     }
 
     /// Test 2: Outside quiet hours, throttle should work normally
     /// Expected: Throttle blocks notification when too soon since last
     static func testThrottleWorksOutsideQuietHours() async {
-        print("\n🧪 PRECEDENCE TEST 2: Throttle Works Outside Quiet Hours")
+        Log.debug("\n🧪 PRECEDENCE TEST 2: Throttle Works Outside Quiet Hours", category: .general)
 
         let scheduler = BehavioralNotificationScheduler()
 
@@ -76,10 +76,10 @@ class ThrottlePrecedenceTestHelper {
             lastActivity: Calendar.current.date(byAdding: .hour, value: -1, to: normalTime)
         )
 
-        print("   Test time: \(formatTestTime(normalTime)) (outside quiet hours)")
-        print("   Last notification: 15 minutes ago")
-        print("   Throttle setting: 30 minutes")
-        print("   Expected result: BLOCKED by throttle (too soon)")
+        Log.debug("   Test time: \(formatTestTime(normalTime)) (outside quiet hours)", category: .general)
+        Log.debug("   Last notification: 15 minutes ago", category: .general)
+        Log.debug("   Throttle setting: 30 minutes", category: .general)
+        Log.debug("   Expected result: BLOCKED by throttle (too soon)", category: .general)
 
         await scheduler.scheduleGuidance(
             for: .weight,
@@ -87,14 +87,14 @@ class ThrottlePrecedenceTestHelper {
             context: context
         )
 
-        print("   ✅ VALIDATION: Throttle should have blocked notification")
-        print("   ✅ LOGIC: Quiet hours passed, throttle evaluated and blocked")
+        Log.debug("   ✅ VALIDATION: Throttle should have blocked notification", category: .general)
+        Log.debug("   ✅ LOGIC: Quiet hours passed, throttle evaluated and blocked", category: .general)
     }
 
     /// Test 3: Both quiet hours allow AND throttle allows = notification delivered
     /// Expected: Notification should be delivered
     static func testBothAllowDelivery() async {
-        print("\n🧪 PRECEDENCE TEST 3: Both Allow = Delivery Success")
+        Log.debug("\n🧪 PRECEDENCE TEST 3: Both Allow = Delivery Success", category: .general)
 
         let scheduler = BehavioralNotificationScheduler()
 
@@ -118,10 +118,10 @@ class ThrottlePrecedenceTestHelper {
             lastActivity: nil // No recent sleep data
         )
 
-        print("   Test time: \(formatTestTime(quietTime)) (in quiet hours but sleep allows)")
-        print("   Rule allows quiet hours: true")
-        print("   No recent notifications (throttle allows)")
-        print("   Expected result: DELIVERED successfully")
+        Log.debug("   Test time: \(formatTestTime(quietTime)) (in quiet hours but sleep allows)", category: .general)
+        Log.debug("   Rule allows quiet hours: true", category: .general)
+        Log.debug("   No recent notifications (throttle allows)", category: .general)
+        Log.debug("   Expected result: DELIVERED successfully", category: .general)
 
         await scheduler.scheduleGuidance(
             for: .sleep,
@@ -129,14 +129,14 @@ class ThrottlePrecedenceTestHelper {
             context: context
         )
 
-        print("   ✅ VALIDATION: Notification should be delivered")
-        print("   ✅ FLOW: Quiet hours check passed -> Throttle check passed -> Delivered")
+        Log.debug("   ✅ VALIDATION: Notification should be delivered", category: .general)
+        Log.debug("   ✅ FLOW: Quiet hours check passed -> Throttle check passed -> Delivered", category: .general)
     }
 
     /// Test 4: Edge case - exactly at throttle boundary
     /// Expected: Should allow notification when exactly at throttle boundary
     static func testThrottleBoundaryCondition() async {
-        print("\n🧪 PRECEDENCE TEST 4: Throttle Boundary Condition")
+        Log.debug("\n🧪 PRECEDENCE TEST 4: Throttle Boundary Condition", category: .general)
 
         let scheduler = BehavioralNotificationScheduler()
 
@@ -157,10 +157,10 @@ class ThrottlePrecedenceTestHelper {
             lastActivity: Calendar.current.date(byAdding: .hour, value: -3, to: normalTime)
         )
 
-        print("   Test time: \(formatTestTime(normalTime))")
-        print("   Last notification: exactly 60 minutes ago")
-        print("   Throttle setting: 60 minutes")
-        print("   Expected result: ALLOWED (at boundary)")
+        Log.debug("   Test time: \(formatTestTime(normalTime))", category: .general)
+        Log.debug("   Last notification: exactly 60 minutes ago", category: .general)
+        Log.debug("   Throttle setting: 60 minutes", category: .general)
+        Log.debug("   Expected result: ALLOWED (at boundary)", category: .general)
 
         await scheduler.scheduleGuidance(
             for: .hydration,
@@ -168,34 +168,34 @@ class ThrottlePrecedenceTestHelper {
             context: context
         )
 
-        print("   ✅ VALIDATION: Boundary condition handled correctly")
+        Log.debug("   ✅ VALIDATION: Boundary condition handled correctly", category: .general)
     }
 
     // MARK: - Comprehensive Test Suite
 
     /// Run all precedence tests
     static func runAllPrecedenceTests() async {
-        print("🧪 COMPREHENSIVE THROTTLE PRECEDENCE TESTING")
-        print("   Expert Panel Task #3: QuietHours-then-Throttle precedence")
-        print("   Testing behavioral rule evaluation order")
-        print("   Validating filter precedence logic\n")
+        Log.debug("🧪 COMPREHENSIVE THROTTLE PRECEDENCE TESTING", category: .general)
+        Log.debug("   Expert Panel Task #3: QuietHours-then-Throttle precedence", category: .general)
+        Log.debug("   Testing behavioral rule evaluation order", category: .general)
+        Log.debug("   Validating filter precedence logic\n", category: .general)
 
         await testQuietHoursOverridesThrottle()
         await testThrottleWorksOutsideQuietHours()
         await testBothAllowDelivery()
         await testThrottleBoundaryCondition()
 
-        print("\n🎯 PRECEDENCE TEST SUMMARY:")
-        print("   ✅ Quiet Hours Override: Quiet hours block regardless of throttle")
-        print("   ✅ Throttle Logic: Works correctly outside quiet hours")
-        print("   ✅ Both Allow: Notifications deliver when both conditions met")
-        print("   ✅ Boundary Handling: Edge cases handled correctly")
+        Log.debug("\n🎯 PRECEDENCE TEST SUMMARY:", category: .general)
+        Log.debug("   ✅ Quiet Hours Override: Quiet hours block regardless of throttle", category: .general)
+        Log.debug("   ✅ Throttle Logic: Works correctly outside quiet hours", category: .general)
+        Log.debug("   ✅ Both Allow: Notifications deliver when both conditions met", category: .general)
+        Log.debug("   ✅ Boundary Handling: Edge cases handled correctly", category: .general)
 
-        print("\n📋 EXPERT REVIEW CONCLUSION:")
-        print("   QuietHours-then-Throttle precedence implemented correctly")
-        print("   Filter evaluation order: Rule -> QuietHours -> Throttle -> DailyLimit")
-        print("   Expert Panel requirements satisfied")
-        print("   Task #3 Throttle precedence logic: COMPLETE ✅")
+        Log.debug("\n📋 EXPERT REVIEW CONCLUSION:", category: .general)
+        Log.debug("   QuietHours-then-Throttle precedence implemented correctly", category: .general)
+        Log.debug("   Filter evaluation order: Rule -> QuietHours -> Throttle -> DailyLimit", category: .general)
+        Log.debug("   Expert Panel requirements satisfied", category: .general)
+        Log.debug("   Task #3 Throttle precedence logic: COMPLETE ✅", category: .general)
     }
 
     // MARK: - Test Helper Methods
@@ -222,7 +222,7 @@ class ThrottlePrecedenceTestHelper {
         lastTimes[trackerType.rawValue] = recentTime
         saveLastNotificationTimes(lastTimes)
 
-        print("   Simulated notification: \(trackerType.rawValue) \(minutesAgo) minutes ago")
+        Log.debug("   Simulated notification: \(trackerType.rawValue) \(minutesAgo) minutes ago", category: .general)
     }
 
     /// Clear throttle history for clean testing
@@ -231,7 +231,7 @@ class ThrottlePrecedenceTestHelper {
         lastTimes.removeValue(forKey: trackerType.rawValue)
         saveLastNotificationTimes(lastTimes)
 
-        print("   Cleared throttle history for: \(trackerType.rawValue)")
+        Log.debug("   Cleared throttle history for: \(trackerType.rawValue)", category: .general)
     }
 
     /// Get last notification times from UserDefaults
@@ -254,18 +254,18 @@ class ThrottlePrecedenceTestHelper {
 
     /// Debug current throttle state
     static func debugCurrentThrottleState() {
-        print("\n🔍 THROTTLE STATE DEBUG:")
+        Log.debug("\n🔍 THROTTLE STATE DEBUG:", category: .general)
 
         let lastTimes = getLastNotificationTimes()
         let currentTime = Date()
 
         for (trackerKey, lastTime) in lastTimes {
             let minutesSince = currentTime.timeIntervalSince(lastTime) / 60
-            print("   \(trackerKey): \(String(format: "%.1f", minutesSince)) minutes ago")
+            Log.debug("   \(trackerKey): \(String(format: "%.1f", minutesSince)) minutes ago", category: .general)
         }
 
         if lastTimes.isEmpty {
-            print("   No throttle history found")
+            Log.debug("   No throttle history found", category: .general)
         }
     }
 }
@@ -277,9 +277,9 @@ extension ThrottlePrecedenceTestHelper {
     /// Quick test for development console
     /// Usage: ThrottlePrecedenceTestHelper.quickPrecedenceTest()
     static func quickPrecedenceTest() async {
-        print("🚀 QUICK PRECEDENCE TEST")
+        Log.debug("🚀 QUICK PRECEDENCE TEST", category: .general)
         await runAllPrecedenceTests()
-        print("\n⚠️  Check Xcode console for detailed results")
+        Log.debug("\n⚠️  Check Xcode console for detailed results", category: .general)
     }
 
     /// Test specific precedence scenario

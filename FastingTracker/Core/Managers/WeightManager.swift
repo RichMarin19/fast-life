@@ -368,6 +368,11 @@ class WeightManager: ObservableObject {
             self.weightEntries.sort { $0.date > $1.date }
 
             self.saveWeightEntries()
+
+            // Phase 2a: Cancel today's weight reminder after successful log
+            Task {
+                await WeightNotificationManager.shared.cancelTodayReminder()
+            }
         }
 
         // Sync to HealthKit if enabled and this is a manual entry

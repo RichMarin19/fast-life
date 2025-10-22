@@ -91,7 +91,7 @@ class RuleConfigMigrationTestHelper {
     /// Test V1.0 to V2.0 migration for FastingNotificationRule
     /// Should apply default throttleMinutes when missing from JSON
     static func testFastingRuleMigration() {
-        print("🧪 MIGRATION TEST 1: Fasting Rule V1.0 -> V2.0")
+        Log.debug("🧪 MIGRATION TEST 1: Fasting Rule V1.0 -> V2.0", category: .general)
 
         do {
             // Attempt to decode V1.0 JSON (missing throttleMinutes)
@@ -99,20 +99,20 @@ class RuleConfigMigrationTestHelper {
             let decoder = JSONDecoder()
             let rule = try decoder.decode(FastingNotificationRule.self, from: jsonData)
 
-            print("   ✅ DECODE SUCCESS: V1.0 JSON parsed without errors")
-            print("   Loaded settings:")
-            print("     - isEnabled: \(rule.isEnabled)")
-            print("     - frequency: \(rule.frequency.rawValue)")
-            print("     - toneStyle: \(rule.toneStyle.rawValue)")
-            print("     - allowDuringQuietHours: \(rule.allowDuringQuietHours)")
-            print("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)")
+            Log.debug("   ✅ DECODE SUCCESS: V1.0 JSON parsed without errors", category: .general)
+            Log.debug("   Loaded settings:", category: .general)
+            Log.debug("     - isEnabled: \(rule.isEnabled)", category: .general)
+            Log.debug("     - frequency: \(rule.frequency.rawValue)", category: .general)
+            Log.debug("     - toneStyle: \(rule.toneStyle.rawValue)", category: .general)
+            Log.debug("     - allowDuringQuietHours: \(rule.allowDuringQuietHours)", category: .general)
+            Log.debug("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)", category: .general)
 
             // Validate that default throttle was applied
             let expectedDefault = 60 // From decoding implementation
             if rule.throttleMinutes == expectedDefault {
-                print("   ✅ MIGRATION SUCCESS: Default throttleMinutes applied correctly")
+                Log.debug("   ✅ MIGRATION SUCCESS: Default throttleMinutes applied correctly", category: .general)
             } else {
-                print("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)")
+                Log.debug("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)", category: .general)
             }
 
             // Test re-encoding to ensure no data loss
@@ -121,95 +121,95 @@ class RuleConfigMigrationTestHelper {
             let reEncodedData = try encoder.encode(rule)
             let reEncodedJSON = String(data: reEncodedData, encoding: .utf8)!
 
-            print("   ✅ RE-ENCODE SUCCESS: Can save updated configuration")
-            print("   V2.0 JSON includes: \"throttleMinutes\" : \(rule.throttleMinutes)")
+            Log.debug("   ✅ RE-ENCODE SUCCESS: Can save updated configuration", category: .general)
+            Log.debug("   V2.0 JSON includes: \"throttleMinutes\" : \(rule.throttleMinutes)", category: .general)
 
         } catch {
-            print("   ❌ MIGRATION FAILED: \(error)")
+            Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
     }
 
     /// Test V1.0 to V2.0 migration for WeightNotificationRule
     static func testWeightRuleMigration() {
-        print("\n🧪 MIGRATION TEST 2: Weight Rule V1.0 -> V2.0")
+        Log.debug("\n🧪 MIGRATION TEST 2: Weight Rule V1.0 -> V2.0", category: .general)
 
         do {
             let jsonData = v1WeightRuleJSON.data(using: .utf8)!
             let decoder = JSONDecoder()
             let rule = try decoder.decode(WeightNotificationRule.self, from: jsonData)
 
-            print("   ✅ DECODE SUCCESS: V1.0 Weight rule parsed")
-            print("   Migration values:")
-            print("     - toneStyle: \(rule.toneStyle.rawValue)")
-            print("     - interruptionLevel: \(rule.interruptionLevel.rawValue)")
-            print("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)")
+            Log.debug("   ✅ DECODE SUCCESS: V1.0 Weight rule parsed", category: .general)
+            Log.debug("   Migration values:", category: .general)
+            Log.debug("     - toneStyle: \(rule.toneStyle.rawValue)", category: .general)
+            Log.debug("     - interruptionLevel: \(rule.interruptionLevel.rawValue)", category: .general)
+            Log.debug("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)", category: .general)
 
             // Weight rules should default to daily frequency throttle
             let expectedDefault = 60 // From implementation
             if rule.throttleMinutes == expectedDefault {
-                print("   ✅ MIGRATION SUCCESS: Weight rule throttle default applied")
+                Log.debug("   ✅ MIGRATION SUCCESS: Weight rule throttle default applied", category: .general)
             } else {
-                print("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)")
+                Log.debug("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)", category: .general)
             }
 
         } catch {
-            print("   ❌ MIGRATION FAILED: \(error)")
+            Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
     }
 
     /// Test V1.0 to V2.0 migration for HydrationNotificationRule
     static func testHydrationRuleMigration() {
-        print("\n🧪 MIGRATION TEST 3: Hydration Rule V1.0 -> V2.0")
+        Log.debug("\n🧪 MIGRATION TEST 3: Hydration Rule V1.0 -> V2.0", category: .general)
 
         do {
             let jsonData = v1HydrationRuleJSON.data(using: .utf8)!
             let decoder = JSONDecoder()
             let rule = try decoder.decode(HydrationNotificationRule.self, from: jsonData)
 
-            print("   ✅ DECODE SUCCESS: V1.0 Hydration rule parsed")
-            print("   Migration values:")
-            print("     - frequency: \(rule.frequency.rawValue)")
-            print("     - timing: after 180 minutes")
-            print("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)")
+            Log.debug("   ✅ DECODE SUCCESS: V1.0 Hydration rule parsed", category: .general)
+            Log.debug("   Migration values:", category: .general)
+            Log.debug("     - frequency: \(rule.frequency.rawValue)", category: .general)
+            Log.debug("     - timing: after 180 minutes", category: .general)
+            Log.debug("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)", category: .general)
 
             // Hydration rules should have longer throttle due to multiple times per day
             let expectedDefault = 60 // From implementation
             if rule.throttleMinutes == expectedDefault {
-                print("   ✅ MIGRATION SUCCESS: Hydration rule throttle default applied")
+                Log.debug("   ✅ MIGRATION SUCCESS: Hydration rule throttle default applied", category: .general)
             } else {
-                print("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)")
+                Log.debug("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)", category: .general)
             }
 
         } catch {
-            print("   ❌ MIGRATION FAILED: \(error)")
+            Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
     }
 
     /// Test V1.0 to V2.0 migration for SleepNotificationRule
     static func testSleepRuleMigration() {
-        print("\n🧪 MIGRATION TEST 4: Sleep Rule V1.0 -> V2.0")
+        Log.debug("\n🧪 MIGRATION TEST 4: Sleep Rule V1.0 -> V2.0", category: .general)
 
         do {
             let jsonData = v1SleepRuleJSON.data(using: .utf8)!
             let decoder = JSONDecoder()
             let rule = try decoder.decode(SleepNotificationRule.self, from: jsonData)
 
-            print("   ✅ DECODE SUCCESS: V1.0 Sleep rule parsed")
-            print("   Migration values:")
-            print("     - allowDuringQuietHours: \(rule.allowDuringQuietHours)")
-            print("     - exact timing: 21:30")
-            print("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)")
+            Log.debug("   ✅ DECODE SUCCESS: V1.0 Sleep rule parsed", category: .general)
+            Log.debug("   Migration values:", category: .general)
+            Log.debug("     - allowDuringQuietHours: \(rule.allowDuringQuietHours)", category: .general)
+            Log.debug("     - exact timing: 21:30", category: .general)
+            Log.debug("     - throttleMinutes: \(rule.throttleMinutes) (DEFAULT applied)", category: .general)
 
             // Sleep rules should have daily throttle (24 hours)
             let expectedDefault = 60 // From implementation
             if rule.throttleMinutes == expectedDefault {
-                print("   ✅ MIGRATION SUCCESS: Sleep rule throttle default applied")
+                Log.debug("   ✅ MIGRATION SUCCESS: Sleep rule throttle default applied", category: .general)
             } else {
-                print("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)")
+                Log.debug("   ❌ MIGRATION FAILED: Expected \(expectedDefault), got \(rule.throttleMinutes)", category: .general)
             }
 
         } catch {
-            print("   ❌ MIGRATION FAILED: \(error)")
+            Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
     }
 
@@ -217,7 +217,7 @@ class RuleConfigMigrationTestHelper {
 
     /// Test malformed JSON handling
     static func testMalformedJSONHandling() {
-        print("\n🧪 MIGRATION TEST 5: Malformed JSON Handling")
+        Log.debug("\n🧪 MIGRATION TEST 5: Malformed JSON Handling", category: .general)
 
         let malformedJSON = """
         {
@@ -232,16 +232,16 @@ class RuleConfigMigrationTestHelper {
             let jsonData = malformedJSON.data(using: .utf8)!
             let decoder = JSONDecoder()
             _ = try decoder.decode(FastingNotificationRule.self, from: jsonData)
-            print("   ❌ UNEXPECTED: Malformed JSON should have failed")
+            Log.debug("   ❌ UNEXPECTED: Malformed JSON should have failed", category: .general)
         } catch {
-            print("   ✅ EXPECTED FAILURE: Malformed JSON properly rejected")
-            print("   Error: \(error.localizedDescription)")
+            Log.debug("   ✅ EXPECTED FAILURE: Malformed JSON properly rejected", category: .general)
+            Log.debug("   Error: \(error.localizedDescription)", category: .general)
         }
     }
 
     /// Test partial configuration migration
     static func testPartialConfigMigration() {
-        print("\n🧪 MIGRATION TEST 6: Partial Configuration Migration")
+        Log.debug("\n🧪 MIGRATION TEST 6: Partial Configuration Migration", category: .general)
 
         // Minimal V1.0 configuration (only required fields)
         let minimalJSON = """
@@ -261,20 +261,20 @@ class RuleConfigMigrationTestHelper {
             let decoder = JSONDecoder()
             let rule = try decoder.decode(FastingNotificationRule.self, from: jsonData)
 
-            print("   ✅ DECODE SUCCESS: Minimal configuration parsed")
-            print("   Applied defaults:")
-            print("     - timing: \(String(describing: rule.timing))")
-            print("     - quietHours: \(String(describing: rule.quietHours))")
-            print("     - throttleMinutes: \(rule.throttleMinutes)")
+            Log.debug("   ✅ DECODE SUCCESS: Minimal configuration parsed", category: .general)
+            Log.debug("   Applied defaults:", category: .general)
+            Log.debug("     - timing: \(String(describing: rule.timing))", category: .general)
+            Log.debug("     - quietHours: \(String(describing: rule.quietHours))", category: .general)
+            Log.debug("     - throttleMinutes: \(rule.throttleMinutes)", category: .general)
 
             if rule.throttleMinutes > 0 {
-                print("   ✅ MIGRATION SUCCESS: Defaults applied for missing fields")
+                Log.debug("   ✅ MIGRATION SUCCESS: Defaults applied for missing fields", category: .general)
             } else {
-                print("   ❌ MIGRATION FAILED: Default throttle not applied")
+                Log.debug("   ❌ MIGRATION FAILED: Default throttle not applied", category: .general)
             }
 
         } catch {
-            print("   ❌ MIGRATION FAILED: \(error)")
+            Log.debug("   ❌ MIGRATION FAILED: \(error)", category: .general)
         }
     }
 
@@ -282,7 +282,7 @@ class RuleConfigMigrationTestHelper {
 
     /// Test future version compatibility (V3.0 with extra fields)
     static func testForwardCompatibility() {
-        print("\n🧪 MIGRATION TEST 7: Forward Compatibility (V3.0 simulation)")
+        Log.debug("\n🧪 MIGRATION TEST 7: Forward Compatibility (V3.0 simulation)", category: .general)
 
         // Simulate V3.0 JSON with additional fields that current version doesn't recognize
         let futureJSON = """
@@ -316,16 +316,16 @@ class RuleConfigMigrationTestHelper {
             let decoder = JSONDecoder()
             let rule = try decoder.decode(FastingNotificationRule.self, from: jsonData)
 
-            print("   ✅ DECODE SUCCESS: Future JSON parsed (unknown fields ignored)")
-            print("   Recognized values:")
-            print("     - frequency: \(rule.frequency.rawValue)")
-            print("     - throttleMinutes: \(rule.throttleMinutes)")
-            print("     - interruptionLevel: \(rule.interruptionLevel.rawValue)")
+            Log.debug("   ✅ DECODE SUCCESS: Future JSON parsed (unknown fields ignored)", category: .general)
+            Log.debug("   Recognized values:", category: .general)
+            Log.debug("     - frequency: \(rule.frequency.rawValue)", category: .general)
+            Log.debug("     - throttleMinutes: \(rule.throttleMinutes)", category: .general)
+            Log.debug("     - interruptionLevel: \(rule.interruptionLevel.rawValue)", category: .general)
 
-            print("   ✅ FORWARD COMPATIBILITY: New fields ignored gracefully")
+            Log.debug("   ✅ FORWARD COMPATIBILITY: New fields ignored gracefully", category: .general)
 
         } catch {
-            print("   ❌ FORWARD COMPATIBILITY FAILED: \(error)")
+            Log.debug("   ❌ FORWARD COMPATIBILITY FAILED: \(error)", category: .general)
         }
     }
 
@@ -333,10 +333,10 @@ class RuleConfigMigrationTestHelper {
 
     /// Run all migration tests
     static func runAllMigrationTests() {
-        print("🧪 COMPREHENSIVE RULECONFIG MIGRATION TESTING")
-        print("   Expert Panel Task #4: RuleConfig migration test with v1 JSON fixture")
-        print("   Testing forward compatibility across configuration versions")
-        print("   Validating default application for missing fields\n")
+        Log.debug("🧪 COMPREHENSIVE RULECONFIG MIGRATION TESTING", category: .general)
+        Log.debug("   Expert Panel Task #4: RuleConfig migration test with v1 JSON fixture", category: .general)
+        Log.debug("   Testing forward compatibility across configuration versions", category: .general)
+        Log.debug("   Validating default application for missing fields\n", category: .general)
 
         testFastingRuleMigration()
         testWeightRuleMigration()
@@ -346,31 +346,31 @@ class RuleConfigMigrationTestHelper {
         testPartialConfigMigration()
         testForwardCompatibility()
 
-        print("\n🎯 MIGRATION TEST SUMMARY:")
-        print("   ✅ V1.0 to V2.0: All rule types migrate successfully")
-        print("   ✅ Default Application: Missing fields get appropriate defaults")
-        print("   ✅ Error Handling: Malformed configurations properly rejected")
-        print("   ✅ Forward Compatibility: Future versions handled gracefully")
+        Log.debug("\n🎯 MIGRATION TEST SUMMARY:", category: .general)
+        Log.debug("   ✅ V1.0 to V2.0: All rule types migrate successfully", category: .general)
+        Log.debug("   ✅ Default Application: Missing fields get appropriate defaults", category: .general)
+        Log.debug("   ✅ Error Handling: Malformed configurations properly rejected", category: .general)
+        Log.debug("   ✅ Forward Compatibility: Future versions handled gracefully", category: .general)
 
-        print("\n📋 EXPERT REVIEW CONCLUSION:")
-        print("   RuleConfig migration system robust across versions")
-        print("   Users won't lose settings during app updates")
-        print("   New features can be added without breaking existing configs")
-        print("   Task #4 RuleConfig migration test: COMPLETE ✅")
+        Log.debug("\n📋 EXPERT REVIEW CONCLUSION:", category: .general)
+        Log.debug("   RuleConfig migration system robust across versions", category: .general)
+        Log.debug("   Users won't lose settings during app updates", category: .general)
+        Log.debug("   New features can be added without breaking existing configs", category: .general)
+        Log.debug("   Task #4 RuleConfig migration test: COMPLETE ✅", category: .general)
     }
 
     // MARK: - Test Utility Methods
 
     /// Save V1.0 fixture to UserDefaults for integration testing
     static func saveV1FixtureToUserDefaults() {
-        print("\n🔧 UTILITY: Saving V1.0 fixtures to UserDefaults for integration testing")
+        Log.debug("\n🔧 UTILITY: Saving V1.0 fixtures to UserDefaults for integration testing", category: .general)
 
         UserDefaults.standard.set(v1FastingRuleJSON, forKey: "test_v1_fasting_rule")
         UserDefaults.standard.set(v1WeightRuleJSON, forKey: "test_v1_weight_rule")
         UserDefaults.standard.set(v1HydrationRuleJSON, forKey: "test_v1_hydration_rule")
         UserDefaults.standard.set(v1SleepRuleJSON, forKey: "test_v1_sleep_rule")
 
-        print("   ✅ V1.0 fixtures saved for manual testing")
+        Log.debug("   ✅ V1.0 fixtures saved for manual testing", category: .general)
     }
 
     /// Clean up test fixtures from UserDefaults
@@ -380,7 +380,7 @@ class RuleConfigMigrationTestHelper {
         UserDefaults.standard.removeObject(forKey: "test_v1_hydration_rule")
         UserDefaults.standard.removeObject(forKey: "test_v1_sleep_rule")
 
-        print("   🧹 Test fixtures cleaned up from UserDefaults")
+        Log.debug("   🧹 Test fixtures cleaned up from UserDefaults", category: .general)
     }
 }
 
@@ -391,9 +391,9 @@ extension RuleConfigMigrationTestHelper {
     /// Quick test for development console
     /// Usage: RuleConfigMigrationTestHelper.quickMigrationTest()
     static func quickMigrationTest() {
-        print("🚀 QUICK MIGRATION TEST")
+        Log.debug("🚀 QUICK MIGRATION TEST", category: .general)
         runAllMigrationTests()
-        print("\n⚠️  Check Xcode console for detailed results")
+        Log.debug("\n⚠️  Check Xcode console for detailed results", category: .general)
     }
 
     /// Test specific rule migration

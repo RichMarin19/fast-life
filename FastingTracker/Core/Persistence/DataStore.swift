@@ -369,7 +369,8 @@ class AppDataStore {
 
     /// Access to migration functionality for testing
     static var dataStore: UserDefaultsDataStore {
-        return shared as! UserDefaultsDataStore
+        guard let store = shared as? UserDefaultsDataStore else { fatalError("DataStore.shared must be UserDefaultsDataStore") }
+        return store
     }
 }
 

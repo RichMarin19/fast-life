@@ -129,7 +129,7 @@ struct DSCardHeader: View {
         VStack(spacing: 20) {
             DSCardHeader(
                 title: "Current Weight",
-                onDismiss: { print("Dismiss tapped") }
+                onDismiss: { Log.debug("Dismiss tapped", category: .general) }
             )
             .padding()
             .background(DSColors.cardBackground)
@@ -139,7 +139,7 @@ struct DSCardHeader: View {
             DSCardHeader(
                 title: "Milestone Card",
                 subtitle: "6 of 10 completed",
-                onDismiss: { print("Dismiss tapped") }
+                onDismiss: { Log.debug("Dismiss tapped", category: .general) }
             )
             .padding()
             .background(DSColors.cardBackground)
@@ -157,8 +157,8 @@ struct DSCardHeader: View {
         DSCardHeader(
             title: "Current Weight",
             subtitle: "Last updated today",
-            onDismiss: { print("Dismiss tapped") },
-            onToggleExpand: { print("Toggle expand tapped") },
+            onDismiss: { Log.debug("Dismiss tapped", category: .general) },
+            onToggleExpand: { Log.debug("Toggle expand tapped", category: .general) },
             isExpanded: true,
             canDismiss: true,
             canExpand: true,

@@ -57,3 +57,7 @@ iOSInjectionProject/
 # Temporary files
 .tmp/
 .temp/
+
+# Firebase Configuration
+GoogleService-Info.plist
+google-services.json

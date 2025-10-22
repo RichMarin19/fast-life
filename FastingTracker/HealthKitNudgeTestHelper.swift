@@ -13,11 +13,11 @@ class HealthKitNudgeTestHelper {
         // Reset all nudge dismissal states
         HealthKitNudgeManager.shared.resetNudges()
 
-        print("🧪 TEST: Simulated user who skipped HealthKit onboarding")
-        print("   - onboardingCompleted = true")
-        print("   - healthKitSkippedOnboarding = true")
-        print("   - All nudges reset")
-        print("   → Nudges should now appear in tracker views")
+        Log.debug("🧪 TEST: Simulated user who skipped HealthKit onboarding", category: .general)
+        Log.debug("   - onboardingCompleted = true", category: .general)
+        Log.debug("   - healthKitSkippedOnboarding = true", category: .general)
+        Log.debug("   - All nudges reset", category: .general)
+        Log.debug("   → Nudges should now appear in tracker views", category: .general)
     }
 
     /// Simulate a user who enabled HealthKit during onboarding
@@ -26,10 +26,10 @@ class HealthKitNudgeTestHelper {
         UserDefaults.standard.set(true, forKey: "onboardingCompleted")
         UserDefaults.standard.set(false, forKey: "healthKitSkippedOnboarding")
 
-        print("🧪 TEST: Simulated user who enabled HealthKit during onboarding")
-        print("   - onboardingCompleted = true")
-        print("   - healthKitSkippedOnboarding = false")
-        print("   → Nudges should NOT appear in tracker views")
+        Log.debug("🧪 TEST: Simulated user who enabled HealthKit during onboarding", category: .general)
+        Log.debug("   - onboardingCompleted = true", category: .general)
+        Log.debug("   - healthKitSkippedOnboarding = false", category: .general)
+        Log.debug("   → Nudges should NOT appear in tracker views", category: .general)
     }
 
     /// Reset to fresh onboarding state
@@ -38,8 +38,8 @@ class HealthKitNudgeTestHelper {
         UserDefaults.standard.removeObject(forKey: "healthKitSkippedOnboarding")
         HealthKitNudgeManager.shared.resetNudges()
 
-        print("🧪 TEST: Reset to fresh onboarding state")
-        print("   → User will see onboarding flow again")
+        Log.debug("🧪 TEST: Reset to fresh onboarding state", category: .general)
+        Log.debug("   → User will see onboarding flow again", category: .general)
     }
 
     /// Print current nudge system state for debugging
@@ -54,22 +54,22 @@ class HealthKitNudgeTestHelper {
         let timerVisitCount = UserDefaults.standard.integer(forKey: "healthkit_nudge_timer_visit_count")
         let timerPermanentlyDismissed = UserDefaults.standard.bool(forKey: "healthkit_nudge_timer_permanently_dismissed")
 
-        print("🔍 NUDGE SYSTEM DEBUG STATE:")
-        print("   onboardingCompleted: \(onboardingComplete)")
-        print("   healthKitSkippedOnboarding: \(healthKitSkipped)")
-        print("   weightAuthorized: \(weightAuthorized)")
-        print("   waterAuthorized: \(waterAuthorized)")
-        print("   sleepAuthorized: \(sleepAuthorized)")
+        Log.debug("🔍 NUDGE SYSTEM DEBUG STATE:", category: .general)
+        Log.debug("   onboardingCompleted: \(onboardingComplete)", category: .general)
+        Log.debug("   healthKitSkippedOnboarding: \(healthKitSkipped)", category: .general)
+        Log.debug("   weightAuthorized: \(weightAuthorized)", category: .general)
+        Log.debug("   waterAuthorized: \(waterAuthorized)", category: .general)
+        Log.debug("   sleepAuthorized: \(sleepAuthorized)", category: .general)
 
-        print("\n   Timer nudge state:")
-        print("   visitCount: \(timerVisitCount)")
-        print("   permanentlyDismissed: \(timerPermanentlyDismissed)")
+        Log.debug("\n   Timer nudge state:", category: .general)
+        Log.debug("   visitCount: \(timerVisitCount)", category: .general)
+        Log.debug("   permanentlyDismissed: \(timerPermanentlyDismissed)", category: .general)
 
-        print("\n   Nudge visibility:")
-        print("   Weight nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .weight))")
-        print("   Hydration nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .hydration))")
-        print("   Sleep nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .sleep))")
-        print("   Fasting nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .fasting))")
+        Log.debug("\n   Nudge visibility:", category: .general)
+        Log.debug("   Weight nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .weight))", category: .general)
+        Log.debug("   Hydration nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .hydration))", category: .general)
+        Log.debug("   Sleep nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .sleep))", category: .general)
+        Log.debug("   Fasting nudge should show: \(HealthKitNudgeManager.shared.shouldShowNudge(for: .fasting))", category: .general)
     }
 }
 
@@ -79,12 +79,12 @@ extension HealthKitNudgeTestHelper {
     /// Usage: HealthKitNudgeTestHelper.quickTestSkip()
     static func quickTestSkip() {
         simulateSkipOnboarding()
-        print("\n⚠️  Restart the app to see nudges in tracker views")
+        Log.debug("\n⚠️  Restart the app to see nudges in tracker views", category: .general)
     }
 
     static func quickTestEnabled() {
         simulateEnabledOnboarding()
-        print("\n⚠️  Restart the app - nudges should not appear")
+        Log.debug("\n⚠️  Restart the app - nudges should not appear", category: .general)
     }
 
     static func quickDebug() {

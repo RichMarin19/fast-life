@@ -175,7 +175,7 @@ extension DSCard {
 
         DSCard(
             cardType: .currentWeight,
-            onDismiss: { print("Dismiss tapped") }
+            onDismiss: { Log.debug("Dismiss tapped", category: .general) }
         ) {
             VStack(spacing: 8) {
                 Text("159.9")
@@ -199,7 +199,7 @@ extension DSCard {
         DSCard(
             cardType: .milestone,
             subtitle: "6 of 10 completed",
-            onDismiss: { print("Dismiss tapped") }
+            onDismiss: { Log.debug("Dismiss tapped", category: .general) }
         ) {
             VStack(spacing: 16) {
                 Circle()
@@ -253,8 +253,8 @@ extension DSCard {
         DSCard(
             cardType: .currentWeight,
             subtitle: "Last updated today",
-            onDismiss: { print("Dismiss tapped") },
-            onToggleExpand: { print("Toggle expand tapped") },
+            onDismiss: { Log.debug("Dismiss tapped", category: .general) },
+            onToggleExpand: { Log.debug("Toggle expand tapped", category: .general) },
             isExpanded: true,
             canDismiss: true,
             canExpand: true,

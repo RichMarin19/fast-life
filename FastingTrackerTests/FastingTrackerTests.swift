@@ -2,33 +2,15 @@
 //  FastingTrackerTests.swift
 //  FastingTrackerTests
 //
-//  Created by Claude Code
-//  Phase 0: Baseline Test Infrastructure
+//  Created by Rich Marin on 10/22/25.
 //
 
-import XCTest
-@testable import FastingTracker
+import Testing
 
-/// Base test case class for Fast LIFe tests
-/// Provides common setup/teardown and helper utilities
-class FastingTrackerTests: XCTestCase {
+struct FastingTrackerTests {
 
-    // MARK: - Setup & Teardown
-
-    override func setUp() {
-        super.setUp()
-        // Common setup for all tests
+    @Test func example() async throws {
+        // Write your test here and use APIs like `#expect(...)` to check expected conditions.
     }
 
-    override func tearDown() {
-        // Common cleanup for all tests
-        super.tearDown()
-    }
-
-    // MARK: - Smoke Test
-
-    func testExample() {
-        // Baseline smoke test - ensures test infrastructure is working
-        XCTAssertTrue(true, "Test infrastructure is operational")
-    }
 }

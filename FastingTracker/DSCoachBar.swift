@@ -141,7 +141,7 @@ extension DSCoachBar {
             DSCoachBar(
                 text: "Progress in motion — your consistency shows!",
                 onHide: {
-                    print("Hide coach bar")
+                    Log.debug("Hide coach bar", category: .general)
                 }
             )
 
@@ -151,7 +151,7 @@ extension DSCoachBar {
                 icon: "heart.text.square",
                 backgroundColor: Theme.ColorToken.accentPrimary,
                 onHide: {
-                    print("Hide coach bar")
+                    Log.debug("Hide coach bar", category: .general)
                 }
             )
 
@@ -161,7 +161,7 @@ extension DSCoachBar {
                 icon: "leaf.fill",
                 backgroundColor: Theme.ColorToken.accentGold,
                 onHide: {
-                    print("Hide coach bar")
+                    Log.debug("Hide coach bar", category: .general)
                 }
             )
 

@@ -333,15 +333,15 @@ struct IdentifierDebugInfo {
     let exceedsMaxLength: Bool
 
     func printDebugInfo() {
-        print("🔍 IDENTIFIER DEBUG: \(identifier)")
-        print("   Valid: \(isValid)")
-        print("   Components: \(componentCount)")
-        print("   Prefix: \(prefix ?? "none")")
-        print("   Tracker: \(trackerType?.rawValue ?? "unknown")")
-        print("   Trigger: \(triggerType ?? "unknown")")
-        print("   Length: \(length)/\(NotificationIdentifierBuilder.maxIdentifierLength)")
+        Log.debug("🔍 IDENTIFIER DEBUG: \(identifier)", category: .general)
+        Log.debug("   Valid: \(isValid)", category: .general)
+        Log.debug("   Components: \(componentCount)", category: .general)
+        Log.debug("   Prefix: \(prefix ?? "none")", category: .general)
+        Log.debug("   Tracker: \(trackerType?.rawValue ?? "unknown")", category: .general)
+        Log.debug("   Trigger: \(triggerType ?? "unknown")", category: .general)
+        Log.debug("   Length: \(length)/\(NotificationIdentifierBuilder.maxIdentifierLength)", category: .general)
         if exceedsMaxLength {
-            print("   ⚠️ WARNING: Exceeds maximum length")
+            Log.debug("   ⚠️ WARNING: Exceeds maximum length", category: .general)
         }
     }
 }
@@ -354,22 +354,22 @@ struct IdentifierStatistics {
     let averageIdentifierLength: Int
 
     func printStatistics() {
-        print("📊 IDENTIFIER STATISTICS:")
-        print("   Total behavioral notifications: \(totalBehavioralNotifications)")
-        print("   Average identifier length: \(averageIdentifierLength)")
+        Log.debug("📊 IDENTIFIER STATISTICS:", category: .general)
+        Log.debug("   Total behavioral notifications: \(totalBehavioralNotifications)", category: .general)
+        Log.debug("   Average identifier length: \(averageIdentifierLength)", category: .general)
 
-        print("   Per-tracker counts:")
+        Log.debug("   Per-tracker counts:", category: .general)
         for (tracker, count) in trackerCounts.sorted(by: { $0.key.rawValue < $1.key.rawValue }) {
-            print("     \(tracker.rawValue): \(count)")
+            Log.debug("     \(tracker.rawValue): \(count)", category: .general)
         }
 
         if !invalidIdentifiers.isEmpty {
-            print("   ⚠️ Invalid identifiers found: \(invalidIdentifiers.count)")
+            Log.debug("   ⚠️ Invalid identifiers found: \(invalidIdentifiers.count)", category: .general)
             for invalid in invalidIdentifiers.prefix(3) {
-                print("     - \(invalid)")
+                Log.debug("     - \(invalid)", category: .general)
             }
             if invalidIdentifiers.count > 3 {
-                print("     ... and \(invalidIdentifiers.count - 3) more")
+                Log.debug("     ... and \(invalidIdentifiers.count - 3) more", category: .general)
             }
         }
     }
@@ -381,31 +381,31 @@ struct IdentifierStatistics {
 extension NotificationIdentifierBuilder {
     /// Test all identifier generation methods
     static func runIdentifierTests() {
-        print("🧪 NOTIFICATION IDENTIFIER TESTS")
-        print("   Expert Panel Task #6: IdentifierBuilder utility validation\n")
+        Log.debug("🧪 NOTIFICATION IDENTIFIER TESTS", category: .general)
+        Log.debug("   Expert Panel Task #6: IdentifierBuilder utility validation\n", category: .general)
 
         // Test basic behavioral identifiers
         let weightId = buildBehavioralIdentifier(tracker: .weight, trigger: .immediate)
-        print("Weight identifier: \(weightId)")
+        Log.debug("Weight identifier: \(weightId)", category: .general)
 
         // Test recurring identifiers
         let recurringId = buildRecurringIdentifier(tracker: .hydration, recurrenceType: .daily, dayOfWeek: "monday")
-        print("Recurring identifier: \(recurringId)")
+        Log.debug("Recurring identifier: \(recurringId)", category: .general)
 
         // Test extraction
         if let extracted = extractTrackerType(from: weightId) {
-            print("Extracted tracker: \(extracted.rawValue)")
+            Log.debug("Extracted tracker: \(extracted.rawValue)", category: .general)
         }
 
         // Test validation
         let isValid = isValidBehavioralIdentifier(weightId)
-        print("Identifier valid: \(isValid)")
+        Log.debug("Identifier valid: \(isValid)", category: .general)
 
         // Test debug info
         let debugInfo = debugIdentifier(weightId)
         debugInfo.printDebugInfo()
 
-        print("\n✅ IDENTIFIER BUILDER: All methods functional")
+        Log.debug("\n✅ IDENTIFIER BUILDER: All methods functional", category: .general)
     }
 }
 #endif

@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-@testable import FastingTracker
+@testable import Fast_lIFe
 
 /// Mock WeightManager for unit testing ViewModels
 /// Industry Pattern: Mock objects for isolated unit testing
