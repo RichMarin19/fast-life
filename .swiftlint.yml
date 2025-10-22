@@ -67,6 +67,10 @@ force_unwrapping:
 force_try:
   severity: error
 
+# Force cast (zero tolerance outside tests)
+force_cast:
+  severity: error
+
 # Cyclomatic complexity (keep functions simple)
 cyclomatic_complexity:
   warning: 10
