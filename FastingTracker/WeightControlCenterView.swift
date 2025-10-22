@@ -325,8 +325,8 @@ struct WeightControlCenterView: View {
             // Luxury gradient background (matches Weight Tracker)
             LinearGradient(
                 colors: [
-                    Color(red: 10/255, green: 18/255, blue: 36/255),
-                    Color(red: 18/255, green: 28/255, blue: 56/255)
+                    Theme.ColorToken.bgDeepStart,
+                    Theme.ColorToken.bgDeepMid
                 ],
                 startPoint: .top,
                 endPoint: .bottom
@@ -343,8 +343,8 @@ struct WeightControlCenterView: View {
                         .foregroundStyle(
                             LinearGradient(
                                 colors: [
-                                    Color(red: 0.4, green: 0.8, blue: 0.9),  // Cyan
-                                    Color(red: 0.3, green: 0.7, blue: 1.0)   // Light blue
+                                    Theme.ColorToken.accentCyan,
+                                    Theme.ColorToken.accentLightBlue
                                 ],
                                 startPoint: .leading,
                                 endPoint: .trailing

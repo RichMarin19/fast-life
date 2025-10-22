@@ -195,6 +195,18 @@ enum Theme {
         /// Usage: Ring accents, emotion indicators for weight gain trends
         /// Replaces harsh red with supportive, non-judgmental color
         static let accentCoral = Color(flHex: "#E47A6E")
+
+        // MARK: Control Center Title Gradient Colors
+
+        /// Cyan accent - Bright cyan for Control Center title gradient start (#66CCE5)
+        /// Usage: Title gradient start (leading edge) in Control Center
+        /// Emotion: Energy, focus, premium feel
+        static let accentCyan = Color(flHex: "#66CCE5")
+
+        /// Light blue accent - Bright light blue for Control Center title gradient end (#4DB3FF)
+        /// Usage: Title gradient end (trailing edge) in Control Center
+        /// Emotion: Clarity, trust, premium feel
+        static let accentLightBlue = Color(flHex: "#4DB3FF")
     }
 
     // MARK: - Corner Radius
