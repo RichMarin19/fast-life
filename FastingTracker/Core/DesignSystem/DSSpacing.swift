@@ -21,9 +21,10 @@ enum DSSpacing {
     /// Used by: DSCard, all card containers
     static let cardPadding: CGFloat = 16
 
-    /// Spacing between card sections (20pt)
-    /// Used by: Multi-section cards like CurrentWeightCard
-    static let cardSectionSpacing: CGFloat = 20
+    /// Spacing between card sections (10pt)
+    /// Used by: Multi-section cards like CurrentWeightCard, spacing between cards in VStack
+    /// UNIVERSAL STANDARD: 10pt spacing across ALL screens (Hub, Weight Tracker, Control Center, Progress Story, all trackers)
+    static let cardSectionSpacing: CGFloat = 10
 
     /// Spacing between card elements (12pt)
     /// Used by: Elements within a card section

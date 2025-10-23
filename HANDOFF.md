@@ -168,6 +168,7 @@ This documentation has been reorganized for improved navigation and focus. The m
 5. **Duplicate Type Definitions** - Centralize shared types
 6. **SwiftUI Compilation Timeout** - Keep body under 500 lines
 7. **Duplicate UI Rendering** - Remove content from main body after extraction
+8. **DSBanner Padding Trap** - CRITICAL: When adjusting vertical spacing in DSBanner components (RecapRow, ProgressBanner, etc.), remember DSBanner has TWO flexible Spacers (top and bottom) that will ALWAYS center content by default. To push content DOWN, add TOP padding (not bottom). To push content UP, add BOTTOM padding. The Spacers distribute remaining space equally, so you must override with asymmetric padding on the content itself. Example: `.padding(.top, 24)` pushes content down by leaving 16pt at bottom in a 66pt container.
 
 **📖 See [HANDOFF-PHASE-C.md](./HANDOFF-PHASE-C.md) for complete Phase 3 lessons**
 

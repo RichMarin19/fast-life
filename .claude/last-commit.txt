@@ -1,34 +1,38 @@
-Last commit: 70b1075 at 2025-10-22 13:33:52
-feat: Phase v1.5 Foundation Perfection complete
+Last commit: a0f7cce at 2025-10-22 13:43:26
+fix: Complete Category 1 visual issues - EmptyWeightStateView design tokens
 
-Layer 1: Padding Standardization (140 replacements)
-- WeightComponents.swift: 59 instances → DSSpacing tokens
-- WeightControlCenterView.swift: 81 instances → DSSpacing tokens
-- Preserved 5 unique spacing values with documentation (2, 6, 24, 32, 40, 10, 5)
+Category 1.1-1.3 Visual Fixes (WeightTrackingView.swift):
+- EmptyWeightStateView: 12 hardcoded values replaced with design tokens
 
-Layer 2: Color Standardization (21 replacements)
-- WeightComponents.swift: 21 instances → Theme.ColorToken
-- WeightControlCenterView.swift: Already 100% clean (0 replacements)
-- Semantic tokens: textPrimary, textSecondary, textPrimaryOnDark, textSecondaryOnDark
-- State tokens: stateError, stateSuccess, accentPrimary, cardAlt
-- Preserved: Parameter-based colors, hex gradients, legacy components
+Typography Fixes (5 instances):
+- Line 327: Icon size → DSTypography.displayXXL (60pt)
+- Line 331: "No Weight Data Yet" → DSTypography.displayM
+- Line 335: Description text → DSTypography.cardBody
+- Line 343: "Add Weight Manually" button → DSTypography.buttonPrimary
+- Line 368: "Sync with Apple Health" button → DSTypography.buttonPrimary
 
-Layer 3: Typography Standardization (23 replacements)
-- WeightComponents.swift: 23 instances → DSTypography tokens
-- Components updated: StatCard, WeightChangeStatCard, WeightHistoryRow, FirstTimeWeightSetupView
-- Tokens used: displayS, statValueMedium, listCaption, cardTitle, cardBody, displayM, buttonPrimary
+Color Fixes (7 instances):
+- Line 328: Icon gray → Theme.ColorToken.textSecondary.opacity(0.6)
+- Line 332: Title secondary → Theme.ColorToken.textSecondary
+- Line 336: Description secondary → Theme.ColorToken.textSecondary
+- Line 344: Button white text → Theme.ColorToken.textPrimaryOnDark
+- Line 347: Primary button background → Theme.ColorToken.accentPrimary
+- Line 369: Button white text → Theme.ColorToken.textPrimaryOnDark
+- Line 372: Success button background → Theme.ColorToken.stateSuccess
 
-Layer 4: Typography Verification
-- WeightControlCenterView.swift: Already 100% clean (0 replacements)
+Category 1.4 Animation Verification:
+- ✅ Reduce Motion support confirmed (WeightComponents.swift:653)
+- ✅ Animations use conditional logic: reduceMotion ? nil : animation
 
-Final Verification:
-- Build Status: ✅ BUILD SUCCEEDED (0 errors, 0 warnings)
-- Test Status: ✅ 105/105 tests passing
-- Remaining hardcoded: 26 padding + 22 color (ALL intentionally preserved)
-- Typography: 0 hardcoded instances
+Category 1.5 Dark Mode Verification:
+- ✅ 9 instances of cardOnDark/textPrimaryOnDark tokens found
+- ✅ Progress Story dark gradient uses proper token system
 
-Weight Tracker foundation now 100% standardized with design tokens.
-Ready for North Star template status.
+Build Status:
+- ✅ BUILD SUCCEEDED (0 errors, 0 warnings)
+- ✅ WeightTrackingView.swift: 100% design token compliance
+
+Next: Category 2 - Test non-functioning data points (Stats, Chart, History)
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 

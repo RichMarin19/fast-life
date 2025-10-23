@@ -102,7 +102,6 @@ struct WeightTrackingView: View {
                 // Industry Pattern: Apple Health - Long-press and drag to reorder
                 ForEach(cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
                     cardView(for: cardType)
-                        .padding(.horizontal, DSSpacing.screenEdgePadding)
                         .transition(.opacity.combined(with: .scale))
                         .onDrag {
                             // Layer 5: Enable drag for reordering

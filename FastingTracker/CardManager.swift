@@ -242,9 +242,18 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
     /// Called on first launch when no saved preferences exist
     private func initializeDefaults() {
         cardPreferences = CardType.allCases.enumerated().map { (index, cardType) in
+            // Special case: ProgressStoryCardType.banner hidden by default (keep only CoachBar)
+            // User feedback: Duplicate motivational messages confusing, keep only top CoachBar
+            let isVisibleByDefault: Bool
+            if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
+                isVisibleByDefault = false
+            } else {
+                isVisibleByDefault = true
+            }
+
             return CardPreference(
                 cardType: cardType,
-                isVisible: true,
+                isVisible: isVisibleByDefault,
                 isExpanded: true,
                 sortOrder: index
             )
@@ -261,9 +270,17 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
         for cardType in CardType.allCases {
             if !cardPreferences.contains(where: { $0.id == cardType.rawValue }) {
                 // New card type - add with default preferences
+                // Special case: ProgressStoryCardType.banner hidden by default
+                let isVisibleByDefault: Bool
+                if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
+                    isVisibleByDefault = false
+                } else {
+                    isVisibleByDefault = true
+                }
+
                 let newPreference = CardPreference(
                     cardType: cardType,
-                    isVisible: true,
+                    isVisible: isVisibleByDefault,
                     isExpanded: true,
                     sortOrder: cardPreferences.count
                 )

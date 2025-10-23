@@ -61,6 +61,9 @@ struct DSBanner<Content: View>: View {
     /// Hide callback (optional)
     let onHide: (() -> Void)?
 
+    /// Fixed height for banner container (optional - if nil, uses natural height)
+    let fixedHeight: CGFloat?
+
     /// Banner content
     let content: Content
 
@@ -78,6 +81,7 @@ struct DSBanner<Content: View>: View {
     ///   - strokeColor: Border color (default: Theme.ColorToken.strokeLight)
     ///   - strokeWidth: Border width (default: 1)
     ///   - onHide: Optional hide callback (adds eye.slash button if provided)
+    ///   - fixedHeight: Optional fixed height for container (nil = natural height)
     ///   - content: Banner content view
     init(
         surface: Color = .white,
@@ -90,6 +94,7 @@ struct DSBanner<Content: View>: View {
         strokeColor: Color = Theme.ColorToken.strokeLight,
         strokeWidth: CGFloat = 1,
         onHide: (() -> Void)? = nil,
+        fixedHeight: CGFloat? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.surface = surface
@@ -102,6 +107,7 @@ struct DSBanner<Content: View>: View {
         self.strokeColor = strokeColor
         self.strokeWidth = strokeWidth
         self.onHide = onHide
+        self.fixedHeight = fixedHeight
         self.content = content()
     }
 
@@ -109,24 +115,7 @@ struct DSBanner<Content: View>: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            // Content with standard padding
-            content
-                .padding(DSSpacing.cardPadding)  // 16pt - iOS standard
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            // Eye.slash button (if onHide provided)
-            if let hideAction = onHide {
-                Button(action: hideAction) {
-                    Image(systemName: "eye.slash")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                        .frame(width: 44, height: 44)  // Apple HIG tap target
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Hide banner")
-            }
-        }
-        .background(
+            // Background layer
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                 .fill(surface)
                 .overlay(
@@ -141,7 +130,32 @@ struct DSBanner<Content: View>: View {
                     x: shadowOffset.x,
                     y: shadowOffset.y
                 )
-        )
+
+            // Content layer
+            VStack {
+                Spacer(minLength: 0)  // Top spacer - flexible
+
+                content
+                    .padding(.horizontal, DSSpacing.cardPadding)  // 16pt horizontal - FIXED
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                Spacer(minLength: 0)  // Bottom spacer - flexible
+            }
+
+            // Eye.slash button (if onHide provided)
+            if let hideAction = onHide {
+                Button(action: hideAction) {
+                    Image(systemName: "eye.slash")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(Theme.ColorToken.textSecondary)
+                        .frame(width: 44, height: 44)  // Apple HIG tap target
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Hide banner")
+            }
+        }
+        .frame(height: fixedHeight)  // 🔧 FIX #18: LOCK THE ENTIRE CONTAINER HEIGHT at 66pt
+        .clipped()  // 🔧 FIX #19: Clip shadow overflow to prevent visual size increase beyond fixed height
     }
 }
 
@@ -167,6 +181,7 @@ extension DSBanner {
             strokeColor: Theme.ColorToken.strokeLight,
             strokeWidth: 1,
             onHide: onHide,
+            fixedHeight: 66,  // 🔧 FIX #15: Match CoachBar height (14pt padding + ~38pt content + 14pt padding)
             content: content
         )
     }
@@ -190,6 +205,7 @@ extension DSBanner {
             strokeColor: Theme.ColorToken.strokeLight,
             strokeWidth: 1,
             onHide: onHide,
+            fixedHeight: 66,  // 🔧 FIX #15: Match CoachBar height
             content: content
         )
     }
@@ -213,6 +229,7 @@ extension DSBanner {
             strokeColor: Theme.ColorToken.strokeLight,
             strokeWidth: 1,
             onHide: onHide,
+            fixedHeight: 66,  // 🔧 FIX #15: Match CoachBar height
             content: content
         )
     }

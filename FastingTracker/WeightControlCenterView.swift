@@ -297,7 +297,7 @@ struct WeightControlCenterView: View {
                 // Layer 3: Wrapped in ScrollViewReader for smooth scroll-to-item functionality
                 ScrollView {
                     ScrollViewReader { proxy in
-                        LazyVStack(spacing: DSSpacing.cardElementSpacing) {
+                        LazyVStack(spacing: DSSpacing.cardSectionSpacing) {
                             ForEach(viewModel.cardOrder) { cardType in
                                 cardView(for: cardType)
                                     .onDrag {

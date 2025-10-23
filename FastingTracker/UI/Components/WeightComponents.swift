@@ -546,6 +546,18 @@ struct WeightTrendsView: View {
         return tips.randomElement() ?? tips[0]
     }
 
+    /// Random reflection prompt for ReflectionNudge banner
+    /// Per v1.2 spec D.3: Rotates between 3 options to encourage micro-planning
+    /// 🔧 FIX #7: Extracted as separate function for pre-computation pattern
+    private func randomReflectionPrompt() -> String {
+        let prompts = [
+            "One small habit to try this week?",
+            "What helped most on your best day?",
+            "Pick tomorrow's anchor: sleep / steps / water."
+        ]
+        return prompts.randomElement() ?? prompts[0]
+    }
+
     /// Calculate weight change over a specific number of days
     /// Returns (amount: Double, isLoss: Bool) or nil if insufficient data
     private func calculateTrend(days: Int?) -> (amount: Double, isLoss: Bool)? {
@@ -584,6 +596,10 @@ struct WeightTrendsView: View {
 
     // Phase v1.4b: Drag-to-Reorder State (following existing pattern - no Edit button)
     @State private var draggedCard: ProgressStoryCardType?  // Currently dragged card
+
+    // 🔧 FIX #12: Stable text state - locked at view appearance, never changes during drag
+    // Apple Health Pattern: Use @State for content that shouldn't change during interactions
+    @State private var reflectionPromptText: String = ""  // Initialized in onAppear
 
     // MARK: - Adaptive Mood Overlay (v1.1)
 
@@ -718,14 +734,15 @@ struct WeightTrendsView: View {
                         let visibleCards = progressStoryCardManager.getVisibleCardsInOrder()
                         let reorderableCards = visibleCards.filter { $0 != .coachBar }
 
-                        // Precompute values for banner (outside ForEach)
+                        // Precompute values for banner and tip (outside ForEach to prevent random changes during drag)
                         let delta7d = calculateDelta(days: 7) ?? 0
                         let state7d = trendState(for: delta7d)
                         let bannerText = banner7Text(for: state7d)
                         let bannerAccent = bannerAccentColor(for: state7d)
+                        let didYouKnowText = randomDidYouKnowTip()  // 🔧 FIX #1: Pre-compute tip text once
+                        // 🔧 FIX #12: reflectionPromptText now @State variable initialized in onAppear (never changes during drag)
 
-                        ForEach(reorderableCards.indices, id: \.self) { index in
-                            let cardType = reorderableCards[index]
+                        ForEach(reorderableCards, id: \.self) { cardType in  // 🔧 FIX #2: Use stable cardType IDs instead of indices
                             Group {
                                 // Render card based on type
                                 switch cardType {
@@ -772,6 +789,7 @@ struct WeightTrendsView: View {
                                 case .reflection:
                                     if !optOutManager.isContentOptedOut(id: contentID_ReflectionNudge) {
                                         ReflectionNudge(
+                                            text: reflectionPromptText,  // 🔧 FIX #7: Use pre-computed text
                                             onHide: {
                                                 withAnimation(.easeInOut(duration: 0.25)) {
                                                     progressStoryCardManager.hideCard(.reflection)
@@ -802,7 +820,7 @@ struct WeightTrendsView: View {
                                 case .didYouKnow:
                                     if totalEntries >= 5 && !optOutManager.isContentOptedOut(id: contentID_Tip) {
                                         DidYouKnowBanner(
-                                            text: randomDidYouKnowTip(),
+                                            text: didYouKnowText,  // 🔧 FIX #1: Use pre-computed text
                                             onHide: {
                                                 withAnimation(.easeInOut(duration: 0.25)) {
                                                     progressStoryCardManager.hideCard(.didYouKnow)
@@ -830,7 +848,7 @@ struct WeightTrendsView: View {
                             ))
                             .opacity(isAnimating ? 1 : 0)
                             .offset(y: isAnimating ? 0 : 20)
-                            .animation(.easeInOut(duration: 0.4).delay(Double(index) * 0.1 + 0.1), value: isAnimating)
+                            .animation(.easeInOut(duration: 0.4), value: isAnimating)  // 🔧 FIX #2: Removed index-based delay (index no longer exists)
                         }
 
                         // 6. FOOTER CELEBRATION (optional - motivational message)
@@ -850,13 +868,17 @@ struct WeightTrendsView: View {
                                 .animation(.easeInOut(duration: 0.6).delay(0.6), value: isAnimating)
                         }
                     }
-                    .padding(.horizontal, DSSpacing.cardPadding)  // Consistent 16pt horizontal rhythm
+                    .padding(.horizontal, DSSpacing.screenEdgePadding)  // Universal standard (20pt) - matches all tracker screens
                     .padding(.vertical, DSSpacing.cardPadding)
                 }
             }
             .navigationTitle("Weight Trends")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
+                // 🔧 FIX #12: Initialize reflection prompt once on appear (never changes during drag)
+                // Apple Health Pattern: Lock content at view appearance for stable UI during interactions
+                reflectionPromptText = randomReflectionPrompt()
+
                 // Trigger staggered fade-in animation on view appear
                 withAnimation {
                     isAnimating = true
@@ -1017,6 +1039,10 @@ struct LightCard<Content: View>: View {
  RecapRow(netDelta: net30d, bestStreak: streak, entries: count)
  DidYouKnowBanner(text: randomTip())
 
+ **STANDARD TEXT SIZE:** DSTypography.statValueSmall (18pt semibold rounded)
+ All banner cards use this size by default for visual consistency.
+ Override only when explicitly required for design reasons.
+
  4️⃣ BACKGROUND:
  ZStack {
  LinearGradient(
@@ -1071,11 +1097,17 @@ struct ProgressBanner: View {
 
     var body: some View {
         DSBanner(ice: onHide) {
-            Text(text)
-                .font(DSTypography.statValueSmall)
-                .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: DSSpacing.cardElementSpacing) {
+                Image(systemName: "square.stack.3d.up.fill")  // 🔧 FIX #3: Unique icon representing small wins compounding/stacking
+                    .font(DSTypography.listTitle)
+                    .foregroundColor(accent)
+
+                Text(text)
+                    .font(DSTypography.statValueSmall)
+                    .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .accessibilityLabel("Progress tip: \(text)")
     }
@@ -1419,11 +1451,12 @@ struct RecapRow: View {
 
     var body: some View {
         DSBanner(ice: onHide) {
-            // Metrics row
+            // Metrics row (2 metrics: Net Delta + Streak)
+            // 🔧 FIX #20: Add top padding to push content down, DSBanner already provides 16pt horizontal (side) padding
             HStack(spacing: DSSpacing.cardElementSpacing) {
                 // Net delta
                 Label(netText, systemImage: "chart.line.uptrend.xyaxis")
-                    .font(DSTypography.cardSubtitle)
+                    .font(DSTypography.statValueSmall)
                     .foregroundColor(Theme.ColorToken.textPrimary)
 
                 Spacer()
@@ -1431,7 +1464,7 @@ struct RecapRow: View {
                 // Best streak (v1.2b: with badge dot when new best achieved)
                 ZStack(alignment: .topTrailing) {
                     Label("\(bestStreak)‑day streak", systemImage: "flame.fill")
-                        .font(DSTypography.cardSubtitle)
+                        .font(DSTypography.statValueSmall)
                         .foregroundColor(Theme.ColorToken.textPrimary)
 
                     // NEW BEST BADGE (v1.2b) - Small dot overlay when new best streak achieved
@@ -1446,14 +1479,8 @@ struct RecapRow: View {
                             .animation(.spring(response: 0.5, dampingFraction: 0.6), value: showNewBestBadge)
                     }
                 }
-
-                Spacer()
-
-                // Total entries
-                Label("\(entries) entries", systemImage: "square.and.pencil")
-                    .font(DSTypography.cardSubtitle)
-                    .foregroundColor(Theme.ColorToken.textPrimary)
             }
+            .padding(.top, 24)  // 🔧 FIX #20: 24pt top padding pushes content down, leaving 16pt bottom space (66pt - 24pt top - ~26pt content = 16pt bottom)
         }
         .onAppear {
             // v1.2b: Check for new best streak and trigger badge animation + haptic feedback
@@ -1475,46 +1502,32 @@ struct RecapRow: View {
 /// Per v1.2 spec D.3: Below 30-day card, rotate one line at random
 /// Tap → triggers micro-plan Coach prompt (stub now, functional later)
 /// v1.2e: Refactored to use DSBanner component for uniform container sizing
+/// 🔧 FIX #7: Accepts pre-computed prompt text to prevent random changes during drag
 struct ReflectionNudge: View {
+    let text: String        // Pre-computed reflection prompt (prevents random changes during drag)
     let onHide: () -> Void  // Hide callback
     let onTap: () -> Void   // Tap callback (stub for now)
 
-    /// Random reflection prompt per v1.2 spec D.3
-    /// Rotates between 3 options to encourage micro-planning
-    private var reflectionPrompt: String {
-        let prompts = [
-            "One small habit to try this week?",
-            "What helped most on your best day?",
-            "Pick tomorrow's anchor: sleep / steps / water."
-        ]
-        return prompts.randomElement() ?? prompts[0]
-    }
-
     var body: some View {
-        Button(action: onTap) {
-            DSBanner(ice: onHide) {
-                HStack(spacing: DSSpacing.cardElementSpacing) {
-                    Image(systemName: "sparkle")
-                        .foregroundColor(Theme.ColorToken.accentGold)
-                        .font(DSTypography.listTitle)
+        DSBanner(ice: onHide) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
+                Image(systemName: "sparkle")
+                    .foregroundColor(Theme.ColorToken.accentGold)
+                    .font(DSTypography.listTitle)
 
-                    Text(reflectionPrompt)
-                        .font(DSTypography.cardBody)
-                        .foregroundColor(Theme.ColorToken.textPrimary)
-                        .italic()
-
-                    Spacer()
-
-                    // Chevron disclosure (indicates tappable)
-                    Image(systemName: "chevron.right")
-                        .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.6))
-                        .font(DSTypography.listCaption)
-                }
+                Text(text)
+                    .font(DSTypography.statValueSmall)
+                    .foregroundColor(Theme.ColorToken.textPrimary)
+                    .italic()
+                    .lineLimit(2)  // Enforce 2-line max for consistent height
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .buttonStyle(.plain)
+        .onTapGesture {
+            onTap()
+        }
         .accessibilityLabel("Respond to reflection prompt")
-        .accessibilityHint("Double tap to respond to: \(reflectionPrompt)")
+        .accessibilityHint("Double tap to respond to: \(text)")
     }
 }
 
@@ -1522,6 +1535,10 @@ struct ReflectionNudge: View {
 /// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
 /// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
 /// v1.2e: Refactored to use DSBanner component for uniform container sizing
+///
+/// **STANDARD CARD TEXT SIZE:** DSTypography.statValueSmall (18pt semibold rounded)
+/// This is the standard text size for all banner cards in Progress Story unless explicitly specified otherwise.
+/// Ensures visual consistency across ProgressBanner, ReflectionNudge, RecapRow, and DidYouKnowBanner.
 struct DidYouKnowBanner: View {
     let text: String
     let onHide: () -> Void  // Hide callback
@@ -1534,7 +1551,7 @@ struct DidYouKnowBanner: View {
                     .font(DSTypography.listTitle)
 
                 Text(text)
-                    .font(DSTypography.cardBody)
+                    .font(DSTypography.statValueSmall)
                     .foregroundColor(Theme.ColorToken.textPrimary)
 
                 Spacer()
@@ -1715,9 +1732,17 @@ struct ProgressStoryCardDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         guard let draggedCard = draggedCard else { return false }
 
-        // Find indices in visible cards array (NOT enum raw values!)
-        guard let sourceIndex = visibleCards.firstIndex(of: draggedCard),
-              let destinationIndex = visibleCards.firstIndex(of: cardType) else {
+        // 🔧 FIX #3: Convert visible card indices to actual cardPreferences array indices
+        // CRITICAL: visibleCards only contains VISIBLE cards, but cardManager.reorderCards
+        // operates on the FULL cardPreferences array (which includes HIDDEN cards)
+        // We must convert indices from visibleCards → cardPreferences to match correctly
+
+        // Get all cards in cardPreferences order (includes hidden cards)
+        let allCardsInOrder = cardManager.cardPreferences.sorted { $0.sortOrder < $1.sortOrder }
+
+        // Find actual indices in full array
+        guard let sourceIndex = allCardsInOrder.firstIndex(where: { $0.id == draggedCard.rawValue }),
+              let destinationIndex = allCardsInOrder.firstIndex(where: { $0.id == cardType.rawValue }) else {
             return false
         }
 

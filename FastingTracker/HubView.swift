@@ -62,7 +62,7 @@ struct HubView: View {
     private func trackerCardsSection(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
             // MARK: - Tracker List (5 trackers in full-width layout)
-            LazyVStack(spacing: 12) {
+            LazyVStack(spacing: DSSpacing.cardSectionSpacing) {
                 ForEach(trackerOrder, id: \.self) { tracker in
                     TrackerSummaryCard(
                         tracker: tracker,

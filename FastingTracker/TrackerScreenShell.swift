@@ -71,7 +71,7 @@ struct TrackerScreenShell<Content: View>: View {
             }
 
             ScrollView {
-                VStack(spacing: 12) {
+                VStack(spacing: DSSpacing.cardSectionSpacing) {
                     // Professional Title Header (when data exists)
                     // Following Fast LIFe branding pattern
                     if hasData {
@@ -86,13 +86,13 @@ struct TrackerScreenShell<Content: View>: View {
                     // HealthKit Nudge Banner (contextual)
                     if showingNudge, let nudge = nudgeContent {
                         nudge
-                            .padding(.horizontal)
                             .padding(.bottom, 8)
                     }
 
                     // Main Tracker Content
                     content
                 }
+                .padding(.horizontal, DSSpacing.screenEdgePadding)  // Universal horizontal padding for ALL tracker screens
                 .background(GeometryReader { geometry in
                     // Track scroll offset for gradient phase animation
                     // Only needed for luxury gradient
