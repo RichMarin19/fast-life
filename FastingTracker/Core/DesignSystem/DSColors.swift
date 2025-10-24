@@ -2,21 +2,28 @@ import SwiftUI
 
 // MARK: - Design System Colors
 
-/// Centralized color tokens for consistent theming across all components
-/// Industry Pattern: Design Tokens (Apple HIG, Material Design, Figma)
-/// Reference: https://developer.apple.com/design/human-interface-guidelines/color
+/// ⚠️ DEPRECATED: Use Theme.ColorToken directly instead
 ///
-/// SINGLE SOURCE OF TRUTH: All color values defined here
-/// Never hardcode colors in components - always reference DSColors
+/// This wrapper enum is being phased out in favor of Theme.ColorToken.
+/// All DSColors properties are simple aliases to Theme.ColorToken.
 ///
-/// BACKWARDS COMPATIBILITY: Uses existing Theme.ColorToken values
-/// This ensures consistency with current luxury gradient system
+/// Migration Guide:
+/// - DSColors.cardBackground → Theme.ColorToken.card
+/// - DSColors.cardShadow → Theme.ColorToken.shadowCard
+/// - DSColors.textPrimary → Theme.ColorToken.textPrimary
+/// - DSColors.textSecondary → Theme.ColorToken.textSecondary
+/// - DSColors.accentPrimary → Theme.ColorToken.accentPrimary
+/// - DSColors.accentSuccess → Theme.ColorToken.stateSuccess
+/// - DSColors.accentWarning → Theme.ColorToken.stateWarning
+/// - DSColors.accentError → Theme.ColorToken.stateError
+/// - DSColors.chartLine → Theme.ColorToken.accentPrimary
+/// - DSColors.chartGoalLine → Theme.ColorToken.stateSuccess
+/// - DSColors.screenBackground → Theme.ColorToken.bgDeepStart
 ///
-/// Usage:
-/// ```
-/// .foregroundColor(DSColors.textPrimary)
-/// .background(DSColors.cardBackground)
-/// ```
+/// Reason for deprecation: Single source of truth
+/// Industry Pattern: Design token consolidation (Apple HIG, Material Design)
+/// Timeline: Will be removed after all references are migrated
+@available(*, deprecated, message: "Use Theme.ColorToken directly instead. See migration guide in comments.")
 enum DSColors {
     // MARK: - Card Colors
 
