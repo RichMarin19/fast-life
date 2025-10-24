@@ -1,34 +1,5 @@
-Last commit: 755aece at 2025-10-23 21:55:34
-feat: complete Phase 2 performance recovery + extract WeightTrackingViewModel
-
-Performance Recovery Phase 2:
-- HubView.swift: 2,114 → 1,707 LOC (-407 LOC / 19.3% reduction)
-- Created HubComponents.swift: 394 LOC (TrackerDropDelegate + 4 progress rings)
-- Created DSCornerRadius.swift: Design token for corner radii
-- Centralized Color hex extension to Theme.swift
-- Replaced 84 corner radius instances with DSCornerRadius tokens
-
-Architecture Audit Task 1 Complete:
-- Created WeightTrackingViewModel.swift (182 LOC)
-- Extracted all business logic from WeightTrackingView
-- Industry Standard: @StateObject with explicit initialization (no race conditions)
-- Fixed Control Center button functionality
-- Performance: 90% better startup, smoother navigation
-- Build Status: ✅ SUCCESS (0 errors, 0 warnings)
-
-Component Extractions:
-- TrackerDropDelegate (33 LOC)
-- FastingProgressRing (76 LOC)
-- WeightProgressRing (91 LOC)
-- SleepRegularityRing (89 LOC)
-- HydrationProgressRing (90 LOC)
-
-Documentation:
-- Created ARCHITECTURE-AUDIT.md (Grade: A-, 85% ready for North Star)
-- Created PERFORMANCE-RECOVERY-ROADMAP.md
-- Created HUBVIEW-ANALYSIS.md
-- Updated HANDOFF.md with Phase 2 results and Task 1 completion
-- Created replace_corner_radius.sh automation script
+Last commit: 4f2ef52 at 2025-10-23 21:56:05
+chore: update Claude tracking files
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
