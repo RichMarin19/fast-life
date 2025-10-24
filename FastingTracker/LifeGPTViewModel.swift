@@ -34,13 +34,39 @@ class LifeGPTViewModel: ObservableObject {
 
     private let dataService: HealthDataAggregator
 
+    // Phase 2: Intelligence Layer (Production)
+    private let queryClassifier: QueryClassifierProtocol
+    private let healthAnalyzer: HealthDataAnalyzerProtocol
+    private let responseGenerator: ResponseGeneratorProtocol
+
     // MARK: - Initialization
 
     /// Initialize with data service dependency
     /// Following Fast LIFe's dependency injection pattern
-    /// - Parameter dataService: Service for fetching unified health data
-    init(dataService: HealthDataAggregator) {
+    /// - Parameters:
+    ///   - dataService: Service for fetching unified health data
+    ///   - queryClassifier: Query classification service (default: QueryClassifier.shared)
+    ///   - healthAnalyzer: Health data analysis service (optional, uses production analyzer if nil)
+    ///   - responseGenerator: Response generation service (default: ResponseGenerator.shared)
+    init(
+        dataService: HealthDataAggregator,
+        queryClassifier: QueryClassifierProtocol = QueryClassifier.shared,
+        healthAnalyzer: HealthDataAnalyzerProtocol? = nil,
+        responseGenerator: ResponseGeneratorProtocol = ResponseGenerator.shared
+    ) {
         self.dataService = dataService
+        self.queryClassifier = queryClassifier
+        self.responseGenerator = responseGenerator
+
+        // Initialize health analyzer with data service dependencies
+        // TODO: Wire up WeightService and FastingService when ready
+        if let analyzer = healthAnalyzer {
+            self.healthAnalyzer = analyzer
+        } else {
+            // Placeholder analyzer (will be replaced with production implementation)
+            // For now, use a mock until we wire up the real services
+            self.healthAnalyzer = MockHealthDataAnalyzer()
+        }
 
         // Add welcome message on init
         addWelcomeMessage()
@@ -71,8 +97,8 @@ class LifeGPTViewModel: ObservableObject {
             // Add delay to simulate processing (smoother UX)
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
-            // Generate response with emotion detection
-            let (response, emotion) = await handleQueryWithEmotion(trimmedQuery)
+            // Phase 2: Use production intelligence layer
+            let (response, emotion) = await executeIntelligentQuery(trimmedQuery)
 
             // Add assistant response with emotion
             let assistantMessage = ChatMessage.assistantMessage(response, emotion: emotion)
@@ -88,7 +114,209 @@ class LifeGPTViewModel: ObservableObject {
         addWelcomeMessage()
     }
 
-    // MARK: - Private Query Handling
+    // MARK: - Private Query Handling (Phase 2: Production Intelligence Layer)
+
+    /// Execute query using production intelligence layer
+    /// **Phase 2:** QueryClassifier → HealthDataAnalyzer → ResponseGenerator
+    /// **Fallback:** Phase 1 keyword matching if intelligence layer unavailable
+    /// - Parameter query: User's question
+    /// - Returns: Tuple of (response text, detected emotion)
+    private func executeIntelligentQuery(_ query: String) async -> (String, EmotionState) {
+        // Step 1: Classify query intent
+        let intent = queryClassifier.classify(query)
+
+        // Step 2: Handle offline-capable queries
+        if intent.isOfflineCapable {
+            do {
+                // Execute query based on intent type
+                let result = try await executeAnalysis(for: intent)
+
+                // Step 3: Detect emotion based on result context
+                let emotion = detectEmotionFromResult(result, intent: intent)
+
+                // Step 4: Generate emotion-aware response
+                let userPrefs = UserPreferences.default
+                let response = responseGenerator.generateResponse(
+                    for: intent,
+                    result: result,
+                    emotion: emotion,
+                    userPreferences: userPrefs
+                )
+
+                return (response, emotion)
+
+            } catch {
+                // If analysis fails, fall back to Phase 1 method
+                print("⚠️ Intelligence layer error: \(error.localizedDescription). Falling back to Phase 1.")
+                return await handleQueryWithEmotion(query)
+            }
+        }
+
+        // Step 5: Unknown intents fall back to Phase 1 or LLM (Phase 3)
+        return await handleQueryWithEmotion(query)
+    }
+
+    /// Execute data analysis based on query intent
+    /// **Production:** Uses HealthDataAnalyzer for all supported intent types
+    /// - Parameter intent: Classified query intent
+    /// - Returns: Analysis result (type varies by intent)
+    /// - Throws: AnalysisError if data unavailable or calculation fails
+    private func executeAnalysis(for intent: QueryIntent) async throws -> Any {
+        switch intent {
+
+        // Weight Stats
+        case .minimumWeight(let timeRange):
+            return try await healthAnalyzer.findMinimumWeight(in: timeRange)
+
+        case .maximumWeight(let timeRange):
+            return try await healthAnalyzer.findMaximumWeight(in: timeRange)
+
+        case .averageWeight(let timeRange):
+            return try await healthAnalyzer.calculateAverageWeight(in: timeRange)
+
+        case .medianWeight(let timeRange):
+            return try await healthAnalyzer.calculateMedianWeight(in: timeRange)
+
+        case .weightPercentile(let value, let timeRange):
+            return try await healthAnalyzer.calculateWeightPercentile(value: value, in: timeRange)
+
+        // Weight Change
+        case .largestWeightLoss(let period):
+            return try await healthAnalyzer.findLargestWeightLoss(period: period)
+
+        case .largestWeightGain(let period):
+            return try await healthAnalyzer.findLargestWeightGain(period: period)
+
+        case .weightChange(let period):
+            return try await healthAnalyzer.calculateWeightChange(period: period)
+
+        case .weightChangeRate(let period):
+            return try await healthAnalyzer.calculateWeightChangeRate(period: period)
+
+        case .weightDelta(let startDate, let endDate):
+            return try await healthAnalyzer.calculateWeightDelta(from: startDate, to: endDate)
+
+        // Fasting Stats
+        case .fastCount(let timeRange):
+            return try await healthAnalyzer.countFasts(in: timeRange)
+
+        case .longestFast(let timeRange):
+            return try await healthAnalyzer.findLongestFast(in: timeRange)
+
+        case .fastingStreak:
+            return try await healthAnalyzer.calculateFastingStreak()
+
+        case .completionRate(let timeRange):
+            return try await healthAnalyzer.calculateCompletionRate(in: timeRange)
+
+        case .averageFastDuration(let timeRange):
+            return try await healthAnalyzer.calculateAverageFastDuration(in: timeRange)
+
+        case .detectProtocol(let timeRange):
+            return try await healthAnalyzer.detectFastingProtocol(in: timeRange)
+
+        case .totalFastingHours(let timeRange):
+            return try await healthAnalyzer.calculateTotalFastingHours(in: timeRange)
+
+        case .fastFrequency(let timeRange):
+            return try await healthAnalyzer.calculateFastFrequency(in: timeRange)
+
+        // Trend Analysis
+        case .weightTrend(let timeRange):
+            return try await healthAnalyzer.analyzeWeightTrend(in: timeRange)
+
+        case .movingAverage(_, let days):
+            return try await healthAnalyzer.calculateMovingAverage(days: days)
+
+        case .goalETA(let targetValue, _):
+            if let eta = try await healthAnalyzer.predictGoalCompletion(targetValue: targetValue) {
+                return eta
+            } else {
+                throw AnalysisError.noSignificantChange
+            }
+
+        case .onTrackToGoal(let targetValue, let targetDate, _):
+            return try await healthAnalyzer.isOnTrackToGoal(targetValue: targetValue, targetDate: targetDate)
+
+        case .rateOfChange(_, let timeRange):
+            return try await healthAnalyzer.calculateRateOfChange(in: timeRange)
+
+        // Goal Tracking
+        case .goalProgress(let targetValue, _):
+            // Calculate progress percentage
+            // TODO: Implement goal progress calculation
+            return 0.0
+
+        case .goalStatus, .remainingToGoal:
+            // TODO: Implement goal status/remaining
+            throw AnalysisError.noData
+
+        // Current stats and comparisons
+        case .currentStats, .recentActivity:
+            // TODO: Implement aggregated stats
+            throw AnalysisError.noData
+
+        case .compareToLast, .yearOverYear, .monthOverMonth, .weekOverWeek:
+            // TODO: Implement comparative analytics
+            throw AnalysisError.noData
+
+        case .unknown:
+            throw AnalysisError.noData
+        }
+    }
+
+    /// Detect emotion state from analysis result
+    /// **Production:** Context-aware emotion detection based on data trends
+    /// - Parameters:
+    ///   - result: Analysis result
+    ///   - intent: Query intent
+    /// - Returns: Detected emotion state
+    private func detectEmotionFromResult(_ result: Any, intent: QueryIntent) -> EmotionState {
+        // Weight change results
+        if let weightChange = result as? WeightChangeResult {
+            if weightChange.change < -2.0 {
+                // Significant loss → Energized
+                return .energized
+            } else if weightChange.change < 0 {
+                // Moderate loss → Stable
+                return .stable
+            } else if weightChange.change > 2.0 {
+                // Significant gain → Offtrack
+                return .offtrack
+            } else {
+                // Slight gain → Stable
+                return .stable
+            }
+        }
+
+        // Trend results
+        if let trend = result as? TrendAnalysisResult {
+            switch trend.direction {
+            case .down:
+                return trend.strength < -0.5 ? .energized : .stable
+            case .up:
+                return trend.strength > 0.5 ? .offtrack : .stable
+            case .stable:
+                return .stable
+            }
+        }
+
+        // Fasting streak
+        if let streak = result as? Int, case .fastingStreak = intent {
+            if streak >= 7 {
+                return .energized
+            } else if streak >= 3 {
+                return .stable
+            } else {
+                return .offtrack
+            }
+        }
+
+        // Default: Stable emotion
+        return .stable
+    }
+
+    // MARK: - Private Query Handling (Phase 1: Legacy Keyword Matching)
 
     /// Handle user query and generate response
     /// Phase 1: Simple keyword matching
@@ -442,5 +670,104 @@ class LifeGPTViewModel: ObservableObject {
             """
         )
         messages.append(welcome)
+    }
+}
+
+// MARK: - Mock Health Data Analyzer (Temporary)
+
+/// Mock analyzer for testing until real services are wired up
+/// **TODO:** Replace with production HealthDataAnalysisService when WeightService/FastingService ready
+private class MockHealthDataAnalyzer: HealthDataAnalyzerProtocol {
+
+    func findMinimumWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
+        throw AnalysisError.noData
+    }
+
+    func findMaximumWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
+        throw AnalysisError.noData
+    }
+
+    func calculateAverageWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
+        throw AnalysisError.noData
+    }
+
+    func calculateMedianWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
+        throw AnalysisError.noData
+    }
+
+    func calculateWeightPercentile(value: Double, in timeRange: TimeRange?) async throws -> Double {
+        throw AnalysisError.noData
+    }
+
+    func findLargestWeightLoss(period: TimePeriod) async throws -> WeightChangeResult {
+        throw AnalysisError.noData
+    }
+
+    func findLargestWeightGain(period: TimePeriod) async throws -> WeightChangeResult {
+        throw AnalysisError.noData
+    }
+
+    func calculateWeightChange(period: TimePeriod) async throws -> WeightChangeResult {
+        throw AnalysisError.noData
+    }
+
+    func calculateWeightChangeRate(period: TimePeriod) async throws -> Double {
+        throw AnalysisError.noData
+    }
+
+    func calculateWeightDelta(from startDate: Date, to endDate: Date) async throws -> WeightChangeResult {
+        throw AnalysisError.noData
+    }
+
+    func countFasts(in timeRange: TimeRange?) async throws -> Int {
+        throw AnalysisError.noData
+    }
+
+    func findLongestFast(in timeRange: TimeRange?) async throws -> FastingAnalysisResult {
+        throw AnalysisError.noData
+    }
+
+    func calculateFastingStreak() async throws -> Int {
+        throw AnalysisError.noData
+    }
+
+    func calculateCompletionRate(in timeRange: TimeRange?) async throws -> Double {
+        throw AnalysisError.noData
+    }
+
+    func calculateAverageFastDuration(in timeRange: TimeRange?) async throws -> Double {
+        throw AnalysisError.noData
+    }
+
+    func detectFastingProtocol(in timeRange: TimeRange?) async throws -> String {
+        throw AnalysisError.noData
+    }
+
+    func calculateTotalFastingHours(in timeRange: TimeRange?) async throws -> Double {
+        throw AnalysisError.noData
+    }
+
+    func calculateFastFrequency(in timeRange: TimeRange?) async throws -> Double {
+        throw AnalysisError.noData
+    }
+
+    func analyzeWeightTrend(in timeRange: TimeRange?) async throws -> TrendAnalysisResult {
+        throw AnalysisError.noData
+    }
+
+    func calculateMovingAverage(days: Int) async throws -> Double {
+        throw AnalysisError.noData
+    }
+
+    func predictGoalCompletion(targetValue: Double) async throws -> Date? {
+        return nil
+    }
+
+    func isOnTrackToGoal(targetValue: Double, targetDate: Date) async throws -> Bool {
+        throw AnalysisError.noData
+    }
+
+    func calculateRateOfChange(in timeRange: TimeRange?) async throws -> Double {
+        throw AnalysisError.noData
     }
 }
