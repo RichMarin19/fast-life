@@ -69,6 +69,22 @@ class QueryClassifier: QueryClassifierProtocol {
         "peak weight"
     ]
 
+    /// Current weight patterns (12 variations) - MOST COMMON QUERY
+    private let currentWeightPatterns: [String] = [
+        "what's my weight",
+        "what is my weight",
+        "whats my weight",
+        "how much do i weigh",
+        "what do i weigh",
+        "show me my weight",
+        "current weight",
+        "my weight",
+        "my current weight",
+        "latest weight",
+        "weight today",
+        "weight"
+    ]
+
     /// Average weight patterns (8 variations)
     private let averageWeightPatterns: [String] = [
         "average weight",
@@ -305,7 +321,7 @@ class QueryClassifier: QueryClassifierProtocol {
         "today overview"
     ]
 
-    /// Comparison patterns (8 variations)
+    /// Comparison patterns (18 variations)
     private let comparisonPatterns: [String] = [
         "this week vs last week",
         "compare this month to last",
@@ -314,7 +330,18 @@ class QueryClassifier: QueryClassifierProtocol {
         "yoy comparison",
         "wow comparison",
         "compare periods",
-        "period comparison"
+        "period comparison",
+        // Follow-up question patterns (conversational)
+        "compare to last week",
+        "how does that compare",
+        "compared to last week",
+        "versus last week",
+        "vs last week",
+        "how does it compare",
+        "compare to last",
+        "compared to last",
+        "difference from last week",
+        "change from last week"
     ]
 
     // MARK: - Time Range Keywords
@@ -360,6 +387,12 @@ class QueryClassifier: QueryClassifierProtocol {
         let period = extractPeriod(from: normalized)
 
         // MARK: Weight Stats Classification
+
+        // Check current weight FIRST (most common query)
+        // Returns LATEST weight entry, not statistical average
+        if matchesAny(normalized, patterns: currentWeightPatterns) {
+            return .currentWeight
+        }
 
         if matchesAny(normalized, patterns: minimumWeightPatterns) {
             return .minimumWeight(timeRange: timeRange)
@@ -542,27 +575,34 @@ class QueryClassifier: QueryClassifierProtocol {
 extension QueryClassifier {
     /// Total pattern count (production standard: 50+)
     var totalPatternCount: Int {
-        minimumWeightPatterns.count +
-        maximumWeightPatterns.count +
-        averageWeightPatterns.count +
-        medianWeightPatterns.count +
-        weightLossPatterns.count +
-        weightGainPatterns.count +
-        weightChangePatterns.count +
-        weightRatePatterns.count +
-        fastCountPatterns.count +
-        longestFastPatterns.count +
-        streakPatterns.count +
-        completionRatePatterns.count +
-        averageFastDurationPatterns.count +
-        protocolPatterns.count +
-        totalFastingHoursPatterns.count +
-        trendPatterns.count +
-        goalETAPatterns.count +
-        onTrackPatterns.count +
-        goalProgressPatterns.count +
-        currentStatsPatterns.count +
-        comparisonPatterns.count
+        // Break up into sub-expressions to avoid compiler timeout
+        let weightPatterns = currentWeightPatterns.count +
+            minimumWeightPatterns.count +
+            maximumWeightPatterns.count +
+            averageWeightPatterns.count +
+            medianWeightPatterns.count +
+            weightLossPatterns.count +
+            weightGainPatterns.count +
+            weightChangePatterns.count +
+            weightRatePatterns.count
+
+        let fastingPatterns = fastCountPatterns.count +
+            longestFastPatterns.count +
+            streakPatterns.count +
+            completionRatePatterns.count +
+            averageFastDurationPatterns.count +
+            protocolPatterns.count +
+            totalFastingHoursPatterns.count
+
+        let goalPatterns = trendPatterns.count +
+            goalETAPatterns.count +
+            onTrackPatterns.count +
+            goalProgressPatterns.count
+
+        let generalPatterns = currentStatsPatterns.count +
+            comparisonPatterns.count
+
+        return weightPatterns + fastingPatterns + goalPatterns + generalPatterns
     }
 
     /// Pattern categories (8 categories)

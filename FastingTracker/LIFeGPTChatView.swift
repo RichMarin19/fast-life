@@ -1,3 +1,4 @@
+
 //
 // LIFeGPTChatView.swift
 // FastingTracker
@@ -6,6 +7,7 @@
 // Main chat interface with emotion-aware theming and animations
 // Reference: FastLIFe_LIFeGPT_UI_Behavioral_Spec_Hour3.md (Section 3, 8)
 //
+
 
 import SwiftUI
 

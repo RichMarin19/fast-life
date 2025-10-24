@@ -27,6 +27,10 @@ enum QueryIntent: Equatable, Hashable {
 
     // MARK: - Weight Stats
 
+    /// Get current weight (latest entry)
+    /// Examples: "What's my weight?", "How much do I weigh?", "Current weight?"
+    case currentWeight
+
     /// Find minimum weight recorded
     /// Examples: "What's the least I ever weighed?", "Lowest weight?"
     case minimumWeight(timeRange: TimeRange?)

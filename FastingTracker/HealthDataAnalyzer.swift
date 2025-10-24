@@ -15,12 +15,14 @@
 import Foundation
 
 // MARK: - Analysis Result Models
+// Following Apple HealthKit pattern (HKStatistics includes date interval)
 
 /// Result of a weight analysis query
 struct WeightAnalysisResult {
     let value: Double           // Primary result value (weight in lbs or kg)
     let date: Date?            // Associated date (for min/max/specific point)
     let unit: String           // "lbs" or "kg"
+    let timeRange: TimeRange?  // Query time range (Apple HKStatistics pattern)
     let metadata: [String: Any]? // Additional context
 }
 
@@ -33,6 +35,7 @@ struct WeightChangeResult {
     let endDate: Date
     let rate: Double           // Change per day
     let unit: String
+    let period: TimePeriod?    // Analysis period (for display context)
 }
 
 /// Result of a fasting analysis query
@@ -40,6 +43,7 @@ struct FastingAnalysisResult {
     let value: Double           // Primary result (count, hours, etc.)
     let valueType: String      // "count", "hours", "percentage"
     let date: Date?            // Associated date
+    let timeRange: TimeRange?  // Query time range (Apple HKStatistics pattern)
     let metadata: [String: Any]? // Additional context
 }
 
@@ -50,6 +54,7 @@ struct TrendAnalysisResult {
     let confidence: Double         // 0.0 to 1.0
     let movingAverage: Double?     // Current moving average
     let prediction: Double?        // Predicted next value
+    let timeRange: TimeRange?      // Query time range (Apple HKStatistics pattern)
     let metadata: [String: Any]?
 }
 
@@ -152,8 +157,7 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
 
     // MARK: - Dependencies
 
-    private let weightService: WeightServiceProtocol
-    private let fastingService: FastingServiceProtocol
+    private let dataService: HealthDataAggregator
 
     // MARK: - Cache
 
@@ -163,12 +167,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
 
     // MARK: - Initialization
 
-    init(
-        weightService: WeightServiceProtocol,
-        fastingService: FastingServiceProtocol
-    ) {
-        self.weightService = weightService
-        self.fastingService = fastingService
+    init(dataService: HealthDataAggregator) {
+        self.dataService = dataService
     }
 
     // MARK: - Weight Analytics (10 methods)
@@ -187,7 +187,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
         let result = WeightAnalysisResult(
             value: minEntry.weight,
             date: minEntry.date,
-            unit: minEntry.unit.rawValue,
+            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+            timeRange: timeRange,  // Apple HKStatistics pattern
             metadata: [
                 "totalEntries": entries.count,
                 "timeRange": timeRange?.description ?? "all"
@@ -212,7 +213,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
         let result = WeightAnalysisResult(
             value: maxEntry.weight,
             date: maxEntry.date,
-            unit: maxEntry.unit.rawValue,
+            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+            timeRange: timeRange,  // Apple HKStatistics pattern
             metadata: [
                 "totalEntries": entries.count,
                 "timeRange": timeRange?.description ?? "all"
@@ -240,7 +242,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
         let result = WeightAnalysisResult(
             value: average,
             date: nil,
-            unit: entries.first!.unit.rawValue,
+            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+            timeRange: timeRange,  // Apple HKStatistics pattern
             metadata: [
                 "totalEntries": entries.count,
                 "timeRange": timeRange?.description ?? "all"
@@ -273,7 +276,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
         let result = WeightAnalysisResult(
             value: median,
             date: nil,
-            unit: entries.first!.unit.rawValue,
+            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+            timeRange: timeRange,  // Apple HKStatistics pattern
             metadata: [
                 "totalEntries": entries.count,
                 "timeRange": timeRange?.description ?? "all"
@@ -318,7 +322,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
                             startDate: entries[i].date,
                             endDate: entries[j].date,
                             rate: change / Double(periodDays),
-                            unit: entries[i].unit.rawValue
+                            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+                            period: period  // Context for display
                         )
                         if largestLoss == nil || abs(change) > abs(largestLoss!.change) {
                             largestLoss = changeResult
@@ -358,7 +363,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
                             startDate: entries[i].date,
                             endDate: entries[j].date,
                             rate: change / Double(periodDays),
-                            unit: entries[i].unit.rawValue
+                            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+                            period: period  // Context for display
                         )
                         if largestGain == nil || change > largestGain!.change {
                             largestGain = changeResult
@@ -405,7 +411,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
             startDate: first.date,
             endDate: last.date,
             rate: change / Double(days),
-            unit: first.unit.rawValue
+            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+            period: period  // Context for display
         )
     }
 
@@ -432,7 +439,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
             startDate: first.date,
             endDate: last.date,
             rate: change / Double(days),
-            unit: first.unit.rawValue
+            unit: WeightUnit.pounds.rawValue,  // All weights stored in pounds
+            period: nil  // Delta is date-based, not period-based
         )
     }
 
@@ -453,9 +461,10 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
             value: longest.duration,
             valueType: "hours",
             date: longest.startTime,
+            timeRange: timeRange,  // Apple HKStatistics pattern
             metadata: [
                 "totalSessions": sessions.count,
-                "goalHours": longest.goalHours
+                "goalHours": longest.goalHours ?? 16.0  // Default to 16 hours
             ]
         )
     }
@@ -494,7 +503,8 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
         }
 
         let completed = sessions.filter { session in
-            return session.duration >= session.goalHours
+            let goalInSeconds = (session.goalHours ?? 16.0) * 3600  // Default to 16 hours, convert to seconds
+            return session.duration >= goalInSeconds
         }.count
 
         return Double(completed) / Double(sessions.count) * 100.0
@@ -604,6 +614,7 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
             confidence: max(0.0, min(1.0, rSquared)),
             movingAverage: try? await calculateMovingAverage(days: 7),
             prediction: nil,
+            timeRange: timeRange,  // Apple HKStatistics pattern
             metadata: [
                 "slope": slope,
                 "dataPoints": entries.count
@@ -667,15 +678,34 @@ class HealthDataAnalysisService: HealthDataAnalyzerProtocol {
     // MARK: - Helper Methods
 
     private func getWeightEntries(in timeRange: TimeRange?) async throws -> [WeightEntry] {
-        // TODO: Integrate with WeightService to fetch actual data
-        // For now, return empty array (will be implemented in integration phase)
-        []
+        let rawEntries: [WeightEntry]
+
+        if let timeRange = timeRange {
+            // Convert time range to dates
+            let (startDate, endDate) = timeRange.toDateRange()
+            rawEntries = await dataService.fetchWeightData(from: startDate, to: endDate)
+        } else {
+            // Fetch all weight data
+            rawEntries = await dataService.fetchAllWeightData()
+        }
+
+        // Data validation: Filter invalid weights
+        // Following CDC/NIH standards: valid adult weights are 50-1000 lbs
+        // Filters out test data, 0.0 values, and extreme outliers
+        return rawEntries.filter { entry in
+            entry.weight >= 50.0 && entry.weight <= 1000.0
+        }
     }
 
     private func getFastingSessions(in timeRange: TimeRange?) async throws -> [FastingSession] {
-        // TODO: Integrate with FastingService to fetch actual data
-        // For now, return empty array (will be implemented in integration phase)
-        []
+        guard let timeRange = timeRange else {
+            // Fetch all fasting sessions
+            return await dataService.fetchAllFastingSessions()
+        }
+
+        // Convert time range to dates
+        let (startDate, endDate) = timeRange.toDateRange()
+        return await dataService.fetchFastingSessions(from: startDate, to: endDate)
     }
 
     // MARK: - Cache Management

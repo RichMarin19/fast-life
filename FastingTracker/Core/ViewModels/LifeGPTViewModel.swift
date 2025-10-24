@@ -30,6 +30,9 @@ class LifeGPTViewModel: ObservableObject {
     /// Whether assistant is processing a query (for loading indicator)
     @Published var isProcessing: Bool = false
 
+    /// Whether first-launch loading is in progress (building InsightContext from HealthKit)
+    @Published var isFirstLaunchLoading: Bool = false
+
     // MARK: - Dependencies
 
     private let dataService: HealthDataAggregator
@@ -44,6 +47,33 @@ class LifeGPTViewModel: ObservableObject {
 
         // Add welcome message on init
         addWelcomeMessage()
+    }
+
+    /// Pre-load HealthKit data on first launch to prevent freeze during first query
+    /// **First Launch UX:** Shows loading overlay while building InsightContext
+    /// **Industry Pattern:** Whoop, Oura, Levels all pre-fetch data on app open
+    func preloadHealthData() async {
+        // Check if this is first launch
+        let hasCompletedFirstLoad = UserDefaults.standard.bool(forKey: "hasCompletedFirstInsightLoad")
+
+        guard !hasCompletedFirstLoad else {
+            return // Already loaded, skip
+        }
+
+        // Show loading overlay
+        isFirstLaunchLoading = true
+
+        // CRITICAL: Give SwiftUI time to render the overlay before blocking with HealthKit queries
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
+
+        // Pre-fetch common health data (simulates .summary query to warm cache)
+        _ = await buildDataContext(for: .summary)
+
+        // Mark as complete
+        UserDefaults.standard.set(true, forKey: "hasCompletedFirstInsightLoad")
+
+        // Dismiss loading overlay
+        isFirstLaunchLoading = false
     }
 
     // MARK: - Public API

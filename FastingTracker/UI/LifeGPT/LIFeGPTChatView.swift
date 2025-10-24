@@ -67,6 +67,12 @@ struct LIFeGPTChatView: View {
                         .padding(.horizontal, DSSpacing.cardElementSpacing)
                         .padding(.bottom, DSSpacing.cardSmallSpacing)
                 }
+
+                // First-launch loading overlay
+                if viewModel.isFirstLaunchLoading {
+                    LifeGPTLoadingOverlay()
+                        .transition(.opacity)
+                }
             }
             .navigationTitle("LifeGPT")
             .navigationBarTitleDisplayMode(.inline)
@@ -80,7 +86,12 @@ struct LIFeGPTChatView: View {
             }
         }
         .onAppear {
-            // Focus input on appear for immediate interaction
+            // Pre-load HealthKit data on first launch (prevents freeze during first query)
+            Task {
+                await viewModel.preloadHealthData()
+            }
+
+            // Focus input after data loads
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isInputFocused = true
             }
