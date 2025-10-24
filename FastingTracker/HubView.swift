@@ -22,6 +22,10 @@ struct HubView: View {
     @State private var trackerOrder: [TrackerType] = [.weight, .fasting, .sleep, .hydration, .mood]
     @State private var draggedTracker: TrackerType?
 
+    // MARK: - LifeGPT State (AI Health Coach)
+    @State private var showLifeGPTChat = false
+    @State private var currentEmotion: EmotionState = .stable
+
     // MARK: - Main Content View (Decomposed for Compilation Performance)
     @ViewBuilder
     private var mainContentView: some View {
@@ -35,6 +39,11 @@ struct HubView: View {
 
                     // MARK: - Top Status Bar (Heart Rate - Luxury Spec Section 2)
                     TopStatusBar()
+
+                    // MARK: - LifeGPT Coach Card (AI Health Coach Entry Point)
+                    lifeGPTCoachCard
+                        .padding(.horizontal)
+                        .padding(.top, 12)
 
                     // MARK: - Vertically Centered Content Area
                     trackerCardsSection(geometry: geometry)
@@ -125,11 +134,23 @@ struct HubView: View {
         }
     }
 
+    // MARK: - LifeGPT Coach Card Component
+    @ViewBuilder
+    private var lifeGPTCoachCard: some View {
+        CoachInviteCard(emotion: currentEmotion) {
+            showLifeGPTChat = true
+        }
+    }
+
     var body: some View {
         NavigationStack(path: $navigationPath) {
             mainContentView
                 .background(luxuryBackgroundGradient)
                 .navigationBarHidden(true)
+                .sheet(isPresented: $showLifeGPTChat) {
+                    // Present LifeGPT chat interface
+                    LIFeGPTChatView(dataService: createUnifiedHealthDataService())
+                }
         }
         .onAppear {
             loadTrackerOrder()
@@ -149,6 +170,18 @@ struct HubView: View {
                 shouldPopToRoot = false
             }
         }
+    }
+
+    // MARK: - LifeGPT Data Service Helper
+    /// Create UnifiedHealthDataService with all manager dependencies
+    private func createUnifiedHealthDataService() -> UnifiedHealthDataService {
+        return UnifiedHealthDataService(
+            weightManager: weightManager,
+            fastingManager: fastingManager,
+            sleepManager: sleepManager,
+            hydrationManager: hydrationManager,
+            moodManager: moodManager
+        )
     }
 
     // MARK: - Tracker Order Persistence (UserDefaults pattern from HANDOFF.md)

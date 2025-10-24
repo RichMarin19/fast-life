@@ -11,6 +11,16 @@
 		521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */; };
 		521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */; };
 		521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */; };
+		521608B42EAB41470085B852 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B22EAB41470085B852 /* ChatMessage.swift */; };
+		521608B52EAB41470085B852 /* EmotionState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B32EAB41470085B852 /* EmotionState.swift */; };
+		521608B92EAB416A0085B852 /* HealthDataAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B72EAB416A0085B852 /* HealthDataAggregator.swift */; };
+		521608BA2EAB416A0085B852 /* UnifiedHealthDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */; };
+		521608BB2EAB416A0085B852 /* BehavioralCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B62EAB416A0085B852 /* BehavioralCopy.swift */; };
+		521608BF2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */; };
+		521608C32EAB41920085B852 /* LIFeGPTChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C12EAB41920085B852 /* LIFeGPTChatView.swift */; };
+		521608D52EAB47730085B852 /* LifeGPTViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D42EAB47730085B852 /* LifeGPTViewModel.swift */; };
+		521608D82EAB47ED0085B852 /* LifeGPTComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */; };
+		521608D92EAB47ED0085B852 /* CoachInviteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D62EAB47ED0085B852 /* CoachInviteCard.swift */; };
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
@@ -136,6 +146,16 @@
 		521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryComponents.swift; sourceTree = "<group>"; };
 		521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSetupComponents.swift; sourceTree = "<group>"; };
 		521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightStatsComponents.swift; sourceTree = "<group>"; };
+		521608B22EAB41470085B852 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
+		521608B32EAB41470085B852 /* EmotionState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionState.swift; sourceTree = "<group>"; };
+		521608B62EAB416A0085B852 /* BehavioralCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BehavioralCopy.swift; sourceTree = "<group>"; };
+		521608B72EAB416A0085B852 /* HealthDataAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataAggregator.swift; sourceTree = "<group>"; };
+		521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedHealthDataService.swift; sourceTree = "<group>"; };
+		521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LifeGPTViewModel+EmotionDetection.swift"; sourceTree = "<group>"; };
+		521608C12EAB41920085B852 /* LIFeGPTChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LIFeGPTChatView.swift; sourceTree = "<group>"; };
+		521608D42EAB47730085B852 /* LifeGPTViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGPTViewModel.swift; sourceTree = "<group>"; };
+		521608D62EAB47ED0085B852 /* CoachInviteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachInviteCard.swift; sourceTree = "<group>"; };
+		521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGPTComponents.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
 		521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info 2.plist"; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
@@ -280,7 +300,17 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				521608C12EAB41920085B852 /* LIFeGPTChatView.swift */,
+				521608D42EAB47730085B852 /* LifeGPTViewModel.swift */,
+				521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */,
+				521608B62EAB416A0085B852 /* BehavioralCopy.swift */,
+				521608B72EAB416A0085B852 /* HealthDataAggregator.swift */,
+				521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */,
 				521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */,
+				521608B22EAB41470085B852 /* ChatMessage.swift */,
+				521608D62EAB47ED0085B852 /* CoachInviteCard.swift */,
+				521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */,
+				521608B32EAB41470085B852 /* EmotionState.swift */,
 				521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */,
 				521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */,
 				521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */,
@@ -523,7 +553,10 @@
 				52B2CFE72E9880B50061FCFF /* HydrationChartView.swift in Sources */,
 				521608AE2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift in Sources */,
 				521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */,
+				521608C32EAB41920085B852 /* LIFeGPTChatView.swift in Sources */,
 				521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */,
+				521608D82EAB47ED0085B852 /* LifeGPTComponents.swift in Sources */,
+				521608D92EAB47ED0085B852 /* CoachInviteCard.swift in Sources */,
 				521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */,
 				52B2CFE82E9880B50061FCFF /* UI/Components/HydrationComponents.swift in Sources */,
 				52B2CFE92E9880B50061FCFF /* HydrationCalendarView.swift in Sources */,
@@ -543,6 +576,7 @@
 				682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */,
 				DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */,
 				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
+				521608BF2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift in Sources */,
 				52B2CFC32E94EE630061FCFF /* AppLogger.swift in Sources */,
 				5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */,
 				52B2CFC12E94B8A40061FCFF /* CSVImporter.swift in Sources */,
@@ -572,6 +606,9 @@
 				52F16D7B2EA48151002C9FC5 /* ProgressStoryCardManager.swift in Sources */,
 				521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */,
 				5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */,
+				521608B92EAB416A0085B852 /* HealthDataAggregator.swift in Sources */,
+				521608BA2EAB416A0085B852 /* UnifiedHealthDataService.swift in Sources */,
+				521608BB2EAB416A0085B852 /* BehavioralCopy.swift in Sources */,
 				52B2CFC72E95A9C80061FCFF /* CrashReportManager.swift in Sources */,
 				52B2CFC82E95A9C80061FCFF /* Core/Persistence/DataStore.swift in Sources */,
 				A1000003000000000000001 /* ContentView.swift in Sources */,
@@ -579,6 +616,9 @@
 				52CB2D192EAADD4000815CAD /* DSCornerRadius.swift in Sources */,
 				52D684182EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift in Sources */,
 				52F16D752EA45ED4002C9FC5 /* DSColors.swift in Sources */,
+				521608D52EAB47730085B852 /* LifeGPTViewModel.swift in Sources */,
+				521608B42EAB41470085B852 /* ChatMessage.swift in Sources */,
+				521608B52EAB41470085B852 /* EmotionState.swift in Sources */,
 				52F16D762EA45ED4002C9FC5 /* DSCardHeader.swift in Sources */,
 				52F16D772EA45ED4002C9FC5 /* DSSpacing.swift in Sources */,
 				52F5788C2EA816F50042727E /* DSCoachBar.swift in Sources */,

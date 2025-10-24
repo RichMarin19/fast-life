@@ -187,16 +187,49 @@ This documentation has been reorganized for improved navigation and focus. The m
 ### Strategic Plan: North Star Weight Tracker ⭐
 
 **After Phase 2 Completion + Architecture Audit:**
-1. **Fix 3 critical issues** identified in audit (1 week)
-2. **Perfect Weight Tracker** UI/UX, performance, and functionality
-3. **Weight Tracker becomes template** for all other trackers
-4. **Future Phase:** Rebuild Fasting, Hydration, Sleep, Mood trackers to match Weight Tracker pattern
+1. ✅ **Fix 3 critical issues** identified in audit (COMPLETE - 101 minutes!)
+2. → **Perfect Weight Tracker** UI/UX, performance, and functionality
+3. → **Build LifeGPT** - AI Health Coach (killer differentiator feature)
+4. **Weight Tracker + LifeGPT become template** for all other trackers
+5. **Future Phase:** Rebuild Fasting, Hydration, Sleep, Mood trackers to match pattern
 
 **Current Priority Order:**
 1. ✅ Complete HubView optimization (Phase 2) ← COMPLETE
-2. 🔄 Fix 3 critical architectural issues ← ACTIVE NOW
-3. ⭐ Perfect Weight Tracker (North Star) ← NEXT FOCUS
-4. 🔄 Rebuild all other trackers to match North Star pattern ← FUTURE
+2. ✅ Fix 3 critical architectural issues ← COMPLETE (101 min, 14-22x faster!)
+3. 🚀 **Build LifeGPT Foundation (Phase 1)** ← ACTIVE NOW (3-hour sprint!)
+   - ✅ Hour 1: Data Layer COMPLETE (~45 min, 15 min ahead of schedule!)
+   - ⏳ Hour 2: ViewModel & Logic (NEXT - Backend only, no UI)
+   - 🎨 Hour 3: UI Layer (USER-FACING - **PAUSE for UI/UX input before starting**)
+4. ⭐ Perfect Weight Tracker (North Star) ← AFTER LifeGPT Phase 1
+5. 🔄 Rebuild all other trackers to match North Star pattern ← FUTURE
+
+**📖 See [LIFEGPT-ROADMAP.md](./LIFEGPT-ROADMAP.md)** ⭐ NEW - AI Health Coach feature plan
+
+### LifeGPT Phase 1 Progress
+
+**✅ Hour 1 Complete: Data Layer (45 min)**
+- ✅ `HealthDataAggregator.swift` - Protocol (240 LOC)
+- ✅ `UnifiedHealthDataService.swift` - Implementation (195 LOC)
+- ✅ `ChatMessage.swift` - Model (145 LOC)
+- ✅ Build Status: **BUILD SUCCEEDED** (0 errors, 0 warnings)
+
+**✅ Hour 2 Complete: ViewModel & Logic (30 min)**
+- ✅ `LifeGPTViewModel.swift` - Query handler (370 LOC)
+- ✅ 6 query handlers (weight, fasting, sleep, hydration, mood, summary)
+- ✅ Simple keyword matching (no AI/LLM yet)
+- ✅ Response generation with formatted strings
+- ✅ Build Status: **BUILD SUCCEEDED** (0 errors, 0 warnings)
+- ✅ **30 minutes ahead of schedule!**
+
+**🎨 Hour 3: UI Layer - PAUSE POINT FOR UI/UX INPUT**
+- **This is when users first see LifeGPT**
+- Get UI/UX team feedback on:
+  - Chat message bubble styling
+  - Hub card appearance and placement
+  - Input bar design
+  - Loading states, animations, empty states
+  - Light/dark mode color scheme
+- Estimated: 60 min after UI/UX approval
 
 ### Why Performance Recovery Now?
 

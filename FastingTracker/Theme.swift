@@ -196,6 +196,29 @@ enum Theme {
         /// Replaces harsh red with supportive, non-judgmental color
         static let accentCoral = Color(flHex: "#E47A6E")
 
+        // MARK: Chat Bubble Opacity Tokens (LifeGPT)
+        // Reference: iMessage pattern - user bubbles are more saturated for visibility
+
+        /// User message bubble opacity in dark mode - 35%
+        /// Usage: User message background (dark mode) for readability
+        /// Contrast: Ensures ≥4.5:1 with white text (WCAG AA)
+        static let chatUserBubbleOpacityDark: Double = 0.35
+
+        /// User message bubble opacity in light mode - 15%
+        /// Usage: User message background (light mode) for subtle distinction
+        /// Contrast: Maintains readability with dark text
+        static let chatUserBubbleOpacityLight: Double = 0.15
+
+        /// Assistant message gradient opacity in dark mode - 12%
+        /// Usage: Assistant message background gradient (dark mode)
+        /// Keeps focus on content, not decoration
+        static let chatAssistantGradientOpacityDark: Double = 0.12
+
+        /// Assistant message gradient opacity in light mode - 8%
+        /// Usage: Assistant message background gradient (light mode)
+        /// Subtle emotion-aware theming
+        static let chatAssistantGradientOpacityLight: Double = 0.08
+
         // MARK: Control Center Title Gradient Colors
 
         /// Cyan accent - Bright cyan for Control Center title gradient start (#66CCE5)
