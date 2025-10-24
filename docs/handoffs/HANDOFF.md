@@ -486,6 +486,60 @@ Recommended: Increase fasting frequency to 4 times per week. Why? You completed 
 - **Transformation:** "Gimmicky" → Production-grade data-driven recommendations
 - **Industry Pattern:** Following Whoop, Oura, Levels (rule-based intelligence, NOT LLMs)
 
+---
+
+### LifeGPT Phase 5: AInstein UI/UX Transformation 🔄 ACTIVE
+
+**📖 Full Plan:** [docs/planning/PHASE-5-AINSTEIN-UI-TRANSFORMATION.md](../planning/PHASE-5-AINSTEIN-UI-TRANSFORMATION.md)
+
+**Goal:** Transform LifeGPT from chat interface → ambient AInstein presence system
+
+**Status:** ACTIVE - Starting Phase 5A (October 24, 2025)
+
+**Strategic Context:**
+- ✅ Phase 4B Complete: Intelligence layers operational and data-driven
+- 🆕 Phase 5: Transform UI/UX to match industry disruptors (Whoop, Oura, Levels)
+- **Current:** iMessage-style chat interface (functional but generic)
+- **Target:** Ambient floating overlay with luxury personality (product differentiation)
+
+**Phase 5 Implementation Plan (8-12 hours total):**
+
+**Phase 5A: Personality Layer (2-3 hours) - STARTING NOW**
+- Create AInsteinPersonality.swift (tone filter system)
+- Update ResponseGenerator with personality layer
+- Transform responses: Max 2 sentences, luxury empathy tone, reflective prompts
+- Example: "Your average weight this week is 180.2 lbs - that's down 2.3 lbs from last week! 🎉"
+  → "Momentum in motion — 2.3 lbs lighter this week. Small shifts, big impact. – AInstein."
+
+**Phase 5B: Floating Overlay Icon (3-4 hours)**
+- Create AInsteinOverlayIcon.swift (48-56pt circular node)
+- Integrate into HubView.swift (bottom-right fixed position)
+- Animation states: idle, thinking, insight ready
+- Tap opens chat overlay
+
+**Phase 5C: Behavioral Triggers (2-3 hours)**
+- Create AInsteinBehaviorEngine.swift
+- Monitor HealthKit sync events for "insight-worthy moments"
+- Variable timing: 3-7 hours between insights
+- Proactive engagement system
+
+**Phase 5D: Welcome Card (1-2 hours)**
+- Create AInsteinWelcomeCard.swift (first-launch glass card)
+- Auto-hide after 2 taps or 48 hours
+- CTA: "Ask AInstein" → opens chat
+
+**Industry Pattern Validation:**
+- Whoop: Ambient recovery score presence (NOT chat)
+- Oura: Readiness ring with proactive insights (NOT chat)
+- Levels: Glucose score with contextual nudges (NOT chat)
+- **Key Finding:** Industry leaders use ambient presence + proactive insights, NOT reactive chat
+
+**Why This Transformation:**
+- Differentiate from generic health chatbots
+- Create emotional connection (habit anchor, variable rewards)
+- Match user expectations for premium wellness apps
+- Transform from "gimmicky chat" → "living wellness concierge"
+
 **Response Structure Fix (October 24, 2025 - Session 3):**
 - ✅ Fixed ResponseGenerator.swift to answer questions first, then provide insights
 - ✅ Added explicit `.currentWeight` handler in `generateCoreResponseWithInsights()` method
@@ -974,4 +1028,4 @@ If you need to make changes that might affect layout, functionality, or architec
 
 ---
 
-**Last Updated:** October 24, 2025 | **Version:** 2.3.0 Build 12 | **Current Phase:** LifeGPT Phase 4B COMPLETE - Data-Driven Intelligence Production-Ready
+**Last Updated:** October 24, 2025 | **Version:** 2.3.0 Build 12 | **Current Phase:** LifeGPT Phase 5 - AInstein UI/UX Transformation (Starting Phase 5A)

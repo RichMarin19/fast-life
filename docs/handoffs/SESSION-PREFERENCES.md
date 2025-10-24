@@ -390,18 +390,18 @@ I MUST review LESSONS-LEARNED.md for:
 
 ### Project: FastingTracker (Fast LIFe)
 **Tech Stack:** SwiftUI, HealthKit, MVVM architecture
-**Current Phase:** LifeGPT Phase 4A - Intelligence Layer Integration + Testing
+**Current Phase:** LifeGPT Phase 5 - AInstein UI/UX Transformation
 **Build Version:** 2.3.0 Build 12
 
 ### Active Work Focus:
-1. **LifeGPT Intelligence Debugging** - Why are enhanced responses not being generated?
-2. **Phase 4A Testing** - Validate transformation from "gimmicky" to production-grade
+1. **Phase 5A: AInstein Personality Layer** - Transform responses with luxury empathy tone
+2. **Phase 5B-D: Ambient Presence System** - Floating overlay, behavioral triggers, welcome card
 
 ### DO NOT Work On (Unless Explicitly Requested):
 - Performance recovery (deferred)
 - Phase C tracker rollout (deferred)
-- UI/UX changes (unless part of current task)
-- New features (unless part of current task)
+- Unrelated UI/UX changes (unless part of Phase 5)
+- New features outside Phase 5 scope
 
 ---
 
