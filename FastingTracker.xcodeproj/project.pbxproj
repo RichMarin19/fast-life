@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		521608AE2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */; };
+		521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */; };
+		521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */; };
+		521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */; };
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
@@ -50,7 +54,6 @@
 		52B2CFD32E96DB460061FCFF /* HealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD22E96DB460061FCFF /* HealthKitNudgeView.swift */; };
 		52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */; };
 		52B2CFD72E9746610061FCFF /* FastingSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */; };
-		52B2CFDE2E986F7D0061FCFF /* UI/Components/WeightComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDD2E986F7D0061FCFF /* UI/Components/WeightComponents.swift */; };
 		52B2CFDF2E986F7D0061FCFF /* FLCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD92E986F7D0061FCFF /* FLCard.swift */; };
 		52B2CFE02E986F7D0061FCFF /* StateBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */; };
 		52B2CFE12E986F7D0061FCFF /* CurrentWeightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFD82E986F7D0061FCFF /* CurrentWeightCard.swift */; };
@@ -80,6 +83,7 @@
 		52F578902EA861470042727E /* CardTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788E2EA861470042727E /* CardTypeProtocol.swift */; };
 		52F578972EA8E2AD0042727E /* WeightNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */; };
 		52F578982EA8E2AD0042727E /* WeightNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */; };
+		682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -113,7 +117,6 @@
 		SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */; };
 		TH001001000000000000001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = TH001002000000000000001 /* Theme.swift */; };
 		TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */; };
-		682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -129,6 +132,10 @@
 /* Begin PBXFileReference section */
 		00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
 		38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationIdentifierBuilder.swift; sourceTree = "<group>"; };
+		521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightHistoryComponents.swift; sourceTree = "<group>"; };
+		521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryComponents.swift; sourceTree = "<group>"; };
+		521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSetupComponents.swift; sourceTree = "<group>"; };
+		521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightStatsComponents.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
 		521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info 2.plist"; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
@@ -176,7 +183,6 @@
 		52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateBadge.swift; sourceTree = "<group>"; };
 		52B2CFDB2E986F7D0061FCFF /* TrackerScreenShell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerScreenShell.swift; sourceTree = "<group>"; };
 		52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightChartView.swift; sourceTree = "<group>"; };
-		52B2CFDD2E986F7D0061FCFF /* UI/Components/WeightComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightComponents.swift; sourceTree = "<group>"; };
 		52B2CFE42E9880B50061FCFF /* HydrationCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationCalendarView.swift; sourceTree = "<group>"; };
 		52B2CFE52E9880B50061FCFF /* HydrationChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HydrationChartView.swift; sourceTree = "<group>"; };
 		52B2CFE62E9880B50061FCFF /* UI/Components/HydrationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HydrationComponents.swift; sourceTree = "<group>"; };
@@ -203,6 +209,7 @@
 		52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightNotificationPlanner.swift; sourceTree = "<group>"; };
 		52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FastingTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
+		94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightTrackingViewModel.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -235,7 +242,6 @@
 		SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StopFastConfirmationView.swift; sourceTree = "<group>"; };
 		TH001002000000000000001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
-		94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/ViewModels/WeightTrackingViewModel.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -274,6 +280,10 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */,
+				521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */,
+				521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */,
+				521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */,
 				52CB2D1A2EAAE64400815CAD /* HubComponents.swift */,
 				52CB2D182EAADD4000815CAD /* DSCornerRadius.swift */,
 				52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */,
@@ -312,7 +322,6 @@
 				52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */,
 				52B2CFDB2E986F7D0061FCFF /* TrackerScreenShell.swift */,
 				52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */,
-				52B2CFDD2E986F7D0061FCFF /* UI/Components/WeightComponents.swift */,
 				A1000032000000000000001 /* AppSettings.swift */,
 				52B2CFD42E9746610061FCFF /* FastingSettingsView.swift */,
 				52B2CFD52E9746610061FCFF /* HealthKitNudgeTestHelper.swift */,
@@ -512,6 +521,10 @@
 			files = (
 				A1000001000000000000001 /* FastingTrackerApp.swift in Sources */,
 				52B2CFE72E9880B50061FCFF /* HydrationChartView.swift in Sources */,
+				521608AE2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift in Sources */,
+				521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */,
+				521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */,
+				521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */,
 				52B2CFE82E9880B50061FCFF /* UI/Components/HydrationComponents.swift in Sources */,
 				52B2CFE92E9880B50061FCFF /* HydrationCalendarView.swift in Sources */,
 				5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */,
@@ -582,7 +595,6 @@
 				52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */,
 				52B2CFD72E9746610061FCFF /* FastingSettingsView.swift in Sources */,
 				FF00000500000000000000A1 /* AnalyticsView.swift in Sources */,
-				52B2CFDE2E986F7D0061FCFF /* UI/Components/WeightComponents.swift in Sources */,
 				52B2CFDF2E986F7D0061FCFF /* FLCard.swift in Sources */,
 				52B2CFE02E986F7D0061FCFF /* StateBadge.swift in Sources */,
 				52B2CFE12E986F7D0061FCFF /* CurrentWeightCard.swift in Sources */,
