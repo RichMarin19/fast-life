@@ -2,58 +2,106 @@ import SwiftUI
 import Charts
 
 struct WeightTrackingView: View {
+    // MARK: - Dependencies (SwiftUI EnvironmentObject Pattern)
+    // Reference: ARCHITECTURE-AUDIT.md - Critical Task 1
     @EnvironmentObject var weightManager: WeightManager
     @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
-    @ObservedObject private var healthKitManager = HealthKitManager.shared
-    @ObservedObject private var nudgeManager = HealthKitNudgeManager.shared
-    @ObservedObject private var cardManager = TrackerCards.shared  // Layer 3: Card visibility management
 
-    // Layer 5: Drag-to-reorder state
-    @State private var draggedCard: TrackerCardType?
+    // MVVM: ViewModel owns all state and business logic
+    // Industry Standard: @StateObject for proper SwiftUI lifecycle management
+    @StateObject private var viewModel: WeightTrackingViewModel
 
-    // PHASE 1: Unit preferences integration
-    // Following Apple's reactive UI pattern for settings changes
-    // Reference: https://developer.apple.com/documentation/swiftui/observedobject
-    // Unit preferences removed for v1.0 - will add in v1.1
-    @State private var showingAddWeight = false
-    @State private var showingSettings = false
-    @State private var showingFirstTimeSetup = false
-    @State private var showingGoalEditor = false  // Quick access goal editor
-    @State private var showingTrends = false  // Weight trends detail view
-    @State private var selectedTimeRange: WeightTimeRange = .month
-    @State private var showGoalLine = false
-    @State private var weightGoal: Double = 180.0
-    @State private var showHealthKitNudge = false
-    // REMOVED: @State private var showMilestoneCard - now managed by TrackerCardManager
+    // MARK: - Initialization
+    // Industry Standard: Create ViewModel with temporary instances
+    // @StateObject ensures single initialization - no race conditions
+    init() {
+        _viewModel = StateObject(wrappedValue: WeightTrackingViewModel(
+            weightManager: WeightManager(),
+            behavioralScheduler: BehavioralNotificationScheduler.shared
+        ))
+    }
 
-    // UserDefaults keys for persistence
-    private let showGoalLineKey = "showGoalLine"
-    private let weightGoalKey = "goalWeight"  // MUST match onboarding key (OnboardingView.swift line 686)
-    // REMOVED: showMilestoneCardKey - now managed by TrackerCardManager
+    private var vm: WeightTrackingViewModel {
+        return viewModel
+    }
+
+    // MARK: - Binding Helpers
+    // SwiftUI requires Bindings to be created from @State/@Published properties
+    // Since vm is a computed property, we create these helper bindings
+
+    private var showingAddWeightBinding: Binding<Bool> {
+        Binding(
+            get: { self.vm.showingAddWeight },
+            set: { self.vm.showingAddWeight = $0 }
+        )
+    }
+
+    private var showingSettingsBinding: Binding<Bool> {
+        Binding(
+            get: { self.vm.showingSettings },
+            set: { self.vm.showingSettings = $0 }
+        )
+    }
+
+    private var showingGoalEditorBinding: Binding<Bool> {
+        Binding(
+            get: { self.vm.showingGoalEditor },
+            set: { self.vm.showingGoalEditor = $0 }
+        )
+    }
+
+    private var showingTrendsBinding: Binding<Bool> {
+        Binding(
+            get: { self.vm.showingTrends },
+            set: { self.vm.showingTrends = $0 }
+        )
+    }
+
+    private var showingFirstTimeSetupBinding: Binding<Bool> {
+        Binding(
+            get: { self.vm.showingFirstTimeSetup },
+            set: { self.vm.showingFirstTimeSetup = $0 }
+        )
+    }
+
+    private var showGoalLineBinding: Binding<Bool> {
+        Binding(
+            get: { self.vm.showGoalLine },
+            set: { self.vm.showGoalLine = $0 }
+        )
+    }
+
+    private var weightGoalBinding: Binding<Double> {
+        Binding(
+            get: { self.vm.weightGoal },
+            set: { self.vm.weightGoal = $0 }
+        )
+    }
+
+    private var selectedTimeRangeBinding: Binding<WeightTimeRange> {
+        Binding(
+            get: { self.vm.selectedTimeRange },
+            set: { self.vm.selectedTimeRange = $0 }
+        )
+    }
+
+    private var draggedCardBinding: Binding<TrackerCardType?> {
+        Binding(
+            get: { self.vm.draggedCard },
+            set: { self.vm.draggedCard = $0 }
+        )
+    }
 
     private var healthKitNudgeView: AnyView? {
-        if showHealthKitNudge && nudgeManager.shouldShowNudge(for: .weight) {
+        if vm.shouldShowHealthKitNudge {
             return AnyView(
                 HealthKitNudgeView(
                     dataType: .weight,
                     onConnect: {
-                        AppLogger.info("HealthKit nudge - requesting weight authorization", category: AppLogger.healthKit)
-                        HealthKitManager.shared.requestWeightAuthorization { success, _ in
-                            DispatchQueue.main.async {
-                                if success {
-                                    AppLogger.info("Weight authorization granted from nudge", category: AppLogger.healthKit)
-                                    weightManager.syncWithHealthKit = true
-                                    showHealthKitNudge = false
-                                } else {
-                                    AppLogger.info("Weight authorization denied from nudge", category: AppLogger.healthKit)
-                                }
-                            }
-                        }
+                        vm.handleHealthKitConnect()
                     },
                     onDismiss: {
-                        AppLogger.info("HealthKit nudge dismissed", category: AppLogger.ui)
-                        showHealthKitNudge = false
-                        nudgeManager.dismissNudge(for: .weight)
+                        vm.handleHealthKitDismiss()
                     }
                 )
             )
@@ -72,10 +120,10 @@ struct WeightTrackingView: View {
             dateText: weightManager.latestWeight.map { $0.date.formatted(date: .abbreviated, time: .omitted) } ?? "",
             leftStat: "Start weight",  // TODO: Get actual start weight
             midStat: "Progress",  // TODO: Calculate % complete
-            rightStat: weightGoal > 0 ? "\(String(format: "%.1f", max(0, (weightManager.latestWeight?.weight ?? weightGoal) - weightGoal))) to go" : "Set goal",
+            rightStat: vm.weightGoal > 0 ? "\(String(format: "%.1f", max(0, (weightManager.latestWeight?.weight ?? vm.weightGoal) - vm.weightGoal))) to go" : "Set goal",
             totalMilestones: 10,
             completedMilestones: 6,  // TODO: Calculate actual milestones completed
-            cardManager: cardManager  // Phase v1.3b: Use TrackerCardManager for DSCard integration
+            cardManager: vm.cardManager  // Phase v1.3b: Use TrackerCardManager for DSCard integration
         )
     }
 
@@ -88,30 +136,30 @@ struct WeightTrackingView: View {
             hasData: !weightManager.weightEntries.isEmpty,
             nudge: healthKitNudgeView,
             gradientStyle: .luxury,  // 🔥 LUXURY UI ACTIVATED
-            settingsAction: { showingSettings = true }
+            settingsAction: { vm.showingSettings = true }
         ) {
             if weightManager.weightEntries.isEmpty {
                 EmptyWeightStateView(
-                    showingAddWeight: $showingAddWeight,
-                    healthKitManager: healthKitManager,
+                    showingAddWeight: showingAddWeightBinding,
+                    healthKitManager: vm.healthKitManager,
                     weightManager: weightManager
                 )
             } else {
                 // LAYER 5: Drag-to-reorder cards
                 // Cards displayed in user-customized order from TrackerCardManager
                 // Industry Pattern: Apple Health - Long-press and drag to reorder
-                ForEach(cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
+                ForEach(vm.cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
                     cardView(for: cardType)
                         .transition(.opacity.combined(with: .scale))
                         .onDrag {
                             // Layer 5: Enable drag for reordering
-                            self.draggedCard = cardType
+                            vm.draggedCard = cardType
                             return NSItemProvider(object: cardType.rawValue as NSString)
                         }
                         .onDrop(of: [.text], delegate: TrackerCardDropDelegate(
                             card: cardType,
-                            draggedCard: $draggedCard,
-                            cardManager: cardManager
+                            draggedCard: draggedCardBinding,
+                            cardManager: vm.cardManager
                         ))
                 }
 
@@ -126,105 +174,54 @@ struct WeightTrackingView: View {
                 // Users access history via: Gear Icon → Control Center → History section
             }
         }
-        .sheet(isPresented: $showingAddWeight) {
+        .sheet(isPresented: showingAddWeightBinding) {
             AddWeightView(weightManager: weightManager)
         }
-        .sheet(isPresented: $showingSettings) {
+        .sheet(isPresented: showingSettingsBinding) {
             WeightControlCenterView(
                 weightManager: weightManager,
-                showGoalLine: $showGoalLine,
-                weightGoal: $weightGoal
+                showGoalLine: showGoalLineBinding,
+                weightGoal: weightGoalBinding
             )
             .environmentObject(behavioralScheduler)
         }
-        .sheet(isPresented: $showingGoalEditor) {
+        .sheet(isPresented: showingGoalEditorBinding) {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
-                weightGoal: $weightGoal,
-                showGoalLine: $showGoalLine
+                weightGoal: weightGoalBinding,
+                showGoalLine: showGoalLineBinding
             )
         }
-        .sheet(isPresented: $showingTrends) {
+        .sheet(isPresented: showingTrendsBinding) {
             WeightTrendsView(weightManager: weightManager)
                 .onAppear {
                     AppLogger.info("🎯 Progress Story sheet appeared", category: AppLogger.ui)
                 }
         }
-        .onChange(of: showingTrends) { oldValue, newValue in
+        .onChange(of: vm.showingTrends) { oldValue, newValue in
             AppLogger.info("🎯 showingTrends changed from \(oldValue) to \(newValue)", category: AppLogger.ui)
         }
         // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
-        .sheet(isPresented: $showingFirstTimeSetup) {
+        .sheet(isPresented: showingFirstTimeSetupBinding) {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
-                weightGoal: $weightGoal,
-                showGoalLine: $showGoalLine
+                weightGoal: weightGoalBinding,
+                showGoalLine: showGoalLineBinding
             )
         }
         .onAppear {
-            // 🔍 FORENSIC: Track onAppear start time
-            let startTime = CFAbsoluteTimeGetCurrent()
-            AppLogger.info("⏱️ WeightTrackingView.onAppear START", category: AppLogger.ui)
-
-            // Load saved goal settings from UserDefaults
-            let loadSettingsStart = CFAbsoluteTimeGetCurrent()
-            loadGoalSettings()
-            let loadSettingsDuration = (CFAbsoluteTimeGetCurrent() - loadSettingsStart) * 1000
-            AppLogger.info("⏱️ loadGoalSettings took \(String(format: "%.2f", loadSettingsDuration))ms", category: AppLogger.ui)
-
-            // Show first-time setup if user has no weight data
-            // No delay needed - weightManager loads synchronously in init
-            if weightManager.weightEntries.isEmpty {
-                showingFirstTimeSetup = true
-            }
-
-            // Show HealthKit nudge for first-time users who skipped onboarding
-            // Following Lose It pattern - contextual reminder on first tracker access
-            let nudgeStart = CFAbsoluteTimeGetCurrent()
-            showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
-            let nudgeDuration = (CFAbsoluteTimeGetCurrent() - nudgeStart) * 1000
-            AppLogger.info("⏱️ shouldShowNudge took \(String(format: "%.2f", nudgeDuration))ms", category: AppLogger.ui)
-
-            if showHealthKitNudge {
-                AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
-            }
-
-            // Note: Removed auto-authorization logic - now uses nudge banner pattern like HydrationTrackingView
-            // User must explicitly tap "Connect" in nudge banner to authorize
-            // This follows Lose It app pattern and Apple HIG contextual permission guidelines
-
-            // 🔍 FORENSIC: Track total onAppear duration
-            let totalDuration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
-            AppLogger.info("⏱️ WeightTrackingView.onAppear TOTAL: \(String(format: "%.2f", totalDuration))ms", category: AppLogger.ui)
+            // MVVM: Delegate onAppear logic to ViewModel
+            vm.onViewAppear()
         }
         .task {
-            // Auto-show Progress Story with delay to prevent cold start freeze
-            // Delay allows Weight Tracker view to render fully before presenting sheet
-            // Industry pattern: Deferred engagement to prevent UI blocking
-            // Reference: Apple HIG - Launching (avoid blocking UI on startup)
-            guard !weightManager.weightEntries.isEmpty else { return }
-
-            let contentID = "progress_story_trends_v1"
-            let isOptedOut = ContentOptOutManager.shared.isContentOptedOut(id: contentID)
-
-            guard !isOptedOut else {
-                AppLogger.info("🎯 Progress Story opted out - skipping auto-show", category: AppLogger.ui)
-                return
-            }
-
-            // Delay 0.6 seconds to let view render + animations settle
-            try? await Task.sleep(nanoseconds: 600_000_000)  // 0.6 seconds
-
-            await MainActor.run {
-                AppLogger.info("🎯 Auto-showing Progress Story on Weight Tracker open (delayed)", category: AppLogger.ui)
-                showingTrends = true
-            }
+            // MVVM: Delegate Progress Story auto-show to ViewModel
+            await vm.handleProgressStoryAutoShow()
         }
-        .onChange(of: showGoalLine) { _, _ in
-            saveGoalSettings()
+        .onChange(of: vm.showGoalLine) { _, _ in
+            vm.saveGoalSettings()
         }
-        .onChange(of: weightGoal) { _, _ in
-            saveGoalSettings()
+        .onChange(of: vm.weightGoal) { _, _ in
+            vm.saveGoalSettings()
         }
     }
 
@@ -238,22 +235,22 @@ struct WeightTrackingView: View {
         case .currentWeight:
             DSCard(
                 cardType: .currentWeight,
-                cardManager: cardManager,
+                cardManager: vm.cardManager,
                 canExpand: true
             ) {
                 CurrentWeightCard(
                     weightManager: weightManager,
-                    weightGoal: weightGoal,
-                    showingGoalEditor: $showingGoalEditor,
-                    showingAddWeight: $showingAddWeight,
-                    showingTrends: $showingTrends
+                    weightGoal: vm.weightGoal,
+                    showingGoalEditor: showingGoalEditorBinding,
+                    showingAddWeight: showingAddWeightBinding,
+                    showingTrends: showingTrendsBinding
                 )
             }
 
         case .milestone:
             DSCard(
                 cardType: .milestone,
-                cardManager: cardManager,
+                cardManager: vm.cardManager,
                 canExpand: true
             ) {
                 milestoneRingCard
@@ -262,21 +259,21 @@ struct WeightTrackingView: View {
         case .chart:
             DSCard(
                 cardType: .chart,
-                cardManager: cardManager,
+                cardManager: vm.cardManager,
                 canExpand: true
             ) {
                 WeightChartView(
                     weightManager: weightManager,
-                    selectedTimeRange: $selectedTimeRange,
-                    showGoalLine: $showGoalLine,
-                    weightGoal: $weightGoal
+                    selectedTimeRange: selectedTimeRangeBinding,
+                    showGoalLine: showGoalLineBinding,
+                    weightGoal: weightGoalBinding
                 )
             }
 
         case .stats:
             DSCard(
                 cardType: .stats,
-                cardManager: cardManager,
+                cardManager: vm.cardManager,
                 canExpand: true
             ) {
                 WeightStatsView(weightManager: weightManager)
@@ -289,27 +286,9 @@ struct WeightTrackingView: View {
     }
 
     // MARK: - Goal Settings Persistence
-
-    private func loadGoalSettings() {
-        // Load show goal line preference (default: false)
-        showGoalLine = UserDefaults.standard.bool(forKey: showGoalLineKey)
-
-        // Load weight goal (default: 180.0 if not set)
-        if let savedGoal = UserDefaults.standard.object(forKey: weightGoalKey) as? Double {
-            weightGoal = savedGoal
-        }
-
-        // REMOVED: Milestone card visibility - now managed by TrackerCardManager
-    }
-
-    func saveGoalSettings() {
-        UserDefaults.standard.set(showGoalLine, forKey: showGoalLineKey)
-        UserDefaults.standard.set(weightGoal, forKey: weightGoalKey)
-    }
-
-    // REMOVED: saveMilestoneVisibility() - now managed by TrackerCardManager
-
-    // Removed: handleHealthDataSelection - no longer needed with direct authorization
+    // MOVED TO VIEWMODEL: loadGoalSettings() and saveGoalSettings()
+    // Reference: ARCHITECTURE-AUDIT.md - Critical Task 1
+    // Business logic now in WeightTrackingViewModel following MVVM pattern
 }
 
 // MARK: - Empty State View
@@ -344,7 +323,7 @@ struct EmptyWeightStateView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Theme.ColorToken.accentPrimary)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .accessibilityLabel("Add weight entry manually")
 
@@ -369,7 +348,7 @@ struct EmptyWeightStateView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Theme.ColorToken.stateSuccess)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .accessibilityLabel("Sync weight data with Apple Health")
             }

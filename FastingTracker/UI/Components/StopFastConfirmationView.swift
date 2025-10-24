@@ -33,7 +33,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color(.systemGray6))
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
 
                 // Stop Button - GREEN, BOLD, LARGER
@@ -44,7 +44,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.green)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
 
                 // Delete Button
@@ -55,7 +55,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.red.opacity(0.1))
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
 
                 // Cancel Button
@@ -66,7 +66,7 @@ struct StopFastConfirmationView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color(.systemGray6))
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
             }
             .padding(.horizontal, 30)

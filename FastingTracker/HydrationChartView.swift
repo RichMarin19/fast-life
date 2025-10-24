@@ -72,7 +72,7 @@ struct HydrationChartView: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 

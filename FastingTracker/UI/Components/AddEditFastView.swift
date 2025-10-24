@@ -66,7 +66,7 @@ struct AddEditFastView: View {
                     }
                     .padding()
                     .background(Color.white)
-                    .cornerRadius(8)
+                    .cornerRadius(DSCornerRadius.button)
                     .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
                     .padding(.horizontal)
 
@@ -142,7 +142,7 @@ struct AddEditFastView: View {
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 10)
                                             .background(goalHours == goal && !isCustomGoal ? Color("FLSecondary") : Color(UIColor.secondarySystemGroupedBackground))
-                                            .cornerRadius(8)
+                                            .cornerRadius(DSCornerRadius.button)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .stroke(goalHours == goal && !isCustomGoal ? Color.clear : Color("FLSecondary").opacity(0.3), lineWidth: 1)
@@ -166,7 +166,7 @@ struct AddEditFastView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
                                     .background(isCustomGoal ? Color("FLSecondary") : Color(UIColor.secondarySystemGroupedBackground))
-                                    .cornerRadius(8)
+                                    .cornerRadius(DSCornerRadius.button)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
                                             .stroke(isCustomGoal ? Color.clear : Color("FLSecondary").opacity(0.3), lineWidth: 1)
@@ -183,7 +183,7 @@ struct AddEditFastView: View {
                                         .padding(.vertical, 12)
                                         .padding(.horizontal, 16)
                                         .background(Color(UIColor.secondarySystemGroupedBackground))
-                                        .cornerRadius(8)
+                                        .cornerRadius(DSCornerRadius.button)
                                         .onChange(of: customGoalText) { _, newValue in
                                             if let value = Double(newValue), value > 0 {
                                                 goalHours = value
@@ -223,7 +223,7 @@ struct AddEditFastView: View {
                                     endPoint: .trailing
                                 )
                             )
-                            .cornerRadius(8)
+                            .cornerRadius(DSCornerRadius.button)
                     }
                     .padding(.horizontal)
                     .disabled(hours == 0 && minutes == 0)
@@ -238,7 +238,7 @@ struct AddEditFastView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding()
                                 .background(Color.red)
-                                .cornerRadius(8)
+                                .cornerRadius(DSCornerRadius.button)
                         }
                         .padding(.horizontal)
                     }

@@ -60,7 +60,7 @@ struct HealthKitNudgeView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color(.systemGray4), lineWidth: 1)
         )
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
     }
 

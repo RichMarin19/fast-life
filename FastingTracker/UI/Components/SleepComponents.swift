@@ -15,7 +15,7 @@ struct SleepHistoryRow: View {
                 .foregroundColor(.purple)
                 .frame(width: 40, height: 40)
                 .background(Color.purple.opacity(0.15))
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(formatDate(sleep.wakeTime))
@@ -42,7 +42,7 @@ struct SleepHistoryRow: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
 
@@ -388,7 +388,7 @@ struct SleepStageTimelineView: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
 }

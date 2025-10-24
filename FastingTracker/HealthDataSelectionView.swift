@@ -65,7 +65,7 @@ struct HealthDataSelectionView: View {
                         .frame(height: 50)
                         .background(selectedTypes.isEmpty ? Color.gray : Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(12)
+                        .cornerRadius(DSCornerRadius.card)
                     }
                     .disabled(selectedTypes.isEmpty || isProcessing)
 

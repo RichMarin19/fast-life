@@ -120,7 +120,7 @@ struct FeaturePreviewCard: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
     }
 }

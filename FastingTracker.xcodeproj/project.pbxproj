@@ -63,6 +63,8 @@
 		52B2CFED2E9886BB0061FCFF /* UI/Components/MoodComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEA2E9886BB0061FCFF /* UI/Components/MoodComponents.swift */; };
 		52B2CFEF2E988CB90061FCFF /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */; };
 		52B2CFF52E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFF42E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift */; };
+		52CB2D192EAADD4000815CAD /* DSCornerRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CB2D182EAADD4000815CAD /* DSCornerRadius.swift */; };
+		52CB2D1B2EAAE64400815CAD /* HubComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CB2D1A2EAAE64400815CAD /* HubComponents.swift */; };
 		52D684182EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D684172EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift */; };
 		52D684202EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D6841D2EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift */; };
 		52F16D752EA45ED4002C9FC5 /* DSColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D722EA45ED4002C9FC5 /* DSColors.swift */; };
@@ -111,6 +113,7 @@
 		SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */; };
 		TH001001000000000000001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = TH001002000000000000001 /* Theme.swift */; };
 		TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */; };
+		682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -181,6 +184,8 @@
 		52B2CFEB2E9886BB0061FCFF /* UI/Components/SleepComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepComponents.swift; sourceTree = "<group>"; };
 		52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitService.swift; sourceTree = "<group>"; };
 		52B2CFF42E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepVisualizationComponents.swift; sourceTree = "<group>"; };
+		52CB2D182EAADD4000815CAD /* DSCornerRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSCornerRadius.swift; sourceTree = "<group>"; };
+		52CB2D1A2EAAE64400815CAD /* HubComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HubComponents.swift; sourceTree = "<group>"; };
 		52D684172EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler.swift; sourceTree = "<group>"; };
 		52D6841D2EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationRule.swift; sourceTree = "<group>"; };
 		52F16D702EA45ED4002C9FC5 /* DSCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSCard.swift; sourceTree = "<group>"; };
@@ -230,6 +235,7 @@
 		SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StopFastConfirmationView.swift; sourceTree = "<group>"; };
 		TH001002000000000000001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
+		94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/ViewModels/WeightTrackingViewModel.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -268,6 +274,8 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				52CB2D1A2EAAE64400815CAD /* HubComponents.swift */,
+				52CB2D182EAADD4000815CAD /* DSCornerRadius.swift */,
 				52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */,
 				52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */,
 				521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */,
@@ -343,6 +351,7 @@
 				5289E0712E8D5F6500254E70 /* WeightEntry.swift */,
 				5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */,
 				7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */,
+				94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */,
 				00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */,
 				5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */,
 				5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */,
@@ -518,6 +527,7 @@
 				52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
 				A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */,
+				682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */,
 				DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */,
 				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
 				52B2CFC32E94EE630061FCFF /* AppLogger.swift in Sources */,
@@ -529,6 +539,7 @@
 				5243F24B2E9029970051A731 /* Core/Managers/MoodManager.swift in Sources */,
 				5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */,
 				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,
+				52CB2D1B2EAAE64400815CAD /* HubComponents.swift in Sources */,
 				52B2CFF52E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift in Sources */,
 				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
 				52D684202EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift in Sources */,
@@ -552,6 +563,7 @@
 				52B2CFC82E95A9C80061FCFF /* Core/Persistence/DataStore.swift in Sources */,
 				A1000003000000000000001 /* ContentView.swift in Sources */,
 				A1000005000000000000001 /* HistoryView.swift in Sources */,
+				52CB2D192EAADD4000815CAD /* DSCornerRadius.swift in Sources */,
 				52D684182EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift in Sources */,
 				52F16D752EA45ED4002C9FC5 /* DSColors.swift in Sources */,
 				52F16D762EA45ED4002C9FC5 /* DSCardHeader.swift in Sources */,

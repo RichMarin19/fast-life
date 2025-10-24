@@ -129,7 +129,7 @@ struct WeightChartView: View {
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
                                         .background(Color("FLPrimary"))
-                                        .cornerRadius(8)
+                                        .cornerRadius(DSCornerRadius.button)
                                 }
                             }
                     }

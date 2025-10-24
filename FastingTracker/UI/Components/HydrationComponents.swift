@@ -39,7 +39,7 @@ struct HydrationStatsView: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 
@@ -105,7 +105,7 @@ struct HydrationStatCard: View {
         .frame(maxWidth: .infinity)
         .padding()
         .background(color.opacity(0.1))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
     }
 }
 
@@ -144,7 +144,7 @@ struct DrinkTypeBreakdownView: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
     }
 
@@ -353,7 +353,7 @@ struct AddEditHydrationView: View {
                                             .frame(maxWidth: .infinity)
                                             .padding(.vertical, 10)
                                             .background(dailyGoalOunces == goal && !isCustomGoal ? Color.cyan : Color(UIColor.secondarySystemGroupedBackground))
-                                            .cornerRadius(8)
+                                            .cornerRadius(DSCornerRadius.button)
                                             .overlay(
                                                 RoundedRectangle(cornerRadius: 8)
                                                     .stroke(dailyGoalOunces == goal && !isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
@@ -378,7 +378,7 @@ struct AddEditHydrationView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, 12)
                                     .background(isCustomGoal ? Color.cyan : Color(UIColor.secondarySystemGroupedBackground))
-                                    .cornerRadius(8)
+                                    .cornerRadius(DSCornerRadius.button)
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 8)
                                             .stroke(isCustomGoal ? Color.clear : Color.cyan.opacity(0.3), lineWidth: 1)
@@ -396,7 +396,7 @@ struct AddEditHydrationView: View {
                                         .padding(.vertical, 12)
                                         .padding(.horizontal, 16)
                                         .background(Color(UIColor.secondarySystemGroupedBackground))
-                                        .cornerRadius(8)
+                                        .cornerRadius(DSCornerRadius.button)
                                         .onChange(of: customGoalText) { _, newValue in
                                             if let value = Double(newValue), value > 0 {
                                                 dailyGoalOunces = value

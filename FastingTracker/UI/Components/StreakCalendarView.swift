@@ -86,7 +86,7 @@ struct StreakCalendarView: View {
         }
         .padding()
         .background(Color.gray.opacity(0.05))
-        .cornerRadius(8)
+        .cornerRadius(DSCornerRadius.button)
     }
 
     @ViewBuilder

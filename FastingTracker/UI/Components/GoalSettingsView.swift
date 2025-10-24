@@ -85,7 +85,7 @@ struct GoalSettingsView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.blue)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 40)

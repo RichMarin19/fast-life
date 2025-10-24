@@ -37,7 +37,7 @@ struct FastingGraphView: View {
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(8)
+        .cornerRadius(DSCornerRadius.button)
         .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
         .sheet(isPresented: $showingCustomPicker) {
             CustomDateRangePickerView(startDate: $customStartDate, endDate: $customEndDate)
@@ -177,7 +177,7 @@ struct FastingGraphView: View {
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(Color.white.opacity(0.9))
-                                .cornerRadius(8)
+                                .cornerRadius(DSCornerRadius.button)
                         }
                 }
 
@@ -313,7 +313,7 @@ struct FastingGraphView: View {
         }
         .padding(12)
         .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
+        .cornerRadius(DSCornerRadius.button)
     }
 
     private var legendView: some View {

@@ -231,13 +231,13 @@ struct GoalStatusBadge: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
 
         // Goal status example
         GoalStatusBadge(current: 165.2, goal: 160.0, unit: "lbs")
             .padding()
             .background(Color(.systemBackground))
-            .cornerRadius(12)
+            .cornerRadius(DSCornerRadius.card)
     }
     .padding()
     .background(Color(.systemGroupedBackground))

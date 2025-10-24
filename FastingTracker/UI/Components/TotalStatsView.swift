@@ -29,7 +29,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
                 // Total Hours
@@ -47,7 +47,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
             }
 
@@ -69,7 +69,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
 
                 // Longest Streak
@@ -88,7 +88,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
             }
 
@@ -110,7 +110,7 @@ struct TotalStatsView: View {
                 .frame(maxWidth: .infinity)
                 .padding()
                 .background(Color.white)
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
                 .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
                 Spacer()
             }

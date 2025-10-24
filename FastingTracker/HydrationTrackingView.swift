@@ -327,7 +327,7 @@ struct DrinkButton: View {
                     .foregroundColor(.white)
                     .frame(width: 60, height: 60)
                     .background(color)
-                    .cornerRadius(12)
+                    .cornerRadius(DSCornerRadius.card)
 
                 Text(type.rawValue)
                     .font(.subheadline)
@@ -341,7 +341,7 @@ struct DrinkButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 12)
             .background(color.opacity(0.1))
-            .cornerRadius(12)
+            .cornerRadius(DSCornerRadius.card)
         }
     }
 }
@@ -359,7 +359,7 @@ struct DrinkHistoryRow: View {
                 .foregroundColor(drinkColor)
                 .frame(width: 40, height: 40)
                 .background(drinkColor.opacity(0.15))
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(drink.type.rawValue)
@@ -386,7 +386,7 @@ struct DrinkHistoryRow: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
 
@@ -535,7 +535,7 @@ struct DrinkAmountPickerView: View {
                                         (!useCustomAmount && selectedAmount == amount) ?
                                             drinkColor.opacity(0.15) : Color(.systemGray6)
                                     )
-                                    .cornerRadius(12)
+                                    .cornerRadius(DSCornerRadius.card)
                                 }
                                 .accessibilityLabel("Select amount, \(Int(amount)) ounces")
                             }
@@ -555,7 +555,7 @@ struct DrinkAmountPickerView: View {
                                             useCustomAmount ?
                                                 drinkColor.opacity(0.15) : Color(.systemGray6)
                                         )
-                                        .cornerRadius(12)
+                                        .cornerRadius(DSCornerRadius.card)
                                         .onChange(of: customAmount) { _, newValue in
                                             if !newValue.isEmpty {
                                                 useCustomAmount = true
@@ -586,7 +586,7 @@ struct DrinkAmountPickerView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(drinkColor)
-                        .cornerRadius(12)
+                        .cornerRadius(DSCornerRadius.card)
                 }
                 .accessibilityLabel("Add \(drinkType.rawValue) to today's log")
                 .padding(.horizontal)
@@ -643,7 +643,7 @@ struct EmptyHydrationStateView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.cyan)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .accessibilityLabel("Log water intake manually")
 
@@ -668,7 +668,7 @@ struct EmptyHydrationStateView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color("FLSuccess"))
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .accessibilityLabel("Sync hydration data with Apple Health")
             }

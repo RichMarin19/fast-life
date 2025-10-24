@@ -213,7 +213,7 @@ struct MoodEntryRow: View {
             }
             .frame(width: 50, height: 50)
             .background(Color.orange.opacity(0.15))
-            .cornerRadius(8)
+            .cornerRadius(DSCornerRadius.button)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(formatDate(entry.date))
@@ -260,7 +260,7 @@ struct MoodEntryRow: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.05), radius: 3, x: 0, y: 1)
     }
 

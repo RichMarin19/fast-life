@@ -155,7 +155,7 @@ struct EssentialCard: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
     }
 }
@@ -259,14 +259,14 @@ struct TimelineStageCard: View {
                     }
                     .padding()
                     .background(Color.yellow.opacity(0.1))
-                    .cornerRadius(12)
+                    .cornerRadius(DSCornerRadius.card)
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
     }
 }
@@ -384,7 +384,7 @@ struct FAQItem: View {
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
     }
 }
@@ -502,7 +502,7 @@ struct MythCard: View {
         }
         .padding()
         .background(Color.white)
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
     }
 }
@@ -602,7 +602,7 @@ struct GlossaryItem: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.white)
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: .black.opacity(0.05), radius: 5, y: 2)
     }
 }

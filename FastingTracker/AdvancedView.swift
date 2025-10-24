@@ -199,7 +199,7 @@ struct AdvancedFeatureCard: View {
                 .foregroundColor(isAvailable ? color : .gray)
                 .frame(width: 60, height: 60)
                 .background(isAvailable ? color.opacity(0.15) : Color.gray.opacity(0.15))
-                .cornerRadius(12)
+                .cornerRadius(DSCornerRadius.card)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
@@ -234,7 +234,7 @@ struct AdvancedFeatureCard: View {
         }
         .padding()
         .background(Color(.systemBackground))
-        .cornerRadius(12)
+        .cornerRadius(DSCornerRadius.card)
         .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
         .opacity(isAvailable ? 1.0 : 0.7)
     }

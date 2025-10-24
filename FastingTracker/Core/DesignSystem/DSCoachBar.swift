@@ -65,10 +65,10 @@ struct DSCoachBar: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             // Background layer
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: DSCornerRadius.banner, style: .continuous)
                 .fill(backgroundColor)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: DSCornerRadius.banner, style: .continuous)
                         .stroke(backgroundColor.opacity(0.3), lineWidth: 1)
                 )
                 .shadow(color: Theme.ColorToken.shadowCard, radius: 8, x: 0, y: 4)

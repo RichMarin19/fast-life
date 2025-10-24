@@ -34,7 +34,7 @@ struct DSBanner<Content: View>: View {
     /// Background surface color
     let surface: Color
 
-    /// Corner radius in points (default: 14pt per Apple HIG)
+    /// Corner radius in points (default: DSCornerRadius.banner per Apple HIG)
     let cornerRadius: CGFloat
 
     /// Enable shadow (default: true)
@@ -85,7 +85,7 @@ struct DSBanner<Content: View>: View {
     ///   - content: Banner content view
     init(
         surface: Color = .white,
-        cornerRadius: CGFloat = 14,
+        cornerRadius: CGFloat = DSCornerRadius.banner,
         enableShadow: Bool = true,
         shadowColor: Color = Theme.ColorToken.shadowCard,
         shadowRadius: CGFloat = 8,
@@ -172,7 +172,7 @@ extension DSBanner {
     ) {
         self.init(
             surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard (Phase v1.3e)
-            cornerRadius: 14,
+            cornerRadius: DSCornerRadius.banner,
             enableShadow: true,
             shadowColor: Theme.ColorToken.shadowCard,
             shadowRadius: 8,
@@ -196,7 +196,7 @@ extension DSBanner {
     ) {
         self.init(
             surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard (Phase v1.3e)
-            cornerRadius: 14,
+            cornerRadius: DSCornerRadius.banner,
             enableShadow: false,  // Mint banners typically don't have shadow
             shadowColor: .clear,
             shadowRadius: 0,
@@ -220,7 +220,7 @@ extension DSBanner {
     ) {
         self.init(
             surface: Theme.ColorToken.surfaceIce,
-            cornerRadius: 14,
+            cornerRadius: DSCornerRadius.banner,
             enableShadow: true,
             shadowColor: Theme.ColorToken.shadowCard,
             shadowRadius: 6,
@@ -303,7 +303,7 @@ extension DSBanner {
             // Custom banner (no hide button)
             DSBanner(
                 surface: Theme.ColorToken.accentInfo,
-                cornerRadius: 14,
+                cornerRadius: DSCornerRadius.banner,
                 enableShadow: true,
                 shadowColor: Theme.ColorToken.shadowCard,
                 shadowRadius: 8,

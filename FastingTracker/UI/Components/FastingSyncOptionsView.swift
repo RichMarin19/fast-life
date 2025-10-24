@@ -53,7 +53,7 @@ struct FastingSyncOptionsView: View {
                         .padding(.horizontal, 12)
                         .background(Color.blue)
                         .foregroundColor(.white)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                     }
 
                     Button(action: onSyncFuture) {
@@ -73,7 +73,7 @@ struct FastingSyncOptionsView: View {
                         .padding(.horizontal, 12)
                         .background(Color.cyan)
                         .foregroundColor(.white)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                     }
                 }
                 .padding(.horizontal, 30)

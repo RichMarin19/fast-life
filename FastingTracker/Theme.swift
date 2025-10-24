@@ -350,6 +350,12 @@ extension Color {
             opacity: Double(a) / 255
         )
     }
+
+    /// Convenience initializer for backward compatibility
+    /// - Parameter hex: Hex color string (e.g., "#1ABC9C", "1ABC9C", "#RGB")
+    init(hex: String) {
+        self.init(flHex: hex)
+    }
 }
 
 // MARK: - Legacy Theme Support (Backward Compatibility)

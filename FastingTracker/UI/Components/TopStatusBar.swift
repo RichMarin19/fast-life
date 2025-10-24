@@ -290,7 +290,7 @@ struct TopStatusBar: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: 50)
                         .background(accentPrimary)
-                        .cornerRadius(12)
+                        .cornerRadius(DSCornerRadius.card)
                 }
                 .padding(.horizontal, 24)
 

@@ -45,7 +45,7 @@ struct FastingHealthKitNudgeView: View {
                     .padding(.vertical, 8)
                     .background(Color("FLPrimary"))
                     .foregroundColor(.white)
-                    .cornerRadius(8)
+                    .cornerRadius(DSCornerRadius.button)
 
                     Button(action: {
                         showingDismissOptions = true
@@ -64,7 +64,7 @@ struct FastingHealthKitNudgeView: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(Color(.systemGray4), lineWidth: 1)
         )
-        .cornerRadius(8)
+        .cornerRadius(DSCornerRadius.button)
         .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
         .confirmationDialog("Dismiss Options", isPresented: $showingDismissOptions, titleVisibility: .visible) {
             Button("Remind me later") {

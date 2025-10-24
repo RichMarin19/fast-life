@@ -294,7 +294,7 @@ struct ContentView: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .background(Color.orange.opacity(0.1))
-            .cornerRadius(8)
+            .cornerRadius(DSCornerRadius.button)
         }
 
         // Goal Display - Styled like Weight Tracker for consistency
@@ -364,7 +364,7 @@ struct ContentView: View {
                     .padding(.horizontal, 16)
                     .padding(.vertical, 8)
                     .background(Color.blue.opacity(0.1))
-                    .cornerRadius(8)
+                    .cornerRadius(DSCornerRadius.button)
                 }
             }
             .padding(.horizontal, 40)
@@ -389,7 +389,7 @@ struct ContentView: View {
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
                 .background(Color("FLWarning"))
-                .cornerRadius(8)
+                .cornerRadius(DSCornerRadius.button)
             }
             .padding(.horizontal, 40)
             .padding(.bottom, 5)
@@ -405,7 +405,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color.red)
-                    .cornerRadius(8)
+                    .cornerRadius(DSCornerRadius.button)
             }
             .padding(.horizontal, 40)
         } else {
@@ -420,7 +420,7 @@ struct ContentView: View {
                     .frame(maxWidth: .infinity)
                     .padding()
                     .background(Color("FLSuccess"))
-                    .cornerRadius(8)
+                    .cornerRadius(DSCornerRadius.button)
             }
             .padding(.horizontal, 40)
         }

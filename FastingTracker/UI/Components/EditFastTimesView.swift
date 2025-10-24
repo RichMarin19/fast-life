@@ -97,7 +97,7 @@ struct EditFastTimesView: View {
                                     }
                                     .padding()
                                     .background(Color("FLSuccess").opacity(0.1))
-                                    .cornerRadius(8)
+                                    .cornerRadius(DSCornerRadius.button)
                                 }
 
                                 if editingStart {
@@ -139,7 +139,7 @@ struct EditFastTimesView: View {
                                     }
                                     .padding()
                                     .background(Color.red.opacity(0.1))
-                                    .cornerRadius(8)
+                                    .cornerRadius(DSCornerRadius.button)
                                 }
 
                                 if editingEnd {
@@ -166,7 +166,7 @@ struct EditFastTimesView: View {
                         }
                         .padding(20)
                         .background(Color.white)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                         .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
 
                         Spacer()

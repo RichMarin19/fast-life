@@ -167,7 +167,7 @@ struct EditStartTimeView: View {
                             }
                             .padding(20)
                             .background(Color.white)
-                            .cornerRadius(8)
+                            .cornerRadius(DSCornerRadius.button)
                             .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
                             .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
@@ -224,7 +224,7 @@ struct EditStartTimeView: View {
                                         }
                                         .padding()
                                         .background(Color("FLSuccess").opacity(0.1))
-                                        .cornerRadius(8)
+                                        .cornerRadius(DSCornerRadius.button)
                                     }
 
                                     if editingTime {
@@ -252,7 +252,7 @@ struct EditStartTimeView: View {
                             }
                             .padding(20)
                             .background(Color.white)
-                            .cornerRadius(8)
+                            .cornerRadius(DSCornerRadius.button)
                             .shadow(color: Color.black.opacity(0.05), radius: 10, y: 5)
                             .transition(.opacity.combined(with: .move(edge: .bottom)))
                         }

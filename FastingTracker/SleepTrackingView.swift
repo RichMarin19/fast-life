@@ -181,7 +181,7 @@ struct SleepTrackingView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.purple)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .padding(.horizontal, 40)
                 .padding(.bottom, 20)
@@ -227,7 +227,7 @@ struct SleepTrackingView: View {
                                         .padding(.horizontal, 12)
                                         .padding(.vertical, 6)
                                         .background(Color.purple.opacity(0.1))
-                                        .cornerRadius(8)
+                                        .cornerRadius(DSCornerRadius.button)
                                     }
                                     .accessibilityLabel("Select sleep chart time range")
                                 }
@@ -339,7 +339,7 @@ struct EmptySleepStateView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color.purple)
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .accessibilityLabel("Log sleep entry manually")
 
@@ -364,7 +364,7 @@ struct EmptySleepStateView: View {
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(Color("FLSuccess"))
-                        .cornerRadius(8)
+                        .cornerRadius(DSCornerRadius.button)
                 }
                 .accessibilityLabel("Sync sleep data with Apple Health")
             }
