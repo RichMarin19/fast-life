@@ -8,6 +8,7 @@
 
 import Foundation
 import Combine
+import os.log
 
 // MARK: - LifeGPT ViewModel
 
@@ -36,6 +37,9 @@ class LifeGPTViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let dataService: HealthDataAggregator
+
+    /// Logger for debugging (Apple standard)
+    private let logger = Logger(subsystem: "com.fastlife.FastingTracker", category: "LifeGPT")
 
     // MARK: - Initialization
 
@@ -101,8 +105,8 @@ class LifeGPTViewModel: ObservableObject {
             // Add delay to simulate processing (smoother UX)
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
-            // Generate response with emotion detection
-            let (response, emotion) = await handleQueryWithEmotion(trimmedQuery)
+            // Phase 4B: Execute intelligent query pipeline (replaces deprecated handleQueryWithEmotion)
+            let (response, emotion) = await executeIntelligentQuery(trimmedQuery)
 
             // Add assistant response with emotion
             let assistantMessage = ChatMessage.assistantMessage(response, emotion: emotion)
@@ -173,9 +177,153 @@ class LifeGPTViewModel: ObservableObject {
         """
     }
 
-    // MARK: - Query Handling with Emotion
+    // MARK: - Intelligence Context Building (Phase 4B)
+
+    /// Build comprehensive insight context from all available health data
+    /// **Industry Pattern:** Whoop, Oura, Levels batch-fetch all data upfront
+    /// **Performance:** Cached for 30s via PerformanceTokens.insightContextCacheTTL
+    /// **Phase 4B:** Single source of truth for intelligence layers
+    /// - Returns: InsightContext with goal, trends, correlations, streaks
+    private func buildInsightContext() async -> InsightContext {
+        // Check cache first (30s TTL)
+        let cacheKey = "insightContext"
+        if let cached: InsightContext = await QueryCache.shared.get(forKey: cacheKey) {
+            logger.debug("⚡ InsightContext cache hit (TTL: \(PerformanceTokens.insightContextCacheTTL)s)")
+            return cached
+        }
+
+        logger.debug("🔄 InsightContext cache miss, building fresh context...")
+
+        // Goal data (from AppSettings - TODO: Add weight goal to AppSettings)
+        // For now, using placeholder - will integrate with AppSettings in polish phase
+        let weightGoal: Double? = nil  // TODO: Get from AppSettings.shared.weightGoal
+
+        // Current weight
+        let currentWeight = await dataService.getCurrentWeight()
+
+        // Start weight (first entry ever)
+        let allWeightData = await dataService.fetchAllWeightData()
+        let startWeight = allWeightData.first
+
+        // Week-over-week weight comparison (CRITICAL for insights)
+        let thisWeekWeight = await dataService.fetchWeightLastWeek()
+        let lastWeekStart = Date().addingTimeInterval(-14 * 86400)  // 2 weeks ago
+        let lastWeekEnd = Date().addingTimeInterval(-7 * 86400)      // 1 week ago
+        let lastWeekWeight = await dataService.fetchWeightData(from: lastWeekStart, to: lastWeekEnd)
+
+        // Calculate week-over-week weight change
+        let thisWeekAvg = thisWeekWeight.isEmpty ? 0 : thisWeekWeight.map({ $0.weight }).reduce(0, +) / Double(thisWeekWeight.count)
+        let lastWeekAvg = lastWeekWeight.isEmpty ? 0 : lastWeekWeight.map({ $0.weight }).reduce(0, +) / Double(lastWeekWeight.count)
+        let weightChangeWeek = thisWeekWeight.isEmpty || lastWeekWeight.isEmpty ? nil : (thisWeekAvg - lastWeekAvg)
+
+        // Fasting correlation data (CRITICAL for multi-metric insights)
+        let fastingThisWeek = await dataService.fetchFastingThisWeek()
+        let fastingLastWeek = await dataService.fetchFastingSessions(from: lastWeekStart, to: lastWeekEnd)
+
+        // Fasting streaks (motivational context)
+        let currentStreak = calculateCurrentStreak(fastingThisWeek)
+        let longestStreak = calculateLongestStreak(allWeightData.count)  // Placeholder for now
+
+        // Build comprehensive context
+        let context = InsightContext(
+            weightGoal: weightGoal,
+            currentWeight: currentWeight?.weight,
+            startWeight: startWeight?.weight,
+            weightChangeWeek: weightChangeWeek,
+            fastingCountThisWeek: fastingThisWeek.count,
+            fastingCountLastWeek: fastingLastWeek.count,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak
+        )
+
+        // Cache for 30s (avoid redundant queries)
+        await QueryCache.shared.set(context, forKey: cacheKey, ttl: PerformanceTokens.insightContextCacheTTL)
+        logger.debug("💾 InsightContext cached (TTL: \(PerformanceTokens.insightContextCacheTTL)s)")
+
+        return context
+    }
+
+    /// Calculate current fasting streak (consecutive fasts this week)
+    /// **Industry Pattern:** Duolingo, Peloton streak gamification
+    /// - Parameter fastingSessions: This week's fasting sessions
+    /// - Returns: Current streak count
+    private func calculateCurrentStreak(_ fastingSessions: [FastingSession]) -> Int {
+        // Simple implementation: count completed fasts this week
+        // Future enhancement: Track consecutive days
+        return fastingSessions.count
+    }
+
+    /// Calculate longest fasting streak ever
+    /// **Industry Pattern:** Snapchat, Duolingo longest streak
+    /// - Parameter totalEntries: Total weight entries (placeholder)
+    /// - Returns: Longest streak count
+    private func calculateLongestStreak(_ totalEntries: Int) -> Int {
+        // Placeholder: Return 0 for now
+        // Future enhancement: Query historical fasting data for true longest streak
+        return 0
+    }
+
+    // MARK: - Intelligent Query Execution (Phase 4B)
+
+    /// Execute full intelligence pipeline for query
+    /// **Phase 4B:** Wires up ALL intelligence layers
+    /// **Industry Pattern:** Whoop Recovery Algorithm, Oura Readiness Pipeline
+    /// **Flow:** Context → Insights → Recommendations → Emotion → Response → Conversation Tracking
+    /// - Parameter query: User's natural language question
+    /// - Returns: Tuple of (enhanced response, goal-aware emotion)
+    private func executeIntelligentQuery(_ query: String) async -> (String, EmotionState) {
+        logger.info("🚀 Executing intelligent query pipeline for: \(query, privacy: .public)")
+
+        // Step 1: Build comprehensive insight context (cached 30s)
+        let context = await buildInsightContext()
+        logger.debug("✅ InsightContext built (goal: \(context.weightGoal?.description ?? "none", privacy: .public))")
+
+        // Step 2: Classify query intent
+        let intent = QueryClassifier.shared.classify(query)
+        logger.debug("✅ Query classified as: \(String(describing: intent), privacy: .public)")
+
+        // Step 3: Generate insights (multi-metric correlations)
+        let insights = await InsightGenerator.shared.generateInsights(context: context)
+        logger.debug("✅ Generated \(insights.insights.count) insights")
+
+        // Step 4: Generate recommendations (actionable advice)
+        let recommendations = await InsightGenerator.shared.generateRecommendations(context: context)
+        logger.debug("✅ Generated \(recommendations.count) recommendations")
+
+        // Step 5: Detect goal-aware emotion
+        let emotionContext = EmotionContext(
+            weightGoal: context.weightGoal,
+            currentWeight: context.currentWeight,
+            weightChangeWeek: context.weightChangeWeek,
+            fastingCountThisWeek: context.fastingCountThisWeek,
+            fastingCountLastWeek: context.fastingCountLastWeek
+        )
+        let emotion = EmotionEngine.shared.detectEmotion(context: emotionContext)
+        logger.debug("✅ Emotion detected: \(emotion.rawValue, privacy: .public)")
+
+        // Step 6: Generate enhanced response (Phase 3D template system)
+        let response = ResponseGenerator.shared.generateEnhancedResponse(
+            for: intent,
+            result: context,  // Pass context as result (contains all health data)
+            emotion: emotion,
+            userPreferences: .default,
+            insights: insights,
+            recommendations: recommendations,
+            conversationContext: nil  // TODO: Wire ConversationManager in Hour 3C
+        )
+        logger.info("✅ Enhanced response generated (\(response.count) chars)")
+
+        // Step 7: Track conversation (for multi-turn dialogue)
+        // TODO: Add conversation tracking with ConversationManager
+        logger.debug("⏭️ Conversation tracking (TODO: Phase 4B Hour 3)")
+
+        return (response, emotion)
+    }
+
+    // MARK: - Query Handling with Emotion (Phase 1 - Deprecated)
 
     /// Handle query and detect appropriate emotion
+    /// **DEPRECATED:** Use executeIntelligentQuery() instead (Phase 4B)
     /// Phase 1: Simple keyword matching + data context
     /// Phase 2: NLP + ML-based sentiment analysis
     /// - Parameter query: User's question

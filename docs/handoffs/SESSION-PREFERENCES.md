@@ -62,6 +62,7 @@
 - Subsystem + category pattern for filtering in Console.app
 - Privacy annotations (`.public` for non-sensitive, `.private` default for sensitive)
 - Proper log levels: `.debug`, `.info`, `.warning`, `.error`
+- **CRITICAL:** `os_log` debugging is MANDATORY for production code - it's in HANDOFF.md and should ALWAYS be the first approach
 
 ### Tokens & Single Source of Truth
 - Always look for opportunities to use tokens and variables

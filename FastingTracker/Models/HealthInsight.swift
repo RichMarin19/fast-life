@@ -9,6 +9,50 @@
 
 import Foundation
 
+// MARK: - Insight Context
+
+/// Comprehensive health data context for intelligence layers
+/// **Phase 4B:** Single source of truth for EmotionEngine, InsightGenerator, ConversationManager
+/// **Industry Pattern:** Whoop Recovery Context, Oura Readiness Context
+struct InsightContext {
+    // Goal data
+    let weightGoal: Double?
+    let currentWeight: Double?
+    let startWeight: Double?
+
+    // Trend data (week-over-week)
+    let weightChangeWeek: Double?
+
+    // Fasting correlation data
+    let fastingCountThisWeek: Int
+    let fastingCountLastWeek: Int
+
+    // Streak data (motivational)
+    let currentStreak: Int
+    let longestStreak: Int
+
+    /// Initialize with all health data
+    init(
+        weightGoal: Double? = nil,
+        currentWeight: Double? = nil,
+        startWeight: Double? = nil,
+        weightChangeWeek: Double? = nil,
+        fastingCountThisWeek: Int = 0,
+        fastingCountLastWeek: Int = 0,
+        currentStreak: Int = 0,
+        longestStreak: Int = 0
+    ) {
+        self.weightGoal = weightGoal
+        self.currentWeight = currentWeight
+        self.startWeight = startWeight
+        self.weightChangeWeek = weightChangeWeek
+        self.fastingCountThisWeek = fastingCountThisWeek
+        self.fastingCountLastWeek = fastingCountLastWeek
+        self.currentStreak = currentStreak
+        self.longestStreak = longestStreak
+    }
+}
+
 // MARK: - Health Insight
 
 /// Structured insight from multi-metric analysis

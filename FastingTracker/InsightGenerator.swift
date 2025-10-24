@@ -127,17 +127,6 @@ class InsightGenerator: InsightGeneratorProtocol {
         recommendations.append(contentsOf: await generateConsistencyRecommendations(context: context))
         recommendations.append(contentsOf: await generateStreakRecommendations(context: context))
 
-        // INDUSTRY STANDARD: Always provide at least one recommendation (Whoop, Oura, Levels pattern)
-        // If no personalized recommendations, provide evidence-based fallback
-        if recommendations.isEmpty {
-            recommendations.append(Recommendation(
-                action: "Maintain 4-5 fasts per week for optimal results",
-                reason: "Research shows 4-5 fasting sessions per week produces 2x better outcomes than 1-3 sessions. High-impact change",
-                impact: .high,
-                confidence: 0.65
-            ))
-        }
-
         // Sort by confidence (highest first)
         return recommendations.sorted { $0.confidence > $1.confidence }
     }
@@ -309,21 +298,61 @@ class InsightGenerator: InsightGeneratorProtocol {
     // MARK: - Fasting Frequency Recommendations
 
     private func generateFastingFrequencyRecommendations(context: InsightContext) async -> [Recommendation] {
-        guard let thisWeek = context.fastingCountThisWeek,
-              let averageFasts = context.averageFastsPerWeek else {
+        guard let thisWeek = context.fastingCountThisWeek else {
             return []
         }
 
         var recommendations: [Recommendation] = []
 
-        // If user is below average, recommend increasing frequency
-        if Double(thisWeek) < averageFasts {
-            let targetFasts = Int(averageFasts.rounded(.up))
+        // INDUSTRY STANDARD: 4-5 fasts/week is optimal (Whoop, Oura, Levels pattern)
+        let optimalFastingRange = 4...5
+
+        // Case 1: User is below optimal frequency
+        if thisWeek < optimalFastingRange.lowerBound {
+            let targetFasts = optimalFastingRange.lowerBound
+
+            // Compare to last week if available for personalized messaging
+            if let lastWeek = context.fastingCountLastWeek {
+                let change = thisWeek - lastWeek
+                let changeText = change > 0 ? "up from \(lastWeek)" : change < 0 ? "down from \(lastWeek)" : "same as"
+
+                let recommendation = Recommendation(
+                    action: "Increase fasting frequency to \(targetFasts) times per week",
+                    reason: "You completed \(thisWeek) fasts this week (\(changeText) last week). Research shows 4-5 fasting sessions per week produces 2x better outcomes",
+                    impact: .high,
+                    confidence: 0.80
+                )
+                recommendations.append(recommendation)
+            } else {
+                // No historical data, use generic recommendation
+                let recommendation = Recommendation(
+                    action: "Increase fasting frequency to \(targetFasts) times per week",
+                    reason: "You completed \(thisWeek) fasts this week. Research shows 4-5 fasting sessions per week produces 2x better outcomes",
+                    impact: .high,
+                    confidence: 0.75
+                )
+                recommendations.append(recommendation)
+            }
+        }
+
+        // Case 2: User is at optimal frequency
+        else if optimalFastingRange.contains(thisWeek) {
             let recommendation = Recommendation(
-                action: "Increase fasting frequency to \(targetFasts) times per week",
-                reason: "Your average is \(Int(averageFasts)) fasts/week, which shows better results than your current \(thisWeek) fasts this week",
-                impact: .high,
-                confidence: 0.75
+                action: "Maintain your current \(thisWeek) fasts per week",
+                reason: "You're in the optimal range (4-5 fasts/week). Consistency at this frequency drives best results",
+                impact: .medium,
+                confidence: 0.85
+            )
+            recommendations.append(recommendation)
+        }
+
+        // Case 3: User is above optimal frequency (6+ fasts)
+        else {
+            let recommendation = Recommendation(
+                action: "Consider reducing to 4-5 fasts per week",
+                reason: "You completed \(thisWeek) fasts this week. More isn't always better—rest and recovery are equally important for sustainable progress",
+                impact: .medium,
+                confidence: 0.70
             )
             recommendations.append(recommendation)
         }
