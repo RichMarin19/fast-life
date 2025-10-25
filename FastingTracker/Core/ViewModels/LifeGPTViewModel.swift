@@ -83,6 +83,7 @@ class LifeGPTViewModel: ObservableObject {
     // MARK: - Public API
 
     /// Send user's query and get response
+    /// **Phase 6:** Now uses hybrid routing (rule-based → LLM)
     /// - Parameter query: User's question
     func sendQuery(_ query: String) {
         // Trim whitespace
@@ -105,8 +106,8 @@ class LifeGPTViewModel: ObservableObject {
             // Add delay to simulate processing (smoother UX)
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
-            // Phase 4B: Execute intelligent query pipeline (replaces deprecated handleQueryWithEmotion)
-            let (response, emotion) = await executeIntelligentQuery(trimmedQuery)
+            // Phase 6: Execute hybrid query (rule-based → LLM)
+            let (response, emotion) = await executeHybridQuery(trimmedQuery)
 
             // Add assistant response with emotion
             let assistantMessage = ChatMessage.assistantMessage(response, emotion: emotion)
@@ -229,7 +230,7 @@ class LifeGPTViewModel: ObservableObject {
             weightGoal: weightGoal,
             currentWeight: currentWeight?.weight,
             startWeight: startWeight?.weight,
-            weightChangeWeek: weightChangeWeek,
+            weightChangeLast7Days: weightChangeWeek,  // CRITICAL FIX: Use correct parameter name
             fastingCountThisWeek: fastingThisWeek.count,
             fastingCountLastWeek: fastingLastWeek.count,
             currentStreak: currentStreak,
@@ -294,17 +295,22 @@ class LifeGPTViewModel: ObservableObject {
         let emotionContext = EmotionContext(
             weightGoal: context.weightGoal,
             currentWeight: context.currentWeight,
-            weightChangeWeek: context.weightChangeWeek,
+            weightTrend: context.weightChangeLast7Days,
             fastingCountThisWeek: context.fastingCountThisWeek,
             fastingCountLastWeek: context.fastingCountLastWeek
         )
         let emotion = EmotionEngine.shared.detectEmotion(context: emotionContext)
         logger.debug("✅ Emotion detected: \(emotion.rawValue, privacy: .public)")
 
-        // Step 6: Generate enhanced response (Phase 3D template system)
+        // Step 6: Convert InsightContext to intent-specific result object
+        // CRITICAL FIX: ResponseGenerator expects WeightAnalysisResult, not InsightContext
+        let result = await convertContextToResult(context: context, intent: intent)
+        logger.debug("✅ Result object prepared for intent: \(String(describing: intent), privacy: .public)")
+
+        // Step 7: Generate enhanced response (Phase 3D template system)
         let response = ResponseGenerator.shared.generateEnhancedResponse(
             for: intent,
-            result: context,  // Pass context as result (contains all health data)
+            result: result,  // Pass properly typed result (WeightAnalysisResult, etc.)
             emotion: emotion,
             userPreferences: .default,
             insights: insights,
@@ -313,11 +319,241 @@ class LifeGPTViewModel: ObservableObject {
         )
         logger.info("✅ Enhanced response generated (\(response.count) chars)")
 
-        // Step 7: Track conversation (for multi-turn dialogue)
+        // Step 8: Track conversation (for multi-turn dialogue)
         // TODO: Add conversation tracking with ConversationManager
         logger.debug("⏭️ Conversation tracking (TODO: Phase 4B Hour 3)")
 
         return (response, emotion)
+    }
+
+    // MARK: - Hybrid Query Routing (Phase 6: LLM Integration)
+
+    /// Execute query with hybrid routing (rule-based → LLM)
+    /// **Phase 6 Architecture:** Try rule-based first (fast, free, offline), fall back to LLM for complex queries
+    /// **Industry Pattern:** Siri, Google Assistant hybrid approach
+    /// - Parameter query: User's natural language question
+    /// - Returns: Tuple of (response, emotion)
+    private func executeHybridQuery(_ query: String) async -> (String, EmotionState) {
+
+        logger.info("🔀 Executing hybrid query: \(query, privacy: .public)")
+
+        // Step 1: Classify query intent
+        let intent = QueryClassifier.shared.classify(query)
+        logger.debug("📊 Query classified with confidence: \(intent.confidence, privacy: .public)")
+
+        // Step 2: High confidence → use rule-based system (fast, free, offline)
+        if intent.confidence > 0.8 {
+            logger.info("✅ High confidence (\(intent.confidence, privacy: .public)) - using rule-based intelligence")
+            return await executeIntelligentQuery(query) // Existing Phase 4B pipeline
+        }
+
+        // Step 3: Low confidence or complex query → check network connectivity
+        guard NetworkMonitor.shared.isConnected else {
+            logger.warning("⚠️ No internet connection - falling back to rule-based")
+            return await executeOfflineFallback(query)
+        }
+
+        // Step 4: Route to LLM for complex/nuanced queries
+        logger.info("🧠 Low confidence or complex query - routing to LLM")
+        return await executeLLMQuery(query)
+    }
+
+    /// Execute LLM query (complex/nuanced queries only)
+    /// **Cost:** ~$0.01-0.03 per query (GPT-4o-mini)
+    /// **Performance:** ~1-2s response time
+    /// - Parameter query: User's question
+    /// - Returns: Tuple of (LLM response with AInstein personality, emotion)
+    private func executeLLMQuery(_ query: String) async -> (String, EmotionState) {
+
+        logger.info("🤖 Executing LLM query")
+
+        do {
+            // Build health context from existing intelligence system
+            let insightContext = await buildInsightContext()
+
+            // Convert to LLM-compatible format (aggregated metrics only, privacy-protected)
+            let llmContext = convertToLLMContext(insightContext)
+
+            // Call OpenAI API with conversation history
+            let response = try await OpenAIService.shared.generateResponse(
+                query: query,
+                context: llmContext,
+                conversationHistory: messages.suffix(5).map { $0 } // Last 5 messages for context
+            )
+
+            // Apply AInstein personality filter (max 2 sentences, luxury empathy, signature)
+            let filteredResponse = AInsteinPersonality.shared.transform(response)
+
+            // Detect emotion from response sentiment (simple heuristic for now)
+            let emotion = detectEmotionFromLLMResponse(filteredResponse)
+
+            logger.info("✅ LLM response generated and filtered (\(filteredResponse.count) chars)")
+
+            return (filteredResponse, emotion)
+
+        } catch {
+            logger.error("❌ LLM query failed: \(error.localizedDescription)")
+
+            // Fallback to rule-based on LLM error
+            return await executeIntelligentQuery(query)
+        }
+    }
+
+    /// Offline fallback (no internet connection)
+    /// **UX:** Provide rule-based response + notice about offline status
+    /// - Parameter query: User's question
+    /// - Returns: Tuple of (rule-based response + notice, emotion)
+    private func executeOfflineFallback(_ query: String) async -> (String, EmotionState) {
+
+        logger.info("📴 Executing offline fallback")
+
+        // Execute rule-based intelligence system
+        let (response, emotion) = await executeIntelligentQuery(query)
+
+        // Append offline notice
+        let offlineNotice = "\n\n(You're offline. Connect to internet for more detailed AI insights.)"
+
+        return (response + offlineNotice, emotion)
+    }
+
+    /// Convert InsightContext → HealthContextForLLM (privacy-protected aggregated metrics)
+    /// **Privacy:** Send aggregated metrics only, never raw HealthKit samples
+    /// - Parameter context: Full insight context from intelligence system
+    /// - Returns: Privacy-protected LLM context
+    private func convertToLLMContext(_ context: InsightContext) -> HealthContextForLLM {
+        return HealthContextForLLM(
+            currentWeight: context.currentWeight ?? 0.0,
+            weightTrend: determineWeightTrend(context.weightChangeLast7Days),  // FIX: Use correct property name
+            weightGoal: context.weightGoal,
+            fastingFrequency: context.fastingCountThisWeek ?? 0,
+            sleepQuality: "unknown", // TODO: Wire up sleep quality from context
+            hydrationStatus: "unknown", // TODO: Wire up hydration from context
+            moodStatus: "unknown", // TODO: Wire up mood from context
+            lastFastDate: nil, // TODO: Wire up last fast date
+            weightChange30Days: context.weightChangeLast7Days ?? 0.0,  // FIX: Use correct property name
+            daysToGoal: nil // TODO: Calculate days to goal
+        )
+    }
+
+    /// Determine weight trend from weight change value
+    /// - Parameter weightChange: Weight change over period (negative = loss, positive = gain)
+    /// - Returns: Trend string ("up", "down", "stable")
+    private func determineWeightTrend(_ weightChange: Double?) -> String {
+        guard let change = weightChange else { return "stable" }
+
+        if change < -0.5 { return "down" }
+        if change > 0.5 { return "up" }
+        return "stable"
+    }
+
+    /// Detect emotion from LLM response sentiment (simple heuristic)
+    /// **Future:** Use sentiment analysis model
+    /// - Parameter response: LLM-generated response
+    /// - Returns: Detected emotion state
+    private func detectEmotionFromLLMResponse(_ response: String) -> EmotionState {
+        let lowercased = response.lowercased()
+
+        // Positive sentiment indicators → ES-5: energized
+        if lowercased.contains("great") || lowercased.contains("excellent") || lowercased.contains("amazing") {
+            return .energized
+        }
+
+        // Progress sentiment indicators → ES-5: energized
+        if lowercased.contains("progress") || lowercased.contains("improving") || lowercased.contains("on track") {
+            return .energized
+        }
+
+        // Encouraging sentiment indicators → ES-5: energized
+        if lowercased.contains("keep it up") || lowercased.contains("maintain") || lowercased.contains("consistent") {
+            return .energized
+        }
+
+        // Default: stable (neutral in ES-5)
+        return .stable
+    }
+
+    /// Convert InsightContext to intent-specific result object
+    /// **CRITICAL:** ResponseGenerator expects strongly-typed result objects (WeightAnalysisResult, etc.)
+    /// - Parameters:
+    ///   - context: Comprehensive insight context with all health data
+    ///   - intent: Classified query intent
+    /// - Returns: Properly typed result object for the intent
+    private func convertContextToResult(context: InsightContext, intent: QueryIntent) async -> Any {
+        switch intent {
+        case .currentWeight:
+            // CRITICAL FIX: Fetch current weight entry (with date) from dataService
+            // This ensures we get BOTH value AND date for proper formatting
+            if let currentWeightEntry = await dataService.getCurrentWeight() {
+                logger.debug("✅ getCurrentWeight() returned weight: \(currentWeightEntry.weight) lbs, date: \(currentWeightEntry.date, privacy: .public)")
+                return WeightAnalysisResult(
+                    value: currentWeightEntry.weight,
+                    date: currentWeightEntry.date,
+                    unit: "lbs",  // TODO: Get from UserPreferences
+                    timeRange: nil,
+                    metadata: nil
+                )
+            } else {
+                // This should NOT happen if user has weight data
+                logger.error("❌ getCurrentWeight() returned nil - user may have no weight data")
+                // Fallback: Return 0 weight with today's date
+                return WeightAnalysisResult(
+                    value: 0,
+                    date: Date(),
+                    unit: "lbs",
+                    timeRange: nil,
+                    metadata: nil
+                )
+            }
+
+        case .averageWeight, .minimumWeight, .maximumWeight:
+            // Use context weight data (simple fallback)
+            return WeightAnalysisResult(
+                value: context.currentWeight ?? 0,
+                date: Date(),
+                unit: "lbs",
+                timeRange: nil,
+                metadata: nil
+            )
+
+        case .weightChange(let period):
+            // Use week-over-week change from context
+            let change = context.weightChangeLast7Days ?? 0  // FIX: Use correct property name
+            let currentWeight = context.currentWeight ?? 0
+            let startWeight = currentWeight - change
+            let now = Date()
+            let weekAgo = now.addingTimeInterval(-7 * 86400)
+
+            return WeightChangeResult(
+                change: change,
+                startValue: startWeight,
+                endValue: currentWeight,
+                startDate: weekAgo,
+                endDate: now,
+                rate: change / 7.0,  // Change per day
+                unit: "lbs",
+                period: period
+            )
+
+        case .fastCount(let timeRange):
+            // Use fasting count from context
+            let count = timeRange == .thisWeek ? (context.fastingCountThisWeek ?? 0) : 0
+            return count
+
+        case .fastingStreak:
+            // Use current streak from context
+            return context.currentStreak ?? 0
+
+        case .weekOverWeek, .monthOverMonth, .yearOverYear:
+            // CRITICAL FIX: Comparison queries need full InsightContext for week-over-week templates
+            // These intents require access to fastingCountThisWeek, fastingCountLastWeek, weightChangeLast7Days
+            // ResponseGenerator.generateWeekOverWeekResponse() expects InsightContext, NOT WeightChangeResult
+            logger.debug("🔍 Returning InsightContext for comparison intent: \(String(describing: intent), privacy: .public)")
+            return context
+
+        default:
+            // Fallback: Return context itself for other intents
+            return context
+        }
     }
 
     // MARK: - Query Handling with Emotion (Phase 1 - Deprecated)

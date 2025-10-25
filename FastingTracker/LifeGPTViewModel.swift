@@ -38,59 +38,52 @@ class LifeGPTViewModel: ObservableObject {
 
     private let dataService: HealthDataAggregator
 
-    // Phase 2: Intelligence Layer (Production)
-    private let queryClassifier: QueryClassifierProtocol
-    private let healthAnalyzer: HealthDataAnalyzerProtocol
-    private let responseGenerator: ResponseGeneratorProtocol
-
-    // Phase 4: Enhanced Intelligence Layer (Goal-Aware + Insights + Conversation)
-    private let conversationManager: ConversationManager
-
-    // MARK: - Logging (Apple Standard)
-
-    /// Unified logging for LifeGPT intelligence layer
-    /// **Apple Pattern:** Subsystem + category for filtering in Console.app
+    /// Logger for debugging (Apple standard)
     private let logger = Logger(subsystem: "com.fastlife.FastingTracker", category: "LifeGPT")
 
     // MARK: - Initialization
 
     /// Initialize with data service dependency
     /// Following Fast LIFe's dependency injection pattern
-    /// - Parameters:
-    ///   - dataService: Service for fetching unified health data
-    ///   - queryClassifier: Query classification service (default: QueryClassifier.shared)
-    ///   - healthAnalyzer: Health data analysis service (optional, uses production analyzer if nil)
-    ///   - responseGenerator: Response generation service (default: ResponseGenerator.shared)
-    init(
-        dataService: HealthDataAggregator,
-        queryClassifier: QueryClassifierProtocol = QueryClassifier.shared,
-        healthAnalyzer: HealthDataAnalyzerProtocol? = nil,
-        responseGenerator: ResponseGeneratorProtocol = ResponseGenerator.shared,
-        conversationManager: ConversationManager = ConversationManager()
-    ) {
+    /// - Parameter dataService: Service for fetching unified health data
+    init(dataService: HealthDataAggregator) {
         self.dataService = dataService
-        self.queryClassifier = queryClassifier
-        self.responseGenerator = responseGenerator
-        self.conversationManager = conversationManager
-
-        // Initialize health analyzer with data service
-        if let analyzer = healthAnalyzer {
-            self.healthAnalyzer = analyzer
-        } else {
-            // Use production analyzer with data service
-            self.healthAnalyzer = HealthDataAnalysisService(dataService: dataService)
-        }
 
         // Add welcome message on init
         addWelcomeMessage()
+    }
 
-        // Test log to verify logging is working
-        logger.info("✅ LifeGPTViewModel initialized successfully")
+    /// Pre-load HealthKit data on first launch to prevent freeze during first query
+    /// **First Launch UX:** Shows loading overlay while building InsightContext
+    /// **Industry Pattern:** Whoop, Oura, Levels all pre-fetch data on app open
+    func preloadHealthData() async {
+        // Check if this is first launch
+        let hasCompletedFirstLoad = UserDefaults.standard.bool(forKey: "hasCompletedFirstInsightLoad")
+
+        guard !hasCompletedFirstLoad else {
+            return // Already loaded, skip
+        }
+
+        // Show loading overlay
+        isFirstLaunchLoading = true
+
+        // CRITICAL: Give SwiftUI time to render the overlay before blocking with HealthKit queries
+        try? await Task.sleep(nanoseconds: 100_000_000) // 100ms delay
+
+        // Pre-fetch common health data (simulates .summary query to warm cache)
+        _ = await buildDataContext(for: .summary)
+
+        // Mark as complete
+        UserDefaults.standard.set(true, forKey: "hasCompletedFirstInsightLoad")
+
+        // Dismiss loading overlay
+        isFirstLaunchLoading = false
     }
 
     // MARK: - Public API
 
     /// Send user's query and get response
+    /// **Phase 6:** Now uses hybrid routing (rule-based → LLM)
     /// - Parameter query: User's question
     func sendQuery(_ query: String) {
         // Trim whitespace
@@ -113,8 +106,8 @@ class LifeGPTViewModel: ObservableObject {
             // Add delay to simulate processing (smoother UX)
             try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
 
-            // Phase 2: Use production intelligence layer
-            let (response, emotion) = await executeIntelligentQuery(trimmedQuery)
+            // Phase 6: Execute hybrid query (rule-based → LLM)
+            let (response, emotion) = await executeHybridQuery(trimmedQuery)
 
             // Add assistant response with emotion
             let assistantMessage = ChatMessage.assistantMessage(response, emotion: emotion)
@@ -130,450 +123,7 @@ class LifeGPTViewModel: ObservableObject {
         addWelcomeMessage()
     }
 
-    // MARK: - Private Query Handling (Phase 2: Production Intelligence Layer)
-
-    /// Execute query using production intelligence layer
-    /// **Phase 4:** QueryClassifier → HealthDataAnalyzer → EmotionEngine → InsightGenerator → ResponseGenerator
-    /// **Fallback:** Phase 1 keyword matching if intelligence layer unavailable
-    /// - Parameter query: User's question
-    /// - Returns: Tuple of (response text, detected emotion)
-    private func executeIntelligentQuery(_ query: String) async -> (String, EmotionState) {
-        // Step 1: Classify query intent
-        let intent = queryClassifier.classify(query)
-        logger.debug("🔍 Query classified: '\(query, privacy: .public)' → Intent: \(String(describing: intent), privacy: .public)")
-
-        // Step 2: Handle offline-capable queries
-        if intent.isOfflineCapable {
-            do {
-                logger.info("✅ Intent is offline-capable, executing analysis...")
-                // Step 2a: Execute query based on intent type
-                let result = try await executeAnalysis(for: intent)
-                logger.debug("✅ Analysis succeeded, result type: \(String(describing: type(of: result)), privacy: .public)")
-
-                // Step 2b: Build insight context (Phase 4: Single source of truth for all health data)
-                logger.info("📊 Building insight context...")
-                let insightContext = await buildInsightContext()
-                logger.debug("📊 Context built - Goal: \(insightContext.weightGoal?.description ?? "nil", privacy: .public), Current: \(insightContext.currentWeight?.description ?? "nil", privacy: .public), Fasts this week: \(insightContext.fastingCountThisWeek?.description ?? "nil", privacy: .public)")
-
-                // Step 2c: Generate insights (Phase 4: Multi-metric correlation)
-                let insights = await InsightGenerator.shared.generateInsights(context: insightContext)
-                logger.info("💡 Generated \(insights.insights.count) insights")
-
-                // Step 2d: Generate recommendations (Phase 4: Actionable advice)
-                let recommendations = await InsightGenerator.shared.generateRecommendations(context: insightContext)
-                logger.info("🎯 Generated \(recommendations.count) recommendations")
-
-                // Step 2e: Detect goal-aware emotion (Phase 4: EmotionEngine with context)
-                let emotion = EmotionEngine.shared.detectEmotion(
-                    weightGoal: insightContext.weightGoal,
-                    currentWeight: insightContext.currentWeight,
-                    trendResult: insightContext.weightTrendResult,
-                    fastingCountThisWeek: insightContext.fastingCountThisWeek,
-                    fastingCountLastWeek: insightContext.fastingCountLastWeek,
-                    daysSinceLastActivity: nil  // TODO: Calculate days since last activity
-                )
-                logger.debug("😊 Detected emotion: \(String(describing: emotion), privacy: .public)")
-
-                // Step 2f: Generate enhanced response (Phase 4: Insight-rich + recommendations)
-                let userPrefs = UserPreferences.default
-                let response = responseGenerator.generateEnhancedResponse(
-                    for: intent,
-                    result: result,
-                    emotion: emotion,
-                    userPreferences: userPrefs,
-                    insights: insights,
-                    recommendations: recommendations,
-                    conversationContext: conversationManager.context
-                )
-                logger.info("💬 Enhanced response generated (\(response.count) chars)")
-
-                // Step 2g: Track conversation (Phase 4: Conversation continuity)
-                conversationManager.addMessage(ChatMessage(
-                    sender: .user,
-                    content: query,
-                    emotion: emotion
-                ))
-                conversationManager.addMessage(ChatMessage(
-                    sender: .assistant,
-                    content: response,
-                    emotion: emotion
-                ))
-
-                return (response, emotion)
-
-            } catch {
-                // If analysis fails, fall back to Phase 1 method
-                logger.error("❌ Intelligence layer error: \(error.localizedDescription, privacy: .public). Falling back to Phase 1.")
-                return await handleQueryWithEmotion(query)
-            }
-        }
-
-        // Step 3: Unknown intents fall back to Phase 1 or LLM (Phase 3)
-        logger.warning("⚠️ Intent not offline-capable, falling back to Phase 1")
-        return await handleQueryWithEmotion(query)
-    }
-
-    // MARK: - Phase 4: Intelligence Context Builder (Optimized)
-
-    /// Build InsightContext from all available health data
-    /// **Phase 4:** Single source of truth for intelligence layers
-    /// **Phase 4A Optimization:** Cached + batched queries (12 sequential → 2 parallel queries)
-    /// **Performance:** 3-5s → <500ms (10x speedup via caching + batching)
-    /// **First Launch UX:** Shows loading overlay if first time building context
-    /// **Gathers:** Goal, weight, fasting, trend data for EmotionEngine + InsightGenerator
-    /// - Returns: InsightContext with all available data
-    private func buildInsightContext() async -> InsightContext {
-        // Check cache first (30s TTL per PerformanceTokens)
-        let cacheKey = "insightContext"
-        if let cached: InsightContext = await QueryCache.shared.get(forKey: cacheKey) {
-            logger.debug("⚡ InsightContext cache hit (TTL: \(PerformanceTokens.insightContextCacheTTL)s)")
-            return cached
-        }
-
-        logger.debug("🔄 InsightContext cache miss, building fresh context...")
-
-        // Check if this is first launch (no previous InsightContext built)
-        let hasCompletedFirstLoad = UserDefaults.standard.bool(forKey: "hasCompletedFirstInsightLoad")
-        if !hasCompletedFirstLoad {
-            logger.info("🎯 First launch detected - showing loading overlay")
-            await MainActor.run {
-                isFirstLaunchLoading = true
-            }
-        }
-
-        // Goal data (MUST match WeightTrackingViewModel key: "goalWeight")
-        let weightGoal: Double? = UserDefaults.standard.object(forKey: "goalWeight") as? Double
-
-        // **OPTIMIZATION:** Fetch all weight data ONCE (instead of 3 separate queries)
-        // This single query replaces: getCurrentWeight(), fetchAllWeightData(), fetchWeightData(30d), fetchWeightData(90d)
-        let now = Date()
-        let cal = Calendar.current
-        let ninetyDaysAgo = cal.date(byAdding: .day, value: -90, to: now) ?? now
-
-        // Single batched weight query (replaces 4 queries)
-        let allWeights = await dataService.fetchWeightData(from: ninetyDaysAgo, to: now)
-
-        // Derive all weight metrics from single dataset
-        let currentWeight = allWeights.first?.weight  // Most recent entry
-        let startWeight = allWeights.last?.weight     // Oldest entry (start of 90d window)
-
-        // Calculate weight changes locally (avoid HealthDataAnalyzer queries)
-        let sevenDaysAgo = cal.date(byAdding: .day, value: -7, to: now) ?? now
-        let thirtyDaysAgo = cal.date(byAdding: .day, value: -30, to: now) ?? now
-
-        let last7DaysWeights = allWeights.filter { $0.date >= sevenDaysAgo }
-        let last30DaysWeights = allWeights.filter { $0.date >= thirtyDaysAgo }
-
-        let weightChangeLast7Days = calculateWeightChange(from: last7DaysWeights)
-        let weightChangeLast30Days = calculateWeightChange(from: last30DaysWeights)
-
-        // Calculate averages locally (no additional queries needed)
-        let averageWeightLast30Days = last30DaysWeights.isEmpty ? nil : last30DaysWeights.map({ $0.weight }).reduce(0, +) / Double(last30DaysWeights.count)
-        let averageWeightLast90Days = allWeights.isEmpty ? nil : allWeights.map({ $0.weight }).reduce(0, +) / Double(allWeights.count)
-
-        // Trend analysis (still needs HealthDataAnalyzer, but could be optimized to use allWeights)
-        let weightTrendResult = try? await healthAnalyzer.analyzeWeightTrend(in: .last30Days)
-
-        // **OPTIMIZATION:** Batch fasting queries in parallel (use Task.detached for concurrency)
-        async let fastingCountThisWeekTask = healthAnalyzer.countFasts(in: .thisWeek)
-        async let fastingCountLastWeekTask = healthAnalyzer.countFasts(in: .lastWeek)
-        async let fastingCountThisMonthTask = healthAnalyzer.countFasts(in: .thisMonth)
-        async let fastingCountLastMonthTask = healthAnalyzer.countFasts(in: .lastMonth)
-        async let currentStreakTask = healthAnalyzer.calculateFastingStreak()
-
-        // Await all fasting queries in parallel (5 queries → 1 batch)
-        let fastingCountThisWeek = try? await fastingCountThisWeekTask
-        let fastingCountLastWeek = try? await fastingCountLastWeekTask
-        let fastingCountThisMonth = try? await fastingCountThisMonthTask
-        let fastingCountLastMonth = try? await fastingCountLastMonthTask
-        let currentStreak = try? await currentStreakTask
-
-        let longestStreak: Int? = nil  // TODO: Add to HealthDataAnalyzer
-
-        // Average fasts per week (estimate from last 30 days)
-        let averageFastsPerWeek: Double? = if let monthCount = fastingCountThisMonth {
-            Double(monthCount) / 4.0  // Approximate 4 weeks per month
-        } else {
-            nil
-        }
-
-        let context = InsightContext(
-            weightGoal: weightGoal,
-            currentWeight: currentWeight,
-            startWeight: startWeight,
-            weightTrendResult: weightTrendResult,
-            weightChangeLast7Days: weightChangeLast7Days,
-            weightChangeLast30Days: weightChangeLast30Days,
-            fastingCountThisWeek: fastingCountThisWeek,
-            fastingCountLastWeek: fastingCountLastWeek,
-            fastingCountThisMonth: fastingCountThisMonth,
-            fastingCountLastMonth: fastingCountLastMonth,
-            currentStreak: currentStreak,
-            longestStreak: longestStreak,
-            averageWeightLast30Days: averageWeightLast30Days,
-            averageWeightLast90Days: averageWeightLast90Days,
-            averageFastsPerWeek: averageFastsPerWeek
-        )
-
-        // Cache result (30s TTL)
-        await QueryCache.shared.set(context, forKey: cacheKey, ttl: PerformanceTokens.insightContextCacheTTL)
-        logger.debug("💾 InsightContext cached (TTL: \(PerformanceTokens.insightContextCacheTTL)s)")
-
-        // Mark first load as complete (only set once)
-        if !hasCompletedFirstLoad {
-            UserDefaults.standard.set(true, forKey: "hasCompletedFirstInsightLoad")
-            logger.info("✅ First InsightContext load complete - flag set")
-
-            // Dismiss loading overlay
-            await MainActor.run {
-                isFirstLaunchLoading = false
-            }
-        }
-
-        return context
-    }
-
-    /// Calculate weight change from array of weight entries
-    /// **Helper:** Avoids redundant HealthDataAnalyzer queries
-    /// - Parameter weights: Array of weight entries (sorted newest first)
-    /// - Returns: Weight change (negative = loss, positive = gain), nil if insufficient data
-    private func calculateWeightChange(from weights: [WeightEntry]) -> Double? {
-        guard let first = weights.first, let last = weights.last, weights.count >= 2 else {
-            return nil
-        }
-        return first.weight - last.weight  // newest - oldest
-    }
-
-    /// Execute data analysis based on query intent
-    /// **Production:** Uses HealthDataAnalyzer for all supported intent types
-    /// - Parameter intent: Classified query intent
-    /// - Returns: Analysis result (type varies by intent)
-    /// - Throws: AnalysisError if data unavailable or calculation fails
-    private func executeAnalysis(for intent: QueryIntent) async throws -> Any {
-        switch intent {
-
-        // Weight Stats
-        case .currentWeight:
-            // Get latest weight entry (NOT statistical average)
-            if let latestWeight = await dataService.getCurrentWeight() {
-                return WeightAnalysisResult(
-                    value: latestWeight.weight,
-                    date: latestWeight.date,
-                    unit: "lbs",
-                    timeRange: nil,
-                    metadata: nil
-                )
-            } else {
-                throw AnalysisError.noData
-            }
-
-        case .minimumWeight(let timeRange):
-            return try await healthAnalyzer.findMinimumWeight(in: timeRange)
-
-        case .maximumWeight(let timeRange):
-            return try await healthAnalyzer.findMaximumWeight(in: timeRange)
-
-        case .averageWeight(let timeRange):
-            return try await healthAnalyzer.calculateAverageWeight(in: timeRange)
-
-        case .medianWeight(let timeRange):
-            return try await healthAnalyzer.calculateMedianWeight(in: timeRange)
-
-        case .weightPercentile(let value, let timeRange):
-            return try await healthAnalyzer.calculateWeightPercentile(value: value, in: timeRange)
-
-        // Weight Change
-        case .largestWeightLoss(let period):
-            return try await healthAnalyzer.findLargestWeightLoss(period: period)
-
-        case .largestWeightGain(let period):
-            return try await healthAnalyzer.findLargestWeightGain(period: period)
-
-        case .weightChange(let period):
-            return try await healthAnalyzer.calculateWeightChange(period: period)
-
-        case .weightChangeRate(let period):
-            return try await healthAnalyzer.calculateWeightChangeRate(period: period)
-
-        case .weightDelta(let startDate, let endDate):
-            return try await healthAnalyzer.calculateWeightDelta(from: startDate, to: endDate)
-
-        // Fasting Stats
-        case .fastCount(let timeRange):
-            return try await healthAnalyzer.countFasts(in: timeRange)
-
-        case .longestFast(let timeRange):
-            return try await healthAnalyzer.findLongestFast(in: timeRange)
-
-        case .fastingStreak:
-            return try await healthAnalyzer.calculateFastingStreak()
-
-        case .completionRate(let timeRange):
-            return try await healthAnalyzer.calculateCompletionRate(in: timeRange)
-
-        case .averageFastDuration(let timeRange):
-            return try await healthAnalyzer.calculateAverageFastDuration(in: timeRange)
-
-        case .detectProtocol(let timeRange):
-            return try await healthAnalyzer.detectFastingProtocol(in: timeRange)
-
-        case .totalFastingHours(let timeRange):
-            return try await healthAnalyzer.calculateTotalFastingHours(in: timeRange)
-
-        case .fastFrequency(let timeRange):
-            return try await healthAnalyzer.calculateFastFrequency(in: timeRange)
-
-        // Sleep Stats
-        case .averageSleep(timeRange: _):
-            // TODO: Implement sleep analytics when sleep tracking is added
-            throw AnalysisError.noData
-
-        case .sleepQuality(timeRange: _):
-            // TODO: Implement sleep quality analytics
-            throw AnalysisError.noData
-
-        case .sleepConsistency(timeRange: _):
-            // TODO: Implement sleep consistency analytics
-            throw AnalysisError.noData
-
-        // Trend Analysis
-        case .weightTrend(let timeRange):
-            return try await healthAnalyzer.analyzeWeightTrend(in: timeRange)
-
-        case .movingAverage(metric: _, days: let days):
-            return try await healthAnalyzer.calculateMovingAverage(days: days)
-
-        case .goalETA(targetValue: let targetValue, metric: _):
-            if let eta = try await healthAnalyzer.predictGoalCompletion(targetValue: targetValue) {
-                return eta
-            } else {
-                throw AnalysisError.noSignificantChange
-            }
-
-        case .onTrackToGoal(targetValue: let targetValue, targetDate: let targetDate, metric: _):
-            return try await healthAnalyzer.isOnTrackToGoal(targetValue: targetValue, targetDate: targetDate)
-
-        case .rateOfChange(metric: _, timeRange: let timeRange):
-            return try await healthAnalyzer.calculateRateOfChange(in: timeRange)
-
-        // Goal Tracking
-        case .goalProgress(targetValue: _, metric: _):
-            // Calculate progress percentage
-            // TODO: Implement goal progress calculation
-            return 0.0
-
-        case .goalStatus(targetValue: _, metric: _), .remainingToGoal(targetValue: _, metric: _):
-            // TODO: Implement goal status/remaining
-            throw AnalysisError.noData
-
-        // Current stats and comparisons
-        case .currentStats:
-            // TODO: Implement aggregated stats
-            throw AnalysisError.noData
-
-        case .recentActivity(days: _):
-            // TODO: Implement recent activity summary
-            throw AnalysisError.noData
-
-        case .weekOverWeek(metric: _):
-            // Simple week-over-week comparison using already-gathered data
-            // Uses buildInsightContext() data (thisWeek vs lastWeek)
-            let context = await buildInsightContext()
-
-            guard let weightChange = context.weightChangeLast7Days,
-                  let currentWeight = context.currentWeight else {
-                throw AnalysisError.noData
-            }
-
-            // Note: fasting counts validated in context but used by InsightGenerator
-            // Week-over-week insights include both weight AND fasting data
-
-            // Calculate dates for last week
-            let cal = Calendar.current
-            let now = Date()
-            let sevenDaysAgo = cal.date(byAdding: .day, value: -7, to: now) ?? now
-
-            // Return comparison result as WeightChangeResult
-            return WeightChangeResult(
-                change: weightChange,
-                startValue: currentWeight - weightChange,  // Calculated from current - change
-                endValue: currentWeight,
-                startDate: sevenDaysAgo,
-                endDate: now,
-                rate: weightChange / 7.0,  // Change per day
-                unit: "lbs",
-                period: .week
-            )
-
-        case .compareToLast(metric: _, period: _):
-            // TODO: Implement compare to last period analytics
-            throw AnalysisError.noData
-
-        case .yearOverYear(metric: _):
-            // TODO: Implement year-over-year analytics
-            throw AnalysisError.noData
-
-        case .monthOverMonth(metric: _):
-            // TODO: Implement month-over-month analytics
-            throw AnalysisError.noData
-
-        case .unknown(query: _):
-            throw AnalysisError.noData
-        }
-    }
-
-    /// Detect emotion state from analysis result
-    /// **Production:** Context-aware emotion detection based on data trends
-    /// - Parameters:
-    ///   - result: Analysis result
-    ///   - intent: Query intent
-    /// - Returns: Detected emotion state
-    private func detectEmotionFromResult(_ result: Any, intent: QueryIntent) -> EmotionState {
-        // Weight change results
-        if let weightChange = result as? WeightChangeResult {
-            if weightChange.change < -2.0 {
-                // Significant loss → Energized
-                return .energized
-            } else if weightChange.change < 0 {
-                // Moderate loss → Stable
-                return .stable
-            } else if weightChange.change > 2.0 {
-                // Significant gain → Offtrack
-                return .offtrack
-            } else {
-                // Slight gain → Stable
-                return .stable
-            }
-        }
-
-        // Trend results
-        if let trend = result as? TrendAnalysisResult {
-            switch trend.direction {
-            case .down:
-                return trend.strength < -0.5 ? .energized : .stable
-            case .up:
-                return trend.strength > 0.5 ? .offtrack : .stable
-            case .stable:
-                return .stable
-            }
-        }
-
-        // Fasting streak
-        if let streak = result as? Int, case .fastingStreak = intent {
-            if streak >= 7 {
-                return .energized
-            } else if streak >= 3 {
-                return .stable
-            } else {
-                return .offtrack
-            }
-        }
-
-        // Default: Stable emotion
-        return .stable
-    }
-
-    // MARK: - Private Query Handling (Phase 1: Legacy Keyword Matching)
+    // MARK: - Private Query Handling
 
     /// Handle user query and generate response
     /// Phase 1: Simple keyword matching
@@ -628,9 +178,388 @@ class LifeGPTViewModel: ObservableObject {
         """
     }
 
-    // MARK: - Query Handling with Emotion
+    // MARK: - Intelligence Context Building (Phase 4B)
+
+    /// Build comprehensive insight context from all available health data
+    /// **Industry Pattern:** Whoop, Oura, Levels batch-fetch all data upfront
+    /// **Performance:** Cached for 30s via PerformanceTokens.insightContextCacheTTL
+    /// **Phase 4B:** Single source of truth for intelligence layers
+    /// - Returns: InsightContext with goal, trends, correlations, streaks
+    private func buildInsightContext() async -> InsightContext {
+        // Check cache first (30s TTL)
+        let cacheKey = "insightContext"
+        if let cached: InsightContext = await QueryCache.shared.get(forKey: cacheKey) {
+            logger.debug("⚡ InsightContext cache hit (TTL: \(PerformanceTokens.insightContextCacheTTL)s)")
+            return cached
+        }
+
+        logger.debug("🔄 InsightContext cache miss, building fresh context...")
+
+        // Goal data (from AppSettings - TODO: Add weight goal to AppSettings)
+        // For now, using placeholder - will integrate with AppSettings in polish phase
+        let weightGoal: Double? = nil  // TODO: Get from AppSettings.shared.weightGoal
+
+        // Current weight
+        let currentWeight = await dataService.getCurrentWeight()
+
+        // Start weight (first entry ever)
+        let allWeightData = await dataService.fetchAllWeightData()
+        let startWeight = allWeightData.first
+
+        // Week-over-week weight comparison (CRITICAL for insights)
+        let thisWeekWeight = await dataService.fetchWeightLastWeek()
+        let lastWeekStart = Date().addingTimeInterval(-14 * 86400)  // 2 weeks ago
+        let lastWeekEnd = Date().addingTimeInterval(-7 * 86400)      // 1 week ago
+        let lastWeekWeight = await dataService.fetchWeightData(from: lastWeekStart, to: lastWeekEnd)
+
+        // Calculate week-over-week weight change
+        let thisWeekAvg = thisWeekWeight.isEmpty ? 0 : thisWeekWeight.map({ $0.weight }).reduce(0, +) / Double(thisWeekWeight.count)
+        let lastWeekAvg = lastWeekWeight.isEmpty ? 0 : lastWeekWeight.map({ $0.weight }).reduce(0, +) / Double(lastWeekWeight.count)
+        let weightChangeWeek = thisWeekWeight.isEmpty || lastWeekWeight.isEmpty ? nil : (thisWeekAvg - lastWeekAvg)
+
+        // Fasting correlation data (CRITICAL for multi-metric insights)
+        let fastingThisWeek = await dataService.fetchFastingThisWeek()
+        let fastingLastWeek = await dataService.fetchFastingSessions(from: lastWeekStart, to: lastWeekEnd)
+
+        // Fasting streaks (motivational context)
+        let currentStreak = calculateCurrentStreak(fastingThisWeek)
+        let longestStreak = calculateLongestStreak(allWeightData.count)  // Placeholder for now
+
+        // Build comprehensive context
+        let context = InsightContext(
+            weightGoal: weightGoal,
+            currentWeight: currentWeight?.weight,
+            startWeight: startWeight?.weight,
+            weightChangeLast7Days: weightChangeWeek,  // CRITICAL FIX: Use correct parameter name
+            fastingCountThisWeek: fastingThisWeek.count,
+            fastingCountLastWeek: fastingLastWeek.count,
+            currentStreak: currentStreak,
+            longestStreak: longestStreak
+        )
+
+        // Cache for 30s (avoid redundant queries)
+        await QueryCache.shared.set(context, forKey: cacheKey, ttl: PerformanceTokens.insightContextCacheTTL)
+        logger.debug("💾 InsightContext cached (TTL: \(PerformanceTokens.insightContextCacheTTL)s)")
+
+        return context
+    }
+
+    /// Calculate current fasting streak (consecutive fasts this week)
+    /// **Industry Pattern:** Duolingo, Peloton streak gamification
+    /// - Parameter fastingSessions: This week's fasting sessions
+    /// - Returns: Current streak count
+    private func calculateCurrentStreak(_ fastingSessions: [FastingSession]) -> Int {
+        // Simple implementation: count completed fasts this week
+        // Future enhancement: Track consecutive days
+        return fastingSessions.count
+    }
+
+    /// Calculate longest fasting streak ever
+    /// **Industry Pattern:** Snapchat, Duolingo longest streak
+    /// - Parameter totalEntries: Total weight entries (placeholder)
+    /// - Returns: Longest streak count
+    private func calculateLongestStreak(_ totalEntries: Int) -> Int {
+        // Placeholder: Return 0 for now
+        // Future enhancement: Query historical fasting data for true longest streak
+        return 0
+    }
+
+    // MARK: - Intelligent Query Execution (Phase 4B)
+
+    /// Execute full intelligence pipeline for query
+    /// **Phase 4B:** Wires up ALL intelligence layers
+    /// **Industry Pattern:** Whoop Recovery Algorithm, Oura Readiness Pipeline
+    /// **Flow:** Context → Insights → Recommendations → Emotion → Response → Conversation Tracking
+    /// - Parameter query: User's natural language question
+    /// - Returns: Tuple of (enhanced response, goal-aware emotion)
+    private func executeIntelligentQuery(_ query: String) async -> (String, EmotionState) {
+        logger.info("🚀 Executing intelligent query pipeline for: \(query, privacy: .public)")
+
+        // Step 1: Build comprehensive insight context (cached 30s)
+        let context = await buildInsightContext()
+        logger.debug("✅ InsightContext built (goal: \(context.weightGoal?.description ?? "none", privacy: .public))")
+
+        // Step 2: Classify query intent
+        let intent = QueryClassifier.shared.classify(query)
+        logger.debug("✅ Query classified as: \(String(describing: intent), privacy: .public)")
+
+        // Step 3: Generate insights (multi-metric correlations)
+        let insights = await InsightGenerator.shared.generateInsights(context: context)
+        logger.debug("✅ Generated \(insights.insights.count) insights")
+
+        // Step 4: Generate recommendations (actionable advice)
+        let recommendations = await InsightGenerator.shared.generateRecommendations(context: context)
+        logger.debug("✅ Generated \(recommendations.count) recommendations")
+
+        // Step 5: Detect goal-aware emotion
+        let emotionContext = EmotionContext(
+            weightGoal: context.weightGoal,
+            currentWeight: context.currentWeight,
+            weightChangeWeek: context.weightChangeLast7Days,  // FIX: Use correct property name
+            fastingCountThisWeek: context.fastingCountThisWeek,
+            fastingCountLastWeek: context.fastingCountLastWeek
+        )
+        let emotion = EmotionEngine.shared.detectEmotion(context: emotionContext)
+        logger.debug("✅ Emotion detected: \(emotion.rawValue, privacy: .public)")
+
+        // Step 6: Convert InsightContext to intent-specific result object
+        // CRITICAL FIX: ResponseGenerator expects WeightAnalysisResult, not InsightContext
+        let result = await convertContextToResult(context: context, intent: intent)
+        logger.debug("✅ Result object prepared for intent: \(String(describing: intent), privacy: .public)")
+
+        // Step 7: Generate enhanced response (Phase 3D template system)
+        let response = ResponseGenerator.shared.generateEnhancedResponse(
+            for: intent,
+            result: result,  // Pass properly typed result (WeightAnalysisResult, etc.)
+            emotion: emotion,
+            userPreferences: .default,
+            insights: insights,
+            recommendations: recommendations,
+            conversationContext: nil  // TODO: Wire ConversationManager in Hour 3C
+        )
+        logger.info("✅ Enhanced response generated (\(response.count) chars)")
+
+        // Step 8: Track conversation (for multi-turn dialogue)
+        // TODO: Add conversation tracking with ConversationManager
+        logger.debug("⏭️ Conversation tracking (TODO: Phase 4B Hour 3)")
+
+        return (response, emotion)
+    }
+
+    // MARK: - Hybrid Query Routing (Phase 6: LLM Integration)
+
+    /// Execute query with hybrid routing (rule-based → LLM)
+    /// **Phase 6 Architecture:** Try rule-based first (fast, free, offline), fall back to LLM for complex queries
+    /// **Industry Pattern:** Siri, Google Assistant hybrid approach
+    /// - Parameter query: User's natural language question
+    /// - Returns: Tuple of (response, emotion)
+    private func executeHybridQuery(_ query: String) async -> (String, EmotionState) {
+
+        logger.info("🔀 Executing hybrid query: \(query, privacy: .public)")
+
+        // Step 1: Classify query intent
+        let intent = QueryClassifier.shared.classify(query)
+        logger.debug("📊 Query classified with confidence: \(intent.confidence, privacy: .public)")
+
+        // Step 2: High confidence → use rule-based system (fast, free, offline)
+        if intent.confidence > 0.8 {
+            logger.info("✅ High confidence (\(intent.confidence, privacy: .public)) - using rule-based intelligence")
+            return await executeIntelligentQuery(query) // Existing Phase 4B pipeline
+        }
+
+        // Step 3: Low confidence or complex query → check network connectivity
+        guard NetworkMonitor.shared.isConnected else {
+            logger.warning("⚠️ No internet connection - falling back to rule-based")
+            return await executeOfflineFallback(query)
+        }
+
+        // Step 4: Route to LLM for complex/nuanced queries
+        logger.info("🧠 Low confidence or complex query - routing to LLM")
+        return await executeLLMQuery(query)
+    }
+
+    /// Execute LLM query (complex/nuanced queries only)
+    /// **Cost:** ~$0.01-0.03 per query (GPT-4o-mini)
+    /// **Performance:** ~1-2s response time
+    /// - Parameter query: User's question
+    /// - Returns: Tuple of (LLM response with AInstein personality, emotion)
+    private func executeLLMQuery(_ query: String) async -> (String, EmotionState) {
+
+        logger.info("🤖 Executing LLM query")
+
+        do {
+            // Build health context from existing intelligence system
+            let insightContext = await buildInsightContext()
+
+            // Convert to LLM-compatible format (aggregated metrics only, privacy-protected)
+            let llmContext = convertToLLMContext(insightContext)
+
+            // Call OpenAI API with conversation history
+            let response = try await OpenAIService.shared.generateResponse(
+                query: query,
+                context: llmContext,
+                conversationHistory: messages.suffix(5).map { $0 } // Last 5 messages for context
+            )
+
+            // Apply AInstein personality filter (max 2 sentences, luxury empathy, signature)
+            let filteredResponse = AInsteinPersonality.shared.transform(response)
+
+            // Detect emotion from response sentiment (simple heuristic for now)
+            let emotion = detectEmotionFromLLMResponse(filteredResponse)
+
+            logger.info("✅ LLM response generated and filtered (\(filteredResponse.count) chars)")
+
+            return (filteredResponse, emotion)
+
+        } catch {
+            logger.error("❌ LLM query failed: \(error.localizedDescription)")
+
+            // Fallback to rule-based on LLM error
+            return await executeIntelligentQuery(query)
+        }
+    }
+
+    /// Offline fallback (no internet connection)
+    /// **UX:** Provide rule-based response + notice about offline status
+    /// - Parameter query: User's question
+    /// - Returns: Tuple of (rule-based response + notice, emotion)
+    private func executeOfflineFallback(_ query: String) async -> (String, EmotionState) {
+
+        logger.info("📴 Executing offline fallback")
+
+        // Execute rule-based intelligence system
+        let (response, emotion) = await executeIntelligentQuery(query)
+
+        // Append offline notice
+        let offlineNotice = "\n\n(You're offline. Connect to internet for more detailed AI insights.)"
+
+        return (response + offlineNotice, emotion)
+    }
+
+    /// Convert InsightContext → HealthContextForLLM (privacy-protected aggregated metrics)
+    /// **Privacy:** Send aggregated metrics only, never raw HealthKit samples
+    /// - Parameter context: Full insight context from intelligence system
+    /// - Returns: Privacy-protected LLM context
+    private func convertToLLMContext(_ context: InsightContext) -> HealthContextForLLM {
+        return HealthContextForLLM(
+            currentWeight: context.currentWeight ?? 0.0,
+            weightTrend: determineWeightTrend(context.weightChangeLast7Days),  // FIX: Use correct property name
+            weightGoal: context.weightGoal,
+            fastingFrequency: context.fastingCountThisWeek ?? 0,
+            sleepQuality: "unknown", // TODO: Wire up sleep quality from context
+            hydrationStatus: "unknown", // TODO: Wire up hydration from context
+            moodStatus: "unknown", // TODO: Wire up mood from context
+            lastFastDate: nil, // TODO: Wire up last fast date
+            weightChange30Days: context.weightChangeLast7Days ?? 0.0,  // FIX: Use correct property name
+            daysToGoal: nil // TODO: Calculate days to goal
+        )
+    }
+
+    /// Determine weight trend from weight change value
+    /// - Parameter weightChange: Weight change over period (negative = loss, positive = gain)
+    /// - Returns: Trend string ("up", "down", "stable")
+    private func determineWeightTrend(_ weightChange: Double?) -> String {
+        guard let change = weightChange else { return "stable" }
+
+        if change < -0.5 { return "down" }
+        if change > 0.5 { return "up" }
+        return "stable"
+    }
+
+    /// Detect emotion from LLM response sentiment (simple heuristic)
+    /// **Future:** Use sentiment analysis model
+    /// - Parameter response: LLM-generated response
+    /// - Returns: Detected emotion state
+    private func detectEmotionFromLLMResponse(_ response: String) -> EmotionState {
+        let lowercased = response.lowercased()
+
+        // Positive sentiment indicators → ES-5: energized
+        if lowercased.contains("great") || lowercased.contains("excellent") || lowercased.contains("amazing") {
+            return .energized
+        }
+
+        // Progress sentiment indicators → ES-5: energized
+        if lowercased.contains("progress") || lowercased.contains("improving") || lowercased.contains("on track") {
+            return .energized
+        }
+
+        // Encouraging sentiment indicators → ES-5: energized
+        if lowercased.contains("keep it up") || lowercased.contains("maintain") || lowercased.contains("consistent") {
+            return .energized
+        }
+
+        // Default: stable (neutral in ES-5)
+        return .stable
+    }
+
+    /// Convert InsightContext to intent-specific result object
+    /// **CRITICAL:** ResponseGenerator expects strongly-typed result objects (WeightAnalysisResult, etc.)
+    /// - Parameters:
+    ///   - context: Comprehensive insight context with all health data
+    ///   - intent: Classified query intent
+    /// - Returns: Properly typed result object for the intent
+    private func convertContextToResult(context: InsightContext, intent: QueryIntent) async -> Any {
+        switch intent {
+        case .currentWeight:
+            // CRITICAL FIX: Fetch current weight entry (with date) from dataService
+            // This ensures we get BOTH value AND date for proper formatting
+            if let currentWeightEntry = await dataService.getCurrentWeight() {
+                logger.debug("✅ getCurrentWeight() returned weight: \(currentWeightEntry.weight) lbs, date: \(currentWeightEntry.date, privacy: .public)")
+                return WeightAnalysisResult(
+                    value: currentWeightEntry.weight,
+                    date: currentWeightEntry.date,
+                    unit: "lbs",  // TODO: Get from UserPreferences
+                    timeRange: nil,
+                    metadata: nil
+                )
+            } else {
+                // This should NOT happen if user has weight data
+                logger.error("❌ getCurrentWeight() returned nil - user may have no weight data")
+                // Fallback: Return 0 weight with today's date
+                return WeightAnalysisResult(
+                    value: 0,
+                    date: Date(),
+                    unit: "lbs",
+                    timeRange: nil,
+                    metadata: nil
+                )
+            }
+
+        case .averageWeight, .minimumWeight, .maximumWeight:
+            // Use context weight data (simple fallback)
+            return WeightAnalysisResult(
+                value: context.currentWeight ?? 0,
+                date: Date(),
+                unit: "lbs",
+                timeRange: nil,
+                metadata: nil
+            )
+
+        case .weightChange(let period):
+            // Use week-over-week change from context
+            let change = context.weightChangeLast7Days ?? 0  // FIX: Use correct property name
+            let currentWeight = context.currentWeight ?? 0
+            let startWeight = currentWeight - change
+            let now = Date()
+            let weekAgo = now.addingTimeInterval(-7 * 86400)
+
+            return WeightChangeResult(
+                change: change,
+                startValue: startWeight,
+                endValue: currentWeight,
+                startDate: weekAgo,
+                endDate: now,
+                rate: change / 7.0,  // Change per day
+                unit: "lbs",
+                period: period
+            )
+
+        case .fastCount(let timeRange):
+            // Use fasting count from context
+            let count = timeRange == .thisWeek ? (context.fastingCountThisWeek ?? 0) : 0
+            return count
+
+        case .fastingStreak:
+            // Use current streak from context
+            return context.currentStreak ?? 0
+
+        case .weekOverWeek, .monthOverMonth, .yearOverYear:
+            // CRITICAL FIX: Comparison queries need full InsightContext for week-over-week templates
+            // These intents require access to fastingCountThisWeek, fastingCountLastWeek, weightChangeLast7Days
+            // ResponseGenerator.generateWeekOverWeekResponse() expects InsightContext, NOT WeightChangeResult
+            logger.debug("🔍 Returning InsightContext for comparison intent: \(String(describing: intent), privacy: .public)")
+            return context
+
+        default:
+            // Fallback: Return context itself for other intents
+            return context
+        }
+    }
+
+    // MARK: - Query Handling with Emotion (Phase 1 - Deprecated)
 
     /// Handle query and detect appropriate emotion
+    /// **DEPRECATED:** Use executeIntelligentQuery() instead (Phase 4B)
     /// Phase 1: Simple keyword matching + data context
     /// Phase 2: NLP + ML-based sentiment analysis
     /// - Parameter query: User's question
@@ -927,104 +856,5 @@ class LifeGPTViewModel: ObservableObject {
             """
         )
         messages.append(welcome)
-    }
-}
-
-// MARK: - Mock Health Data Analyzer (Temporary)
-
-/// Mock analyzer for testing until real services are wired up
-/// **TODO:** Replace with production HealthDataAnalysisService when WeightService/FastingService ready
-private class MockHealthDataAnalyzer: HealthDataAnalyzerProtocol {
-
-    func findMinimumWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
-        throw AnalysisError.noData
-    }
-
-    func findMaximumWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
-        throw AnalysisError.noData
-    }
-
-    func calculateAverageWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
-        throw AnalysisError.noData
-    }
-
-    func calculateMedianWeight(in timeRange: TimeRange?) async throws -> WeightAnalysisResult {
-        throw AnalysisError.noData
-    }
-
-    func calculateWeightPercentile(value: Double, in timeRange: TimeRange?) async throws -> Double {
-        throw AnalysisError.noData
-    }
-
-    func findLargestWeightLoss(period: TimePeriod) async throws -> WeightChangeResult {
-        throw AnalysisError.noData
-    }
-
-    func findLargestWeightGain(period: TimePeriod) async throws -> WeightChangeResult {
-        throw AnalysisError.noData
-    }
-
-    func calculateWeightChange(period: TimePeriod) async throws -> WeightChangeResult {
-        throw AnalysisError.noData
-    }
-
-    func calculateWeightChangeRate(period: TimePeriod) async throws -> Double {
-        throw AnalysisError.noData
-    }
-
-    func calculateWeightDelta(from startDate: Date, to endDate: Date) async throws -> WeightChangeResult {
-        throw AnalysisError.noData
-    }
-
-    func countFasts(in timeRange: TimeRange?) async throws -> Int {
-        throw AnalysisError.noData
-    }
-
-    func findLongestFast(in timeRange: TimeRange?) async throws -> FastingAnalysisResult {
-        throw AnalysisError.noData
-    }
-
-    func calculateFastingStreak() async throws -> Int {
-        throw AnalysisError.noData
-    }
-
-    func calculateCompletionRate(in timeRange: TimeRange?) async throws -> Double {
-        throw AnalysisError.noData
-    }
-
-    func calculateAverageFastDuration(in timeRange: TimeRange?) async throws -> Double {
-        throw AnalysisError.noData
-    }
-
-    func detectFastingProtocol(in timeRange: TimeRange?) async throws -> String {
-        throw AnalysisError.noData
-    }
-
-    func calculateTotalFastingHours(in timeRange: TimeRange?) async throws -> Double {
-        throw AnalysisError.noData
-    }
-
-    func calculateFastFrequency(in timeRange: TimeRange?) async throws -> Double {
-        throw AnalysisError.noData
-    }
-
-    func analyzeWeightTrend(in timeRange: TimeRange?) async throws -> TrendAnalysisResult {
-        throw AnalysisError.noData
-    }
-
-    func calculateMovingAverage(days: Int) async throws -> Double {
-        throw AnalysisError.noData
-    }
-
-    func predictGoalCompletion(targetValue: Double) async throws -> Date? {
-        return nil
-    }
-
-    func isOnTrackToGoal(targetValue: Double, targetDate: Date) async throws -> Bool {
-        throw AnalysisError.noData
-    }
-
-    func calculateRateOfChange(in timeRange: TimeRange?) async throws -> Double {
-        throw AnalysisError.noData
     }
 }

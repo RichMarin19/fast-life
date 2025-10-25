@@ -14,6 +14,7 @@ import Foundation
 /// Phase 1: Fast LIFe data only (simple, fast, works for all users)
 /// Phase 2: Add HealthKit data merge for users with sync enabled
 /// Following Fast LIFe's protocol-based dependency injection pattern
+@MainActor
 class UnifiedHealthDataService: HealthDataAggregator {
 
     // MARK: - Dependencies
@@ -104,14 +105,14 @@ class UnifiedHealthDataService: HealthDataAggregator {
 
     func fetchAllHydrationData() async -> [(Date, Double)] {
         // Phase 1: Fast LIFe data only
-        // Convert HydrationEntry to (Date, Double) format
-        return hydrationManager.hydrationHistory.map { entry in
+        // Convert DrinkEntry to (Date, Double) format
+        return hydrationManager.drinkEntries.map { entry in
             (entry.date, entry.amount)
         }
     }
 
     func fetchHydrationData(from startDate: Date, to endDate: Date) async -> [(Date, Double)] {
-        return hydrationManager.hydrationHistory
+        return hydrationManager.drinkEntries
             .filter { entry in
                 entry.date >= startDate && entry.date <= endDate
             }
@@ -123,7 +124,7 @@ class UnifiedHealthDataService: HealthDataAggregator {
         let today = calendar.startOfDay(for: Date())
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? Date()
 
-        return hydrationManager.hydrationHistory
+        return hydrationManager.drinkEntries
             .filter { entry in
                 entry.date >= today && entry.date < tomorrow
             }
@@ -168,7 +169,9 @@ class UnifiedHealthDataService: HealthDataAggregator {
         if let currentFast = await getCurrentFast() {
             summary["fastingActive"] = true
             summary["fastingDuration"] = currentFast.duration
-            summary["fastingElapsed"] = currentFast.elapsedTime
+            // Calculate elapsed time for active fast (endTime is nil for active fasts)
+            let elapsed = Date().timeIntervalSince(currentFast.startTime)
+            summary["fastingElapsed"] = elapsed
         } else {
             summary["fastingActive"] = false
         }
@@ -179,8 +182,8 @@ class UnifiedHealthDataService: HealthDataAggregator {
 
         // Mood
         if let todayMood = await getTodayMood() {
-            summary["mood"] = todayMood.rating
-            summary["energy"] = todayMood.energy
+            summary["mood"] = todayMood.moodLevel
+            summary["energy"] = todayMood.energyLevel
         }
 
         // Sleep (last night)

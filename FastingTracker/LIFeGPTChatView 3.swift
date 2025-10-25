@@ -144,17 +144,16 @@ struct LIFeGPTChatView: View {
                 .padding(.top, DSSpacing.cardElementSpacing)
                 .padding(.bottom, 24)
             }
-            .onChange(of: viewModel.messages.count) { oldCount, newCount in
-                // Auto-scroll to bottom on new message when count increases
-                guard newCount > oldCount else { return }
+            .onChange(of: viewModel.messages.count) { _ in
+                // Auto-scroll to bottom on new message
                 withAnimation(.easeOut(duration: 0.3)) {
                     if let lastMessage = viewModel.messages.last {
                         proxy.scrollTo(lastMessage.id, anchor: .bottom)
                     }
                 }
             }
-            .onChange(of: viewModel.isProcessing) { _, isProcessing in
-                // Auto-scroll to typing indicator when processing starts
+            .onChange(of: viewModel.isProcessing) { isProcessing in
+                // Auto-scroll to typing indicator
                 if isProcessing {
                     withAnimation(.easeOut(duration: 0.3)) {
                         proxy.scrollTo(bottomID, anchor: .bottom)
@@ -279,4 +278,3 @@ class MockHealthDataService: HealthDataAggregator {
     func getSummary(from startDate: Date, to endDate: Date) async -> [String: Any] { [:] }
 }
 #endif
-

@@ -14,6 +14,7 @@ import Foundation
 /// Phase 1: Fast LIFe data only (simple, fast, works for all users)
 /// Phase 2: Add HealthKit data merge for users with sync enabled
 /// Following Fast LIFe's protocol-based dependency injection pattern
+@MainActor
 class UnifiedHealthDataService: HealthDataAggregator {
 
     // MARK: - Dependencies
@@ -53,69 +54,51 @@ class UnifiedHealthDataService: HealthDataAggregator {
     func fetchAllWeightData() async -> [WeightEntry] {
         // Phase 1: Fast LIFe data only
         // Phase 2: Merge with HealthKit data, deduplicate
-        return await MainActor.run {
-            weightManager.weightEntries
-        }
+        return weightManager.weightEntries
     }
 
     func fetchWeightData(from startDate: Date, to endDate: Date) async -> [WeightEntry] {
-        return await MainActor.run {
-            weightManager.weightEntries.filter { entry in
-                entry.date >= startDate && entry.date <= endDate
-            }
+        return weightManager.weightEntries.filter { entry in
+            entry.date >= startDate && entry.date <= endDate
         }
     }
 
     func getCurrentWeight() async -> WeightEntry? {
-        return await MainActor.run {
-            weightManager.weightEntries.first
-        }
+        return weightManager.weightEntries.first
     }
 
     // MARK: - Fasting Data
 
     func fetchAllFastingSessions() async -> [FastingSession] {
         // Phase 1: Fast LIFe data only
-        return await MainActor.run {
-            fastingManager.fastingHistory
-        }
+        return fastingManager.fastingHistory
     }
 
     func fetchFastingSessions(from startDate: Date, to endDate: Date) async -> [FastingSession] {
-        return await MainActor.run {
-            fastingManager.fastingHistory.filter { session in
-                session.startTime >= startDate && session.startTime <= endDate
-            }
+        return fastingManager.fastingHistory.filter { session in
+            session.startTime >= startDate && session.startTime <= endDate
         }
     }
 
     func getCurrentFast() async -> FastingSession? {
-        return await MainActor.run {
-            fastingManager.currentSession
-        }
+        return fastingManager.currentSession
     }
 
     // MARK: - Sleep Data
 
     func fetchAllSleepData() async -> [SleepEntry] {
         // Phase 1: Fast LIFe data only
-        return await MainActor.run {
-            sleepManager.sleepEntries
-        }
+        return sleepManager.sleepEntries
     }
 
     func fetchSleepData(from startDate: Date, to endDate: Date) async -> [SleepEntry] {
-        return await MainActor.run {
-            sleepManager.sleepEntries.filter { entry in
-                entry.bedTime >= startDate && entry.bedTime <= endDate
-            }
+        return sleepManager.sleepEntries.filter { entry in
+            entry.bedTime >= startDate && entry.bedTime <= endDate
         }
     }
 
     func getLastNightSleep() async -> SleepEntry? {
-        return await MainActor.run {
-            sleepManager.sleepEntries.first
-        }
+        return sleepManager.sleepEntries.first
     }
 
     // MARK: - Hydration Data
@@ -123,55 +106,51 @@ class UnifiedHealthDataService: HealthDataAggregator {
     func fetchAllHydrationData() async -> [(Date, Double)] {
         // Phase 1: Fast LIFe data only
         // Convert DrinkEntry to (Date, Double) format
-        return await MainActor.run {
-            hydrationManager.drinkEntries.map { entry in
-                (entry.date, entry.amount)
-            }
+        return hydrationManager.drinkEntries.map { entry in
+            (entry.date, entry.amount)
         }
     }
 
     func fetchHydrationData(from startDate: Date, to endDate: Date) async -> [(Date, Double)] {
-        return await MainActor.run {
-            hydrationManager.drinkEntries
-                .filter { entry in
-                    entry.date >= startDate && entry.date <= endDate
-                }
-                .map { ($0.date, $0.amount) }
-        }
+        return hydrationManager.drinkEntries
+            .filter { entry in
+                entry.date >= startDate && entry.date <= endDate
+            }
+            .map { ($0.date, $0.amount) }
     }
 
     func getTodayHydration() async -> Double {
-        return await MainActor.run {
-            hydrationManager.todaysTotalOunces()
-        }
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? Date()
+
+        return hydrationManager.drinkEntries
+            .filter { entry in
+                entry.date >= today && entry.date < tomorrow
+            }
+            .reduce(0.0) { $0 + $1.amount }
     }
 
     // MARK: - Mood Data
 
     func fetchAllMoodData() async -> [MoodEntry] {
         // Phase 1: Fast LIFe data only
-        return await MainActor.run {
-            moodManager.moodEntries
-        }
+        return moodManager.moodEntries
     }
 
     func fetchMoodData(from startDate: Date, to endDate: Date) async -> [MoodEntry] {
-        return await MainActor.run {
-            moodManager.moodEntries.filter { entry in
-                entry.date >= startDate && entry.date <= endDate
-            }
+        return moodManager.moodEntries.filter { entry in
+            entry.date >= startDate && entry.date <= endDate
         }
     }
 
     func getTodayMood() async -> MoodEntry? {
-        return await MainActor.run {
-            let calendar = Calendar.current
-            let today = calendar.startOfDay(for: Date())
-            let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? Date()
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: today) ?? Date()
 
-            return moodManager.moodEntries.first { entry in
-                entry.date >= today && entry.date < tomorrow
-            }
+        return moodManager.moodEntries.first { entry in
+            entry.date >= today && entry.date < tomorrow
         }
     }
 
@@ -190,9 +169,9 @@ class UnifiedHealthDataService: HealthDataAggregator {
         if let currentFast = await getCurrentFast() {
             summary["fastingActive"] = true
             summary["fastingDuration"] = currentFast.duration
-            // Calculate elapsed time manually
-            let elapsedTime = Date().timeIntervalSince(currentFast.startTime)
-            summary["fastingElapsed"] = elapsedTime
+            // Calculate elapsed time for active fast (endTime is nil for active fasts)
+            let elapsed = Date().timeIntervalSince(currentFast.startTime)
+            summary["fastingElapsed"] = elapsed
         } else {
             summary["fastingActive"] = false
         }
@@ -253,7 +232,7 @@ class UnifiedHealthDataService: HealthDataAggregator {
         // Mood
         let moodData = await fetchMoodData(from: startDate, to: endDate)
         summary["moodEntries"] = moodData.count
-        if let avgMood = moodData.map({ Double($0.moodLevel) }).average() {
+        if let avgMood = moodData.map({ Double($0.rating) }).average() {
             summary["avgMood"] = avgMood
         }
 

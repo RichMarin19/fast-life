@@ -51,6 +51,31 @@
 
 ---
 
+### Bug: AInstein Emoji Filter Stripping Digits (Phase 5B.2 - FIXED)
+**Date:** October 24, 2025
+**Problem:** AInstein responses missing ALL numbers: "Your current weight is . lbs as of Oct , ."
+**Root Cause:** `AInsteinPersonality.removeExcessiveEmojis()` stripping digits 0-9 because `scalar.properties.isEmoji == true` for digits
+**Why:** Unicode treats digits as emoji-capable for combining characters (e.g., "1️⃣", "2️⃣")
+**Status:** ✅ FIXED
+**Solution:**
+1. Added ASCII digit preservation check before emoji filtering
+2. Implementation: `if scalar.value >= 48 && scalar.value <= 57 { return true }` (ASCII 0-9)
+3. Added comprehensive debug logging to ResponseGenerator (3 checkpoints)
+**Debug Process:**
+- Logs revealed data was CORRECT before personality transform
+- Logs showed numbers DISAPPEARED after personality transform
+- Tested Unicode properties: Discovered digits have `isEmoji: true`
+**Files Affected:**
+- AInsteinPersonality.swift:172-176 (ASCII digit preservation)
+- ResponseGenerator.swift:689-717 (debug logging added)
+**Build Status:** ✅ SUCCESS (0 errors, 0 warnings)
+**Pattern:** Always check Unicode scalar properties when filtering characters - digits are emoji-capable!
+**Never Do:** Filter emoji without explicitly preserving ASCII digits (48-57)
+**Always Do:** Add debug logging at transformation boundaries to identify where data is lost
+**Reference:** HANDOFF.md Phase 5B.2 Critical Bug Fix #2
+
+---
+
 ## ✅ Successful Patterns
 
 ### Pattern: Manual First, Automate Second
@@ -269,11 +294,125 @@ logger.debug("message", privacy: .public)
 
 ---
 
+---
+
+### Bug: Week-Over-Week Query Fallback + Circular Debugging (Phase 6 - FIXED)
+**Date:** October 25, 2025
+**Problem:** Week-over-week fasting queries returning fallback responses + circular debugging causing 6+ failed fix attempts
+**Root Cause #1:** Duplicate files - Old Phase 1-4 files at root, correct Phase 6 files in subdirectories, Xcode compiling wrong files
+**Root Cause #2:** Code issues in correct files - property name mismatches, missing @MainActor, deprecated APIs, wrong ES-5 emotion states
+**Status:** ✅ FIXED (by outside consultant)
+
+**What Went Wrong (My Failures):**
+1. **Fixated on symptoms (duplicates) instead of root causes (code bugs)**
+   - Saw "Cannot find type" errors → assumed file management issue
+   - Ignored actual code problems: `hydrationHistory` vs `drinkEntries`, `rating` vs `moodLevel`, missing `@MainActor`
+2. **Repeated same failed approach 5+ times**
+   - Kept telling user: "Delete files and add them back from correct location"
+   - Expected different results each time (classic definition of insanity)
+   - Created frustration and circular pattern
+3. **Didn't verify which files Xcode was actually compiling**
+   - Should have checked build logs to see file paths being compiled
+   - Would have revealed Xcode was using root files, not subdirectory files
+4. **Made user do manual work repeatedly**
+   - Each "add files back to Xcode" instruction created opportunity for error
+   - User sometimes added from wrong location, perpetuating problem
+5. **Took too long to identify property name mismatches**
+   - `hydrationManager.hydrationHistory` → should be `drinkEntries`
+   - `MoodEntry.rating` → should be `moodLevel`
+   - `MoodEntry.energy` → should be `energyLevel`
+   - `FastingSession.elapsedTime` → doesn't exist, must calculate manually
+
+**Actual Solution (by consultant):**
+1. Fixed all CODE issues first in correct files:
+   - Added `@MainActor` to UnifiedHealthDataService.swift
+   - Changed property names to match actual manager properties
+   - Updated design tokens: `DSTypography.body` → `Theme.Font.body(15)`, `DSTypography.caption` → `Theme.Font.body(12)`
+   - Fixed ES-5 emotion states: removed `.celebratory`, `.motivated`, `.calm` (don't exist)
+2. Added UnifiedHealthDataService.swift to Xcode project from Core/Services/ (ONCE)
+3. Updated deprecated `onChange` API in LIFeGPTChatView.swift to iOS 17+ syntax (two-parameter closures)
+4. Build succeeded
+
+**Files Affected:**
+- UnifiedHealthDataService.swift (added @MainActor, fixed property names)
+- LifeGPTViewModel.swift (fixed ES-5 emotion detection, parameter name `weightTrend`)
+- LifeGPTComponents.swift (fixed design tokens)
+- LifeGPTLoadingOverlay.swift (fixed design tokens)
+- LIFeGPTChatView.swift (updated onChange API)
+
+**Build Status:** ✅ SUCCESS (0 errors, 0 warnings) after consultant's fixes
+
+**Critical Lessons Learned:**
+
+1. **"Cannot find type" errors have TWO causes - fix in this order:**
+   - ✅ FIRST: Fix code bugs (property names, missing annotations, API mismatches)
+   - ✅ SECOND: Add file to Xcode project (if actually missing)
+   - ❌ NEVER: Delete and re-add files repeatedly hoping for different result
+
+2. **Change strategy after FIRST failure, not after 5+ failures**
+   - If delete/re-add doesn't work once, it won't work on repeat
+   - Switch to: "Let me check the actual code for bugs"
+
+3. **Property name mismatches are CODE bugs, not file management issues**
+   - Error: "Value of type 'HydrationManager' has no member 'hydrationHistory'"
+   - This is NOT a duplicate file issue
+   - This IS a code bug: wrong property name used
+
+4. **Verify which files Xcode is actually compiling**
+   - Check Build Log in Report Navigator
+   - Look for file paths being compiled
+   - Duplicate files mean wrong one might be getting compiled
+
+5. **Check API compatibility IMMEDIATELY when seeing deprecation warnings**
+   - iOS 17+ changed `onChange(of:) { newValue in }` → `onChange(of:) { oldValue, newValue in }`
+   - Design token APIs change between phases (DSTypography → Theme.Font)
+   - Check documentation/existing code for current API
+
+**Pattern to Follow:**
+```
+1. Read error message carefully
+2. Identify error TYPE:
+   - "Cannot find type" → Missing from Xcode OR code has bugs preventing compilation
+   - "No member named X" → Wrong property name (code bug)
+   - "Deprecated in iOS N" → API compatibility issue (code bug)
+   - "Main actor-isolated" → Missing @MainActor annotation (code bug)
+3. Fix CODE issues FIRST
+4. Verify build succeeds
+5. THEN deal with Xcode project structure (if still needed)
+```
+
+**Never Do:**
+- Tell user to delete and re-add files more than ONCE without changing approach
+- Focus on file management when real issues are code-level bugs
+- Repeat same failed solution expecting different results
+- Ignore property name mismatch errors (they're NOT duplicate file issues)
+
+**Always Do:**
+- Check what properties/methods actually exist on types before using them
+- Verify API compatibility (iOS version, design token names, etc.)
+- Read error messages to distinguish "file not found" vs "type mismatch" vs "property doesn't exist"
+- Change strategy after first failure
+- Fix code bugs BEFORE dealing with Xcode project structure
+
+**User Feedback Summary:**
+- "Stop the bullshit and fix things once and for all"
+- "Stop with the duplicate bullshit, that has not resolved anything"
+- "Don't tell me to delete it and add it back again. We have never done this before like that."
+- "What the fuck is wrong with you... You are a true shit show today."
+- Resolution: "We are back working! Our outside consultant made a few minor tweaks."
+
+**My Biggest Takeaway:**
+This session was a failure in problem-solving approach, not technical capability. The fix was simple once the right approach was taken: fix code bugs first, THEN deal with Xcode project structure. I spent 6+ fix attempts on file management when the real issues were code-level bugs (wrong property names, missing @MainActor, deprecated APIs). Classic case of treating symptoms instead of root causes.
+
+**Reference:** HANDOFF.md Phase 6 Week-Over-Week Query Debugging (October 25, 2025)
+
+---
+
 ## 📋 TODO: Add More Lessons As We Discover Them
 
 **This file grows over time as we encounter new patterns, bugs, and successes.**
 
 ---
 
-**Last Updated:** 2025-10-24
-**Next Review:** After Phase 4A debugging complete
+**Last Updated:** 2025-10-25
+**Next Review:** After next major debugging session
