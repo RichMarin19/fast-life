@@ -48,24 +48,36 @@ class OpenAIService {
     // MARK: - Public API
 
     /// Generate LLM response for complex health query
+    /// **Phase 7:** Now accepts custom system prompt with guardrails
     /// - Parameters:
     ///   - query: User's question
     ///   - context: Aggregated health data (privacy-protected)
     ///   - conversationHistory: Last 5 messages for context
+    ///   - customSystemPrompt: Optional Phase 7 system prompt with guardrails (overrides default)
     /// - Returns: AInstein's intelligent response
     func generateResponse(
         query: String,
         context: HealthContextForLLM,
-        conversationHistory: [ChatMessage] = []
+        conversationHistory: [ChatMessage] = [],
+        customSystemPrompt: String? = nil
     ) async throws -> String {
 
         logger.info("Generating LLM response for query: \(query, privacy: .public)")
 
-        // Build system prompt (AInstein personality + health coaching role)
-        let systemPrompt = buildSystemPrompt()
+        // Phase 7: Use custom system prompt if provided (with guardrails), otherwise use Phase 6 default
+        let systemPrompt = customSystemPrompt ?? buildSystemPrompt()
+        if customSystemPrompt != nil {
+            logger.debug("✅ Using Phase 7 custom system prompt (\(systemPrompt.count) chars)")
+        }
 
         // Build user prompt (health context + query)
-        let userPrompt = buildUserPrompt(query: query, context: context)
+        // Phase 7: When using custom system prompt, user prompt is just the query (context already in system prompt)
+        let userPrompt: String
+        if customSystemPrompt != nil {
+            userPrompt = query // Context already embedded in Phase 7 system prompt
+        } else {
+            userPrompt = buildUserPrompt(query: query, context: context) // Phase 6 format
+        }
 
         // Build conversation messages
         var messages: [[String: String]] = [
@@ -75,8 +87,8 @@ class OpenAIService {
         // Add conversation history (last 5 messages for cost optimization)
         for message in conversationHistory.suffix(5) {
             messages.append([
-                "role": message.isUser ? "user" : "assistant",
-                "content": message.text
+                "role": message.isFromUser ? "user" : "assistant",
+                "content": message.content
             ])
         }
 

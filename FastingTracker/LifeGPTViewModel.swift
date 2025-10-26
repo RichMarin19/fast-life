@@ -295,7 +295,7 @@ class LifeGPTViewModel: ObservableObject {
         let emotionContext = EmotionContext(
             weightGoal: context.weightGoal,
             currentWeight: context.currentWeight,
-            weightChangeWeek: context.weightChangeLast7Days,  // FIX: Use correct property name
+            weightTrend: context.weightChangeLast7Days,
             fastingCountThisWeek: context.fastingCountThisWeek,
             fastingCountLastWeek: context.fastingCountLastWeek
         )
@@ -329,72 +329,107 @@ class LifeGPTViewModel: ObservableObject {
     // MARK: - Hybrid Query Routing (Phase 6: LLM Integration)
 
     /// Execute query with hybrid routing (rule-based → LLM)
-    /// **Phase 6 Architecture:** Try rule-based first (fast, free, offline), fall back to LLM for complex queries
-    /// **Industry Pattern:** Siri, Google Assistant hybrid approach
+    /// **Phase 7 Architecture:** LLM-primary intelligence with rule-based safety net
+    /// **Industry Pattern:** Whoop Coach, Oura Advisor (trust LLM with system prompt guardrails)
     /// - Parameter query: User's natural language question
     /// - Returns: Tuple of (response, emotion)
     private func executeHybridQuery(_ query: String) async -> (String, EmotionState) {
 
-        logger.info("🔀 Executing hybrid query: \(query, privacy: .public)")
+        logger.info("🔀 PHASE 7 HYBRID ROUTING START - Query: \(query, privacy: .public)")
 
         // Step 1: Classify query intent
         let intent = QueryClassifier.shared.classify(query)
-        logger.debug("📊 Query classified with confidence: \(intent.confidence, privacy: .public)")
+        logger.info("📊 QueryClassifier returned - Intent: \(String(describing: intent), privacy: .public), Confidence: \(intent.confidence, privacy: .public)")
 
-        // Step 2: High confidence → use rule-based system (fast, free, offline)
-        if intent.confidence > 0.8 {
-            logger.info("✅ High confidence (\(intent.confidence, privacy: .public)) - using rule-based intelligence")
+        // Step 2: EXTREMELY high confidence (>0.95) → use rule-based system (fast, free, offline)
+        // Phase 7: Lowered threshold from 0.8 → 0.95 (ONLY exact matches like "What's my weight?")
+        // Anything below 0.95 = complex/nuanced query → route to LLM for intelligent analysis
+        if intent.confidence > 0.95 {
+            logger.info("✅ ROUTING TO RULE-BASED - Confidence \(intent.confidence, privacy: .public) > 0.95 threshold")
             return await executeIntelligentQuery(query) // Existing Phase 4B pipeline
         }
 
+        logger.info("🧠 Confidence \(intent.confidence, privacy: .public) ≤ 0.95 - Should route to LLM")
+
         // Step 3: Low confidence or complex query → check network connectivity
-        guard NetworkMonitor.shared.isConnected else {
-            logger.warning("⚠️ No internet connection - falling back to rule-based")
+        let isConnected = NetworkMonitor.shared.isConnected
+        logger.info("📡 Network status: \(isConnected ? "CONNECTED" : "OFFLINE", privacy: .public)")
+
+        guard isConnected else {
+            logger.warning("⚠️ NO INTERNET - Falling back to rule-based despite low confidence")
             return await executeOfflineFallback(query)
         }
 
-        // Step 4: Route to LLM for complex/nuanced queries
-        logger.info("🧠 Low confidence or complex query - routing to LLM")
+        // Step 4: Route to LLM for complex/nuanced/conversational queries
+        // Phase 7: LLM handles 70%+ of queries with system prompt guardrails
+        logger.info("🚀 ROUTING TO LLM - Confidence: \(intent.confidence, privacy: .public), Network: CONNECTED")
         return await executeLLMQuery(query)
     }
 
     /// Execute LLM query (complex/nuanced queries only)
+    /// **Phase 7:** Now uses AInsteinSystemPrompt with comprehensive guardrails
     /// **Cost:** ~$0.01-0.03 per query (GPT-4o-mini)
     /// **Performance:** ~1-2s response time
     /// - Parameter query: User's question
     /// - Returns: Tuple of (LLM response with AInstein personality, emotion)
     private func executeLLMQuery(_ query: String) async -> (String, EmotionState) {
 
-        logger.info("🤖 Executing LLM query")
+        logger.info("🤖 ===== EXECUTING LLM QUERY START =====")
+        logger.info("🤖 Query: \(query, privacy: .public)")
 
         do {
             // Build health context from existing intelligence system
+            logger.info("🤖 Step 1: Building InsightContext...")
             let insightContext = await buildInsightContext()
+            logger.info("🤖 Step 1 COMPLETE: InsightContext built")
 
-            // Convert to LLM-compatible format (aggregated metrics only, privacy-protected)
+            // Phase 7: Format context using AInsteinSystemPrompt
+            logger.info("🤖 Step 2: Formatting context with AInsteinSystemPrompt...")
+            let formattedContext = AInsteinSystemPrompt.formatContext(from: insightContext)
+            logger.info("🤖 Step 2 COMPLETE: Context formatted (\(formattedContext.count) chars)")
+            logger.debug("📊 Formatted context: \(formattedContext, privacy: .public)")
+
+            // Phase 7: Generate complete system prompt with guardrails
+            logger.info("🤖 Step 3: Generating Phase 7 system prompt...")
+            let systemPrompt = AInsteinSystemPrompt.generatePrompt(with: formattedContext)
+            logger.info("🤖 Step 3 COMPLETE: System prompt generated (\(systemPrompt.count) chars)")
+
+            // Call OpenAI API with Phase 7 system prompt
+            logger.info("🤖 Step 4: Calling OpenAI API...")
             let llmContext = convertToLLMContext(insightContext)
-
-            // Call OpenAI API with conversation history
             let response = try await OpenAIService.shared.generateResponse(
                 query: query,
                 context: llmContext,
-                conversationHistory: messages.suffix(5).map { $0 } // Last 5 messages for context
+                conversationHistory: messages.suffix(5).map { $0 }, // Last 5 messages for context
+                customSystemPrompt: systemPrompt // Phase 7: Use AInsteinSystemPrompt with guardrails
             )
+            logger.info("🤖 Step 4 COMPLETE: OpenAI returned response (\(response.count) chars)")
+            logger.debug("📝 Raw OpenAI response: \(response, privacy: .public)")
+
+            // Phase 7: Validate response for hallucinations and tone enforcement
+            logger.info("🤖 Step 5: Validating response with ResponseValidator...")
+            let validatedResponse = ResponseValidator.validate(response, against: insightContext)
+            logger.info("🤖 Step 5 COMPLETE: Response validated (\(validatedResponse.count) chars)")
 
             // Apply AInstein personality filter (max 2 sentences, luxury empathy, signature)
-            let filteredResponse = AInsteinPersonality.shared.transform(response)
+            logger.info("🤖 Step 6: Applying AInstein personality filter...")
+            let filteredResponse = AInsteinPersonality.shared.transform(validatedResponse)
+            logger.info("🤖 Step 6 COMPLETE: Personality filter applied (\(filteredResponse.count) chars)")
+            logger.debug("📝 Final filtered response: \(filteredResponse, privacy: .public)")
 
             // Detect emotion from response sentiment (simple heuristic for now)
             let emotion = detectEmotionFromLLMResponse(filteredResponse)
 
-            logger.info("✅ LLM response generated and filtered (\(filteredResponse.count) chars)")
+            logger.info("✅ ===== LLM QUERY COMPLETE - Emotion: \(emotion.rawValue, privacy: .public) =====")
 
             return (filteredResponse, emotion)
 
         } catch {
-            logger.error("❌ LLM query failed: \(error.localizedDescription)")
+            logger.error("❌ ===== LLM QUERY FAILED: \(error.localizedDescription, privacy: .public) =====")
+            logger.error("❌ Error type: \(String(describing: type(of: error)), privacy: .public)")
 
             // Fallback to rule-based on LLM error
+            logger.info("⚠️ Falling back to rule-based system due to LLM error")
             return await executeIntelligentQuery(query)
         }
     }
