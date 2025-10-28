@@ -64,6 +64,7 @@
 		52B2CFC72E95A9C80061FCFF /* CrashReportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC42E95A9C80061FCFF /* CrashReportManager.swift */; };
 		52B2CFC82E95A9C80061FCFF /* Core/Persistence/DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC52E95A9C80061FCFF /* Core/Persistence/DataStore.swift */; };
 		52B2CFCB2E95A9F50061FCFF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 52B2CFCA2E95A9F50061FCFF /* GoogleService-Info.plist */; };
+		52FA00022EAD00000085B999 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */; };
 		52B2CFCF2E96C3060061FCFF /* HealthDataSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */; };
 		52B2CFD02E96C3060061FCFF /* HealthDataType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCE2E96C3060061FCFF /* HealthDataType.swift */; };
 		52B2CFD12E96C3060061FCFF /* HealthDataPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCC2E96C3060061FCFF /* HealthDataPreferences.swift */; };
@@ -209,6 +210,7 @@
 		52B2CFC42E95A9C80061FCFF /* CrashReportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/CrashReportManager.swift; sourceTree = "<group>"; };
 		52B2CFC52E95A9C80061FCFF /* Core/Persistence/DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Persistence/DataStore.swift; sourceTree = "<group>"; };
 		52B2CFCA2E95A9F50061FCFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		52B2CFCC2E96C3060061FCFF /* HealthDataPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Configuration/HealthDataPreferences.swift; sourceTree = "<group>"; };
 		52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HealthDataSelectionView.swift; sourceTree = "<group>"; };
 		52B2CFCE2E96C3060061FCFF /* HealthDataType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/HealthDataType.swift; sourceTree = "<group>"; };
@@ -393,6 +395,7 @@
 				52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */,
 				52B2CFCE2E96C3060061FCFF /* HealthDataType.swift */,
 				52B2CFCA2E95A9F50061FCFF /* GoogleService-Info.plist */,
+				52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */,
 				52B2CFC42E95A9C80061FCFF /* CrashReportManager.swift */,
 				52B2CFC52E95A9C80061FCFF /* Core/Persistence/DataStore.swift */,
 				52B2CFC22E94EE630061FCFF /* AppLogger.swift */,
@@ -565,6 +568,7 @@
 			files = (
 				A1000013000000000000001 /* Assets.xcassets in Resources */,
 				52B2CFCB2E95A9F50061FCFF /* GoogleService-Info.plist in Resources */,
+				52FA00022EAD00000085B999 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
