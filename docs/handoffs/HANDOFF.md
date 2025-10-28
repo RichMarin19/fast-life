@@ -137,5 +137,51 @@
 
 ---
 
-**Last Updated:** October 27, 2025 - 9:55 PM | **Version:** 2.3.0 Build 12 | **Current Phase:** Phase 8.6 ✅ COMPLETE
+---
+
+## ✅ Phase 8.7: Date-Driven HealthKit Weight Auto-Population (October 27, 2025)
+
+**Status:** ✅ COMPLETE - Date-first HealthKit workflow implemented
+
+**Problem:** Previous implementation showed a list of recent HealthKit entries (limited to 90 days), but user wanted date selection to drive weight lookup
+
+**What Was Implemented:**
+1. ✅ **Date Picker First**: User selects ANY historical date (no limitations)
+2. ✅ **Automatic HealthKit Query**: When date changes, app queries HealthKit for weight on that specific date
+3. ✅ **Auto-Population**: If weight found → fills "Start Weight" field automatically
+4. ✅ **Manual Fallback**: If no weight found → field stays empty for user to type
+5. ✅ **Unlimited History**: No 10-day or 90-day limits - user can go back years
+
+**Workflow:**
+```
+User taps "Start Date" picker
+→ Selects date (e.g., "January 15, 2024")
+→ App queries HealthKit for Jan 15, 2024
+→ IF weight exists: Auto-populate "Start Weight" field (e.g., "185.0")
+→ IF no weight: Leave field empty for manual entry
+→ User can change date anytime to query different dates
+```
+
+**File Modified:** `FastingTracker/UI/Components/WeightSetupComponents.swift`
+
+**Key Changes:**
+- ✅ Removed HealthKit picker list UI (60 lines simplified)
+- ✅ Simplified state variables (removed hasHealthKitData, historicalEntries, selectedEntry, useManualEntry)
+- ✅ Date picker always visible in main UI
+- ✅ Added `.onChange(of: startDate)` modifier to trigger HealthKit query
+- ✅ Created `queryHealthKitForDate()` function - queries specific date only (not date range)
+- ✅ Auto-populates weight field when HealthKit data found
+- ✅ Shows progress indicator while querying
+- ✅ Simplified `saveAndContinue()` function
+- ✅ Build verified: 0 errors, 0 warnings
+
+**Professional Assessment:**
+- ✅ User-centric design (date-first thinking matches user mental model)
+- ✅ Simpler codebase (60 fewer lines, easier to maintain)
+- ✅ Better performance (queries only specific date, not 90-day range)
+- ✅ Clear user intent (explicitly chooses journey start date)
+
+---
+
+**Last Updated:** October 27, 2025 - 10:30 PM | **Version:** 2.3.0 Build 12 | **Current Phase:** Phase 8.7 ✅ COMPLETE
 

@@ -1158,3 +1158,37 @@ COMMIT: 9a2d3fe at 2025-10-27 21:30:27 - Session tracking update - duplicate cle
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: c2a2b3a at 2025-10-27 21:55:26 - Complete root directory organization - Phase 8.6 ✅
+
+Professional code organization with industry-standard folder structure achieved.
+
+**What Was Done:**
+1. ✅ Created new folder structure (Core/Configuration, Core/Utilities, Testing/Helpers, Testing/Views)
+2. ✅ Moved 58 files from root to proper subdirectories
+3. ✅ Deleted 8 duplicate files (CoachInviteCard 2-4, LIFeGPTChatView 2-3, LifeGPTComponents 2-4)
+4. ✅ Updated Xcode project.pbxproj with all new file references
+5. ✅ Verified build succeeds (0 errors, 0 warnings)
+
+**Files Organized:**
+- 24 Views → UI/Views/
+- 9 Components → UI/Components/
+- 6 Models → Models/
+- 5 Managers → Core/Managers/
+- 3 Services → Core/Services/
+- 4 Utilities → Core/Utilities/
+- 4 Configuration files → Core/Configuration/ and Core/DesignSystem/
+- 6 Test files → Testing/Helpers/ and Testing/Views/
+
+**Current State:**
+- ✅ Root directory CLEAN (only 2 Swift files remain: FastingTrackerApp.swift, ContentView.swift)
+- ✅ Professional folder structure matching industry standards
+- ✅ Easy to find any file by type
+- ✅ Build working perfectly (0 errors, 0 warnings)
+- ✅ No more root clutter
+
+**Build Status:** ✅ BUILD SUCCEEDED
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: 369969d at 2025-10-27 21:56:34 - Update HANDOFF.md - Phase 8.6 complete
