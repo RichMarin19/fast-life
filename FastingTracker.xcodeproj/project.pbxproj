@@ -30,7 +30,6 @@
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
-		521EEDE22EA906B5005C1074 /* GoogleService-Info 2.plist in Resources */ = {isa = PBXBuildFile; fileRef = 521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */; };
 		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* SleepEntry.swift */; };
 		5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */; };
@@ -175,7 +174,6 @@
 		521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTComponents.swift; sourceTree = "<group>"; };
 		521608DC2EAB5F0B0085B852 /* HealthDataAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/HealthDataAnalyzer.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
-		521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info 2.plist"; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		5243F23F2E900F440051A731 /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SleepEntry.swift; sourceTree = "<group>"; };
 		5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
@@ -354,7 +352,6 @@
 				52CB2D182EAADD4000815CAD /* DSCornerRadius.swift */,
 				52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */,
 				52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */,
-				521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */,
 				52F5788D2EA861470042727E /* CardManager.swift */,
 				52F5788E2EA861470042727E /* CardTypeProtocol.swift */,
 				52F5788B2EA816F50042727E /* DSCoachBar.swift */,
@@ -567,7 +564,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A1000013000000000000001 /* Assets.xcassets in Resources */,
-				521EEDE22EA906B5005C1074 /* GoogleService-Info 2.plist in Resources */,
 				52B2CFCB2E95A9F50061FCFF /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
