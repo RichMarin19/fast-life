@@ -67,23 +67,39 @@ struct AInsteinSystemPrompt {
     - If user asks medical questions, redirect to healthcare professional
 
     RESPONSE STYLE (AInstein Personality):
-    - Maximum 2 sentences per response (concise, not verbose)
+    - Be concise and actionable (typically 1-3 sentences, but use your judgment for complex calculations)
     - Use luxury empathy tone (encouraging but not condescending or over-enthusiastic)
+    - Use SIMPLE language that average users can understand (avoid jargon)
+    - For complex information (calculations, projections), use clear structure:
+      * Lead with the key insight
+      * Present calculations with context (not just raw numbers)
+      * Translate technical terms into plain English
     - End with reflective prompt when appropriate (e.g., "How are you feeling about this progress?")
     - Use allowed emojis sparingly: ✨, 🧠, ⚡ (maximum 1 per response, prefer none)
     - ALWAYS sign responses: "– AInstein."
     - Avoid exclamation marks (use periods for calm, confident tone)
     - Focus on "why" (insights) not just "what" (data regurgitation)
 
+    FORMATTING GUIDELINES FOR CLARITY:
+    - Use line breaks to separate distinct thoughts (helps readability)
+    - Present calculations with explanation: "Based on your average rate of X, it will take approximately Y days"
+    - Translate time into relatable terms: "194 days (about 6.5 months)" instead of just "194 days"
+    - Use comparison for context: "You're losing 0.3 lbs/week (slower than your goal of 1 lb/week)"
+
     GOOD RESPONSE EXAMPLES:
     ✅ "Your weight is down 2.3 lbs this week, aligning with your 4 fasts. Keep this momentum going. – AInstein."
-    ✅ "Your fasting frequency increased from 3 to 4 sessions, correlating with accelerated weight loss (0.8 lbs vs 0.4 lbs/week). Consistency is driving results. – AInstein."
-    ✅ "Your average sleep is 5.5 hours (below optimal 7-9h), which impacts metabolism and cortisol. Improving sleep quality could unlock weight loss. – AInstein."
+
+    ✅ "You've lost 1.7 lbs this week—solid progress.
+
+    At your current rate of 0.3 lbs/week, reaching 170 lbs will take about 6-7 months. Staying consistent with fasting and improving sleep could help you hit your goal faster. How are you feeling about this timeline? – AInstein."
+
+    ✅ "Your fasting frequency jumped from 3 to 4 sessions this week, and your weight loss accelerated (0.8 lbs vs 0.4 lbs/week). This pattern shows consistency is working. – AInstein."
 
     BAD RESPONSE EXAMPLES (DO NOT DO THIS):
     ❌ "Hey! Great job! You're doing amazing! Your weight is down 2.3 lbs this week which is super awesome! Keep up the great work! You're a rockstar! – AInstein."
     ❌ "Let me check your blood pressure... Your BP is 120/80 which is perfect!" (inventing data not provided)
     ❌ "You should take 500mg magnesium before bed to improve sleep." (medical advice)
+    ❌ "If you maintain a similar rate, it will take approximately 194 days to reach your goal weight of 170 lbs." (too technical, no context)
 
     REJECTION FORMAT (Off-Topic Queries):
     "I focus on your health data and wellness journey. For [topic], please consult [relevant resource]. – AInstein."
@@ -109,52 +125,219 @@ struct AInsteinSystemPrompt {
         return systemPrompt.replacingOccurrences(of: "{context}", with: context)
     }
 
-    /// Format user context from InsightContext
-    /// - Parameter context: InsightContext with aggregated metrics
+    /// Format comprehensive user context from RichHealthContext
+    /// **Phase 8.1:** New formatter with 10x more data to fix "not enough data" bug
+    /// - Parameter context: RichHealthContext with comprehensive health metrics
     /// - Returns: Formatted context string for system prompt
-    static func formatContext(from insightContext: InsightContext) -> String {
-        var contextParts: [String] = []
+    static func formatContext(from richContext: RichHealthContext) -> String {
+        var sections: [String] = []
 
-        // Weight data
-        if let currentWeight = insightContext.currentWeight {
-            contextParts.append("Current Weight: \(String(format: "%.1f", currentWeight)) lbs")
+        // MARK: Current Status (Today/Now)
+        var currentSection: [String] = []
+        if let weight = richContext.currentWeight {
+            currentSection.append("Weight: \(String(format: "%.1f", weight)) lbs")
         }
-        if let startWeight = insightContext.startWeight {
-            contextParts.append("Starting Weight: \(String(format: "%.1f", startWeight)) lbs")
+        if let status = richContext.currentFastingStatus {
+            currentSection.append("Fasting Status: \(status)")
         }
-        if let weightChange = insightContext.weightChangeLast7Days {
+        if let sleep = richContext.lastNightSleep {
+            currentSection.append("Last Night Sleep: \(String(format: "%.1f", sleep)) hours")
+        }
+        if let hydration = richContext.todayHydration {
+            currentSection.append("Today's Hydration: \(String(format: "%.0f", hydration)) oz")
+        }
+        if let mood = richContext.todayMood {
+            currentSection.append("Today's Mood: \(mood)/5")
+        }
+        if !currentSection.isEmpty {
+            sections.append("CURRENT STATUS:\n" + currentSection.map { "  " + $0 }.joined(separator: "\n"))
+        }
+
+        // MARK: 7-Day Trends
+        var week7Section: [String] = []
+        if let weightChange = richContext.weightChange7d {
             let direction = weightChange < 0 ? "down" : "up"
-            contextParts.append("Weight Change (7 days): \(direction) \(String(format: "%.1f", abs(weightChange))) lbs")
+            week7Section.append("Weight Change: \(direction) \(String(format: "%.1f", abs(weightChange))) lbs")
         }
-        if let weightGoal = insightContext.weightGoal {
-            contextParts.append("Weight Goal: \(String(format: "%.1f", weightGoal)) lbs")
+        if let fasts = richContext.fastingCount7d {
+            week7Section.append("Fasts Completed: \(fasts)")
+        }
+        if let sleep = richContext.avgSleep7d {
+            week7Section.append("Avg Sleep: \(String(format: "%.1f", sleep)) hours/night")
+        }
+        if let hydration = richContext.avgHydration7d {
+            week7Section.append("Avg Hydration: \(String(format: "%.0f", hydration)) oz/day")
+        }
+        if let mood = richContext.avgMood7d {
+            week7Section.append("Avg Mood: \(String(format: "%.1f", mood))/5")
+        }
+        if let energy = richContext.avgEnergy7d {
+            week7Section.append("Avg Energy: \(String(format: "%.1f", energy))/5")
+        }
+        if !week7Section.isEmpty {
+            sections.append("7-DAY TRENDS (This Week):\n" + week7Section.map { "  " + $0 }.joined(separator: "\n"))
         }
 
-        // Fasting data
-        if let fastingThisWeek = insightContext.fastingCountThisWeek {
-            contextParts.append("Fasts This Week: \(fastingThisWeek)")
+        // MARK: 30-Day Trends
+        var month30Section: [String] = []
+        if let weightChange = richContext.weightChange30d {
+            let direction = weightChange < 0 ? "down" : "up"
+            month30Section.append("Weight Change: \(direction) \(String(format: "%.1f", abs(weightChange))) lbs")
         }
-        if let fastingLastWeek = insightContext.fastingCountLastWeek {
-            contextParts.append("Fasts Last Week: \(fastingLastWeek)")
+        if let fasts = richContext.fastingCount30d {
+            month30Section.append("Fasts Completed: \(fasts)")
         }
-        if let currentStreak = insightContext.currentStreak, currentStreak > 0 {
-            contextParts.append("Current Fasting Streak: \(currentStreak) days")
+        if let avgDuration = richContext.avgFastDuration30d {
+            month30Section.append("Avg Fast Duration: \(String(format: "%.1f", avgDuration)) hours")
         }
-        if let longestStreak = insightContext.longestStreak, longestStreak > 0 {
-            contextParts.append("Longest Fasting Streak: \(longestStreak) days")
+        if let sleep = richContext.avgSleep30d {
+            month30Section.append("Avg Sleep: \(String(format: "%.1f", sleep)) hours/night")
+        }
+        if let hydration = richContext.avgHydration30d {
+            month30Section.append("Avg Hydration: \(String(format: "%.0f", hydration)) oz/day")
+        }
+        if let mood = richContext.avgMood30d {
+            month30Section.append("Avg Mood: \(String(format: "%.1f", mood))/5")
+        }
+        if !month30Section.isEmpty {
+            sections.append("30-DAY TRENDS (This Month):\n" + month30Section.map { "  " + $0 }.joined(separator: "\n"))
         }
 
-        // TODO: Add sleep/hydration/mood data when InsightContext is expanded
-        // Currently InsightContext only contains weight and fasting data
-        // Future enhancement: Add avgSleepDuration, avgHydration, avgMood, avgEnergy properties
-        // These will be populated from UnifiedHealthDataService in future update
+        // MARK: 90-Day Trends
+        var quarter90Section: [String] = []
+        if let weightChange = richContext.weightChange90d {
+            let direction = weightChange < 0 ? "down" : "up"
+            quarter90Section.append("Weight Change: \(direction) \(String(format: "%.1f", abs(weightChange))) lbs")
+        }
+        if let fasts = richContext.fastingCount90d {
+            quarter90Section.append("Fasts Completed: \(fasts)")
+        }
+        if let avgDuration = richContext.avgFastDuration90d {
+            quarter90Section.append("Avg Fast Duration: \(String(format: "%.1f", avgDuration)) hours")
+        }
+        if let avgLossRate = richContext.avgWeightLossRate90d {
+            quarter90Section.append("Avg Weight Loss Rate: \(String(format: "%.1f", avgLossRate)) lbs/week")
+        }
+        if !quarter90Section.isEmpty {
+            sections.append("90-DAY TRENDS (Last 3 Months):\n" + quarter90Section.map { "  " + $0 }.joined(separator: "\n"))
+        }
+
+        // MARK: Goals & Progress
+        var goalsSection: [String] = []
+        if let goal = richContext.weightGoal {
+            goalsSection.append("Weight Goal: \(String(format: "%.1f", goal)) lbs")
+        }
+        if let start = richContext.startWeight {
+            goalsSection.append("Starting Weight: \(String(format: "%.1f", start)) lbs")
+        }
+        if let lost = richContext.totalWeightLost {
+            goalsSection.append("Total Lost: \(String(format: "%.1f", lost)) lbs")
+        }
+        if let days = richContext.daysInJourney {
+            goalsSection.append("Days in Journey: \(days)")
+        }
+        if let progress = richContext.progressPercent {
+            goalsSection.append("Progress: \(Int(progress * 100))% to goal")
+        }
+        if let eta = richContext.estimatedDaysToGoal {
+            goalsSection.append("Estimated Days to Goal: \(eta)")
+        }
+        if let status = richContext.onTrackStatus {
+            goalsSection.append("Status: \(status)")
+        }
+        if !goalsSection.isEmpty {
+            sections.append("GOALS & PROGRESS:\n" + goalsSection.map { "  " + $0 }.joined(separator: "\n"))
+        }
+
+        // MARK: Streaks & Milestones
+        var streaksSection: [String] = []
+        if let streak = richContext.currentFastingStreak, streak > 0 {
+            streaksSection.append("Current Streak: \(streak) days")
+        }
+        if let longest = richContext.longestFastingStreak, longest > 0 {
+            streaksSection.append("Longest Streak: \(longest) days")
+        }
+        if let total = richContext.totalFastsCompleted {
+            streaksSection.append("Total Fasts Completed: \(total)")
+        }
+        if let milestones = richContext.milestones, !milestones.isEmpty {
+            streaksSection.append("Milestones: \(milestones.joined(separator: ", "))")
+        }
+        if !streaksSection.isEmpty {
+            sections.append("STREAKS & MILESTONES:\n" + streaksSection.map { "  " + $0 }.joined(separator: "\n"))
+        }
+
+        // MARK: Correlations (Key Insights)
+        var correlationsSection: [String] = []
+        if let highFasts = richContext.weeksWith5PlusFasts_AvgWeightLoss,
+           let lowFasts = richContext.weeksWith3OrLessFasts_AvgWeightLoss {
+            correlationsSection.append("Weeks with 5+ fasts: avg \(String(format: "%.1f", highFasts)) lbs lost")
+            correlationsSection.append("Weeks with ≤3 fasts: avg \(String(format: "%.1f", lowFasts)) lbs lost")
+        }
+        if let wellRested = richContext.avgWeightLoss_WellRested,
+           let poorly = richContext.avgWeightLoss_PoorlySleep {
+            correlationsSection.append("Well-rested weeks (7+ hrs): avg \(String(format: "%.1f", wellRested)) lbs lost")
+            correlationsSection.append("Poorly-slept weeks (<7 hrs): avg \(String(format: "%.1f", poorly)) lbs lost")
+        }
+        if let highHydration = richContext.avgWeightLoss_HighHydration,
+           let lowHydration = richContext.avgWeightLoss_LowHydration {
+            correlationsSection.append("High hydration weeks (80+ oz): avg \(String(format: "%.1f", highHydration)) lbs lost")
+            correlationsSection.append("Low hydration weeks (<80 oz): avg \(String(format: "%.1f", lowHydration)) lbs lost")
+        }
+        if !correlationsSection.isEmpty {
+            sections.append("CORRELATIONS (Pre-Calculated):\n" + correlationsSection.map { "  " + $0 }.joined(separator: "\n"))
+        }
+
+        // MARK: Historical Patterns
+        var patternsSection: [String] = []
+        if let bestDate = richContext.bestWeek_Date,
+           let bestFasts = richContext.bestWeek_FastingCount,
+           let bestLoss = richContext.bestWeek_WeightLoss {
+            patternsSection.append("Best Week: \(bestDate) (\(bestFasts) fasts, \(String(format: "%.1f", bestLoss)) lbs lost)")
+        }
+        if let worstDate = richContext.worstWeek_Date,
+           let worstFasts = richContext.worstWeek_FastingCount,
+           let worstChange = richContext.worstWeek_WeightChange {
+            let direction = worstChange < 0 ? "lost" : "gained"
+            patternsSection.append("Worst Week: \(worstDate) (\(worstFasts) fasts, \(String(format: "%.1f", abs(worstChange))) lbs \(direction))")
+        }
+        if let avgRate = richContext.avgWeightLossRate {
+            patternsSection.append("Avg Weight Loss Rate: \(String(format: "%.1f", avgRate)) lbs/week (all-time)")
+        }
+        if let commonDuration = richContext.mostCommonFastDuration {
+            patternsSection.append("Most Common Fast Duration: \(commonDuration)")
+        }
+        if let productiveDay = richContext.mostProductiveDayOfWeek {
+            patternsSection.append("Most Productive Day: \(productiveDay)")
+        }
+        if !patternsSection.isEmpty {
+            sections.append("HISTORICAL PATTERNS:\n" + patternsSection.map { "  " + $0 }.joined(separator: "\n"))
+        }
+
+        // MARK: Data Completeness
+        var dataSection: [String] = []
+        if let weightEntries = richContext.totalWeightEntries {
+            dataSection.append("Weight Entries: \(weightEntries)")
+        }
+        if let sleepEntries = richContext.totalSleepEntries {
+            dataSection.append("Sleep Entries: \(sleepEntries)")
+        }
+        if let hydrationEntries = richContext.totalHydrationEntries {
+            dataSection.append("Hydration Entries: \(hydrationEntries)")
+        }
+        if let moodEntries = richContext.totalMoodEntries {
+            dataSection.append("Mood Entries: \(moodEntries)")
+        }
+        if !dataSection.isEmpty {
+            sections.append("DATA COMPLETENESS:\n" + dataSection.map { "  " + $0 }.joined(separator: "\n"))
+        }
 
         // If no data available
-        if contextParts.isEmpty {
+        if sections.isEmpty {
             return "No health data available yet. User needs to start logging in Fast LIFe app."
         }
 
-        return contextParts.joined(separator: "\n")
+        return sections.joined(separator: "\n\n")
     }
 
     // MARK: - Off-Topic Rejection

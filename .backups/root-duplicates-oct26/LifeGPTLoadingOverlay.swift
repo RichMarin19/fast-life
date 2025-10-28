@@ -35,8 +35,8 @@ struct LifeGPTLoadingOverlay: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                Theme.ColorToken.accentPrimary,
-                                Theme.ColorToken.accentInfo
+                                Theme.ColorToken.accentEmerald,
+                                Theme.ColorToken.accentTeal
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -51,33 +51,33 @@ struct LifeGPTLoadingOverlay: View {
 
                 // Title
                 Text("Building Your Health Insights")
-                    .font(DSTypography.displayS)
+                    .font(DSTypography.heading3)
                     .foregroundStyle(Theme.ColorToken.textPrimary)
                     .multilineTextAlignment(.center)
 
                 // Subtitle
                 Text("Analyzing your HealthKit data to provide personalized insights...")
-                    .font(DSTypography.cardBody)
+                    .font(DSTypography.bodySmall)
                     .foregroundStyle(Theme.ColorToken.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DSSpacing.cardElementSpacing)
 
                 // Progress indicator
                 ProgressView()
-                    .progressViewStyle(CircularProgressViewStyle(tint: Theme.ColorToken.accentPrimary))
+                    .progressViewStyle(CircularProgressViewStyle(tint: Theme.ColorToken.accentEmerald))
                     .scaleEffect(1.2)
                     .padding(.top, DSSpacing.cardSmallSpacing)
 
                 // Time estimate
                 Text("This usually takes 30-60 seconds")
-                    .font(DSTypography.cardCaption)
-                    .foregroundStyle(Theme.ColorToken.textSecondary)
+                    .font(DSTypography.caption)
+                    .foregroundStyle(Theme.ColorToken.textTertiary)
                     .padding(.top, DSSpacing.cardSmallSpacing)
             }
-            .padding(24)
+            .padding(DSSpacing.cardLargeSpacing)
             .background(
                 RoundedRectangle(cornerRadius: DSCornerRadius.card)
-                    .fill(Theme.ColorToken.card)
+                    .fill(Theme.ColorToken.bgCard)
                     .shadow(
                         color: Color.black.opacity(0.3),
                         radius: 20,
@@ -85,7 +85,7 @@ struct LifeGPTLoadingOverlay: View {
                         y: 10
                     )
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, DSSpacing.cardLargeSpacing)
         }
         .onAppear {
             isAnimating = true

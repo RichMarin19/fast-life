@@ -46,12 +46,12 @@ struct MessageBubble: View {
     @ViewBuilder
     private var userBubble: some View {
         Text(message.content)
-            .font(DSTypography.cardBody)
+            .font(DSTypography.body)
             .foregroundStyle(userTextColor)
             .padding(.horizontal, DSSpacing.cardElementSpacing)
             .padding(.vertical, 10)
             .background(userBackgroundColor)
-            .cornerRadius(DSCornerRadius.button)
+            .cornerRadius(DSCornerRadius.chatBubble)
             .shadow(color: Theme.ColorToken.shadowCard.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 
@@ -81,13 +81,13 @@ struct MessageBubble: View {
             // Message content with gradient background
             VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                 Text(message.content)
-                    .font(DSTypography.cardBody)
+                    .font(DSTypography.body)
                     .foregroundStyle(assistantTextColor)
                     .multilineTextAlignment(.leading)
 
                 // Timestamp (subtle)
                 Text(message.formattedTime)
-                    .font(DSTypography.cardCaption)
+                    .font(DSTypography.caption)
                     .foregroundStyle(assistantSecondaryTextColor)
             }
             .padding(.horizontal, DSSpacing.cardElementSpacing)
@@ -95,7 +95,7 @@ struct MessageBubble: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(assistantBackgroundGradient)
-        .cornerRadius(DSCornerRadius.button)
+        .cornerRadius(DSCornerRadius.chatBubble)
         .shadow(color: Theme.ColorToken.shadowCard.opacity(0.08), radius: 3, x: 0, y: 2)
     }
 
@@ -184,7 +184,7 @@ struct LifeGPTInputBar: View {
 
             // Text input field
             TextField("", text: $text, axis: .vertical)
-                .font(DSTypography.cardBody)
+                .font(DSTypography.body)
                 .lineLimit(1...4)
                 .focused($isFocused)
                 .submitLabel(.send)
@@ -294,7 +294,7 @@ struct TypingIndicator: View {
         .padding(.vertical, DSSpacing.cardSmallSpacing)
         .padding(.horizontal, DSSpacing.cardElementSpacing)
         .background(indicatorBackground)
-        .cornerRadius(DSCornerRadius.button)
+        .cornerRadius(DSCornerRadius.chatBubble)
         .onAppear {
             animatingDot1 = true
             animatingDot2 = true
@@ -345,7 +345,7 @@ struct LifeGPTEmptyState: View {
                     .foregroundStyle(Theme.ColorToken.accentPrimary)
 
                 Text("Meet your Coach.")
-                    .font(DSTypography.displayM)
+                    .font(DSTypography.titleLg)
                     .foregroundStyle(Theme.ColorToken.textPrimary)
             }
 
@@ -367,13 +367,13 @@ struct LifeGPTEmptyState: View {
             onPromptTap(prompt)
         }) {
             Text(prompt)
-                .font(DSTypography.cardBody)
+                .font(DSTypography.body)
                 .foregroundStyle(Theme.ColorToken.accentPrimary)
                 .padding(.horizontal, DSSpacing.cardElementSpacing)
                 .padding(.vertical, DSSpacing.cardSmallSpacing)
                 .frame(maxWidth: .infinity)
                 .background(Theme.ColorToken.accentPrimary.opacity(0.1))
-                .cornerRadius(DSCornerRadius.button)
+                .cornerRadius(DSCornerRadius.chip)
         }
     }
 }

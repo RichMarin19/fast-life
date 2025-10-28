@@ -23,8 +23,7 @@ struct HubView: View {
     @State private var draggedTracker: TrackerType?
 
     // MARK: - LifeGPT State (AI Health Coach)
-    @State private var showLifeGPTChat = false
-    @State private var currentEmotion: EmotionState = .stable
+    // NOTE: AInstein presence now managed by floating button overlay via .withAInsteinPresence() modifier
 
     // MARK: - Main Content View (Decomposed for Compilation Performance)
     @ViewBuilder
@@ -39,11 +38,6 @@ struct HubView: View {
 
                     // MARK: - Top Status Bar (Heart Rate - Luxury Spec Section 2)
                     TopStatusBar()
-
-                    // MARK: - LifeGPT Coach Card (AI Health Coach Entry Point)
-                    lifeGPTCoachCard
-                        .padding(.horizontal)
-                        .padding(.top, 12)
 
                     // MARK: - Vertically Centered Content Area
                     trackerCardsSection(geometry: geometry)
@@ -134,23 +128,11 @@ struct HubView: View {
         }
     }
 
-    // MARK: - LifeGPT Coach Card Component
-    @ViewBuilder
-    private var lifeGPTCoachCard: some View {
-        CoachInviteCard(emotion: currentEmotion) {
-            showLifeGPTChat = true
-        }
-    }
-
     var body: some View {
         NavigationStack(path: $navigationPath) {
             mainContentView
                 .background(luxuryBackgroundGradient)
                 .navigationBarHidden(true)
-                .sheet(isPresented: $showLifeGPTChat) {
-                    // Present LifeGPT chat interface
-                    LIFeGPTChatView(dataService: createUnifiedHealthDataService())
-                }
         }
         .onAppear {
             loadTrackerOrder()
@@ -170,18 +152,6 @@ struct HubView: View {
                 shouldPopToRoot = false
             }
         }
-    }
-
-    // MARK: - LifeGPT Data Service Helper
-    /// Create UnifiedHealthDataService with all manager dependencies
-    private func createUnifiedHealthDataService() -> UnifiedHealthDataService {
-        return UnifiedHealthDataService(
-            weightManager: weightManager,
-            fastingManager: fastingManager,
-            sleepManager: sleepManager,
-            hydrationManager: hydrationManager,
-            moodManager: moodManager
-        )
     }
 
     // MARK: - Tracker Order Persistence (UserDefaults pattern from HANDOFF.md)
@@ -219,6 +189,10 @@ struct TrackerSummaryCard: View {
     @ObservedObject var sleepManager: SleepManager
     @ObservedObject var moodManager: MoodManager
 
+    // MARK: - Single Source of Truth for Goal Weight
+    // Matches WeightTrackingViewModel, OnboardingView, UnifiedHealthDataService
+    @AppStorage("goalWeight") private var goalWeight: Double = 170.0
+
     // MARK: - Expanded Card State Management
     @State private var isExpanded: Bool = false
     @State private var tapCount: Int = 0
@@ -230,6 +204,69 @@ struct TrackerSummaryCard: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter
+    }
+
+    // MARK: - Weight Tracker Calculations (Single Source of Truth)
+    // Following UnifiedHealthDataService patterns for consistency
+
+    /// Calculate 7-day average weight from last 7 CALENDAR DAYS
+    /// **Industry Standard:** WHOOP, Oura, Apple Health use date-based filtering (not entry count)
+    /// **Source:** WeightManager.weightEntries filtered by date >= 7 days ago
+    /// **Returns:** Formatted string like "183.1" or "--" if no data
+    private var calculate7DayAverage: String {
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+        let last7DaysWeights = weightManager.weightEntries.filter { $0.date >= sevenDaysAgo }
+        guard !last7DaysWeights.isEmpty else { return "--" }
+
+        let sum = last7DaysWeights.map { $0.weight }.reduce(0.0, +)
+        let average = sum / Double(last7DaysWeights.count)
+        return String(format: "%.1f", average)
+    }
+
+    /// Calculate progress toward weight goal
+    /// **Formula:** (start - current) / (start - goal)
+    /// **Source:** UnifiedHealthDataService.buildRichHealthContext() line 374-379
+    /// **Returns:** Progress as decimal (0.0-1.0), or nil if insufficient data
+    private var calculateProgress: Double? {
+        guard let currentWeight = weightManager.latestWeight?.weight else { return nil }
+
+        // Start weight = oldest weight entry (journey start)
+        guard let startWeight = weightManager.weightEntries.last?.weight else { return nil }
+
+        // Goal weight from UserDefaults (already bound to @AppStorage)
+        let totalGoal = startWeight - goalWeight
+        guard totalGoal > 0 else { return nil } // Avoid division by zero
+
+        let achieved = startWeight - currentWeight
+        let progress = achieved / totalGoal
+
+        // Clamp to 0.0-1.0 range
+        return max(0.0, min(1.0, progress))
+    }
+
+    /// Calculate weight trend rate (lbs per week) over last 7 CALENDAR DAYS
+    /// **Industry Standard:** WHOOP, Oura, Apple Health use date-based filtering (not entry count)
+    /// **Formula:** (oldest - newest) / days * 7
+    /// **Source:** UnifiedHealthDataService.buildRichHealthContext() line 361-364
+    /// **Returns:** Formatted string like "-0.6 lb/wk" or "--" if insufficient data
+    private var calculateWeightTrend: String {
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date())!
+        let last7DaysWeights = weightManager.weightEntries.filter { $0.date >= sevenDaysAgo }
+        guard last7DaysWeights.count >= 2 else { return "--" }
+
+        let oldestWeight = last7DaysWeights.last!.weight
+        let newestWeight = last7DaysWeights.first!.weight
+        let oldestDate = last7DaysWeights.last!.date
+        let newestDate = last7DaysWeights.first!.date
+
+        let daysDiff = newestDate.timeIntervalSince(oldestDate) / 86400 // Convert to days
+        guard daysDiff > 0 else { return "--" }
+
+        let weightChange = oldestWeight - newestWeight // positive = weight loss
+        let weeklyRate = weightChange / daysDiff * 7.0 // lbs per week
+
+        let sign = weeklyRate >= 0 ? "-" : "+"
+        return String(format: "%@%.1f lb/wk", sign, abs(weeklyRate))
     }
 
     // Computed property for fasting display value following ContentView patterns
@@ -670,7 +707,7 @@ struct TrackerSummaryCard: View {
                     Text("7-Day Avg")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundColor(.white.opacity(0.8))
-                    Text("183.1")
+                    Text(calculate7DayAverage)
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
@@ -679,7 +716,7 @@ struct TrackerSummaryCard: View {
                 // Center: Weight Progress Ring (matching Mood & Energy size exactly)
                 VStack(spacing: 8) {
                     WeightProgressRing(
-                        progress: 0.62, // Mock 62% progress toward goal
+                        progress: calculateProgress ?? 0.0,
                         size: 100
                     )
                 }
@@ -697,12 +734,12 @@ struct TrackerSummaryCard: View {
     @ViewBuilder
     private var weightMetaRow: some View {
         HStack {
-            // Goal Weight
+            // Goal Weight (Single Source of Truth from UserDefaults)
             VStack(spacing: 2) {
                 Text("Goal")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color(hex: "#D0D4DA"))
-                Text("165.0 lbs")
+                Text("\(String(format: "%.1f", goalWeight)) lbs")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
@@ -721,7 +758,7 @@ struct TrackerSummaryCard: View {
                 Text("Trend")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color(hex: "#D0D4DA"))
-                Text("-0.6 lb/wk")
+                Text(calculateWeightTrend)
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
             }
@@ -740,7 +777,7 @@ struct TrackerSummaryCard: View {
                 Text("Progress")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundColor(Color(hex: "#D4AF37").opacity(0.9))
-                Text("62%")
+                Text(calculateProgress != nil ? String(format: "%d%%", Int(calculateProgress! * 100)) : "--")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
                     .foregroundColor(Color(hex: "#D4AF37"))
             }

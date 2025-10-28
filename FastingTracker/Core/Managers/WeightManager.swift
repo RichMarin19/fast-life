@@ -176,6 +176,22 @@ class WeightManager: ObservableObject {
         }
     }
 
+    // MARK: - Delete All Weight Data
+
+    /// Delete all weight data from Fast LIFe
+    /// Used for debugging and troubleshooting HealthKit sync issues
+    /// Following Apple HIG: Destructive actions require confirmation (handled in View layer)
+    func deleteAllWeightData() {
+        AppLogger.info("Deleting all weight data - count before: \(weightEntries.count)", category: AppLogger.weightTracking)
+
+        // Industry Standard: All @Published property updates must be on main thread
+        DispatchQueue.main.async {
+            self.weightEntries.removeAll()
+            self.saveWeightEntries()
+            AppLogger.info("Deleted all weight data - count after: \(self.weightEntries.count)", category: AppLogger.weightTracking)
+        }
+    }
+
     // MARK: - Unit Conversion Methods
     // Following Apple adapter pattern to maintain backward compatibility
     // Reference: https://docs.swift.org/swift-book/LanguageGuide/Protocols.html#ID521
@@ -272,6 +288,15 @@ class WeightManager: ObservableObject {
 
             // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
+                // DEBUG: Log what HealthKit returned BEFORE duplicate check
+                let detailedFormatter = DateFormatter()
+                detailedFormatter.dateFormat = "MMM d, yyyy HH:mm:ss"
+                AppLogger.info("🔍 [HealthKit Sync] Received \(healthKitEntries.count) entries from HealthKit", category: AppLogger.weightTracking)
+                for (index, hkEntry) in healthKitEntries.enumerated() {
+                    AppLogger.info("🔍 HK Entry #\(index): \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) (source: \(hkEntry.source.rawValue))", category: AppLogger.weightTracking)
+                }
+                AppLogger.info("🔍 [HealthKit Sync] Fast LIFe currently has \(self.weightEntries.count) entries", category: AppLogger.weightTracking)
+
                 // Track newly added entries for accurate reporting
                 var newlyAddedCount = 0
 
@@ -281,13 +306,24 @@ class WeightManager: ObservableObject {
                     // FIXED: Check across ALL sources to prevent Manual vs HealthKit duplicates
                     // Following Apple HealthKit best practices for duplicate detection
                     // Reference: https://developer.apple.com/documentation/healthkit/about_the_healthkit_framework
+
+                    // DEBUG: Check for duplicates with detailed logging
+                    var matchDetails = ""
                     let isDuplicate = self.weightEntries.contains(where: {
-                        // Check ANY existing entry (Manual OR HealthKit) to prevent bidirectional duplicates
-                        abs($0.date.timeIntervalSince(hkEntry.date)) < 60 && // Within 1 minute
-                            abs($0.weight - hkEntry.weight) < 0.1 // Within 0.1 lbs (≈0.045 kg)
+                        let timeDiff = abs($0.date.timeIntervalSince(hkEntry.date))
+                        let weightDiff = abs($0.weight - hkEntry.weight)
+                        let matches = timeDiff < 60 && weightDiff < 0.1
+
+                        if matches {
+                            matchDetails = "matches existing entry \($0.weight) lbs on \(detailedFormatter.string(from: $0.date)) (timeDiff: \(String(format: "%.1f", timeDiff))s, weightDiff: \(String(format: "%.3f", weightDiff)) lbs)"
+                        }
+                        return matches
                     })
 
-                    if !isDuplicate {
+                    if isDuplicate {
+                        AppLogger.info("🔍 [Duplicate Check] SKIPPING HK entry \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) - \(matchDetails)", category: AppLogger.weightTracking)
+                    } else {
+                        AppLogger.info("🔍 [Duplicate Check] ADDING HK entry \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) - not a duplicate", category: AppLogger.weightTracking)
                         // Add new HealthKit entry (allows multiple per day)
                         self.weightEntries.append(hkEntry)
                         newlyAddedCount += 1
@@ -580,20 +616,70 @@ class WeightManager: ObservableObject {
     }
 
     func weightChange(since date: Date) -> Double? {
-        guard let latestEntry = latestWeight else { return nil }
+        guard let latestEntry = latestWeight else {
+            AppLogger.info("🔍 [WeightManager.weightChange] NO DATA - latestEntry is nil", category: AppLogger.weightTracking)
+            return nil
+        }
 
         let calendar = Calendar.current
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
 
-        // Optimized: Since weightEntries is sorted newest first, iterate backwards
-        // to find oldest entry that matches the date (more efficient than filter + last)
+        AppLogger.info("🔍 [WeightManager.weightChange] START - since: \(formatter.string(from: date)) | current weight: \(latestEntry.weight) lbs", category: AppLogger.weightTracking)
+
+        // DEBUG: Dump ALL entries to see where the missing ones are
+        let detailedFormatter = DateFormatter()
+        detailedFormatter.dateFormat = "MMM d, yyyy HH:mm:ss"
+        AppLogger.info("🔍 [WeightManager.weightChange] FULL DUMP - Total entries: \(weightEntries.count)", category: AppLogger.weightTracking)
+        for (index, entry) in weightEntries.enumerated() {
+            AppLogger.info("🔍 Entry #\(index): \(entry.weight) lbs on \(detailedFormatter.string(from: entry.date)) (source: \(entry.source.rawValue))", category: AppLogger.weightTracking)
+        }
+
+        // Find oldest entry WITHIN the time window (on or after the cutoff date)
+        // Step 1: Find the oldest DATE in the window
+        var oldestEntry: WeightEntry?
         for entry in weightEntries.reversed() {
             let comparison = calendar.compare(entry.date, to: date, toGranularity: .day)
-            if comparison == .orderedAscending || comparison == .orderedSame {
-                return latestEntry.weight - entry.weight
+            if comparison == .orderedDescending || comparison == .orderedSame {
+                oldestEntry = entry
+                break
             }
         }
 
-        return nil
+        guard let oldestEntry = oldestEntry else {
+            AppLogger.info("🔍 [WeightManager.weightChange] NO DATA - no entries found in date range", category: AppLogger.weightTracking)
+            return nil
+        }
+
+        AppLogger.info("🔍 [WeightManager.weightChange] Oldest date in window: \(formatter.string(from: oldestEntry.date))", category: AppLogger.weightTracking)
+
+        // Step 2: Get ALL entries from that same day using date range (more robust than isDate)
+        // Get start and end of the oldest day
+        let startOfOldestDay = calendar.startOfDay(for: oldestEntry.date)
+        guard let endOfOldestDay = calendar.date(byAdding: .day, value: 1, to: startOfOldestDay) else {
+            AppLogger.info("🔍 [WeightManager.weightChange] ERROR - Could not calculate end of day", category: AppLogger.weightTracking)
+            return nil
+        }
+
+        // Filter all entries that fall within this 24-hour period
+        let entriesOnOldestDay = weightEntries.filter {
+            $0.date >= startOfOldestDay && $0.date < endOfOldestDay
+        }
+
+        AppLogger.info("🔍 [WeightManager.weightChange] Date range: \(formatter.string(from: startOfOldestDay)) to \(formatter.string(from: endOfOldestDay))", category: AppLogger.weightTracking)
+        AppLogger.info("🔍 [WeightManager.weightChange] Entries on oldest day: \(entriesOnOldestDay.count) - weights: \(entriesOnOldestDay.map { $0.weight })", category: AppLogger.weightTracking)
+
+        // Step 3: Calculate average weight for that day
+        guard !entriesOnOldestDay.isEmpty else { return nil }
+        let sumWeight = entriesOnOldestDay.map { $0.weight }.reduce(0.0, +)
+        let avgWeightOnOldestDay = sumWeight / Double(entriesOnOldestDay.count)
+
+        AppLogger.info("🔍 [WeightManager.weightChange] Average weight on oldest day: \(avgWeightOnOldestDay) lbs", category: AppLogger.weightTracking)
+
+        // Step 4: Calculate change using daily average (not single entry)
+        let change = latestEntry.weight - avgWeightOnOldestDay
+        AppLogger.info("🔍 [WeightManager.weightChange] RESULT: \(change) lbs (\(latestEntry.weight) - \(avgWeightOnOldestDay))", category: AppLogger.weightTracking)
+        return change
     }
 
     // MARK: - Persistence
@@ -655,3 +741,4 @@ class WeightManager: ObservableObject {
         }
     }
 }
+

@@ -30,23 +30,14 @@ struct WeightTrendsView: View {
         case flat       // |Δ| ≤ 0.2
     }
 
-    /// Calculate signed delta for a period
+    /// Calculate signed delta for a period using WeightManager Single Source of Truth
     /// Returns signed value (negative = loss, positive = gain)
     private func calculateDelta(days: Int) -> Double? {
-        guard weightManager.weightEntries.count >= 2 else { return nil }
-
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
         let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        let recentEntries = sortedEntries.filter { $0.date >= cutoffDate }
-
-        guard recentEntries.count >= 2,
-              let firstWeight = recentEntries.first?.weight,
-              let lastWeight = recentEntries.last?.weight else {
-            return nil
-        }
-
-        // Positive = gain, Negative = loss
-        return lastWeight - firstWeight
+        // SINGLE SOURCE OF TRUTH: Use WeightManager.weightChange(since:)
+        // Returns: latestWeight - avgWeightOnOldestDay
+        // Negative = weight loss, Positive = weight gain
+        return weightManager.weightChange(since: cutoffDate)
     }
 
     /// Determine trend state from delta
@@ -138,36 +129,23 @@ struct WeightTrendsView: View {
         return prompts.randomElement() ?? prompts[0]
     }
 
-    /// Calculate weight change over a specific number of days
+    /// Calculate weight change over a specific number of days using WeightManager Single Source of Truth
     /// Returns (amount: Double, isLoss: Bool) or nil if insufficient data
     private func calculateTrend(days: Int?) -> (amount: Double, isLoss: Bool)? {
-        guard weightManager.weightEntries.count >= 2 else { return nil }
-
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
-
+        let cutoffDate: Date
         if let days = days {
-            // Calculate trend for specific period
-            let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-            let recentEntries = sortedEntries.filter { $0.date >= cutoffDate }
-
-            guard recentEntries.count >= 2,
-                  let firstWeight = recentEntries.first?.weight,
-                  let lastWeight = recentEntries.last?.weight else {
-                return nil
-            }
-
-            let change = firstWeight - lastWeight
-            return (amount: abs(change), isLoss: change > 0)
+            cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
         } else {
-            // All-time trend (first to latest)
-            guard let firstWeight = sortedEntries.first?.weight,
-                  let lastWeight = sortedEntries.last?.weight else {
-                return nil
-            }
-
-            let change = firstWeight - lastWeight
-            return (amount: abs(change), isLoss: change > 0)
+            // All-time trend: use date 10 years ago
+            cutoffDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
         }
+
+        // SINGLE SOURCE OF TRUTH: Use WeightManager.weightChange(since:)
+        // Returns: latestWeight - avgWeightOnOldestDay
+        // Negative = weight loss (isLoss = true), Positive = weight gain (isLoss = false)
+        guard let change = weightManager.weightChange(since: cutoffDate) else { return nil }
+
+        return (amount: abs(change), isLoss: change < 0)
     }
 
     @State private var isAnimating = false  // Animation state for staggered fade-in

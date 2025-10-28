@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		521608AE2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */; };
+		521608AE2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AB2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift */; };
 		521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */; };
 		521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */; };
 		521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */; };
@@ -16,15 +16,17 @@
 		521608B92EAB416A0085B852 /* HealthDataAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B72EAB416A0085B852 /* HealthDataAggregator.swift */; };
 		521608BA2EAB416A0085B852 /* UnifiedHealthDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */; };
 		521608BB2EAB416A0085B852 /* BehavioralCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B62EAB416A0085B852 /* BehavioralCopy.swift */; };
-		521608BF2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */; };
-		521608C32EAB41920085B852 /* LIFeGPTChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C12EAB41920085B852 /* LIFeGPTChatView.swift */; };
-		521608D52EAB47730085B852 /* LifeGPTViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D42EAB47730085B852 /* LifeGPTViewModel.swift */; };
-		521608D82EAB47ED0085B852 /* LifeGPTComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */; };
-		521608D92EAB47ED0085B852 /* CoachInviteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D62EAB47ED0085B852 /* CoachInviteCard.swift */; };
-		521608E02EAB5F0B0085B852 /* ResponseGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608DF2EAB5F0B0085B852 /* ResponseGenerator.swift */; };
+		521608BF2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608BD2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift */; };
+		521608C32EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C12EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift */; };
+		521608C52EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C42EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift */; };
+		521608C72EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C62EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift */; };
+		521608CA2EABC3000085B852 /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C82EABC3000085B852 /* OpenAIService.swift */; };
+		521608CC2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608CB2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift */; };
+		521608CE2EABC5000085B852 /* Core/AI/ResponseValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608CD2EABC5000085B852 /* Core/AI/ResponseValidator.swift */; };
+		521608CF2EABC6000085B852 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D02EABC6000085B852 /* NetworkMonitor.swift */; };
+		521608D82EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */; };
+		521608D92EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D62EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift */; };
 		521608E12EAB5F0B0085B852 /* HealthDataAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608DC2EAB5F0B0085B852 /* HealthDataAnalyzer.swift */; };
-		521608E22EAB5F0B0085B852 /* QueryIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608DE2EAB5F0B0085B852 /* QueryIntent.swift */; };
-		521608E32EAB5F0B0085B852 /* QueryClassifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608DD2EAB5F0B0085B852 /* QueryClassifier.swift */; };
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
@@ -38,6 +40,7 @@
 		5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2492E9029970051A731 /* MoodTrackingView.swift */; };
 		524976192EA2133E00632E28 /* WeightControlCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524976182EA2133E00632E28 /* WeightControlCenterView.swift */; };
 		525A7C972EA329A200E724F4 /* MilestoneRingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525A7C962EA329A200E724F4 /* MilestoneRingCard.swift */; };
+		527695072EAFDE5B0040DF5D /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 527695062EAFDE5B0040DF5D /* Config.xcconfig */; };
 		5288A52B2EA44CF100806BE7 /* TrackerCardManagerTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52A2EA44CF100806BE7 /* TrackerCardManagerTestView.swift */; };
 		5288A52D2EA44D1100806BE7 /* TrackerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52C2EA44D1100806BE7 /* TrackerCard.swift */; };
 		5288A52F2EA44D2600806BE7 /* TrackerCardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52E2EA44D2600806BE7 /* TrackerCardManager.swift */; };
@@ -90,10 +93,8 @@
 		52F16D782EA45ED4002C9FC5 /* DSTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D742EA45ED4002C9FC5 /* DSTypography.swift */; };
 		52F16D792EA45ED4002C9FC5 /* DSCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D702EA45ED4002C9FC5 /* DSCard.swift */; };
 		52F16D7B2EA48151002C9FC5 /* ProgressStoryCardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D7A2EA48151002C9FC5 /* ProgressStoryCardManager.swift */; };
-		52F211D02EABA1CF006705CD /* EmotionEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F211CF2EABA1CF006705CD /* EmotionEngine.swift */; };
 		52F211D42EABA449006705CD /* HealthInsight.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F211D32EABA449006705CD /* HealthInsight.swift */; };
 		52F211D72EABA46B006705CD /* ConversationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F211D52EABA46B006705CD /* ConversationManager.swift */; };
-		52F211D82EABA46B006705CD /* InsightGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F211D62EABA46B006705CD /* InsightGenerator.swift */; };
 		52F3D16F2EABE32B00C20142 /* PerformanceTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F3D16E2EABE32B00C20142 /* PerformanceTokens.swift */; };
 		52F578882EA804ED0042727E /* DSProgressRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578872EA804ED0042727E /* DSProgressRing.swift */; };
 		52F5788A2EA80CFB0042727E /* DSBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578892EA80CFB0042727E /* DSBanner.swift */; };
@@ -103,6 +104,8 @@
 		52F578972EA8E2AD0042727E /* WeightNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */; };
 		52F578982EA8E2AD0042727E /* WeightNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */; };
 		682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */; };
+		769DC2E8156D4FA2CEE51A90 /* AInsteinPresenceModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769DC2E8156D4FA2CEE51A91 /* AInsteinPresenceModifier.swift */; };
+		7DD29F2C28F125F7C45DF9F7 /* AInsteinPresenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD29F2C28F125F7C45DF9F8 /* AInsteinPresenceView.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
@@ -152,7 +155,7 @@
 		00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
 		38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationIdentifierBuilder.swift; sourceTree = "<group>"; };
 		521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightHistoryComponents.swift; sourceTree = "<group>"; };
-		521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryComponents.swift; sourceTree = "<group>"; };
+		521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightProgressStoryComponents.swift; sourceTree = "<group>"; };
 		521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSetupComponents.swift; sourceTree = "<group>"; };
 		521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightStatsComponents.swift; sourceTree = "<group>"; };
 		521608B22EAB41470085B852 /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatMessage.swift; sourceTree = "<group>"; };
@@ -160,15 +163,17 @@
 		521608B62EAB416A0085B852 /* BehavioralCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BehavioralCopy.swift; sourceTree = "<group>"; };
 		521608B72EAB416A0085B852 /* HealthDataAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataAggregator.swift; sourceTree = "<group>"; };
 		521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnifiedHealthDataService.swift; sourceTree = "<group>"; };
-		521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LifeGPTViewModel+EmotionDetection.swift"; sourceTree = "<group>"; };
-		521608C12EAB41920085B852 /* LIFeGPTChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LIFeGPTChatView.swift; sourceTree = "<group>"; };
-		521608D42EAB47730085B852 /* LifeGPTViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGPTViewModel.swift; sourceTree = "<group>"; };
-		521608D62EAB47ED0085B852 /* CoachInviteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachInviteCard.swift; sourceTree = "<group>"; };
-		521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LifeGPTComponents.swift; sourceTree = "<group>"; };
+		521608BD2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift"; sourceTree = "<group>"; };
+		521608C12EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LIFeGPTChatView.swift; sourceTree = "<group>"; };
+		521608C42EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/LifeGPTViewModel.swift; sourceTree = "<group>"; };
+		521608C62EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTLoadingOverlay.swift; sourceTree = "<group>"; };
+		521608C82EABC3000085B852 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAIService.swift; sourceTree = "<group>"; };
+		521608CB2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AI/AInsteinSystemPrompt.swift; sourceTree = "<group>"; };
+		521608CD2EABC5000085B852 /* Core/AI/ResponseValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AI/ResponseValidator.swift; sourceTree = "<group>"; };
+		521608D02EABC6000085B852 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		521608D62EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/CoachInviteCard.swift; sourceTree = "<group>"; };
+		521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTComponents.swift; sourceTree = "<group>"; };
 		521608DC2EAB5F0B0085B852 /* HealthDataAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthDataAnalyzer.swift; sourceTree = "<group>"; };
-		521608DD2EAB5F0B0085B852 /* QueryClassifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryClassifier.swift; sourceTree = "<group>"; };
-		521608DE2EAB5F0B0085B852 /* QueryIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryIntent.swift; sourceTree = "<group>"; };
-		521608DF2EAB5F0B0085B852 /* ResponseGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResponseGenerator.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
 		521EEDE12EA906B5005C1074 /* GoogleService-Info 2.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info 2.plist"; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
@@ -180,6 +185,7 @@
 		5243F2492E9029970051A731 /* MoodTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodTrackingView.swift; sourceTree = "<group>"; };
 		524976182EA2133E00632E28 /* WeightControlCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightControlCenterView.swift; sourceTree = "<group>"; };
 		525A7C962EA329A200E724F4 /* MilestoneRingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MilestoneRingCard.swift; sourceTree = "<group>"; };
+		527695062EAFDE5B0040DF5D /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		5288A52A2EA44CF100806BE7 /* TrackerCardManagerTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerCardManagerTestView.swift; sourceTree = "<group>"; };
 		5288A52C2EA44D1100806BE7 /* TrackerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerCard.swift; sourceTree = "<group>"; };
 		5288A52E2EA44D2600806BE7 /* TrackerCardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackerCardManager.swift; sourceTree = "<group>"; };
@@ -233,10 +239,8 @@
 		52F16D732EA45ED4002C9FC5 /* DSSpacing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSSpacing.swift; sourceTree = "<group>"; };
 		52F16D742EA45ED4002C9FC5 /* DSTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSTypography.swift; sourceTree = "<group>"; };
 		52F16D7A2EA48151002C9FC5 /* ProgressStoryCardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressStoryCardManager.swift; sourceTree = "<group>"; };
-		52F211CF2EABA1CF006705CD /* EmotionEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmotionEngine.swift; sourceTree = "<group>"; };
 		52F211D32EABA449006705CD /* HealthInsight.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthInsight.swift; sourceTree = "<group>"; };
 		52F211D52EABA46B006705CD /* ConversationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationManager.swift; sourceTree = "<group>"; };
-		52F211D62EABA46B006705CD /* InsightGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InsightGenerator.swift; sourceTree = "<group>"; };
 		52F3D16E2EABE32B00C20142 /* PerformanceTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PerformanceTokens.swift; sourceTree = "<group>"; };
 		52F578872EA804ED0042727E /* DSProgressRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSProgressRing.swift; sourceTree = "<group>"; };
 		52F578892EA80CFB0042727E /* DSBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DSBanner.swift; sourceTree = "<group>"; };
@@ -246,7 +250,9 @@
 		52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightNotificationManager.swift; sourceTree = "<group>"; };
 		52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightNotificationPlanner.swift; sourceTree = "<group>"; };
 		52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FastingTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		769DC2E8156D4FA2CEE51A91 /* AInsteinPresenceModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AInsteinPresenceModifier.swift; sourceTree = "<group>"; };
 		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
+		7DD29F2C28F125F7C45DF9F8 /* AInsteinPresenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AInsteinPresenceView.swift; sourceTree = "<group>"; };
 		94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightTrackingViewModel.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -312,6 +318,7 @@
 				A1000019000000000000001 /* FastingTracker */,
 				52F5789E2EA8FD4C0042727E /* FastingTrackerTests */,
 				A1000020000000000000001 /* Products */,
+				527695062EAFDE5B0040DF5D /* Config.xcconfig */,
 			);
 			sourceTree = "<group>";
 		};
@@ -319,24 +326,26 @@
 			isa = PBXGroup;
 			children = (
 				52F3D16E2EABE32B00C20142 /* PerformanceTokens.swift */,
-				52F211CF2EABA1CF006705CD /* EmotionEngine.swift */,
 				52F211D32EABA449006705CD /* HealthInsight.swift */,
 				52F211D52EABA46B006705CD /* ConversationManager.swift */,
-				52F211D62EABA46B006705CD /* InsightGenerator.swift */,
 				521608DC2EAB5F0B0085B852 /* HealthDataAnalyzer.swift */,
-				521608DD2EAB5F0B0085B852 /* QueryClassifier.swift */,
-				521608DE2EAB5F0B0085B852 /* QueryIntent.swift */,
-				521608DF2EAB5F0B0085B852 /* ResponseGenerator.swift */,
-				521608C12EAB41920085B852 /* LIFeGPTChatView.swift */,
-				521608D42EAB47730085B852 /* LifeGPTViewModel.swift */,
-				521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */,
+				521608C12EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift */,
+				521608C42EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift */,
+				521608C62EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift */,
+				521608C82EABC3000085B852 /* OpenAIService.swift */,
+				521608CB2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift */,
+				7DD29F2C28F125F7C45DF9F8 /* AInsteinPresenceView.swift */,
+				769DC2E8156D4FA2CEE51A91 /* AInsteinPresenceModifier.swift */,
+				521608CD2EABC5000085B852 /* Core/AI/ResponseValidator.swift */,
+				521608D02EABC6000085B852 /* NetworkMonitor.swift */,
+				521608BD2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift */,
 				521608B62EAB416A0085B852 /* BehavioralCopy.swift */,
 				521608B72EAB416A0085B852 /* HealthDataAggregator.swift */,
 				521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */,
 				521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */,
 				521608B22EAB41470085B852 /* ChatMessage.swift */,
-				521608D62EAB47ED0085B852 /* CoachInviteCard.swift */,
-				521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */,
+				521608D62EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift */,
+				521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */,
 				521608B32EAB41470085B852 /* EmotionState.swift */,
 				521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */,
 				521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */,
@@ -549,6 +558,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				527695072EAFDE5B0040DF5D /* Config.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -580,11 +590,19 @@
 				52B2CFE72E9880B50061FCFF /* HydrationChartView.swift in Sources */,
 				521608AE2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift in Sources */,
 				521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */,
-				521608C32EAB41920085B852 /* LIFeGPTChatView.swift in Sources */,
+				521608C32EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift in Sources */,
+				521608C52EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift in Sources */,
+				521608C72EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift in Sources */,
+				521608CA2EABC3000085B852 /* OpenAIService.swift in Sources */,
+				521608CC2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift in Sources */,
+				7DD29F2C28F125F7C45DF9F7 /* AInsteinPresenceView.swift in Sources */,
+				769DC2E8156D4FA2CEE51A90 /* AInsteinPresenceModifier.swift in Sources */,
+				521608CE2EABC5000085B852 /* Core/AI/ResponseValidator.swift in Sources */,
+				521608CF2EABC6000085B852 /* NetworkMonitor.swift in Sources */,
 				52F211D42EABA449006705CD /* HealthInsight.swift in Sources */,
 				521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */,
-				521608D82EAB47ED0085B852 /* LifeGPTComponents.swift in Sources */,
-				521608D92EAB47ED0085B852 /* CoachInviteCard.swift in Sources */,
+				521608D82EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift in Sources */,
+				521608D92EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift in Sources */,
 				521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */,
 				52B2CFE82E9880B50061FCFF /* UI/Components/HydrationComponents.swift in Sources */,
 				52B2CFE92E9880B50061FCFF /* HydrationCalendarView.swift in Sources */,
@@ -604,7 +622,7 @@
 				682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */,
 				DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */,
 				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
-				521608BF2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift in Sources */,
+				521608BF2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift in Sources */,
 				52B2CFC32E94EE630061FCFF /* AppLogger.swift in Sources */,
 				5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */,
 				52B2CFC12E94B8A40061FCFF /* CSVImporter.swift in Sources */,
@@ -629,7 +647,6 @@
 				5288A52D2EA44D1100806BE7 /* TrackerCard.swift in Sources */,
 				HK001003000000000000001 /* Core/Managers/HealthKitWeightService.swift in Sources */,
 				52F211D72EABA46B006705CD /* ConversationManager.swift in Sources */,
-				52F211D82EABA46B006705CD /* InsightGenerator.swift in Sources */,
 				5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */,
 				5289E07D2E8D700000254E70 /* Core/Managers/HydrationManager.swift in Sources */,
 				5288A52B2EA44CF100806BE7 /* TrackerCardManagerTestView.swift in Sources */,
@@ -639,10 +656,7 @@
 				521608B92EAB416A0085B852 /* HealthDataAggregator.swift in Sources */,
 				521608BA2EAB416A0085B852 /* UnifiedHealthDataService.swift in Sources */,
 				521608BB2EAB416A0085B852 /* BehavioralCopy.swift in Sources */,
-				521608E02EAB5F0B0085B852 /* ResponseGenerator.swift in Sources */,
 				521608E12EAB5F0B0085B852 /* HealthDataAnalyzer.swift in Sources */,
-				521608E22EAB5F0B0085B852 /* QueryIntent.swift in Sources */,
-				521608E32EAB5F0B0085B852 /* QueryClassifier.swift in Sources */,
 				52B2CFC72E95A9C80061FCFF /* CrashReportManager.swift in Sources */,
 				52B2CFC82E95A9C80061FCFF /* Core/Persistence/DataStore.swift in Sources */,
 				A1000003000000000000001 /* ContentView.swift in Sources */,
@@ -651,7 +665,6 @@
 				52F3D16F2EABE32B00C20142 /* PerformanceTokens.swift in Sources */,
 				52D684182EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift in Sources */,
 				52F16D752EA45ED4002C9FC5 /* DSColors.swift in Sources */,
-				521608D52EAB47730085B852 /* LifeGPTViewModel.swift in Sources */,
 				521608B42EAB41470085B852 /* ChatMessage.swift in Sources */,
 				521608B52EAB41470085B852 /* EmotionState.swift in Sources */,
 				52F16D762EA45ED4002C9FC5 /* DSCardHeader.swift in Sources */,
@@ -667,7 +680,6 @@
 				52B2CFED2E9886BB0061FCFF /* UI/Components/MoodComponents.swift in Sources */,
 				FF00000100000000000000A1 /* FastingStage.swift in Sources */,
 				FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */,
-				52F211D02EABA1CF006705CD /* EmotionEngine.swift in Sources */,
 				52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */,
 				52B2CFD72E9746610061FCFF /* FastingSettingsView.swift in Sources */,
 				FF00000500000000000000A1 /* AnalyticsView.swift in Sources */,
@@ -760,6 +772,7 @@
 		};
 		A1000027000000000000001 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 527695062EAFDE5B0040DF5D /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
@@ -825,6 +838,7 @@
 		};
 		A1000028000000000000001 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 527695062EAFDE5B0040DF5D /* Config.xcconfig */;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;

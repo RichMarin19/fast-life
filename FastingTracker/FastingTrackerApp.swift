@@ -85,10 +85,26 @@ struct MainTabView: View {
     @Binding var selectedTab: Int
     let tabBinding: Binding<Int>
 
+    // MARK: - UnifiedHealthDataService Helper
+
+    /// Creates UnifiedHealthDataService with all manager dependencies
+    /// DRY principle: Single source of truth for data service across all tabs
+    /// Used by .withAInsteinPresence() modifier on all 5 tabs
+    private func createUnifiedHealthDataService() -> UnifiedHealthDataService {
+        return UnifiedHealthDataService(
+            weightManager: weightManager,
+            fastingManager: fastingManager,
+            sleepManager: sleepManager,
+            hydrationManager: hydrationManager,
+            moodManager: moodManager
+        )
+    }
+
     var body: some View {
         TabView(selection: tabBinding) {
             // Stats tab - Analytics and cross-tracker insights
             LazyView(AnalyticsView())
+                .withAInsteinPresence(dataService: createUnifiedHealthDataService())
                 .tabItem {
                     Label("Stats", systemImage: "chart.bar.xaxis")
                 }
@@ -96,6 +112,7 @@ struct MainTabView: View {
 
             // Coach tab - AI coaching and guidance (placeholder for now)
             LazyView(CoachView())
+                .withAInsteinPresence(dataService: createUnifiedHealthDataService())
                 .tabItem {
                     Label("Coach", systemImage: "person.crop.circle.badge.checkmark")
                 }
@@ -109,6 +126,7 @@ struct MainTabView: View {
                 .environmentObject(sleepManager)
                 .environmentObject(moodManager)
                 .environmentObject(behavioralScheduler)
+                .withAInsteinPresence(dataService: createUnifiedHealthDataService())
                 .tabItem {
                     Label("Hub", systemImage: "waveform.path.ecg")
                 }
@@ -116,6 +134,7 @@ struct MainTabView: View {
 
             // Learn tab - Educational content and insights
             LazyView(InsightsView())
+                .withAInsteinPresence(dataService: createUnifiedHealthDataService())
                 .tabItem {
                     Label("Learn", systemImage: "lightbulb.fill")
                 }
@@ -130,8 +149,13 @@ struct MainTabView: View {
                     selectedTab: $selectedTab
                 )
                 .environmentObject(fastingManager)
+                .environmentObject(weightManager)
+                .environmentObject(sleepManager)
+                .environmentObject(hydrationManager)
+                .environmentObject(moodManager)
                 .environmentObject(behavioralScheduler)
             )
+            .withAInsteinPresence(dataService: createUnifiedHealthDataService())
             .tabItem {
                 Label("Me", systemImage: "person.circle")
             }

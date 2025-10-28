@@ -85,7 +85,7 @@ struct CoachInviteCard: View {
     @ViewBuilder
     private var title: some View {
         Text("Ask Your Coach")
-            .font(DSTypography.titleMd)
+            .font(DSTypography.cardTitle)
             .foregroundStyle(titleColor)
     }
 
@@ -93,7 +93,7 @@ struct CoachInviteCard: View {
     @ViewBuilder
     private var prompt: some View {
         Text(promptText)
-            .font(DSTypography.subhead)
+            .font(DSTypography.cardSubtitle)
             .foregroundStyle(promptColor)
             .lineLimit(1)
     }
@@ -212,7 +212,9 @@ struct CoachInviteChip: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        Button(action: onTap) {
+        Button {
+            onTap()
+        } label: {
             HStack(spacing: DSSpacing.cardSmallSpacing) {
                 // Icon (smaller)
                 Image(systemName: "brain.head.profile")
@@ -221,7 +223,7 @@ struct CoachInviteChip: View {
 
                 // Title only (no prompt in chip)
                 Text("Coach")
-                    .font(DSTypography.subhead)
+                    .font(DSTypography.cardSubtitle)
                     .foregroundStyle(textColor)
 
                 Spacer()
@@ -234,7 +236,7 @@ struct CoachInviteChip: View {
             .padding(.horizontal, DSSpacing.cardElementSpacing)
             .padding(.vertical, 10)
             .background(chipBackground)
-            .cornerRadius(DSCornerRadius.chip)
+            .cornerRadius(DSCornerRadius.button)
             .shadow(color: Theme.ColorToken.shadowCard.opacity(0.1), radius: 4, x: 0, y: 2)
         }
         .buttonStyle(CoachCardButtonStyle())

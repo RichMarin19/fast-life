@@ -331,11 +331,25 @@ struct EmptyWeightStateView: View {
                     // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
                     // Request weight permissions immediately when user wants to sync weight data
                     AppLogger.info("EmptyState: Sync button tapped - requesting weight authorization", category: AppLogger.healthKit)
+
+                    // CRITICAL FIX: Enable sync preference FIRST so syncFromHealthKit() doesn't early-return
+                    // This ensures the sync actually runs and logs appear
+                    weightManager.setSyncPreference(true)
+                    AppLogger.info("EmptyState: Enabled sync preference", category: AppLogger.healthKit)
+
                     HealthKitManager.shared.requestWeightAuthorization { success, _ in
                         if success {
                             AppLogger.info("EmptyState: Weight authorization granted - starting sync", category: AppLogger.healthKit)
                             DispatchQueue.main.async {
-                                weightManager.syncFromHealthKit()
+                                // Use syncFromHealthKitWithReset to reset anchor and get all data fresh
+                                let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
+                                weightManager.syncFromHealthKitWithReset(startDate: startDate) { addedCount, error in
+                                    if let error = error {
+                                        AppLogger.error("EmptyState: Sync failed", category: AppLogger.healthKit, error: error)
+                                    } else {
+                                        AppLogger.info("EmptyState: Sync completed - added \(addedCount) entries", category: AppLogger.healthKit)
+                                    }
+                                }
                             }
                         } else {
                             AppLogger.info("EmptyState: Weight authorization denied", category: AppLogger.healthKit)

@@ -298,3 +298,93 @@ extension Recommendation {
     ]
 }
 #endif
+
+// MARK: - Rich Health Context (Phase 8.1)
+
+/// Comprehensive health data context for AInstein LLM intelligence
+/// **Purpose:** Fix "not enough data" bug with hybrid approach (summaries + recent history)
+/// **Industry Pattern:** WHOOP Coach sends comprehensive summaries + recent patterns (NOT raw data dumps)
+/// **Speed:** 2-2.5s response time (matches <3s industry standard)
+struct RichHealthContext {
+    // MARK: - Current State
+    let currentWeight: Double?
+    let currentFastingStatus: String?
+    let todayHydration: Double?
+    let todayMood: Int?
+    let lastNightSleep: Double?
+
+    // MARK: - 7-Day Trends
+    let weightChange7d: Double?
+    let fastingCount7d: Int?
+    let avgSleep7d: Double?
+    let avgHydration7d: Double?
+    let avgMood7d: Double?
+    let avgEnergy7d: Double?
+
+    // MARK: - 30-Day Trends
+    let weightChange30d: Double?
+    let fastingCount30d: Int?
+    let avgFastDuration30d: Double?
+    let avgSleep30d: Double?
+    let avgHydration30d: Double?
+    let avgMood30d: Double?
+    let avgEnergy30d: Double?
+
+    // MARK: - 90-Day Trends
+    let weightChange90d: Double?
+    let fastingCount90d: Int?
+    let avgFastDuration90d: Double?
+    let avgSleep90d: Double?
+    let avgWeightLossRate90d: Double?
+
+    // MARK: - Goals & Progress
+    let weightGoal: Double?
+    let startWeight: Double?
+    let totalWeightLost: Double?
+    let daysInJourney: Int?
+    let progressPercent: Double?
+    let estimatedDaysToGoal: Int?
+    let onTrackStatus: String?
+
+    // MARK: - Milestones
+    let currentFastingStreak: Int?
+    let longestFastingStreak: Int?
+    let totalFastsCompleted: Int?
+    let milestones: [String]?
+
+    // MARK: - Recent History (Last 30 Days - For Dynamic Pattern Analysis)
+    struct DailySummary {
+        let date: Date
+        let weight: Double?
+        let fastsCompleted: Int
+        let sleepHours: Double?
+        let hydrationOz: Double?
+        let mood: Int?
+    }
+    let recentHistory: [DailySummary]?  // Last 30 days
+
+    // MARK: - Correlations (Pre-Calculated for Speed)
+    let weeksWith5PlusFasts_AvgWeightLoss: Double?
+    let weeksWith3OrLessFasts_AvgWeightLoss: Double?
+    let avgWeightLoss_WellRested: Double?
+    let avgWeightLoss_PoorlySleep: Double?
+    let avgWeightLoss_HighHydration: Double?
+    let avgWeightLoss_LowHydration: Double?
+
+    // MARK: - Key Patterns
+    let bestWeek_Date: String?
+    let bestWeek_FastingCount: Int?
+    let bestWeek_WeightLoss: Double?
+    let worstWeek_Date: String?
+    let worstWeek_FastingCount: Int?
+    let worstWeek_WeightChange: Double?
+    let avgWeightLossRate: Double?
+    let mostCommonFastDuration: String?
+    let mostProductiveDayOfWeek: String?
+
+    // MARK: - Data Completeness
+    let totalWeightEntries: Int?
+    let totalSleepEntries: Int?
+    let totalHydrationEntries: Int?
+    let totalMoodEntries: Int?
+}

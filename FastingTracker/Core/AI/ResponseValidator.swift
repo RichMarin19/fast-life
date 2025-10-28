@@ -10,83 +10,46 @@
 import Foundation
 import os.log
 
-/// Validates LLM responses for hallucination prevention and tone enforcement
+/// Validates LLM responses for tone enforcement (minimal, trust-based)
 /// Following industry pattern: Whoop Coach validation, Oura Advisor guardrails
 ///
-/// **Purpose:**
-/// - Detect hallucinations (LLM inventing numbers not in context)
-/// - Enforce AInstein personality (max 2 sentences, luxury empathy tone)
+/// **Purpose (Phase 8.2+):**
 /// - Filter emojis (only ✨, 🧠, ⚡ allowed, max 1)
 /// - Ensure signature ("– AInstein." at end)
+/// - Trust LLM intelligence for conciseness, accuracy, and tone
 ///
-/// **Industry Validation:**
-/// - Whoop Coach: Validates metrics against provided data
-/// - Oura Advisor: Flags responses with invented sleep scores
-/// - MyFitnessPal: Cross-checks calorie counts with database
+/// **Industry Reality:**
+/// - WHOOP, Oura, Levels do NOT enforce sentence limits - they trust the LLM
+/// - System prompts + rich context = accurate, concise responses naturally
+/// - Over-engineering validation fights against LLM strengths
 struct ResponseValidator {
 
     // MARK: - Public API
 
-    /// Validate LLM response against provided context
+    /// Validate LLM response against RichHealthContext (Phase 8.2+)
+    /// **Industry Standard:** WHOOP, Oura, Levels trust LLM intelligence - no artificial truncation
+    /// **Philosophy:** GPT-4o-mini is smart enough to follow system prompt instructions naturally
     /// - Parameters:
     ///   - response: Raw LLM response
-    ///   - context: InsightContext used to generate response
-    /// - Returns: Validated response (truncated, signature added, emojis filtered)
-    static func validate(_ response: String, against context: InsightContext) -> String {
+    ///   - richContext: RichHealthContext used to generate response (unused, kept for future)
+    /// - Returns: Validated response (signature added, emojis filtered)
+    static func validateWithRichContext(_ response: String, against richContext: RichHealthContext) -> String {
         var validated = response
 
-        // 1. Detect hallucinations (invented numbers)
-        if containsHallucination(validated, context: context) {
-            logger.warning("⚠️ Hallucination detected in LLM response, returning fallback")
-            return "I don't have enough reliable data for that question yet. Keep logging to get insights. – AInstein."
-        }
-
-        // 2. Enforce max 2 sentences
-        validated = enforceMaxSentences(validated, maxSentences: 2)
-
-        // 3. Filter emojis (only ✨, 🧠, ⚡ allowed, max 1)
+        // 1. Filter emojis (only ✨, 🧠, ⚡ allowed, max 1)
         validated = filterEmojis(validated)
 
-        // 4. Ensure signature
+        // 2. Ensure signature
         validated = ensureSignature(validated)
 
         return validated
     }
 
-    // MARK: - Hallucination Detection
+    // MARK: - Deprecated: Hallucination Detection (Phase 8.2)
+    // Industry standard: Trust LLM accuracy with rich context + system prompts
+    // These methods are kept for reference but not used in validation
 
-    /// Check if response contains numbers not present in context (hallucination)
-    /// **Tolerance:** ±0.5 for rounding differences
-    /// - Parameters:
-    ///   - response: LLM-generated response
-    ///   - context: InsightContext with health data
-    /// - Returns: True if hallucination detected, false otherwise
-    private static func containsHallucination(_ response: String, context: InsightContext) -> Bool {
-        // Extract all numbers from response
-        let responseNumbers = extractNumbers(from: response)
-
-        // Extract all numbers from context
-        let contextNumbers = extractNumbersFromContext(context)
-
-        // Check if response contains numbers NOT in context (tolerance: ±0.5 for rounding)
-        for responseNum in responseNumbers {
-            var foundMatch = false
-            for contextNum in contextNumbers {
-                if abs(responseNum - contextNum) <= 0.5 {
-                    foundMatch = true
-                    break
-                }
-            }
-            if !foundMatch {
-                logger.debug("🚨 Hallucination detected: \(responseNum) not in context")
-                return true
-            }
-        }
-
-        return false
-    }
-
-    /// Extract all numbers from string (weight values, counts, percentages)
+    /// [DEPRECATED] Extract all numbers from string (weight values, counts, percentages)
     /// - Parameter text: Text to extract numbers from
     /// - Returns: Array of Double values found in text
     private static func extractNumbers(from text: String) -> [Double] {
@@ -101,52 +64,154 @@ struct ResponseValidator {
         }
     }
 
-    /// Extract all numbers from InsightContext
-    /// - Parameter context: Health data context
+    /// [DEPRECATED] Check if response contains numbers not present in RichHealthContext (Phase 8.1)
+    /// **Phase 8.2:** Removed from validation - false positives on calculated values (0.4 lbs/week)
+    /// **Industry Standard:** WHOOP/Oura/Levels trust LLM math with rich context
+    /// - Parameters:
+    ///   - response: LLM-generated response
+    ///   - context: RichHealthContext with comprehensive health data
+    /// - Returns: True if hallucination detected, false otherwise
+    private static func containsHallucinationInRichContext(_ response: String, context: RichHealthContext) -> Bool {
+        // Extract all numbers from response
+        let responseNumbers = extractNumbers(from: response)
+
+        // Extract all numbers from RichHealthContext (70+ metrics)
+        let contextNumbers = extractNumbersFromRichContext(context)
+
+        // Check if response contains numbers NOT in context (tolerance: ±0.5 for rounding)
+        for responseNum in responseNumbers {
+            var foundMatch = false
+            for contextNum in contextNumbers {
+                if abs(responseNum - contextNum) <= 0.5 {
+                    foundMatch = true
+                    break
+                }
+            }
+            if !foundMatch {
+                logger.debug("🚨 Hallucination detected: \(responseNum) not in RichHealthContext")
+                return true
+            }
+        }
+
+        return false
+    }
+
+    /// [DEPRECATED] Extract all numbers from RichHealthContext (Phase 8.1)
+    /// **Phase 8.2:** No longer used - trust LLM to calculate derived values
+    /// - Parameter context: Comprehensive health data context
     /// - Returns: Array of all numeric values in context
-    private static func extractNumbersFromContext(_ context: InsightContext) -> [Double] {
+    private static func extractNumbersFromRichContext(_ context: RichHealthContext) -> [Double] {
         var numbers: [Double] = []
 
-        // Weight data
+        // Current State
         if let weight = context.currentWeight { numbers.append(weight) }
-        if let startWeight = context.startWeight { numbers.append(startWeight) }
-        if let weightChange = context.weightChangeLast7Days { numbers.append(abs(weightChange)) }
+        if let hydration = context.todayHydration { numbers.append(hydration) }
+        if let mood = context.todayMood { numbers.append(Double(mood)) }
+        if let sleep = context.lastNightSleep { numbers.append(sleep) }
+
+        // 7-Day Trends
+        if let change = context.weightChange7d { numbers.append(abs(change)) }
+        if let count = context.fastingCount7d { numbers.append(Double(count)) }
+        if let sleep = context.avgSleep7d { numbers.append(sleep) }
+        if let hydration = context.avgHydration7d { numbers.append(hydration) }
+        if let mood = context.avgMood7d { numbers.append(mood) }
+        if let energy = context.avgEnergy7d { numbers.append(energy) }
+
+        // 30-Day Trends
+        if let change = context.weightChange30d { numbers.append(abs(change)) }
+        if let count = context.fastingCount30d { numbers.append(Double(count)) }
+        if let duration = context.avgFastDuration30d { numbers.append(duration) }
+        if let sleep = context.avgSleep30d { numbers.append(sleep) }
+        if let hydration = context.avgHydration30d { numbers.append(hydration) }
+        if let mood = context.avgMood30d { numbers.append(mood) }
+        if let energy = context.avgEnergy30d { numbers.append(energy) }
+
+        // 90-Day Trends
+        if let change = context.weightChange90d { numbers.append(abs(change)) }
+        if let count = context.fastingCount90d { numbers.append(Double(count)) }
+        if let duration = context.avgFastDuration90d { numbers.append(duration) }
+        if let sleep = context.avgSleep90d { numbers.append(sleep) }
+        if let rate = context.avgWeightLossRate90d { numbers.append(abs(rate)) }
+
+        // Goals & Progress
         if let goal = context.weightGoal { numbers.append(goal) }
+        if let start = context.startWeight { numbers.append(start) }
+        if let lost = context.totalWeightLost { numbers.append(abs(lost)) }
+        if let days = context.daysInJourney { numbers.append(Double(days)) }
+        if let percent = context.progressPercent { numbers.append(percent) }
+        if let daysToGoal = context.estimatedDaysToGoal { numbers.append(Double(daysToGoal)) }
 
-        // Fasting data
-        if let fastingThisWeek = context.fastingCountThisWeek { numbers.append(Double(fastingThisWeek)) }
-        if let fastingLastWeek = context.fastingCountLastWeek { numbers.append(Double(fastingLastWeek)) }
-        if let streak = context.currentStreak { numbers.append(Double(streak)) }
-        if let longestStreak = context.longestStreak { numbers.append(Double(longestStreak)) }
+        // Streaks & Milestones
+        if let streak = context.currentFastingStreak { numbers.append(Double(streak)) }
+        if let longest = context.longestFastingStreak { numbers.append(Double(longest)) }
+        if let total = context.totalFastsCompleted { numbers.append(Double(total)) }
 
-        // TODO: Add sleep/hydration/mood data extraction when InsightContext is expanded
-        // Currently InsightContext only contains weight and fasting data
-        // Future enhancement: Add avgSleepDuration, avgHydration, avgMood, avgEnergy properties
+        // Correlations
+        if let high = context.weeksWith5PlusFasts_AvgWeightLoss { numbers.append(abs(high)) }
+        if let low = context.weeksWith3OrLessFasts_AvgWeightLoss { numbers.append(abs(low)) }
+        if let wellRested = context.avgWeightLoss_WellRested { numbers.append(abs(wellRested)) }
+        if let poorly = context.avgWeightLoss_PoorlySleep { numbers.append(abs(poorly)) }
+        if let highHydration = context.avgWeightLoss_HighHydration { numbers.append(abs(highHydration)) }
+        if let lowHydration = context.avgWeightLoss_LowHydration { numbers.append(abs(lowHydration)) }
+
+        // Key Patterns
+        if let count = context.bestWeek_FastingCount { numbers.append(Double(count)) }
+        if let loss = context.bestWeek_WeightLoss { numbers.append(abs(loss)) }
+        if let count = context.worstWeek_FastingCount { numbers.append(Double(count)) }
+        if let change = context.worstWeek_WeightChange { numbers.append(abs(change)) }
+        if let rate = context.avgWeightLossRate { numbers.append(abs(rate)) }
+
+        // Data Completeness
+        if let count = context.totalWeightEntries { numbers.append(Double(count)) }
+        if let count = context.totalSleepEntries { numbers.append(Double(count)) }
+        if let count = context.totalHydrationEntries { numbers.append(Double(count)) }
+        if let count = context.totalMoodEntries { numbers.append(Double(count)) }
 
         return numbers
     }
 
-    // MARK: - Sentence Enforcement
 
-    /// Enforce maximum sentence count
-    /// **AInstein Rule:** Max 2 sentences per response
+    // MARK: - Deprecated: Sentence Enforcement (Phase 8.2+)
+    // Industry Reality: WHOOP, Oura, Levels do NOT enforce sentence limits
+    // Philosophy: "We have the power of an LLM connected to us" - trust its intelligence
+    // These methods are kept for reference but not used in validation
+
+    /// [DEPRECATED] Enforce maximum sentence count
+    /// **Phase 8.2+ Decision:** REMOVED from validation - trust LLM to follow system prompt naturally
+    /// **Issue:** Artificially truncating LLM responses fights against its intelligence
+    /// **Fix Applied (before deprecation):** Properly handles decimal numbers (0.3, 178.4) without breaking
     /// - Parameters:
     ///   - text: Response text
     ///   - maxSentences: Maximum allowed sentences (default: 2)
     /// - Returns: Truncated text with max sentences
     private static func enforceMaxSentences(_ text: String, maxSentences: Int) -> String {
-        // Split by sentence-ending punctuation (.!?)
-        let sentences = text.components(separatedBy: CharacterSet(charactersIn: ".!?"))
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
+        // Pattern: Match sentence-ending punctuation (.!?) followed by:
+        // - Whitespace + uppercase letter (start of new sentence)
+        // - OR end of string
+        // But NOT periods in decimal numbers (e.g., 0.3, 178.4)
+        let pattern = "(?<![0-9])[.!?](?=\\s+[A-Z]|\\s*$)"
 
-        if sentences.count <= maxSentences {
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            // Fallback: return original text if regex fails
             return text
         }
 
-        // Take first maxSentences and rejoin
-        let truncated = sentences.prefix(maxSentences).joined(separator: ". ")
-        return truncated + "."
+        let matches = regex.matches(in: text, range: NSRange(text.startIndex..., in: text))
+
+        // If we have maxSentences or fewer sentences, return original
+        if matches.count <= maxSentences {
+            return text
+        }
+
+        // Find the position after the Nth sentence-ending punctuation
+        guard let nthMatch = matches.dropFirst(maxSentences - 1).first,
+              let range = Range(nthMatch.range, in: text) else {
+            return text
+        }
+
+        // Truncate at the Nth sentence boundary
+        let truncated = String(text[..<range.upperBound]).trimmingCharacters(in: .whitespaces)
+        return truncated
     }
 
     // MARK: - Emoji Filtering

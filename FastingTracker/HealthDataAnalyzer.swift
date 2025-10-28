@@ -14,6 +14,98 @@
 
 import Foundation
 
+// MARK: - Time Range Types (Stub Definitions)
+// Note: These were previously defined in QueryIntent.swift (deleted in Phase 8.2)
+// HealthDataAnalyzer is not currently used in production, but kept for potential future use
+
+/// Time range for queries (e.g., "last 7 days", "this month")
+enum TimeRange {
+    case today
+    case yesterday
+    case thisWeek
+    case lastWeek
+    case thisMonth
+    case lastMonth
+    case thisYear
+    case lastYear
+    case last7Days
+    case last30Days
+    case last90Days
+    case allTime
+    case custom(startDate: Date, endDate: Date)
+
+    /// Convert to date range (startDate, endDate)
+    func toDateRange() -> (Date, Date) {
+        let calendar = Calendar.current
+        let now = Date()
+
+        switch self {
+        case .today:
+            let start = calendar.startOfDay(for: now)
+            return (start, now)
+        case .yesterday:
+            let start = calendar.date(byAdding: .day, value: -1, to: calendar.startOfDay(for: now))!
+            let end = calendar.startOfDay(for: now)
+            return (start, end)
+        case .thisWeek:
+            let start = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
+            return (start, now)
+        case .lastWeek:
+            let thisWeekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: now))!
+            let start = calendar.date(byAdding: .weekOfYear, value: -1, to: thisWeekStart)!
+            return (start, thisWeekStart)
+        case .thisMonth:
+            let start = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
+            return (start, now)
+        case .lastMonth:
+            let thisMonthStart = calendar.date(from: calendar.dateComponents([.year, .month], from: now))!
+            let start = calendar.date(byAdding: .month, value: -1, to: thisMonthStart)!
+            return (start, thisMonthStart)
+        case .thisYear:
+            let start = calendar.date(from: calendar.dateComponents([.year], from: now))!
+            return (start, now)
+        case .lastYear:
+            let thisYearStart = calendar.date(from: calendar.dateComponents([.year], from: now))!
+            let start = calendar.date(byAdding: .year, value: -1, to: thisYearStart)!
+            return (start, thisYearStart)
+        case .last7Days:
+            let start = calendar.date(byAdding: .day, value: -7, to: now)!
+            return (start, now)
+        case .last30Days:
+            let start = calendar.date(byAdding: .day, value: -30, to: now)!
+            return (start, now)
+        case .last90Days:
+            let start = calendar.date(byAdding: .day, value: -90, to: now)!
+            return (start, now)
+        case .allTime:
+            // Use a date far in the past
+            let start = calendar.date(byAdding: .year, value: -10, to: now)!
+            return (start, now)
+        case .custom(let startDate, let endDate):
+            return (startDate, endDate)
+        }
+    }
+}
+
+/// Time period for analysis (e.g., "7 days", "1 month")
+enum TimePeriod {
+    case day
+    case week
+    case month
+    case year
+    case custom(days: Int)
+
+    var days: Int {
+        switch self {
+        case .day: return 1
+        case .week: return 7
+        case .month: return 30
+        case .year: return 365
+        case .custom(let days): return days
+        }
+    }
+}
+
 // MARK: - Analysis Result Models
 // Following Apple HealthKit pattern (HKStatistics includes date interval)
 

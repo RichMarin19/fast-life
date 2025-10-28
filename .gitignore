@@ -61,3 +61,4 @@ iOSInjectionProject/
 # Firebase Configuration
 GoogleService-Info.plist
 google-services.json
+Config.xcconfig

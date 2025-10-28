@@ -95,6 +95,11 @@ class OpenAIService {
         // Add current query
         messages.append(["role": "user", "content": userPrompt])
 
+        // CRITICAL DEBUG: Log the full user prompt being sent to OpenAI
+        logger.info("🔍 DEBUG - User prompt being sent to OpenAI:")
+        logger.info("🔍   Content: \(userPrompt, privacy: .public)")
+        logger.info("🔍   Total messages in API call: \(messages.count)")
+
         // Make API request
         let response = try await callOpenAIAPI(messages: messages)
 

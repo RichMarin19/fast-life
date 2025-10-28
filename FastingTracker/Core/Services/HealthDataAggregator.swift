@@ -113,6 +113,14 @@ protocol HealthDataAggregator {
     ///   - endDate: End of date range
     /// - Returns: Dictionary with aggregated data
     func getSummary(from startDate: Date, to endDate: Date) async -> [String: Any]
+
+    // MARK: - Rich Health Context (Phase 8.1)
+
+    /// Build comprehensive RichHealthContext for AInstein LLM intelligence
+    /// **Phase 8.1:** Aggregates 70+ metrics across all timeframes
+    /// **Industry Pattern:** WHOOP Coach comprehensive summaries + recent patterns
+    /// - Returns: RichHealthContext with current state, trends, correlations, history
+    func buildRichHealthContext() async -> RichHealthContext
 }
 
 // MARK: - Default Implementations (Convenience)

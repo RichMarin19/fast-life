@@ -223,6 +223,7 @@ struct WeightControlCenterView: View {
     @StateObject private var viewModel: WeightControlCenterViewModel
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
+    @State private var showDeleteAllConfirmation = false
 
     // MARK: - Initialization
 
@@ -403,6 +404,14 @@ struct WeightControlCenterView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("This will restore all hidden tracker cards and opted-out content to default. Are you sure?")
+        }
+        .confirmationDialog("Delete All Weight Data?", isPresented: $showDeleteAllConfirmation) {
+            Button("Delete All Data", role: .destructive) {
+                viewModel.weightManager.deleteAllWeightData()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This will delete all \(viewModel.weightManager.weightEntries.count) weight entries from Fast LIFe. You can resync from HealthKit afterward. This action cannot be undone.")
         }
     }
 
@@ -1031,6 +1040,32 @@ struct WeightControlCenterView: View {
                 }
                 .disabled(viewModel.isSyncing || !viewModel.hasHealthKitPermission)
                 .opacity((viewModel.isSyncing || !viewModel.hasHealthKitPermission) ? 0.5 : 1.0)
+
+                Divider()
+                    .background(Theme.ColorToken.dividerOnDark)
+
+                // Delete All Data button
+                Button(action: {
+                    showDeleteAllConfirmation = true
+                }) {
+                    HStack(spacing: DSSpacing.cardSmallSpacing) {
+                        Image(systemName: "trash")
+                            .font(DSTypography.cardTitle)
+                        Text("Delete All Weight Data")
+                            .font(DSTypography.cardTitle)
+                    }
+                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                    .frame(maxWidth: .infinity)
+                    .padding(DSSpacing.cardElementSpacing)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Theme.ColorToken.stateError.opacity(0.2))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(Theme.ColorToken.stateError, lineWidth: 1)
+                            )
+                    )
+                }
             }
 
             // Status message

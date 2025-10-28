@@ -67,12 +67,6 @@ struct LIFeGPTChatView: View {
                         .padding(.horizontal, DSSpacing.cardElementSpacing)
                         .padding(.bottom, DSSpacing.cardSmallSpacing)
                 }
-
-                // First-launch loading overlay
-                if viewModel.isFirstLaunchLoading {
-                    LifeGPTLoadingOverlay()
-                        .transition(.opacity)
-                }
             }
             .navigationTitle("LifeGPT")
             .navigationBarTitleDisplayMode(.inline)
@@ -86,12 +80,7 @@ struct LIFeGPTChatView: View {
             }
         }
         .onAppear {
-            // Pre-load HealthKit data on first launch (prevents freeze during first query)
-            Task {
-                await viewModel.preloadHealthData()
-            }
-
-            // Focus input after data loads
+            // Focus input on appear for immediate interaction
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 isInputFocused = true
             }
@@ -144,7 +133,7 @@ struct LIFeGPTChatView: View {
                 .padding(.top, DSSpacing.cardElementSpacing)
                 .padding(.bottom, 24)
             }
-            .onChange(of: viewModel.messages.count) {
+            .onChange(of: viewModel.messages.count) { _ in
                 // Auto-scroll to bottom on new message
                 withAnimation(.easeOut(duration: 0.3)) {
                     if let lastMessage = viewModel.messages.last {
@@ -152,9 +141,9 @@ struct LIFeGPTChatView: View {
                     }
                 }
             }
-            .onChange(of: viewModel.isProcessing) { _, newValue in
+            .onChange(of: viewModel.isProcessing) { isProcessing in
                 // Auto-scroll to typing indicator
-                if newValue {
+                if isProcessing {
                     withAnimation(.easeOut(duration: 0.3)) {
                         proxy.scrollTo(bottomID, anchor: .bottom)
                     }
@@ -276,28 +265,5 @@ class MockHealthDataService: HealthDataAggregator {
     func getTodayMood() async -> MoodEntry? { nil }
     func getTodaySummary() async -> [String: Any] { [:] }
     func getSummary(from startDate: Date, to endDate: Date) async -> [String: Any] { [:] }
-
-    // Phase 8.1: Mock implementation of RichHealthContext
-    func buildRichHealthContext() async -> RichHealthContext {
-        return RichHealthContext(
-            currentWeight: nil, currentFastingStatus: nil, todayHydration: nil, todayMood: nil,
-            lastNightSleep: nil, weightChange7d: nil, fastingCount7d: nil, avgSleep7d: nil,
-            avgHydration7d: nil, avgMood7d: nil, avgEnergy7d: nil, weightChange30d: nil,
-            fastingCount30d: nil, avgFastDuration30d: nil, avgSleep30d: nil, avgHydration30d: nil,
-            avgMood30d: nil, avgEnergy30d: nil, weightChange90d: nil, fastingCount90d: nil,
-            avgFastDuration90d: nil, avgSleep90d: nil, avgWeightLossRate90d: nil, weightGoal: nil,
-            startWeight: nil, totalWeightLost: nil, daysInJourney: nil, progressPercent: nil,
-            estimatedDaysToGoal: nil, onTrackStatus: nil, currentFastingStreak: nil,
-            longestFastingStreak: nil, totalFastsCompleted: nil, milestones: nil, recentHistory: nil,
-            weeksWith5PlusFasts_AvgWeightLoss: nil, weeksWith3OrLessFasts_AvgWeightLoss: nil,
-            avgWeightLoss_WellRested: nil, avgWeightLoss_PoorlySleep: nil,
-            avgWeightLoss_HighHydration: nil, avgWeightLoss_LowHydration: nil,
-            bestWeek_Date: nil, bestWeek_FastingCount: nil, bestWeek_WeightLoss: nil,
-            worstWeek_Date: nil, worstWeek_FastingCount: nil, worstWeek_WeightChange: nil,
-            avgWeightLossRate: nil, mostCommonFastDuration: nil, mostProductiveDayOfWeek: nil,
-            totalWeightEntries: nil, totalSleepEntries: nil, totalHydrationEntries: nil,
-            totalMoodEntries: nil
-        )
-    }
 }
 #endif
