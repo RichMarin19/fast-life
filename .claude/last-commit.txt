@@ -1,2 +1,46 @@
-Last commit: 369969d at 2025-10-27 21:56:34
-Update HANDOFF.md - Phase 8.6 complete
+Last commit: 97942c8 at 2025-10-27 22:31:54
+Implement date-driven HealthKit weight auto-population - Phase 8.7 ✅
+
+Date-first workflow with automatic HealthKit query and weight auto-fill.
+
+**Problem:**
+Previous implementation showed a list of recent HealthKit entries (limited to 90 days).
+User wanted date selection to drive weight lookup with unlimited history.
+
+**What Was Implemented:**
+1. ✅ Date picker always visible and primary
+2. ✅ When user changes date → automatically queries HealthKit for that specific date
+3. ✅ If weight found → auto-populates "Start Weight" field
+4. ✅ If no weight found → field stays empty for manual entry
+5. ✅ No date limitations - user can go back years
+
+**Workflow:**
+```
+User selects date (e.g., "January 15, 2024")
+→ App queries HealthKit for Jan 15, 2024
+→ IF weight exists: Auto-populate field (e.g., "185.0 lbs")
+→ IF no weight: Leave empty for manual entry
+```
+
+**Key Changes:**
+- Removed HealthKit picker list UI (60 lines simplified)
+- Simplified state (removed hasHealthKitData, historicalEntries, selectedEntry, useManualEntry)
+- Added .onChange(of: startDate) to trigger HealthKit query
+- Created queryHealthKitForDate() - queries specific date only (not date range)
+- Auto-populates weight field when HealthKit data found
+- Shows progress indicator while querying
+- Simplified saveAndContinue() function
+
+**Benefits:**
+- User-centric design (date-first thinking matches mental model)
+- Simpler codebase (60 fewer lines, easier to maintain)
+- Better performance (queries only specific date, not 90-day range)
+- Clear user intent (explicitly chooses journey start date)
+
+**Build Status:** ✅ BUILD SUCCEEDED (0 errors, 0 warnings)
+
+**File Modified:** FastingTracker/UI/Components/WeightSetupComponents.swift
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

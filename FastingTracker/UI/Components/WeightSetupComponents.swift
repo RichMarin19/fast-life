@@ -176,39 +176,42 @@ struct FirstTimeWeightSetupView: View {
     private func queryHealthKitForDate(_ date: Date) {
         // Only query if HealthKit is authorized
         guard healthKitAuthorized else {
-            AppLogger.info("HealthKit not authorized, skipping query", category: AppLogger.weightTracking)
+            AppLogger.info("❌ HealthKit not authorized, skipping query", category: AppLogger.weightTracking)
             return
         }
 
         isQueryingHealthKit = true
+
+        AppLogger.info("🔍 Querying HealthKit for date: \(date.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
 
         // Get start and end of the selected date
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
             isQueryingHealthKit = false
+            AppLogger.error("❌ Failed to calculate end of day", category: AppLogger.weightTracking)
             return
         }
 
-        // Sync HealthKit data for this specific date
-        weightManager.syncFromHealthKit(startDate: startOfDay) { _, _ in
-            DispatchQueue.main.async {
-                // Find weight entries for this specific date
-                let entriesForDate = weightManager.weightEntries.filter { entry in
-                    entry.date >= startOfDay && entry.date < endOfDay
-                }
+        AppLogger.info("📅 Query range: \(startOfDay.formatted(date: .complete, time: .shortened)) to \(endOfDay.formatted(date: .complete, time: .shortened))", category: AppLogger.weightTracking)
 
-                if let latestEntry = entriesForDate.sorted(by: { $0.date > $1.date }).first {
+        // Query HealthKit directly using HealthKitManager
+        HealthKitManager.shared.fetchWeightData(startDate: startOfDay, endDate: endOfDay, resetAnchor: false) { entries in
+            DispatchQueue.main.async {
+                AppLogger.info("📊 HealthKit returned \(entries.count) weight entries for date", category: AppLogger.weightTracking)
+
+                if let latestEntry = entries.sorted(by: { $0.date > $1.date }).first {
                     // Weight found for this date - auto-populate
-                    startWeightString = String(format: "%.1f", latestEntry.weight)
-                    AppLogger.info("Auto-populated weight: \(latestEntry.weight) lbs for date \(date.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
+                    self.startWeightString = String(format: "%.1f", latestEntry.weight)
+                    AppLogger.info("✅ Auto-populated weight: \(latestEntry.weight) lbs from HealthKit", category: AppLogger.weightTracking)
+                    AppLogger.info("   Entry date: \(latestEntry.date.formatted(date: .complete, time: .shortened))", category: AppLogger.weightTracking)
                 } else {
                     // No weight found for this date - clear field for manual entry
-                    startWeightString = ""
-                    AppLogger.info("No HealthKit data found for date \(date.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
+                    self.startWeightString = ""
+                    AppLogger.info("⚠️ No HealthKit data found for date \(date.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
                 }
 
-                isQueryingHealthKit = false
+                self.isQueryingHealthKit = false
             }
         }
     }
