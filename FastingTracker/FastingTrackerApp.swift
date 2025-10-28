@@ -5,9 +5,14 @@ struct FastLifeApp: App {
     @State private var selectedTab: Int = 2  // Always start at Hub tab (index 2 - center tab)
     @State private var shouldPopToRoot = false  // Trigger navigation pop
     @State private var shouldResetToOnboarding = false  // Trigger full app reset
-    @State private var isOnboardingComplete: Bool = UserDefaults.standard.bool(forKey: "onboardingCompleted")
+    @State private var isOnboardingComplete: Bool = UserDefaults.standard.safeBool(forKey: "onboardingCompleted", defaultValue: false)
 
     init() {
+        // CRITICAL: Validate UserDefaults before anything else
+        // Prevents app freezes from corrupted data caused by crashes
+        // Must run BEFORE Firebase or any other initialization
+        UserDefaults.validateAndResetIfCorrupted()
+
         // Initialize crash reporting system for production monitoring
         // Following Firebase Crashlytics setup guide for iOS
         // Reference: https://firebase.google.com/docs/crashlytics/get-started?platform=ios

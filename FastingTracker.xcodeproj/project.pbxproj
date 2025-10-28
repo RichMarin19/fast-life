@@ -7,7 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		521608AE2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AB2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift */; };
+		AC0000000002000000000001 /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC0000000001000000000001 /* AnimationConstants.swift */; };
+		CC0000000002000000000001 /* ChartConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC0000000001000000000001 /* ChartConstants.swift */; };
+		WC0000000002000000000001 /* WeightConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = WC0000000001000000000001 /* WeightConstants.swift */; };
+		521608AE2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */; };
 		521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AD2EAB1B8B0085B852 /* WeightStatsComponents.swift */; };
 		521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */; };
 		521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */; };
@@ -16,26 +19,26 @@
 		521608B92EAB416A0085B852 /* HealthDataAggregator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B72EAB416A0085B852 /* HealthDataAggregator.swift */; };
 		521608BA2EAB416A0085B852 /* UnifiedHealthDataService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */; };
 		521608BB2EAB416A0085B852 /* BehavioralCopy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608B62EAB416A0085B852 /* BehavioralCopy.swift */; };
-		521608BF2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608BD2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift */; };
-		521608C32EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C12EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift */; };
-		521608C52EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C42EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift */; };
-		521608C72EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C62EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift */; };
+		521608BF2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */; };
+		521608C32EAB41920085B852 /* LIFeGPTChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C12EAB41920085B852 /* LIFeGPTChatView.swift */; };
+		521608C52EABC1000085B852 /* LifeGPTViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C42EABC1000085B852 /* LifeGPTViewModel.swift */; };
+		521608C72EABC2000085B852 /* LifeGPTLoadingOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C62EABC2000085B852 /* LifeGPTLoadingOverlay.swift */; };
 		521608CA2EABC3000085B852 /* OpenAIService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608C82EABC3000085B852 /* OpenAIService.swift */; };
-		521608CC2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608CB2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift */; };
-		521608CE2EABC5000085B852 /* Core/AI/ResponseValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608CD2EABC5000085B852 /* Core/AI/ResponseValidator.swift */; };
+		521608CC2EABC4000085B852 /* AInsteinSystemPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608CB2EABC4000085B852 /* AInsteinSystemPrompt.swift */; };
+		521608CE2EABC5000085B852 /* ResponseValidator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608CD2EABC5000085B852 /* ResponseValidator.swift */; };
 		521608CF2EABC6000085B852 /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D02EABC6000085B852 /* NetworkMonitor.swift */; };
-		521608D82EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */; };
-		521608D92EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D62EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift */; };
+		521608D82EAB47ED0085B852 /* LifeGPTComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */; };
+		521608D92EAB47ED0085B852 /* CoachInviteCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608D62EAB47ED0085B852 /* CoachInviteCard.swift */; };
 		521608E12EAB5F0B0085B852 /* HealthDataAnalyzer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608DC2EAB5F0B0085B852 /* HealthDataAnalyzer.swift */; };
-		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
+		521D18112EA148F70072F38C /* BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* BehavioralNotificationScheduler_Simple.swift */; };
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
-		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
+		5243F23E2E8F27C70051A731 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* SleepEntry.swift */; };
-		5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */; };
+		5243F2432E900F440051A731 /* SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* SleepManager.swift */; };
 		5243F2442E900F440051A731 /* SleepTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2412E900F440051A731 /* SleepTrackingView.swift */; };
 		5243F24A2E9029970051A731 /* MoodEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2472E9029970051A731 /* MoodEntry.swift */; };
-		5243F24B2E9029970051A731 /* Core/Managers/MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2482E9029970051A731 /* Core/Managers/MoodManager.swift */; };
+		5243F24B2E9029970051A731 /* MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2482E9029970051A731 /* MoodManager.swift */; };
 		5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2492E9029970051A731 /* MoodTrackingView.swift */; };
 		524976192EA2133E00632E28 /* WeightControlCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524976182EA2133E00632E28 /* WeightControlCenterView.swift */; };
 		525A7C972EA329A200E724F4 /* MilestoneRingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525A7C962EA329A200E724F4 /* MilestoneRingCard.swift */; };
@@ -44,15 +47,15 @@
 		5288A52D2EA44D1100806BE7 /* TrackerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52C2EA44D1100806BE7 /* TrackerCard.swift */; };
 		5288A52F2EA44D2600806BE7 /* TrackerCardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52E2EA44D2600806BE7 /* TrackerCardManager.swift */; };
 		5288A5312EA44D3800806BE7 /* UniversalCardContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A5302EA44D3800806BE7 /* UniversalCardContainer.swift */; };
-		5289E06D2E8D0DAD00254E70 /* UI/InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06C2E8D0DAD00254E70 /* UI/InsightsView.swift */; };
+		5289E06D2E8D0DAD00254E70 /* InsightsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06C2E8D0DAD00254E70 /* InsightsView.swift */; };
 		5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06F2E8D5F6500254E70 /* AdvancedView.swift */; };
 		5289E0762E8D5F6500254E70 /* WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0712E8D5F6500254E70 /* WeightEntry.swift */; };
-		5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */; };
+		5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0722E8D5F6500254E70 /* WeightManager.swift */; };
 		5289E0782E8D5F6500254E70 /* WeightTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */; };
 		5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06E2E8D5F6500254E70 /* AddWeightView.swift */; };
 		5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */; };
-		5289E07B2E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0702E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift */; };
-		5289E07D2E8D700000254E70 /* Core/Managers/HydrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E07E2E8D700000254E70 /* Core/Managers/HydrationManager.swift */; };
+		5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0702E8D5F6500254E70 /* HealthKitManager.swift */; };
+		5289E07D2E8D700000254E70 /* HydrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E07E2E8D700000254E70 /* HydrationManager.swift */; };
 		5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0802E8D700100254E70 /* HydrationTrackingView.swift */; };
 		5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0822E8D700200254E70 /* HydrationHistoryView.swift */; };
 		52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */; };
@@ -62,9 +65,8 @@
 		52B2CFC12E94B8A40061FCFF /* CSVImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC02E94B8A40061FCFF /* CSVImporter.swift */; };
 		52B2CFC32E94EE630061FCFF /* AppLogger.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC22E94EE630061FCFF /* AppLogger.swift */; };
 		52B2CFC72E95A9C80061FCFF /* CrashReportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC42E95A9C80061FCFF /* CrashReportManager.swift */; };
-		52B2CFC82E95A9C80061FCFF /* Core/Persistence/DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC52E95A9C80061FCFF /* Core/Persistence/DataStore.swift */; };
+		52B2CFC82E95A9C80061FCFF /* DataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFC52E95A9C80061FCFF /* DataStore.swift */; };
 		52B2CFCB2E95A9F50061FCFF /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 52B2CFCA2E95A9F50061FCFF /* GoogleService-Info.plist */; };
-		52FA00022EAD00000085B999 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */; };
 		52B2CFCF2E96C3060061FCFF /* HealthDataSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */; };
 		52B2CFD02E96C3060061FCFF /* HealthDataType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCE2E96C3060061FCFF /* HealthDataType.swift */; };
 		52B2CFD12E96C3060061FCFF /* HealthDataPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFCC2E96C3060061FCFF /* HealthDataPreferences.swift */; };
@@ -77,16 +79,16 @@
 		52B2CFE22E986F7D0061FCFF /* TrackerScreenShell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDB2E986F7D0061FCFF /* TrackerScreenShell.swift */; };
 		52B2CFE32E986F7D0061FCFF /* WeightChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */; };
 		52B2CFE72E9880B50061FCFF /* HydrationChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFE52E9880B50061FCFF /* HydrationChartView.swift */; };
-		52B2CFE82E9880B50061FCFF /* UI/Components/HydrationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFE62E9880B50061FCFF /* UI/Components/HydrationComponents.swift */; };
+		52B2CFE82E9880B50061FCFF /* HydrationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFE62E9880B50061FCFF /* HydrationComponents.swift */; };
 		52B2CFE92E9880B50061FCFF /* HydrationCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFE42E9880B50061FCFF /* HydrationCalendarView.swift */; };
-		52B2CFEC2E9886BB0061FCFF /* UI/Components/SleepComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEB2E9886BB0061FCFF /* UI/Components/SleepComponents.swift */; };
-		52B2CFED2E9886BB0061FCFF /* UI/Components/MoodComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEA2E9886BB0061FCFF /* UI/Components/MoodComponents.swift */; };
+		52B2CFEC2E9886BB0061FCFF /* SleepComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */; };
+		52B2CFED2E9886BB0061FCFF /* MoodComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */; };
 		52B2CFEF2E988CB90061FCFF /* HealthKitService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */; };
-		52B2CFF52E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFF42E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift */; };
+		52B2CFF52E98CCDC0061FCFF /* SleepVisualizationComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */; };
 		52CB2D192EAADD4000815CAD /* DSCornerRadius.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CB2D182EAADD4000815CAD /* DSCornerRadius.swift */; };
 		52CB2D1B2EAAE64400815CAD /* HubComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52CB2D1A2EAAE64400815CAD /* HubComponents.swift */; };
-		52D684182EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D684172EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift */; };
-		52D684202EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D6841D2EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift */; };
+		52D684182EA04420002C5736 /* BehavioralNotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D684172EA04420002C5736 /* BehavioralNotificationScheduler.swift */; };
+		52D684202EA077D5002C5736 /* BehavioralNotificationRule.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52D6841D2EA077D5002C5736 /* BehavioralNotificationRule.swift */; };
 		52F16D752EA45ED4002C9FC5 /* DSColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D722EA45ED4002C9FC5 /* DSColors.swift */; };
 		52F16D762EA45ED4002C9FC5 /* DSCardHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D712EA45ED4002C9FC5 /* DSCardHeader.swift */; };
 		52F16D772EA45ED4002C9FC5 /* DSSpacing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F16D732EA45ED4002C9FC5 /* DSSpacing.swift */; };
@@ -103,42 +105,44 @@
 		52F578902EA861470042727E /* CardTypeProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F5788E2EA861470042727E /* CardTypeProtocol.swift */; };
 		52F578972EA8E2AD0042727E /* WeightNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */; };
 		52F578982EA8E2AD0042727E /* WeightNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */; };
-		682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */; };
+		52FA00022EAD00000085B999 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */; };
+		682D3A2BD2DF47BAA5A58DA8 /* WeightTrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BFB82C20914BC086078772 /* WeightTrackingViewModel.swift */; };
 		769DC2E8156D4FA2CEE51A90 /* AInsteinPresenceModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769DC2E8156D4FA2CEE51A91 /* AInsteinPresenceModifier.swift */; };
 		7DD29F2C28F125F7C45DF9F7 /* AInsteinPresenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD29F2C28F125F7C45DF9F8 /* AInsteinPresenceView.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000003000000000000001 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000004000000000000001 /* ContentView.swift */; };
 		A1000005000000000000001 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* HistoryView.swift */; };
 		A1000007000000000000001 /* FastingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008000000000000001 /* FastingSession.swift */; };
-		A1000009000000000000001 /* Core/Managers/FastingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010000000000000001 /* Core/Managers/FastingManager.swift */; };
-		A1000011000000000000001 /* Core/Managers/NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012000000000000001 /* Core/Managers/NotificationManager.swift */; };
+		A1000009000000000000001 /* FastingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000010000000000000001 /* FastingManager.swift */; };
+		A1000011000000000000001 /* NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012000000000000001 /* NotificationManager.swift */; };
 		A1000013000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000014000000000000001 /* Assets.xcassets */; };
 		A1000031000000000000001 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000032000000000000001 /* AppSettings.swift */; };
-		A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */; };
-		A62491EA2BAB48DCB3C21552 /* Core/Managers/NotificationIdentifierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */; };
+		A61A28CA263664CC583BAE01 /* WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* WeightControlCenterViewModel.swift */; };
+		A62491EA2BAB48DCB3C21552 /* NotificationIdentifierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38391CDA20D047F59B0EA6C8 /* NotificationIdentifierBuilder.swift */; };
+		B3154D57947632A5BB927807 /* SafeUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F359651881524D4E6CC4DA24 /* SafeUserDefaults.swift */; };
 		CV001001000000000000001 /* CoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CV001002000000000000001 /* CoachView.swift */; };
-		DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */; };
-		ES001001000000000000001 /* UI/Components/EditStartTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */; };
-		FC001001000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC001002000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift */; };
-		FC002001000000000000001 /* UI/Components/EditFastTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC002002000000000000001 /* UI/Components/EditFastTimesView.swift */; };
-		FC003001000000000000001 /* UI/Components/FastingSyncOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC003002000000000000001 /* UI/Components/FastingSyncOptionsView.swift */; };
-		FC004001000000000000001 /* UI/Components/StreakCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC004002000000000000001 /* UI/Components/StreakCalendarView.swift */; };
-		FC005001000000000000001 /* UI/Components/FastingGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC005002000000000000001 /* UI/Components/FastingGraphView.swift */; };
-		FC006001000000000000001 /* UI/Components/TotalStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC006002000000000000001 /* UI/Components/TotalStatsView.swift */; };
-		FC007001000000000000001 /* UI/Components/AddEditFastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC007002000000000000001 /* UI/Components/AddEditFastView.swift */; };
+		DC01B28C3A00473B8C88E668 /* WeightChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00579E29CBCC45D59580DDBC /* WeightChartViewModel.swift */; };
+		ES001001000000000000001 /* EditStartTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ES001002000000000000001 /* EditStartTimeView.swift */; };
+		FC001001000000000000001 /* FastingHealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC001002000000000000001 /* FastingHealthKitNudgeView.swift */; };
+		FC002001000000000000001 /* EditFastTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC002002000000000000001 /* EditFastTimesView.swift */; };
+		FC003001000000000000001 /* FastingSyncOptionsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC003002000000000000001 /* FastingSyncOptionsView.swift */; };
+		FC004001000000000000001 /* StreakCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC004002000000000000001 /* StreakCalendarView.swift */; };
+		FC005001000000000000001 /* FastingGraphView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC005002000000000000001 /* FastingGraphView.swift */; };
+		FC006001000000000000001 /* TotalStatsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC006002000000000000001 /* TotalStatsView.swift */; };
+		FC007001000000000000001 /* AddEditFastView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC007002000000000000001 /* AddEditFastView.swift */; };
 		FF00000100000000000000A1 /* FastingStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000200000000000000A1 /* FastingStage.swift */; };
 		FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000400000000000000A1 /* FastingStageDetailView.swift */; };
 		FF00000500000000000000A1 /* AnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF00000600000000000000A1 /* AnalyticsView.swift */; };
-		GS001001000000000000001 /* UI/Components/GoalSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS001002000000000000001 /* UI/Components/GoalSettingsView.swift */; };
-		HK001001000000000000001 /* Core/Managers/HealthKitAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HK001002000000000000001 /* Core/Managers/HealthKitAuthManager.swift */; };
-		HK001003000000000000001 /* Core/Managers/HealthKitWeightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = HK001004000000000000001 /* Core/Managers/HealthKitWeightService.swift */; };
-		HR001001000000000000001 /* UI/Components/HistoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HR001002000000000000001 /* UI/Components/HistoryRowView.swift */; };
-		HRM01001000000000000001 /* Core/Managers/HeartRateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HRM01002000000000000001 /* Core/Managers/HeartRateManager.swift */; };
+		GS001001000000000000001 /* GoalSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = GS001002000000000000001 /* GoalSettingsView.swift */; };
+		HK001001000000000000001 /* HealthKitAuthManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HK001002000000000000001 /* HealthKitAuthManager.swift */; };
+		HK001003000000000000001 /* HealthKitWeightService.swift in Sources */ = {isa = PBXBuildFile; fileRef = HK001004000000000000001 /* HealthKitWeightService.swift */; };
+		HR001001000000000000001 /* HistoryRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HR001002000000000000001 /* HistoryRowView.swift */; };
+		HRM01001000000000000001 /* HeartRateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HRM01002000000000000001 /* HeartRateManager.swift */; };
 		HV001001000000000000001 /* HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HV001002000000000000001 /* HubView.swift */; };
-		ID001001000000000000001 /* Core/Models/IdentifiableDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */; };
-		SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */; };
+		ID001001000000000000001 /* IdentifiableDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ID001002000000000000001 /* IdentifiableDate.swift */; };
+		SF001001000000000000001 /* StopFastConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF001002000000000000001 /* StopFastConfirmationView.swift */; };
 		TH001001000000000000001 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = TH001002000000000000001 /* Theme.swift */; };
-		TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */; };
+		TSB01001000000000000001 /* TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* TopStatusBar.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -152,8 +156,11 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
-		38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationIdentifierBuilder.swift; sourceTree = "<group>"; };
+		AC0000000001000000000001 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
+		CC0000000001000000000001 /* ChartConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChartConstants.swift; sourceTree = "<group>"; };
+		WC0000000001000000000001 /* WeightConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightConstants.swift; sourceTree = "<group>"; };
+		00579E29CBCC45D59580DDBC /* WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
+		38391CDA20D047F59B0EA6C8 /* NotificationIdentifierBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationIdentifierBuilder.swift; sourceTree = "<group>"; };
 		521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightHistoryComponents.swift; sourceTree = "<group>"; };
 		521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightProgressStoryComponents.swift; sourceTree = "<group>"; };
 		521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightSetupComponents.swift; sourceTree = "<group>"; };
@@ -163,24 +170,24 @@
 		521608B62EAB416A0085B852 /* BehavioralCopy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/BehavioralCopy.swift; sourceTree = "<group>"; };
 		521608B72EAB416A0085B852 /* HealthDataAggregator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/HealthDataAggregator.swift; sourceTree = "<group>"; };
 		521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/UnifiedHealthDataService.swift; sourceTree = "<group>"; };
-		521608BD2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift"; sourceTree = "<group>"; };
-		521608C12EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LIFeGPTChatView.swift; sourceTree = "<group>"; };
-		521608C42EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/LifeGPTViewModel.swift; sourceTree = "<group>"; };
-		521608C62EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTLoadingOverlay.swift; sourceTree = "<group>"; };
+		521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift"; sourceTree = "<group>"; };
+		521608C12EAB41920085B852 /* LIFeGPTChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LIFeGPTChatView.swift; sourceTree = "<group>"; };
+		521608C42EABC1000085B852 /* LifeGPTViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/LifeGPTViewModel.swift; sourceTree = "<group>"; };
+		521608C62EABC2000085B852 /* LifeGPTLoadingOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTLoadingOverlay.swift; sourceTree = "<group>"; };
 		521608C82EABC3000085B852 /* OpenAIService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/OpenAIService.swift; sourceTree = "<group>"; };
-		521608CB2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AI/AInsteinSystemPrompt.swift; sourceTree = "<group>"; };
-		521608CD2EABC5000085B852 /* Core/AI/ResponseValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AI/ResponseValidator.swift; sourceTree = "<group>"; };
+		521608CB2EABC4000085B852 /* AInsteinSystemPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AI/AInsteinSystemPrompt.swift; sourceTree = "<group>"; };
+		521608CD2EABC5000085B852 /* ResponseValidator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/AI/ResponseValidator.swift; sourceTree = "<group>"; };
 		521608D02EABC6000085B852 /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Utilities/NetworkMonitor.swift; sourceTree = "<group>"; };
-		521608D62EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/CoachInviteCard.swift; sourceTree = "<group>"; };
-		521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTComponents.swift; sourceTree = "<group>"; };
+		521608D62EAB47ED0085B852 /* CoachInviteCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/CoachInviteCard.swift; sourceTree = "<group>"; };
+		521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTComponents.swift; sourceTree = "<group>"; };
 		521608DC2EAB5F0B0085B852 /* HealthDataAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/HealthDataAnalyzer.swift; sourceTree = "<group>"; };
-		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
-		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
+		521D18102EA148F70072F38C /* BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
+		5243F23D2E8F27C70051A731 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		5243F23F2E900F440051A731 /* SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SleepEntry.swift; sourceTree = "<group>"; };
-		5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
+		5243F2402E900F440051A731 /* SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
 		5243F2412E900F440051A731 /* SleepTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/SleepTrackingView.swift; sourceTree = "<group>"; };
 		5243F2472E9029970051A731 /* MoodEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/MoodEntry.swift; sourceTree = "<group>"; };
-		5243F2482E9029970051A731 /* Core/Managers/MoodManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/MoodManager.swift; sourceTree = "<group>"; };
+		5243F2482E9029970051A731 /* MoodManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/MoodManager.swift; sourceTree = "<group>"; };
 		5243F2492E9029970051A731 /* MoodTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/MoodTrackingView.swift; sourceTree = "<group>"; };
 		524976182EA2133E00632E28 /* WeightControlCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterView.swift; sourceTree = "<group>"; };
 		525A7C962EA329A200E724F4 /* MilestoneRingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/MilestoneRingCard.swift; sourceTree = "<group>"; };
@@ -189,16 +196,16 @@
 		5288A52C2EA44D1100806BE7 /* TrackerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/TrackerCard.swift; sourceTree = "<group>"; };
 		5288A52E2EA44D2600806BE7 /* TrackerCardManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/TrackerCardManager.swift; sourceTree = "<group>"; };
 		5288A5302EA44D3800806BE7 /* UniversalCardContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Views/UniversalCardContainer.swift; sourceTree = "<group>"; };
-		5289E06C2E8D0DAD00254E70 /* UI/InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/InsightsView.swift; sourceTree = "<group>"; };
+		5289E06C2E8D0DAD00254E70 /* InsightsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/InsightsView.swift; sourceTree = "<group>"; };
 		5289E06E2E8D5F6500254E70 /* AddWeightView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/AddWeightView.swift; sourceTree = "<group>"; };
 		5289E06F2E8D5F6500254E70 /* AdvancedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/AdvancedView.swift; sourceTree = "<group>"; };
-		5289E0702E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitManager.swift; sourceTree = "<group>"; };
+		5289E0702E8D5F6500254E70 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitManager.swift; sourceTree = "<group>"; };
 		5289E0712E8D5F6500254E70 /* WeightEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/WeightEntry.swift; sourceTree = "<group>"; };
-		5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
+		5289E0722E8D5F6500254E70 /* WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
 		5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightTrackingView.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
-		5289E07E2E8D700000254E70 /* Core/Managers/HydrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HydrationManager.swift; sourceTree = "<group>"; };
+		5289E07E2E8D700000254E70 /* HydrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HydrationManager.swift; sourceTree = "<group>"; };
 		5289E0802E8D700100254E70 /* HydrationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HydrationTrackingView.swift; sourceTree = "<group>"; };
 		5289E0822E8D700200254E70 /* HydrationHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HydrationHistoryView.swift; sourceTree = "<group>"; };
 		52B2CFB82E91B7160061FCFF /* NotificationSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/NotificationSettingsView.swift; sourceTree = "<group>"; };
@@ -208,9 +215,8 @@
 		52B2CFC02E94B8A40061FCFF /* CSVImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Utilities/CSVImporter.swift; sourceTree = "<group>"; };
 		52B2CFC22E94EE630061FCFF /* AppLogger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Utilities/AppLogger.swift; sourceTree = "<group>"; };
 		52B2CFC42E95A9C80061FCFF /* CrashReportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/CrashReportManager.swift; sourceTree = "<group>"; };
-		52B2CFC52E95A9C80061FCFF /* Core/Persistence/DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Persistence/DataStore.swift; sourceTree = "<group>"; };
+		52B2CFC52E95A9C80061FCFF /* DataStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Persistence/DataStore.swift; sourceTree = "<group>"; };
 		52B2CFCA2E95A9F50061FCFF /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
-		52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		52B2CFCC2E96C3060061FCFF /* HealthDataPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Configuration/HealthDataPreferences.swift; sourceTree = "<group>"; };
 		52B2CFCD2E96C3060061FCFF /* HealthDataSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HealthDataSelectionView.swift; sourceTree = "<group>"; };
 		52B2CFCE2E96C3060061FCFF /* HealthDataType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/HealthDataType.swift; sourceTree = "<group>"; };
@@ -224,15 +230,15 @@
 		52B2CFDC2E986F7D0061FCFF /* WeightChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightChartView.swift; sourceTree = "<group>"; };
 		52B2CFE42E9880B50061FCFF /* HydrationCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HydrationCalendarView.swift; sourceTree = "<group>"; };
 		52B2CFE52E9880B50061FCFF /* HydrationChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HydrationChartView.swift; sourceTree = "<group>"; };
-		52B2CFE62E9880B50061FCFF /* UI/Components/HydrationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HydrationComponents.swift; sourceTree = "<group>"; };
-		52B2CFEA2E9886BB0061FCFF /* UI/Components/MoodComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/MoodComponents.swift; sourceTree = "<group>"; };
-		52B2CFEB2E9886BB0061FCFF /* UI/Components/SleepComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepComponents.swift; sourceTree = "<group>"; };
+		52B2CFE62E9880B50061FCFF /* HydrationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HydrationComponents.swift; sourceTree = "<group>"; };
+		52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/MoodComponents.swift; sourceTree = "<group>"; };
+		52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepComponents.swift; sourceTree = "<group>"; };
 		52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/HealthKitService.swift; sourceTree = "<group>"; };
-		52B2CFF42E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepVisualizationComponents.swift; sourceTree = "<group>"; };
+		52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/SleepVisualizationComponents.swift; sourceTree = "<group>"; };
 		52CB2D182EAADD4000815CAD /* DSCornerRadius.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/DSCornerRadius.swift; sourceTree = "<group>"; };
 		52CB2D1A2EAAE64400815CAD /* HubComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HubComponents.swift; sourceTree = "<group>"; };
-		52D684172EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler.swift; sourceTree = "<group>"; };
-		52D6841D2EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationRule.swift; sourceTree = "<group>"; };
+		52D684172EA04420002C5736 /* BehavioralNotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler.swift; sourceTree = "<group>"; };
+		52D6841D2EA077D5002C5736 /* BehavioralNotificationRule.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationRule.swift; sourceTree = "<group>"; };
 		52F16D702EA45ED4002C9FC5 /* DSCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/DSCard.swift; sourceTree = "<group>"; };
 		52F16D712EA45ED4002C9FC5 /* DSCardHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/DSCardHeader.swift; sourceTree = "<group>"; };
 		52F16D722EA45ED4002C9FC5 /* DSColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/DSColors.swift; sourceTree = "<group>"; };
@@ -250,46 +256,58 @@
 		52F578952EA8E2AD0042727E /* WeightNotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightNotificationManager.swift; sourceTree = "<group>"; };
 		52F578962EA8E2AD0042727E /* WeightNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightNotificationPlanner.swift; sourceTree = "<group>"; };
 		52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FastingTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		769DC2E8156D4FA2CEE51A91 /* AInsteinPresenceModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AInsteinPresenceModifier.swift; sourceTree = "<group>"; };
-		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
+		7C387067F01BECDB5518D6D6 /* WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
 		7DD29F2C28F125F7C45DF9F8 /* AInsteinPresenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AInsteinPresenceView.swift; sourceTree = "<group>"; };
-		94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightTrackingViewModel.swift; sourceTree = "<group>"; };
+		94BFB82C20914BC086078772 /* WeightTrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightTrackingViewModel.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000004000000000000001 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HistoryView.swift; sourceTree = "<group>"; };
 		A1000008000000000000001 /* FastingSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/FastingSession.swift; sourceTree = "<group>"; };
-		A1000010000000000000001 /* Core/Managers/FastingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/FastingManager.swift; sourceTree = "<group>"; };
-		A1000012000000000000001 /* Core/Managers/NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationManager.swift; sourceTree = "<group>"; };
+		A1000010000000000000001 /* FastingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/FastingManager.swift; sourceTree = "<group>"; };
+		A1000012000000000000001 /* NotificationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationManager.swift; sourceTree = "<group>"; };
 		A1000014000000000000001 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A1000015000000000000001 /* Fast lIFe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Fast lIFe.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000016000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000032000000000000001 /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Configuration/AppSettings.swift; sourceTree = "<group>"; };
 		CV001002000000000000001 /* CoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/CoachView.swift; sourceTree = "<group>"; };
-		ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditStartTimeView.swift; sourceTree = "<group>"; };
-		FC001002000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingHealthKitNudgeView.swift; sourceTree = "<group>"; };
-		FC002002000000000000001 /* UI/Components/EditFastTimesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditFastTimesView.swift; sourceTree = "<group>"; };
-		FC003002000000000000001 /* UI/Components/FastingSyncOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingSyncOptionsView.swift; sourceTree = "<group>"; };
-		FC004002000000000000001 /* UI/Components/StreakCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StreakCalendarView.swift; sourceTree = "<group>"; };
-		FC005002000000000000001 /* UI/Components/FastingGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingGraphView.swift; sourceTree = "<group>"; };
-		FC006002000000000000001 /* UI/Components/TotalStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TotalStatsView.swift; sourceTree = "<group>"; };
-		FC007002000000000000001 /* UI/Components/AddEditFastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AddEditFastView.swift; sourceTree = "<group>"; };
+		ES001002000000000000001 /* EditStartTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditStartTimeView.swift; sourceTree = "<group>"; };
+		F359651881524D4E6CC4DA24 /* SafeUserDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SafeUserDefaults.swift; path = Core/Utilities/SafeUserDefaults.swift; sourceTree = "<group>"; };
+		FC001002000000000000001 /* FastingHealthKitNudgeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingHealthKitNudgeView.swift; sourceTree = "<group>"; };
+		FC002002000000000000001 /* EditFastTimesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditFastTimesView.swift; sourceTree = "<group>"; };
+		FC003002000000000000001 /* FastingSyncOptionsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingSyncOptionsView.swift; sourceTree = "<group>"; };
+		FC004002000000000000001 /* StreakCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StreakCalendarView.swift; sourceTree = "<group>"; };
+		FC005002000000000000001 /* FastingGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingGraphView.swift; sourceTree = "<group>"; };
+		FC006002000000000000001 /* TotalStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TotalStatsView.swift; sourceTree = "<group>"; };
+		FC007002000000000000001 /* AddEditFastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AddEditFastView.swift; sourceTree = "<group>"; };
 		FF00000200000000000000A1 /* FastingStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/FastingStage.swift; sourceTree = "<group>"; };
 		FF00000400000000000000A1 /* FastingStageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/FastingStageDetailView.swift; sourceTree = "<group>"; };
 		FF00000600000000000000A1 /* AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/AnalyticsView.swift; sourceTree = "<group>"; };
-		GS001002000000000000001 /* UI/Components/GoalSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/GoalSettingsView.swift; sourceTree = "<group>"; };
-		HK001002000000000000001 /* Core/Managers/HealthKitAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitAuthManager.swift; sourceTree = "<group>"; };
-		HK001004000000000000001 /* Core/Managers/HealthKitWeightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitWeightService.swift; sourceTree = "<group>"; };
-		HR001002000000000000001 /* UI/Components/HistoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HistoryRowView.swift; sourceTree = "<group>"; };
-		HRM01002000000000000001 /* Core/Managers/HeartRateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HeartRateManager.swift; sourceTree = "<group>"; };
+		GS001002000000000000001 /* GoalSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/GoalSettingsView.swift; sourceTree = "<group>"; };
+		HK001002000000000000001 /* HealthKitAuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitAuthManager.swift; sourceTree = "<group>"; };
+		HK001004000000000000001 /* HealthKitWeightService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HealthKitWeightService.swift; sourceTree = "<group>"; };
+		HR001002000000000000001 /* HistoryRowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/HistoryRowView.swift; sourceTree = "<group>"; };
+		HRM01002000000000000001 /* HeartRateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HeartRateManager.swift; sourceTree = "<group>"; };
 		HV001002000000000000001 /* HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HubView.swift; sourceTree = "<group>"; };
-		ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/IdentifiableDate.swift; sourceTree = "<group>"; };
-		SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StopFastConfirmationView.swift; sourceTree = "<group>"; };
+		ID001002000000000000001 /* IdentifiableDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/IdentifiableDate.swift; sourceTree = "<group>"; };
+		SF001002000000000000001 /* StopFastConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StopFastConfirmationView.swift; sourceTree = "<group>"; };
 		TH001002000000000000001 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/Theme.swift; sourceTree = "<group>"; };
-		TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
+		TSB01002000000000000001 /* TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		52F5789E2EA8FD4C0042727E /* FastingTrackerTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FastingTrackerTests; sourceTree = "<group>"; };
+		52F5789E2EA8FD4C0042727E /* FastingTrackerTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = FastingTrackerTests;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -312,6 +330,22 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		33C03EF668CDF7C3E0E02142 /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				F359651881524D4E6CC4DA24 /* SafeUserDefaults.swift */,
+			);
+			name = Utilities;
+			sourceTree = "<group>";
+		};
+		5F387F5CC30D9936FACFF8DC /* Core */ = {
+			isa = PBXGroup;
+			children = (
+				33C03EF668CDF7C3E0E02142 /* Utilities */,
+			);
+			name = Core;
+			sourceTree = "<group>";
+		};
 		A1000018000000000000001 = {
 			isa = PBXGroup;
 			children = (
@@ -329,23 +363,23 @@
 				52F211D32EABA449006705CD /* HealthInsight.swift */,
 				52F211D52EABA46B006705CD /* ConversationManager.swift */,
 				521608DC2EAB5F0B0085B852 /* HealthDataAnalyzer.swift */,
-				521608C12EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift */,
-				521608C42EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift */,
-				521608C62EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift */,
+				521608C12EAB41920085B852 /* LIFeGPTChatView.swift */,
+				521608C42EABC1000085B852 /* LifeGPTViewModel.swift */,
+				521608C62EABC2000085B852 /* LifeGPTLoadingOverlay.swift */,
 				521608C82EABC3000085B852 /* OpenAIService.swift */,
-				521608CB2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift */,
+				521608CB2EABC4000085B852 /* AInsteinSystemPrompt.swift */,
 				7DD29F2C28F125F7C45DF9F8 /* AInsteinPresenceView.swift */,
 				769DC2E8156D4FA2CEE51A91 /* AInsteinPresenceModifier.swift */,
-				521608CD2EABC5000085B852 /* Core/AI/ResponseValidator.swift */,
+				521608CD2EABC5000085B852 /* ResponseValidator.swift */,
 				521608D02EABC6000085B852 /* NetworkMonitor.swift */,
-				521608BD2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift */,
+				521608BD2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift */,
 				521608B62EAB416A0085B852 /* BehavioralCopy.swift */,
 				521608B72EAB416A0085B852 /* HealthDataAggregator.swift */,
 				521608B82EAB416A0085B852 /* UnifiedHealthDataService.swift */,
 				521608AA2EAB1B8B0085B852 /* WeightHistoryComponents.swift */,
 				521608B22EAB41470085B852 /* ChatMessage.swift */,
-				521608D62EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift */,
-				521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */,
+				521608D62EAB47ED0085B852 /* CoachInviteCard.swift */,
+				521608D72EAB47ED0085B852 /* LifeGPTComponents.swift */,
 				521608B32EAB41470085B852 /* EmotionState.swift */,
 				521608AB2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift */,
 				521608AC2EAB1B8B0085B852 /* WeightSetupComponents.swift */,
@@ -371,17 +405,17 @@
 				5288A52A2EA44CF100806BE7 /* TrackerCardManagerTestView.swift */,
 				525A7C962EA329A200E724F4 /* MilestoneRingCard.swift */,
 				524976182EA2133E00632E28 /* WeightControlCenterView.swift */,
-				521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */,
-				52D6841D2EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift */,
-				52D684172EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift */,
-				38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */,
-				52B2CFF42E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift */,
+				521D18102EA148F70072F38C /* BehavioralNotificationScheduler_Simple.swift */,
+				52D6841D2EA077D5002C5736 /* BehavioralNotificationRule.swift */,
+				52D684172EA04420002C5736 /* BehavioralNotificationScheduler.swift */,
+				38391CDA20D047F59B0EA6C8 /* NotificationIdentifierBuilder.swift */,
+				52B2CFF42E98CCDC0061FCFF /* SleepVisualizationComponents.swift */,
 				52B2CFEE2E988CB90061FCFF /* HealthKitService.swift */,
-				52B2CFEA2E9886BB0061FCFF /* UI/Components/MoodComponents.swift */,
-				52B2CFEB2E9886BB0061FCFF /* UI/Components/SleepComponents.swift */,
+				52B2CFEA2E9886BB0061FCFF /* MoodComponents.swift */,
+				52B2CFEB2E9886BB0061FCFF /* SleepComponents.swift */,
 				52B2CFE42E9880B50061FCFF /* HydrationCalendarView.swift */,
 				52B2CFE52E9880B50061FCFF /* HydrationChartView.swift */,
-				52B2CFE62E9880B50061FCFF /* UI/Components/HydrationComponents.swift */,
+				52B2CFE62E9880B50061FCFF /* HydrationComponents.swift */,
 				52B2CFD82E986F7D0061FCFF /* CurrentWeightCard.swift */,
 				52B2CFD92E986F7D0061FCFF /* FLCard.swift */,
 				52B2CFDA2E986F7D0061FCFF /* StateBadge.swift */,
@@ -397,7 +431,7 @@
 				52B2CFCA2E95A9F50061FCFF /* GoogleService-Info.plist */,
 				52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */,
 				52B2CFC42E95A9C80061FCFF /* CrashReportManager.swift */,
-				52B2CFC52E95A9C80061FCFF /* Core/Persistence/DataStore.swift */,
+				52B2CFC52E95A9C80061FCFF /* DataStore.swift */,
 				52B2CFC22E94EE630061FCFF /* AppLogger.swift */,
 				52B2CFC02E94B8A40061FCFF /* CSVImporter.swift */,
 				52B2CFBE2E94B3290061FCFF /* DataExportManager.swift */,
@@ -408,54 +442,55 @@
 				FF00000400000000000000A1 /* FastingStageDetailView.swift */,
 				FF00000600000000000000A1 /* AnalyticsView.swift */,
 				5243F2472E9029970051A731 /* MoodEntry.swift */,
-				5243F2482E9029970051A731 /* Core/Managers/MoodManager.swift */,
+				5243F2482E9029970051A731 /* MoodManager.swift */,
 				5243F2492E9029970051A731 /* MoodTrackingView.swift */,
 				5243F23F2E900F440051A731 /* SleepEntry.swift */,
-				5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */,
+				5243F2402E900F440051A731 /* SleepManager.swift */,
 				5243F2412E900F440051A731 /* SleepTrackingView.swift */,
-				5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */,
+				5243F23D2E8F27C70051A731 /* OnboardingView.swift */,
 				5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */,
 				5289E06E2E8D5F6500254E70 /* AddWeightView.swift */,
 				5289E06F2E8D5F6500254E70 /* AdvancedView.swift */,
-				5289E0702E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift */,
-				HK001002000000000000001 /* Core/Managers/HealthKitAuthManager.swift */,
-				HK001004000000000000001 /* Core/Managers/HealthKitWeightService.swift */,
+				5289E0702E8D5F6500254E70 /* HealthKitManager.swift */,
+				HK001002000000000000001 /* HealthKitAuthManager.swift */,
+				HK001004000000000000001 /* HealthKitWeightService.swift */,
 				5289E0822E8D700200254E70 /* HydrationHistoryView.swift */,
-				5289E07E2E8D700000254E70 /* Core/Managers/HydrationManager.swift */,
+				5289E07E2E8D700000254E70 /* HydrationManager.swift */,
 				5289E0802E8D700100254E70 /* HydrationTrackingView.swift */,
 				5289E0712E8D5F6500254E70 /* WeightEntry.swift */,
-				5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */,
-				7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */,
-				94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */,
-				00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */,
+				5289E0722E8D5F6500254E70 /* WeightManager.swift */,
+				7C387067F01BECDB5518D6D6 /* WeightControlCenterViewModel.swift */,
+				94BFB82C20914BC086078772 /* WeightTrackingViewModel.swift */,
+				00579E29CBCC45D59580DDBC /* WeightChartViewModel.swift */,
 				5289E0732E8D5F6500254E70 /* WeightSettingsView.swift */,
 				5289E0742E8D5F6500254E70 /* WeightTrackingView.swift */,
-				5289E06C2E8D0DAD00254E70 /* UI/InsightsView.swift */,
+				5289E06C2E8D0DAD00254E70 /* InsightsView.swift */,
 				A1000002000000000000001 /* FastingTrackerApp.swift */,
 				A1000004000000000000001 /* ContentView.swift */,
 				A1000006000000000000001 /* HistoryView.swift */,
 				A1000008000000000000001 /* FastingSession.swift */,
-				A1000010000000000000001 /* Core/Managers/FastingManager.swift */,
-				A1000012000000000000001 /* Core/Managers/NotificationManager.swift */,
+				A1000010000000000000001 /* FastingManager.swift */,
+				A1000012000000000000001 /* NotificationManager.swift */,
 				A1000014000000000000001 /* Assets.xcassets */,
 				A1000016000000000000001 /* Info.plist */,
-				ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */,
+				ID001002000000000000001 /* IdentifiableDate.swift */,
 				TH001002000000000000001 /* Theme.swift */,
-				GS001002000000000000001 /* UI/Components/GoalSettingsView.swift */,
-				HR001002000000000000001 /* UI/Components/HistoryRowView.swift */,
-				SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */,
-				FC001002000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift */,
-				FC002002000000000000001 /* UI/Components/EditFastTimesView.swift */,
-				ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */,
-				FC003002000000000000001 /* UI/Components/FastingSyncOptionsView.swift */,
-				FC004002000000000000001 /* UI/Components/StreakCalendarView.swift */,
-				FC005002000000000000001 /* UI/Components/FastingGraphView.swift */,
-				FC006002000000000000001 /* UI/Components/TotalStatsView.swift */,
-				FC007002000000000000001 /* UI/Components/AddEditFastView.swift */,
-				TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */,
-				HRM01002000000000000001 /* Core/Managers/HeartRateManager.swift */,
+				GS001002000000000000001 /* GoalSettingsView.swift */,
+				HR001002000000000000001 /* HistoryRowView.swift */,
+				SF001002000000000000001 /* StopFastConfirmationView.swift */,
+				FC001002000000000000001 /* FastingHealthKitNudgeView.swift */,
+				FC002002000000000000001 /* EditFastTimesView.swift */,
+				ES001002000000000000001 /* EditStartTimeView.swift */,
+				FC003002000000000000001 /* FastingSyncOptionsView.swift */,
+				FC004002000000000000001 /* StreakCalendarView.swift */,
+				FC005002000000000000001 /* FastingGraphView.swift */,
+				FC006002000000000000001 /* TotalStatsView.swift */,
+				FC007002000000000000001 /* AddEditFastView.swift */,
+				TSB01002000000000000001 /* TopStatusBar.swift */,
+				HRM01002000000000000001 /* HeartRateManager.swift */,
 				HV001002000000000000001 /* HubView.swift */,
 				CV001002000000000000001 /* CoachView.swift */,
+				5F387F5CC30D9936FACFF8DC /* Core */,
 			);
 			path = FastingTracker;
 			sourceTree = "<group>";
@@ -489,8 +524,6 @@
 				52F5789E2EA8FD4C0042727E /* FastingTrackerTests */,
 			);
 			name = FastingTrackerTests;
-			packageProductDependencies = (
-			);
 			productName = FastingTrackerTests;
 			productReference = 52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -499,7 +532,8 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = A1000022000000000000001 /* Build configuration list for PBXNativeTarget "FastingTracker" */;
 			buildPhases = (
-				A1000023000000000000001 /* Sources */,
+								SW1FTL1NT0000000000001 /* SwiftLint */,
+A1000023000000000000001 /* Sources */,
 				A1000017000000000000001 /* Frameworks */,
 				A1000024000000000000001 /* Resources */,
 			);
@@ -586,25 +620,28 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1000001000000000000001 /* FastingTrackerApp.swift in Sources */,
+																AC0000000002000000000001 /* AnimationConstants.swift in Sources */,
+CC0000000002000000000001 /* ChartConstants.swift in Sources */,
+WC0000000002000000000001 /* WeightConstants.swift in Sources */,
+A1000001000000000000001 /* FastingTrackerApp.swift in Sources */,
 				52B2CFE72E9880B50061FCFF /* HydrationChartView.swift in Sources */,
 				521608AE2EAB1B8B0085B852 /* WeightProgressStoryComponents.swift in Sources */,
 				521608AF2EAB1B8B0085B852 /* WeightStatsComponents.swift in Sources */,
-				521608C32EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift in Sources */,
-				521608C52EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift in Sources */,
-				521608C72EABC2000085B852 /* UI/LifeGPT/LifeGPTLoadingOverlay.swift in Sources */,
+				521608C32EAB41920085B852 /* LIFeGPTChatView.swift in Sources */,
+				521608C52EABC1000085B852 /* LifeGPTViewModel.swift in Sources */,
+				521608C72EABC2000085B852 /* LifeGPTLoadingOverlay.swift in Sources */,
 				521608CA2EABC3000085B852 /* OpenAIService.swift in Sources */,
-				521608CC2EABC4000085B852 /* Core/AI/AInsteinSystemPrompt.swift in Sources */,
+				521608CC2EABC4000085B852 /* AInsteinSystemPrompt.swift in Sources */,
 				7DD29F2C28F125F7C45DF9F7 /* AInsteinPresenceView.swift in Sources */,
 				769DC2E8156D4FA2CEE51A90 /* AInsteinPresenceModifier.swift in Sources */,
-				521608CE2EABC5000085B852 /* Core/AI/ResponseValidator.swift in Sources */,
+				521608CE2EABC5000085B852 /* ResponseValidator.swift in Sources */,
 				521608CF2EABC6000085B852 /* NetworkMonitor.swift in Sources */,
 				52F211D42EABA449006705CD /* HealthInsight.swift in Sources */,
 				521608B02EAB1B8B0085B852 /* WeightHistoryComponents.swift in Sources */,
-				521608D82EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift in Sources */,
-				521608D92EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift in Sources */,
+				521608D82EAB47ED0085B852 /* LifeGPTComponents.swift in Sources */,
+				521608D92EAB47ED0085B852 /* CoachInviteCard.swift in Sources */,
 				521608B12EAB1B8B0085B852 /* WeightSetupComponents.swift in Sources */,
-				52B2CFE82E9880B50061FCFF /* UI/Components/HydrationComponents.swift in Sources */,
+				52B2CFE82E9880B50061FCFF /* HydrationComponents.swift in Sources */,
 				52B2CFE92E9880B50061FCFF /* HydrationCalendarView.swift in Sources */,
 				5289E0752E8D5F6500254E70 /* AdvancedView.swift in Sources */,
 				52B2CFCF2E96C3060061FCFF /* HealthDataSelectionView.swift in Sources */,
@@ -615,55 +652,55 @@
 				52F5788A2EA80CFB0042727E /* DSBanner.swift in Sources */,
 				52B2CFD32E96DB460061FCFF /* HealthKitNudgeView.swift in Sources */,
 				52B2CFBD2E949EE40061FCFF /* Logging.swift in Sources */,
-				5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */,
+				5243F23E2E8F27C70051A731 /* OnboardingView.swift in Sources */,
 				52B2CFB92E91B7160061FCFF /* NotificationSettingsView.swift in Sources */,
-				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
-				A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */,
-				682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */,
-				DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */,
+				5289E0772E8D5F6500254E70 /* WeightManager.swift in Sources */,
+				A61A28CA263664CC583BAE01 /* WeightControlCenterViewModel.swift in Sources */,
+				682D3A2BD2DF47BAA5A58DA8 /* WeightTrackingViewModel.swift in Sources */,
+				DC01B28C3A00473B8C88E668 /* WeightChartViewModel.swift in Sources */,
 				5243F2422E900F440051A731 /* SleepEntry.swift in Sources */,
-				521608BF2EAB417E0085B852 /* Core/ViewModels/LifeGPTViewModel+EmotionDetection.swift in Sources */,
+				521608BF2EAB417E0085B852 /* LifeGPTViewModel+EmotionDetection.swift in Sources */,
 				52B2CFC32E94EE630061FCFF /* AppLogger.swift in Sources */,
-				5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */,
+				5243F2432E900F440051A731 /* SleepManager.swift in Sources */,
 				52B2CFC12E94B8A40061FCFF /* CSVImporter.swift in Sources */,
 				5243F2442E900F440051A731 /* SleepTrackingView.swift in Sources */,
 				5289E0782E8D5F6500254E70 /* WeightTrackingView.swift in Sources */,
 				5243F24A2E9029970051A731 /* MoodEntry.swift in Sources */,
-				5243F24B2E9029970051A731 /* Core/Managers/MoodManager.swift in Sources */,
+				5243F24B2E9029970051A731 /* MoodManager.swift in Sources */,
 				5243F24C2E9029970051A731 /* MoodTrackingView.swift in Sources */,
 				5289E0792E8D5F6500254E70 /* AddWeightView.swift in Sources */,
 				52CB2D1B2EAAE64400815CAD /* HubComponents.swift in Sources */,
-				52B2CFF52E98CCDC0061FCFF /* UI/Components/SleepVisualizationComponents.swift in Sources */,
+				52B2CFF52E98CCDC0061FCFF /* SleepVisualizationComponents.swift in Sources */,
 				5289E07A2E8D5F6500254E70 /* WeightSettingsView.swift in Sources */,
-				52D684202EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift in Sources */,
-				A62491EA2BAB48DCB3C21552 /* Core/Managers/NotificationIdentifierBuilder.swift in Sources */,
+				52D684202EA077D5002C5736 /* BehavioralNotificationRule.swift in Sources */,
+				A62491EA2BAB48DCB3C21552 /* NotificationIdentifierBuilder.swift in Sources */,
 				5288A5312EA44D3800806BE7 /* UniversalCardContainer.swift in Sources */,
 				524976192EA2133E00632E28 /* WeightControlCenterView.swift in Sources */,
 				52B2CFEF2E988CB90061FCFF /* HealthKitService.swift in Sources */,
 				52B2CFBF2E94B3290061FCFF /* DataExportManager.swift in Sources */,
-				5289E07B2E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift in Sources */,
+				5289E07B2E8D5F6500254E70 /* HealthKitManager.swift in Sources */,
 				52F578882EA804ED0042727E /* DSProgressRing.swift in Sources */,
-				HK001001000000000000001 /* Core/Managers/HealthKitAuthManager.swift in Sources */,
+				HK001001000000000000001 /* HealthKitAuthManager.swift in Sources */,
 				5288A52D2EA44D1100806BE7 /* TrackerCard.swift in Sources */,
-				HK001003000000000000001 /* Core/Managers/HealthKitWeightService.swift in Sources */,
+				HK001003000000000000001 /* HealthKitWeightService.swift in Sources */,
 				52F211D72EABA46B006705CD /* ConversationManager.swift in Sources */,
 				5289E0812E8D700200254E70 /* HydrationHistoryView.swift in Sources */,
-				5289E07D2E8D700000254E70 /* Core/Managers/HydrationManager.swift in Sources */,
+				5289E07D2E8D700000254E70 /* HydrationManager.swift in Sources */,
 				5288A52B2EA44CF100806BE7 /* TrackerCardManagerTestView.swift in Sources */,
 				52F16D7B2EA48151002C9FC5 /* ProgressStoryCardManager.swift in Sources */,
-				521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */,
+				521D18112EA148F70072F38C /* BehavioralNotificationScheduler_Simple.swift in Sources */,
 				5289E07F2E8D700100254E70 /* HydrationTrackingView.swift in Sources */,
 				521608B92EAB416A0085B852 /* HealthDataAggregator.swift in Sources */,
 				521608BA2EAB416A0085B852 /* UnifiedHealthDataService.swift in Sources */,
 				521608BB2EAB416A0085B852 /* BehavioralCopy.swift in Sources */,
 				521608E12EAB5F0B0085B852 /* HealthDataAnalyzer.swift in Sources */,
 				52B2CFC72E95A9C80061FCFF /* CrashReportManager.swift in Sources */,
-				52B2CFC82E95A9C80061FCFF /* Core/Persistence/DataStore.swift in Sources */,
+				52B2CFC82E95A9C80061FCFF /* DataStore.swift in Sources */,
 				A1000003000000000000001 /* ContentView.swift in Sources */,
 				A1000005000000000000001 /* HistoryView.swift in Sources */,
 				52CB2D192EAADD4000815CAD /* DSCornerRadius.swift in Sources */,
 				52F3D16F2EABE32B00C20142 /* PerformanceTokens.swift in Sources */,
-				52D684182EA04420002C5736 /* Core/Managers/BehavioralNotificationScheduler.swift in Sources */,
+				52D684182EA04420002C5736 /* BehavioralNotificationScheduler.swift in Sources */,
 				52F16D752EA45ED4002C9FC5 /* DSColors.swift in Sources */,
 				521608B42EAB41470085B852 /* ChatMessage.swift in Sources */,
 				521608B52EAB41470085B852 /* EmotionState.swift in Sources */,
@@ -673,11 +710,11 @@
 				52F16D782EA45ED4002C9FC5 /* DSTypography.swift in Sources */,
 				52F16D792EA45ED4002C9FC5 /* DSCard.swift in Sources */,
 				A1000007000000000000001 /* FastingSession.swift in Sources */,
-				A1000009000000000000001 /* Core/Managers/FastingManager.swift in Sources */,
-				5289E06D2E8D0DAD00254E70 /* UI/InsightsView.swift in Sources */,
-				A1000011000000000000001 /* Core/Managers/NotificationManager.swift in Sources */,
-				52B2CFEC2E9886BB0061FCFF /* UI/Components/SleepComponents.swift in Sources */,
-				52B2CFED2E9886BB0061FCFF /* UI/Components/MoodComponents.swift in Sources */,
+				A1000009000000000000001 /* FastingManager.swift in Sources */,
+				5289E06D2E8D0DAD00254E70 /* InsightsView.swift in Sources */,
+				A1000011000000000000001 /* NotificationManager.swift in Sources */,
+				52B2CFEC2E9886BB0061FCFF /* SleepComponents.swift in Sources */,
+				52B2CFED2E9886BB0061FCFF /* MoodComponents.swift in Sources */,
 				FF00000100000000000000A1 /* FastingStage.swift in Sources */,
 				FF00000300000000000000A1 /* FastingStageDetailView.swift in Sources */,
 				52B2CFD62E9746610061FCFF /* HealthKitNudgeTestHelper.swift in Sources */,
@@ -689,33 +726,57 @@
 				52B2CFE22E986F7D0061FCFF /* TrackerScreenShell.swift in Sources */,
 				52B2CFE32E986F7D0061FCFF /* WeightChartView.swift in Sources */,
 				A1000031000000000000001 /* AppSettings.swift in Sources */,
-				ID001001000000000000001 /* Core/Models/IdentifiableDate.swift in Sources */,
+				ID001001000000000000001 /* IdentifiableDate.swift in Sources */,
 				TH001001000000000000001 /* Theme.swift in Sources */,
-				GS001001000000000000001 /* UI/Components/GoalSettingsView.swift in Sources */,
-				HR001001000000000000001 /* UI/Components/HistoryRowView.swift in Sources */,
-				SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */,
+				GS001001000000000000001 /* GoalSettingsView.swift in Sources */,
+				HR001001000000000000001 /* HistoryRowView.swift in Sources */,
+				SF001001000000000000001 /* StopFastConfirmationView.swift in Sources */,
 				52F578972EA8E2AD0042727E /* WeightNotificationManager.swift in Sources */,
 				52F578982EA8E2AD0042727E /* WeightNotificationPlanner.swift in Sources */,
-				FC001001000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift in Sources */,
+				FC001001000000000000001 /* FastingHealthKitNudgeView.swift in Sources */,
 				5288A52F2EA44D2600806BE7 /* TrackerCardManager.swift in Sources */,
-				FC002001000000000000001 /* UI/Components/EditFastTimesView.swift in Sources */,
-				ES001001000000000000001 /* UI/Components/EditStartTimeView.swift in Sources */,
-				FC003001000000000000001 /* UI/Components/FastingSyncOptionsView.swift in Sources */,
-				FC004001000000000000001 /* UI/Components/StreakCalendarView.swift in Sources */,
-				FC005001000000000000001 /* UI/Components/FastingGraphView.swift in Sources */,
-				FC006001000000000000001 /* UI/Components/TotalStatsView.swift in Sources */,
-				FC007001000000000000001 /* UI/Components/AddEditFastView.swift in Sources */,
+				FC002001000000000000001 /* EditFastTimesView.swift in Sources */,
+				ES001001000000000000001 /* EditStartTimeView.swift in Sources */,
+				FC003001000000000000001 /* FastingSyncOptionsView.swift in Sources */,
+				FC004001000000000000001 /* StreakCalendarView.swift in Sources */,
+				FC005001000000000000001 /* FastingGraphView.swift in Sources */,
+				FC006001000000000000001 /* TotalStatsView.swift in Sources */,
+				FC007001000000000000001 /* AddEditFastView.swift in Sources */,
 				52F5788F2EA861470042727E /* CardManager.swift in Sources */,
 				52F578902EA861470042727E /* CardTypeProtocol.swift in Sources */,
-				TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */,
+				TSB01001000000000000001 /* TopStatusBar.swift in Sources */,
 				525A7C972EA329A200E724F4 /* MilestoneRingCard.swift in Sources */,
-				HRM01001000000000000001 /* Core/Managers/HeartRateManager.swift in Sources */,
+				HRM01001000000000000001 /* HeartRateManager.swift in Sources */,
 				HV001001000000000000001 /* HubView.swift in Sources */,
 				CV001001000000000000001 /* CoachView.swift in Sources */,
+				B3154D57947632A5BB927807 /* SafeUserDefaults.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		SW1FTL1NT0000000000001 /* SwiftLint */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = SwiftLint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "if which swiftlint >/dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+
 
 /* Begin PBXTargetDependency section */
 		52F578A22EA8FD4C0042727E /* PBXTargetDependency */ = {

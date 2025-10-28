@@ -196,7 +196,9 @@ struct FirstTimeWeightSetupView: View {
         AppLogger.info("📅 Query range: \(startOfDay.formatted(date: .complete, time: .shortened)) to \(endOfDay.formatted(date: .complete, time: .shortened))", category: AppLogger.weightTracking)
 
         // Query HealthKit directly using HealthKitManager
-        HealthKitManager.shared.fetchWeightData(startDate: startOfDay, endDate: endOfDay, resetAnchor: false) { entries in
+        // CRITICAL: resetAnchor: true forces fresh query for historical dates
+        // Without this, anchored queries skip data before the saved anchor
+        HealthKitManager.shared.fetchWeightData(startDate: startOfDay, endDate: endOfDay, resetAnchor: true) { entries in
             DispatchQueue.main.async {
                 AppLogger.info("📊 HealthKit returned \(entries.count) weight entries for date", category: AppLogger.weightTracking)
 

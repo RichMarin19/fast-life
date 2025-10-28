@@ -104,7 +104,7 @@ class WeightManager: ObservableObject {
 
             healthKit.saveWeight(weight: entry.weight, bmi: entry.bmi, bodyFat: entry.bodyFat, date: entry.date) { [weak self] success, error in
                 // Re-enable observer after a brief delay to ensure HealthKit write completes
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + WeightConstants.SyncTiming.observerSuppressionDelay) {
                     self?.isSuppressingObserver = false
                     AppLogger.info("Observer suppression lifted after manual entry sync", category: AppLogger.weightTracking)
                 }
@@ -234,8 +234,8 @@ class WeightManager: ObservableObject {
         // FIXED: Check across ALL sources, not just manual (Industry standard pattern)
         let isDuplicate = weightEntries.contains(where: {
             // Check ANY existing entry (Manual OR HealthKit) to prevent bidirectional duplicates
-            abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
-                abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
+            abs($0.date.timeIntervalSince(date)) < WeightConstants.DuplicationThreshold.timeInterval && // Within 30 minutes
+                abs($0.weight - weightInPounds) < WeightConstants.DuplicationThreshold.weightDelta // Within 0.1 lbs
         })
 
         guard !isDuplicate else {
@@ -263,8 +263,8 @@ class WeightManager: ObservableObject {
         return weightEntries.contains(where: {
             // FIXED: Check across ALL sources, not just manual (Industry standard pattern)
             // This prevents Manual vs HealthKit duplicates that were causing the issue
-            abs($0.date.timeIntervalSince(date)) < 1800 && // Within 30 minutes
-                abs($0.weight - weightInPounds) < 0.1 // Within 0.1 lbs
+            abs($0.date.timeIntervalSince(date)) < WeightConstants.DuplicationThreshold.timeInterval && // Within 30 minutes
+                abs($0.weight - weightInPounds) < WeightConstants.DuplicationThreshold.weightDelta // Within 0.1 lbs
         })
     }
 
@@ -278,7 +278,7 @@ class WeightManager: ObservableObject {
 
         // Default to comprehensive sync (10 years) for data consistency with manual sync
         // Industry Standard: Use same wide date range as manual sync to ensure identical results
-        let start = startDate ?? Calendar.current.date(byAdding: .year, value: -10, to: Date())!
+        let start = startDate ?? Calendar.current.date(byAdding: .year, value: -WeightConstants.SyncTiming.defaultHistoricalLookbackYears, to: Date())!
 
         healthKit.fetchWeightData(startDate: start, endDate: Date(), resetAnchor: false) { [weak self] healthKitEntries in
             guard let self = self else {
@@ -312,7 +312,7 @@ class WeightManager: ObservableObject {
                     let isDuplicate = self.weightEntries.contains(where: {
                         let timeDiff = abs($0.date.timeIntervalSince(hkEntry.date))
                         let weightDiff = abs($0.weight - hkEntry.weight)
-                        let matches = timeDiff < 60 && weightDiff < 0.1
+                        let matches = timeDiff < WeightConstants.DuplicationThreshold.tightTimeInterval && weightDiff < WeightConstants.DuplicationThreshold.weightDelta
 
                         if matches {
                             matchDetails = "matches existing entry \($0.weight) lbs on \(detailedFormatter.string(from: $0.date)) (timeDiff: \(String(format: "%.1f", timeDiff))s, weightDiff: \(String(format: "%.3f", weightDiff)) lbs)"
@@ -370,8 +370,8 @@ class WeightManager: ObservableObject {
                     let isDuplicate = self.weightEntries.contains(where: {
                         // Check if entry already exists across ANY source (Manual OR HealthKit)
                         // Following Apple HealthKit historical sync best practices
-                        abs($0.date.timeIntervalSince(hkEntry.date)) < 300 && // Within 5 minutes (more flexible for historical)
-                            abs($0.weight - hkEntry.weight) < 0.2 // Within 0.2 lbs (≈0.09 kg) account for rounding
+                        abs($0.date.timeIntervalSince(hkEntry.date)) < WeightConstants.DuplicationThreshold.historicalTimeInterval && // Within 5 minutes (more flexible for historical)
+                            abs($0.weight - hkEntry.weight) < WeightConstants.DuplicationThreshold.historicalWeightDelta // Within 0.2 lbs (≈0.09 kg) account for rounding
                     })
 
                     if !isDuplicate {
@@ -431,7 +431,7 @@ class WeightManager: ObservableObject {
                     let stillExistsInHealthKit = healthKitEntries.contains { healthKitEntry in
                         let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
                         let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
-                        return timeDiff < 60 && weightDiff < 0.1
+                        return timeDiff < WeightConstants.DuplicationThreshold.tightTimeInterval && weightDiff < WeightConstants.DuplicationThreshold.weightDelta
                     }
 
                     let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
@@ -461,7 +461,7 @@ class WeightManager: ObservableObject {
                         let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
                         let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
 
-                        let matches = timeDiff < 60 && weightDiff < 0.1
+                        let matches = timeDiff < WeightConstants.DuplicationThreshold.tightTimeInterval && weightDiff < WeightConstants.DuplicationThreshold.weightDelta
 
                         if matches {
                             AppLogger.info("MATCH FOUND: HealthKit(\(healthKitEntry.weight)lbs \(healthKitDateString)) matches Fast LIFe(\(fastLifeEntry.weight)lbs \(fastLifeDateString)) - timeDiff:\(timeDiff)s weightDiff:\(weightDiff)lbs", category: AppLogger.weightTracking)
@@ -576,7 +576,7 @@ class WeightManager: ObservableObject {
             // Industry Standard: Use anchored query (handles deletions) with wide date range for consistency
             AppLogger.info("New weight data detected in HealthKit, syncing with deletion support", category: AppLogger.weightTracking)
             DispatchQueue.main.async {
-                let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
+                let startDate = Calendar.current.date(byAdding: .year, value: -WeightConstants.SyncTiming.defaultHistoricalLookbackYears, to: Date()) ?? Date()
                 self.syncFromHealthKit(startDate: startDate, completion: nil)
             }
 
@@ -596,10 +596,10 @@ class WeightManager: ObservableObject {
     }
 
     var weightTrend: Double? {
-        guard weightEntries.count >= 2 else { return nil }
+        guard weightEntries.count >= WeightConstants.Statistics.minimumEntriesForTrend else { return nil }
 
         let recentEntries = Array(weightEntries.prefix(7)) // Last 7 entries
-        guard recentEntries.count >= 2 else { return nil }
+        guard recentEntries.count >= WeightConstants.Statistics.minimumEntriesForTrend else { return nil }
 
         let oldestRecent = recentEntries.last!.weight
         let newest = recentEntries.first!.weight
@@ -729,8 +729,8 @@ class WeightManager: ObservableObject {
             // Following established patterns from syncFromHealthKit method
             weightEntries.removeAll { entry in
                 entry.source == .healthKit &&
-                    abs(entry.date.timeIntervalSince(dateValue)) < 60 && // Within 1 minute
-                    abs(entry.weight - weightValue) < 0.1 // Within 0.1 lbs
+                    abs(entry.date.timeIntervalSince(dateValue)) < WeightConstants.DuplicationThreshold.tightTimeInterval && // Within 1 minute
+                    abs(entry.weight - weightValue) < WeightConstants.DuplicationThreshold.weightDelta // Within 0.1 lbs
             }
             deletedCount += 1
         }
@@ -741,4 +741,3 @@ class WeightManager: ObservableObject {
         }
     }
 }
-

@@ -58,24 +58,31 @@ public class CrashReportManager {
 
     // MARK: - Initialization
 
-    /// Initialize crash reporting system
+    /// Initialize crash reporting system asynchronously (non-blocking)
     /// Call this from FastingTrackerApp.init() following Firebase setup guide
+    /// Initialization happens on background thread to prevent main thread blocking
     public func initialize() {
         guard !isInitialized else {
             AppLogger.warning("CrashReportManager already initialized", category: AppLogger.general)
             return
         }
 
-        #if DEBUG
-        AppLogger.info("CrashReportManager: Debug mode - crash reporting disabled", category: AppLogger.general)
-        #else
-        // In production, this would initialize Firebase Crashlytics
-        FirebaseApp.configure()
-        Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
-        AppLogger.info("CrashReportManager initialized for production", category: AppLogger.general)
-        #endif
-
+        // Mark as initialized immediately to prevent duplicate calls
         isInitialized = true
+
+        // Move Firebase configuration to background thread to prevent blocking
+        // This is critical: Firebase can block when processing pending crash reports
+        DispatchQueue.global(qos: .utility).async {
+            AppLogger.info("Starting Firebase configuration on background thread...", category: AppLogger.general)
+
+            // Configure Firebase off main thread
+            FirebaseApp.configure()
+
+            // Enable Crashlytics collection
+            Crashlytics.crashlytics().setCrashlyticsCollectionEnabled(true)
+
+            AppLogger.info("CrashReportManager initialized successfully", category: AppLogger.general)
+        }
     }
 
     // MARK: - Crash Reporting Methods
@@ -150,12 +157,11 @@ public class CrashReportManager {
             AppLogger.debug("   Context: \(contextString)", category: AppLogger.safety)
         }
         #else
-        // In production, this would record to Firebase Crashlytics
+        // In production, record to Firebase Crashlytics
         Crashlytics.crashlytics().record(error: error)
         for (key, value) in context {
             Crashlytics.crashlytics().setCustomValue(value, forKey: key)
         }
-        // Note: setCustomKeys replaced with loop below
         Crashlytics.crashlytics().log("Category: \(category.rawValue)")
         #endif
     }
@@ -216,7 +222,7 @@ public class CrashReportManager {
         }
 
         #if !DEBUG
-        // In production, this would log to Firebase Crashlytics
+        // In production, log to Firebase Crashlytics
         Crashlytics.crashlytics().log(logMessage)
         #endif
     }
@@ -231,7 +237,7 @@ public class CrashReportManager {
         AppLogger.info("Setting user context: \(hashedID)", category: AppLogger.general)
 
         #if !DEBUG
-        // In production, this would set user context in Firebase Crashlytics
+        // In production, set user context in Firebase Crashlytics
         Crashlytics.crashlytics().setUserID(hashedID)
         #endif
     }
@@ -241,7 +247,7 @@ public class CrashReportManager {
         AppLogger.debug("Setting custom value: \(key)=\(value)", category: AppLogger.general)
 
         #if !DEBUG
-        // In production, this would set custom keys in Firebase Crashlytics
+        // In production, set custom keys in Firebase Crashlytics
         Crashlytics.crashlytics().setCustomValue(value, forKey: key)
         #endif
     }
