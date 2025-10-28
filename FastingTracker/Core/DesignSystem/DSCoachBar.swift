@@ -64,39 +64,22 @@ struct DSCoachBar: View {
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
-            // Background layer
-            RoundedRectangle(cornerRadius: DSCornerRadius.banner, style: .continuous)
-                .fill(backgroundColor)
-                .overlay(
-                    RoundedRectangle(cornerRadius: DSCornerRadius.banner, style: .continuous)
-                        .stroke(backgroundColor.opacity(0.3), lineWidth: 1)
-                )
-                .shadow(color: Theme.ColorToken.shadowCard, radius: 8, x: 0, y: 4)
+            // Coach Bar content
+            HStack(spacing: 8) {
+                // Icon: SF Symbol, 18-20pt, WHITE
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundColor(.white)
 
-            // Content layer
-            VStack {
-                Spacer(minLength: 0)  // Top spacer - flexible
-
-                HStack(spacing: 8) {
-                    // Icon: SF Symbol, 18-20pt, WHITE
-                    Image(systemName: icon)
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.white)
-
-                    Text(text)
-                        .font(.system(size: 21, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white)  // WHITE for high contrast
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Spacer()
-                }
-                .padding(.leading, DSSpacing.cardPadding)  // 16pt horizontal - FIXED
-                .padding(.trailing, DSSpacing.cardPadding + 44)  // Extra space for eye.slash button
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                Spacer(minLength: 0)  // Bottom spacer - flexible
+                Text(text)
+                    .font(.system(size: 21, weight: .semibold, design: .rounded))
+                    .foregroundColor(.white)  // WHITE for high contrast
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(.horizontal, DSSpacing.cardPadding)  // 16pt - iOS standard
+            .padding(.vertical, 14)
+            .frame(maxWidth: .infinity)
 
             // Eye.slash button overlaid in top-right corner (if onHide provided)
             if let hideAction = onHide {
@@ -110,8 +93,15 @@ struct DSCoachBar: View {
                 .accessibilityLabel("Hide coach bar")
             }
         }
-        .frame(height: 66)  // 🔧 FIX #18: LOCK THE ENTIRE CONTAINER HEIGHT at 66pt
-        .clipped()  // 🔧 FIX #19: Clip shadow overflow to prevent visual size increase beyond fixed height
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(backgroundColor)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(backgroundColor.opacity(0.3), lineWidth: 1)
+                )
+                .shadow(color: Theme.ColorToken.shadowCard, radius: 8, x: 0, y: 4)
+        )
         .accessibilityLabel("Coach tip: \(text)")
     }
 }

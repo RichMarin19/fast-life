@@ -49,12 +49,13 @@ extension TrackerCard {
     var canBeCollapsed: Bool { true }
 }
 
-// MARK: - Card Preference Model
+// MARK: - Legacy Card Preference Models (DEPRECATED - Use CardManager<T> instead)
+// These structs are kept for backward compatibility with old persistence code
+// Phase v1.4a: Unified into generic CardPreference<CardType> in CardManager.swift
 
-/// Codable model for persisting card preferences
-/// Industry Pattern: JSON serialization for UserDefaults storage
-/// Reference: Apple Foundation - Codable (Swift 4+)
-struct CardPreference: Codable, Identifiable {
+/// DEPRECATED: Use CardPreference<TrackerCardType> from CardManager instead
+/// Legacy model for persisting tracker card preferences
+struct LegacyTrackerCardPreference: Codable, Identifiable {
     let id: String  // cardType.rawValue
     var isVisible: Bool
     var isExpanded: Bool
@@ -64,6 +65,20 @@ struct CardPreference: Codable, Identifiable {
         self.id = cardType.rawValue
         self.isVisible = isVisible
         self.isExpanded = isExpanded
+        self.sortOrder = sortOrder
+    }
+}
+
+/// DEPRECATED: Use CardPreference<ProgressStoryCardType> from CardManager instead
+/// Legacy model for persisting Progress Story card preferences
+struct LegacyProgressStoryCardPreference: Codable, Identifiable {
+    let id: String  // cardType.rawValue
+    var isVisible: Bool
+    var sortOrder: Int
+
+    init(cardType: ProgressStoryCardType, isVisible: Bool = true, sortOrder: Int) {
+        self.id = cardType.rawValue
+        self.isVisible = isVisible
         self.sortOrder = sortOrder
     }
 }

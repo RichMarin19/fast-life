@@ -2,28 +2,21 @@ import SwiftUI
 
 // MARK: - Design System Colors
 
-/// ⚠️ DEPRECATED: Use Theme.ColorToken directly instead
+/// Centralized color tokens for consistent theming across all components
+/// Industry Pattern: Design Tokens (Apple HIG, Material Design, Figma)
+/// Reference: https://developer.apple.com/design/human-interface-guidelines/color
 ///
-/// This wrapper enum is being phased out in favor of Theme.ColorToken.
-/// All DSColors properties are simple aliases to Theme.ColorToken.
+/// SINGLE SOURCE OF TRUTH: All color values defined here
+/// Never hardcode colors in components - always reference DSColors
 ///
-/// Migration Guide:
-/// - DSColors.cardBackground → Theme.ColorToken.card
-/// - DSColors.cardShadow → Theme.ColorToken.shadowCard
-/// - DSColors.textPrimary → Theme.ColorToken.textPrimary
-/// - DSColors.textSecondary → Theme.ColorToken.textSecondary
-/// - DSColors.accentPrimary → Theme.ColorToken.accentPrimary
-/// - DSColors.accentSuccess → Theme.ColorToken.stateSuccess
-/// - DSColors.accentWarning → Theme.ColorToken.stateWarning
-/// - DSColors.accentError → Theme.ColorToken.stateError
-/// - DSColors.chartLine → Theme.ColorToken.accentPrimary
-/// - DSColors.chartGoalLine → Theme.ColorToken.stateSuccess
-/// - DSColors.screenBackground → Theme.ColorToken.bgDeepStart
+/// BACKWARDS COMPATIBILITY: Uses existing Theme.ColorToken values
+/// This ensures consistency with current luxury gradient system
 ///
-/// Reason for deprecation: Single source of truth
-/// Industry Pattern: Design token consolidation (Apple HIG, Material Design)
-/// Timeline: Will be removed after all references are migrated
-@available(*, deprecated, message: "Use Theme.ColorToken directly instead. See migration guide in comments.")
+/// Usage:
+/// ```
+/// .foregroundColor(DSColors.textPrimary)
+/// .background(DSColors.cardBackground)
+/// ```
 enum DSColors {
     // MARK: - Card Colors
 
@@ -55,17 +48,17 @@ enum DSColors {
     /// Used by: CTA buttons, primary actions, highlights
     static let accentPrimary: Color = Theme.ColorToken.accentPrimary
 
-    /// Success color (green)
+    /// Success color (green) - Maps to stateSuccess
     /// Used by: Positive progress, achievements, success states
-    static let accentSuccess: Color = Theme.ColorToken.accentSuccess
+    static let accentSuccess: Color = Theme.ColorToken.stateSuccess
 
-    /// Warning color (orange/yellow)
+    /// Warning color (orange/yellow) - Maps to stateWarning
     /// Used by: Warnings, alerts, attention needed
-    static let accentWarning: Color = Theme.ColorToken.accentWarning
+    static let accentWarning: Color = Theme.ColorToken.stateWarning
 
-    /// Error color (red)
+    /// Error color (red) - Maps to stateError
     /// Used by: Errors, destructive actions, critical alerts
-    static let accentError: Color = Theme.ColorToken.accentError
+    static let accentError: Color = Theme.ColorToken.stateError
 
     // MARK: - Interactive Colors
 
@@ -106,7 +99,7 @@ enum DSColors {
 
     /// Chart goal line color
     /// Used by: Goal reference line on charts
-    static let chartGoalLine: Color = Theme.ColorToken.accentSuccess
+    static let chartGoalLine: Color = Theme.ColorToken.stateSuccess
 
     /// Chart fill gradient start
     /// Used by: Area chart fills
@@ -115,38 +108,4 @@ enum DSColors {
     /// Chart fill gradient end
     /// Used by: Area chart fills
     static let chartFillEnd: Color = Theme.ColorToken.accentPrimary.opacity(0.05)
-}
-
-// MARK: - Color Extension - Hex Support
-
-/// Extension to initialize Color from hex strings
-/// Industry Pattern: Figma/Sketch/Design handoff workflows
-/// Reference: Common iOS pattern for design system integration
-extension Color {
-    /// Initialize Color from hex string (e.g., "#22D1A3" or "22D1A3")
-    /// - Parameter hex: Hex color string with or without "#" prefix
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
-    }
 }

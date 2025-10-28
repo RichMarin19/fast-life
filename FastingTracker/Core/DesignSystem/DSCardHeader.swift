@@ -76,7 +76,7 @@ struct DSCardHeader: View {
             if canReorder {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Theme.ColorToken.textSecondary)
+                    .foregroundColor(DSColors.textSecondary)
                     .opacity(0.5)  // More subtle than other controls
             }
 
@@ -84,12 +84,12 @@ struct DSCardHeader: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
                     .font(DSTypography.cardTitle)
-                    .foregroundColor(Theme.ColorToken.textPrimary)
+                    .foregroundColor(DSColors.textPrimary)
 
                 if let subtitle = subtitle {
                     Text(subtitle)
                         .font(DSTypography.cardCaption)
-                        .foregroundColor(Theme.ColorToken.textSecondary)
+                        .foregroundColor(DSColors.textSecondary)
                 }
             }
 
@@ -100,7 +100,7 @@ struct DSCardHeader: View {
                 Button(action: onToggleExpand) {
                     Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
+                        .foregroundColor(DSColors.textSecondary)
                 }
                 .accessibilityLabel(isExpanded ? "Collapse card" : "Expand card")
             }
@@ -110,7 +110,7 @@ struct DSCardHeader: View {
                 Button(action: onDismiss) {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
+                        .foregroundColor(DSColors.textSecondary)
                 }
                 .accessibilityLabel("Hide \(title)")
             }
@@ -123,7 +123,7 @@ struct DSCardHeader: View {
 
 #Preview("Header with Dismiss Only") {
     ZStack {
-        Theme.ColorToken.bgDeepStart
+        DSColors.screenBackground
             .ignoresSafeArea()
 
         VStack(spacing: 20) {
@@ -132,7 +132,7 @@ struct DSCardHeader: View {
                 onDismiss: { Log.debug("Dismiss tapped", category: .general) }
             )
             .padding()
-            .background(Theme.ColorToken.card)
+            .background(DSColors.cardBackground)
             .cornerRadius(16)
             .padding(.horizontal, 20)
 
@@ -142,7 +142,7 @@ struct DSCardHeader: View {
                 onDismiss: { Log.debug("Dismiss tapped", category: .general) }
             )
             .padding()
-            .background(Theme.ColorToken.card)
+            .background(DSColors.cardBackground)
             .cornerRadius(16)
             .padding(.horizontal, 20)
         }
@@ -151,7 +151,7 @@ struct DSCardHeader: View {
 
 #Preview("Header with All Controls - Layer 5") {
     ZStack {
-        Theme.ColorToken.bgDeepStart
+        DSColors.screenBackground
             .ignoresSafeArea()
 
         DSCardHeader(
@@ -165,7 +165,7 @@ struct DSCardHeader: View {
             canReorder: true
         )
         .padding()
-        .background(Theme.ColorToken.card)
+        .background(DSColors.cardBackground)
         .cornerRadius(16)
         .padding(.horizontal, 20)
     }

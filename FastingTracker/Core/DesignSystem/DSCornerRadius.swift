@@ -84,12 +84,6 @@ enum DSCornerRadius {
     /// Used by: Thumbnail images, avatar containers, media previews
     /// Design Decision: Softer than buttons but tighter than cards
     static let image: CGFloat = 10
-
-    /// Chat bubble corner radius (18pt)
-    /// Used by: Message bubbles in LifeGPT chat interface
-    /// Design Decision: More rounded than cards for friendly, conversational feel
-    /// Reference: iMessage (20pt), WhatsApp (18pt) - industry standard
-    static let chatBubble: CGFloat = 18
 }
 
 // MARK: - View Extension for Corner Radius

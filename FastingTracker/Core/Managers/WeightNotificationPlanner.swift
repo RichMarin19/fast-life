@@ -4,7 +4,7 @@ import Foundation
 
 /// Make DateComponents Comparable for convenience comparisons
 /// Note: DateComponents is already Codable in Foundation (iOS 17+)
-extension DateComponents: Comparable {
+extension DateComponents: @retroactive Comparable {
     /// Compare DateComponents based on hour and minute
     /// Used for time comparisons (not for Range creation)
     public static func < (lhs: DateComponents, rhs: DateComponents) -> Bool {
@@ -24,6 +24,7 @@ extension DateComponents: Comparable {
 // MARK: - Weight Tracker Notification Planner
 /// Pure scheduling logic with zero UserNotifications dependencies
 /// 100% testable, deterministic, time-zone aware
+///
 ///
 /// Following technical plan: fastlife_notifications_plan.md
 /// Architecture: Separate from Fasting notification system
@@ -249,7 +250,7 @@ struct WeightNotificationPlanner {
     ///
     /// - Parameters:
     ///   - date: Date to check
-    ///   - quietHours: Quiet hours range
+    ///   - quietHours: Quiet hours
     ///   - tz: Time zone
     ///
     /// - Returns: True if date is in quiet hours

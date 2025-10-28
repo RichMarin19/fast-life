@@ -9,15 +9,6 @@ import SwiftUI
 /// SINGLE SOURCE OF TRUTH: All text styles defined here
 /// Never hardcode font styles in components - always reference DSTypography
 ///
-/// DYNAMIC TYPE SUPPORT:
-/// ✅ All fonts scale automatically with user's text size preference (Settings > Accessibility > Larger Text)
-/// ✅ SwiftUI `.system()` fonts provide built-in Dynamic Type support across all 12 size categories
-/// ✅ Maintains visual hierarchy at all sizes (titles always larger than body text)
-/// ✅ WCAG 2.1 AA compliant - text scales up to 200% without loss of content or functionality
-///
-/// Testing: Settings > Accessibility > Display & Text Size > Larger Text → drag to maximum
-/// Reference: Apple HIG Typography + WWDC 2022 "What's new in SwiftUI"
-///
 /// COLOR CONTEXT SYSTEM:
 /// - Light backgrounds (Ice/Ivory/White) → textPrimary (dark) / textSecondary (gray)
 /// - Dark backgrounds (Navy gradient) → textPrimaryOnDark (white) / textSecondaryOnDark (70% white)
@@ -36,24 +27,24 @@ enum DSTypography {
     // MARK: - Card Typography
 
     /// Card title (header text)
-    /// Size: 16pt, Weight: Semibold, Scales with: .headline
+    /// Size: 16pt, Weight: Semibold
     /// Used by: DSCardHeader title, card headers
-    static let cardTitle: Font = .system(size: 16, weight: .semibold, design: .default)
+    static let cardTitle: Font = .system(size: 16, weight: .semibold)
 
     /// Card subtitle
-    /// Size: 14pt, Weight: Regular, Scales with: .subheadline
+    /// Size: 14pt, Weight: Regular
     /// Used by: Card subtitles, secondary headers
-    static let cardSubtitle: Font = .system(size: 14, weight: .regular, design: .default)
+    static let cardSubtitle: Font = .system(size: 14, weight: .regular)
 
     /// Card body text
-    /// Size: 15pt, Weight: Regular, Scales with: .body
+    /// Size: 15pt, Weight: Regular
     /// Used by: Main content text, descriptions
-    static let cardBody: Font = .system(size: 15, weight: .regular, design: .default)
+    static let cardBody: Font = .system(size: 15, weight: .regular)
 
     /// Card caption text
-    /// Size: 13pt, Weight: Regular, Scales with: .caption
+    /// Size: 13pt, Weight: Regular
     /// Used by: Labels, metadata, timestamps
-    static let cardCaption: Font = .system(size: 13, weight: .regular, design: .default)
+    static let cardCaption: Font = .system(size: 13, weight: .regular)
 
     // MARK: - Display Typography (Large Values)
 
@@ -152,6 +143,48 @@ enum DSTypography {
     /// Size: 12pt, Weight: Regular
     /// Used by: Timestamps, metadata in lists
     static let listCaption: Font = .system(size: 12, weight: .regular)
+
+    // MARK: - Additional Typography (Phase v1.5)
+
+    /// Screen title (large)
+    /// Size: 34pt, Weight: Bold
+    /// Used by: Control Center title, main screen headers
+    static let screenTitle: Font = .system(size: 34, weight: .bold)
+
+    /// Hero display (40pt)
+    /// Size: 40pt, Weight: Semibold
+    /// Used by: Large emphasis numbers, trend card values
+    static let displayHero: Font = .system(size: 40, weight: .semibold)
+
+    /// Icon button text
+    /// Size: 14pt, Weight: Semibold
+    /// Used by: Icon button labels, small action buttons
+    static let iconButton: Font = .system(size: 14, weight: .semibold)
+
+    /// Pill label (rounded)
+    /// Size: 11pt, Weight: Bold, Design: Rounded
+    /// Used by: Badge labels, status pills
+    static let pillLabel: Font = .system(size: 11, weight: .bold, design: .rounded)
+
+    /// Period label (rounded)
+    /// Size: 12pt, Weight: Semibold, Design: Rounded
+    /// Used by: Period markers, time labels
+    static let periodLabel: Font = .system(size: 12, weight: .semibold, design: .rounded)
+
+    /// Secondary label (medium weight)
+    /// Size: 13pt, Weight: Medium
+    /// Used by: Secondary text with emphasis
+    static let labelSecondary: Font = .system(size: 13, weight: .medium)
+
+    /// Subtitle emphasized
+    /// Size: 17pt, Weight: Regular
+    /// Used by: Emphasized subtitle text
+    static let subtitleEmphasized: Font = .system(size: 17, weight: .regular)
+
+    /// Subtitle large
+    /// Size: 18pt, Weight: Medium
+    /// Used by: Large subtitle text with emphasis
+    static let subtitleLarge: Font = .system(size: 18, weight: .medium)
 
     // MARK: - Helper Methods
 

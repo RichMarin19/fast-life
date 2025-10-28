@@ -1,6 +1,69 @@
 import Foundation
 import UserNotifications
 
+// MARK: - Weight Notification Messages
+
+/// Weight Notification Message Content
+/// Phase 2a enhancement: Variable messaging to reduce notification fatigue
+/// Industry pattern: Rotating message content (Apple Fitness+, Headspace, Noom)
+/// Reference: fastlife_notifications_plan.md
+struct WeightNotificationMessages {
+
+    /// 10 variations for daily weight reminder
+    /// Industry standard: 5-10 message variations to reduce habituation
+    static let dailyReminders = [
+        "Time for your weigh-in",
+        "Ready to step on the scale?",
+        "Let's track today's progress",
+        "Your daily weigh-in awaits",
+        "Time to log your weight",
+        "Step on the scale when ready",
+        "Track your weight today",
+        "Your weigh-in is ready",
+        "Time to update your progress",
+        "Let's capture today's weight"
+    ]
+
+    /// Get message for a specific date using deterministic rotation
+    /// Algorithm: Use day-of-year as index modulo array count
+    static func getMessage(from messages: [String], for date: Date = Date()) -> String {
+        let calendar = Calendar.current
+        let dayOfYear = calendar.ordinality(of: .day, in: .year, for: date) ?? 1
+        let index = (dayOfYear - 1) % messages.count
+        return messages[index]
+    }
+
+    /// Get today's daily reminder message
+    static func getDailyReminder(for date: Date = Date()) -> String {
+        return getMessage(from: dailyReminders, for: date)
+    }
+}
+
+// MARK: - Weight Quiet Hours Time Range
+
+/// Represents quiet hours time range for weight notifications (can span midnight)
+/// Industry pattern: Custom struct for time ranges (Stack Overflow #49611634, Apple Do Not Disturb)
+/// Replaces Range<DateComponents> which can't handle midnight-spanning (start > end)
+/// Note: Named WeightQuietHours to avoid conflict with BehavioralNotificationRule.QuietHours
+public struct WeightQuietHours {
+    public let start: DateComponents
+    public let end: DateComponents
+
+    public init(start: DateComponents, end: DateComponents) {
+        self.start = start
+        self.end = end
+    }
+
+    /// Check if this represents midnight-spanning quiet hours
+    public var spansMidnight: Bool {
+        let startHour = start.hour ?? 0
+        let endHour = end.hour ?? 0
+        return startHour > endHour || (startHour == endHour && (start.minute ?? 0) > (end.minute ?? 0))
+    }
+}
+
+// MARK: - Weight Notification Manager
+
 /// Weight Tracker Notification Manager
 /// Handles scheduling/cancellation for daily weight reminders
 /// Delegates authorization to NotificationManager.shared (reuses Fasting auth)

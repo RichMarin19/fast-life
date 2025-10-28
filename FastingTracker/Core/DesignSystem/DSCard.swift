@@ -49,10 +49,6 @@ struct DSCard<Content: View>: View {
     /// Optional subtitle
     let subtitle: String?
 
-    /// Optional surface color for light backgrounds (ice/ivory/mint)
-    /// When nil, uses default white background
-    let surface: Color?
-
     /// Card content (MUST be pure - no styling!)
     let content: Content
 
@@ -80,7 +76,6 @@ struct DSCard<Content: View>: View {
         cardType: TrackerCardType,
         title: String? = nil,
         subtitle: String? = nil,
-        surface: Color? = nil,  // Optional light surface color
         onDismiss: (() -> Void)? = nil,
         onToggleExpand: (() -> Void)? = nil,
         isExpanded: Bool = true,
@@ -92,7 +87,6 @@ struct DSCard<Content: View>: View {
         self.cardType = cardType
         self.title = title
         self.subtitle = subtitle
-        self.surface = surface
         self.onDismiss = onDismiss
         self.onToggleExpand = onToggleExpand
         self.isExpanded = isExpanded
@@ -125,10 +119,10 @@ struct DSCard<Content: View>: View {
             }
         }
         .padding(DSSpacing.cardPadding)  // UNIVERSAL PADDING: 16pt
-        .background(surface ?? Theme.ColorToken.card)  // Light surface or default white
+        .background(DSColors.cardBackground)  // UNIVERSAL BACKGROUND: White
         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))  // UNIVERSAL RADIUS: 16pt
         .shadow(
-            color: Theme.ColorToken.shadowCard,  // UNIVERSAL SHADOW
+            color: DSColors.cardShadow,  // UNIVERSAL SHADOW
             radius: 16,
             x: 0,
             y: 8
@@ -141,12 +135,18 @@ struct DSCard<Content: View>: View {
 extension DSCard {
     /// Create card with TrackerCardManager integration
     /// Automatically wires up dismiss action to hide card
+    ///
+    /// Usage in View (where @MainActor is available):
+    /// ```
+    /// DSCard(cardType: .currentWeight, cardManager: cardManager) {
+    ///     CurrentWeightCard(...)
+    /// }
+    /// ```
     init(
         cardType: TrackerCardType,
         title: String? = nil,
         subtitle: String? = nil,
-        surface: Color? = nil,  // Optional light surface color
-        cardManager: TrackerCardManager = .shared,
+        cardManager: CardManager<TrackerCardType>,  // Must be passed explicitly due to @MainActor isolation
         canExpand: Bool = false,
         canReorder: Bool = false,
         @ViewBuilder content: () -> Content
@@ -155,7 +155,6 @@ extension DSCard {
             cardType: cardType,
             title: title,
             subtitle: subtitle,
-            surface: surface,
             onDismiss: { cardManager.hideCard(cardType) },
             onToggleExpand: canExpand ? { cardManager.toggleCardExpansion(cardType) } : nil,
             isExpanded: cardManager.isCardExpanded(cardType),
@@ -171,7 +170,7 @@ extension DSCard {
 
 #Preview("Current Weight Card - Simple") {
     ZStack {
-        Theme.ColorToken.bgDeepStart
+        DSColors.screenBackground
             .ignoresSafeArea()
 
         DSCard(
@@ -181,11 +180,11 @@ extension DSCard {
             VStack(spacing: 8) {
                 Text("159.9")
                     .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(Theme.ColorToken.textPrimary)
+                    .foregroundColor(DSColors.textPrimary)
 
                 Text("Latest Weight")
                     .font(DSTypography.cardCaption)
-                    .foregroundColor(Theme.ColorToken.textSecondary)
+                    .foregroundColor(DSColors.textSecondary)
             }
         }
         .padding(.horizontal, DSSpacing.screenEdgePadding)
@@ -194,7 +193,7 @@ extension DSCard {
 
 #Preview("Milestone Card - With Subtitle") {
     ZStack {
-        Theme.ColorToken.bgDeepStart
+        DSColors.screenBackground
             .ignoresSafeArea()
 
         DSCard(
@@ -204,40 +203,40 @@ extension DSCard {
         ) {
             VStack(spacing: 16) {
                 Circle()
-                    .stroke(Theme.ColorToken.accentPrimary, lineWidth: 12)
+                    .stroke(DSColors.accentPrimary, lineWidth: 12)
                     .frame(width: 100, height: 100)
                     .overlay(
                         Text("65%")
                             .font(DSTypography.displayM)
-                            .foregroundColor(Theme.ColorToken.textPrimary)
+                            .foregroundColor(DSColors.textPrimary)
                     )
 
                 HStack(spacing: 20) {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Start")
                             .font(DSTypography.statLabel)
-                            .foregroundColor(Theme.ColorToken.textSecondary)
+                            .foregroundColor(DSColors.textSecondary)
                         Text("180 lb")
                             .font(DSTypography.statValueSmall)
-                            .foregroundColor(Theme.ColorToken.textPrimary)
+                            .foregroundColor(DSColors.textPrimary)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Progress")
                             .font(DSTypography.statLabel)
-                            .foregroundColor(Theme.ColorToken.textSecondary)
+                            .foregroundColor(DSColors.textSecondary)
                         Text("-20.1 lb")
                             .font(DSTypography.statValueSmall)
-                            .foregroundColor(Theme.ColorToken.stateSuccess)
+                            .foregroundColor(DSColors.accentSuccess)
                     }
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text("To Go")
                             .font(DSTypography.statLabel)
-                            .foregroundColor(Theme.ColorToken.textSecondary)
+                            .foregroundColor(DSColors.textSecondary)
                         Text("10.9 lb")
                             .font(DSTypography.statValueSmall)
-                            .foregroundColor(Theme.ColorToken.accentPrimary)
+                            .foregroundColor(DSColors.accentPrimary)
                     }
                 }
             }
@@ -248,7 +247,7 @@ extension DSCard {
 
 #Preview("Card with All Controls - Layer 5") {
     ZStack {
-        Theme.ColorToken.bgDeepStart
+        DSColors.screenBackground
             .ignoresSafeArea()
 
         DSCard(
@@ -264,11 +263,11 @@ extension DSCard {
             VStack(spacing: 8) {
                 Text("159.9")
                     .font(.system(size: 48, weight: .bold))
-                    .foregroundColor(Theme.ColorToken.textPrimary)
+                    .foregroundColor(DSColors.textPrimary)
 
                 Text("This card has all Layer 5 controls")
                     .font(DSTypography.cardCaption)
-                    .foregroundColor(Theme.ColorToken.textSecondary)
+                    .foregroundColor(DSColors.textSecondary)
                     .multilineTextAlignment(.center)
             }
         }

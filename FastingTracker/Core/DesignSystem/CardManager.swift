@@ -152,7 +152,7 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
         }
         // Default: use enum case order
         if let index = CardType.allCases.firstIndex(of: cardType) {
-            return Int(index)
+            return CardType.allCases.distance(from: CardType.allCases.startIndex, to: index)
         }
         return 0
     }
@@ -242,9 +242,18 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
     /// Called on first launch when no saved preferences exist
     private func initializeDefaults() {
         cardPreferences = CardType.allCases.enumerated().map { (index, cardType) in
+            // Special case: ProgressStoryCardType.banner hidden by default (keep only CoachBar)
+            // User feedback: Duplicate motivational messages confusing, keep only top CoachBar
+            let isVisibleByDefault: Bool
+            if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
+                isVisibleByDefault = false
+            } else {
+                isVisibleByDefault = true
+            }
+
             return CardPreference(
                 cardType: cardType,
-                isVisible: true,
+                isVisible: isVisibleByDefault,
                 isExpanded: true,
                 sortOrder: index
             )
@@ -261,9 +270,17 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
         for cardType in CardType.allCases {
             if !cardPreferences.contains(where: { $0.id == cardType.rawValue }) {
                 // New card type - add with default preferences
+                // Special case: ProgressStoryCardType.banner hidden by default
+                let isVisibleByDefault: Bool
+                if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
+                    isVisibleByDefault = false
+                } else {
+                    isVisibleByDefault = true
+                }
+
                 let newPreference = CardPreference(
                     cardType: cardType,
-                    isVisible: true,
+                    isVisible: isVisibleByDefault,
                     isExpanded: true,
                     sortOrder: cardPreferences.count
                 )
@@ -321,40 +338,26 @@ struct CardPreference<CardType: CardTypeProtocol>: Codable, Identifiable {
     }
 }
 
-// MARK: - Singleton Instances
+// MARK: - Convenience Singletons (Non-Generic Wrappers)
 
-/// Singleton instance for tracker cards (Current Weight, Chart, Stats, etc.)
+/// Singleton for tracker cards (Current Weight, Chart, Stats, etc.)
 /// Replaces: TrackerCardManager.shared
-private let trackerCardsInstance = CardManager<TrackerCardType>(preferencesKey: "trackerCardPreferences_v1")
+///
+/// Industry Pattern: Non-generic wrapper class enables static stored property (Swift limitation workaround)
+/// Reference: Apple Foundation - URLSession.shared, NotificationCenter.default use this pattern
+@MainActor
+final class TrackerCards {
+    static let shared = CardManager<TrackerCardType>(preferencesKey: "trackerCardPreferences_v1")
+    private init() {}
+}
 
-/// Singleton instance for Progress Story cards (7-Day, 30-Day, Banner, etc.)
+/// Singleton for Progress Story cards (7-Day, 30-Day, Banner, etc.)
 /// Replaces: ProgressStoryCardManager.shared
-private let progressStoryCardsInstance = CardManager<ProgressStoryCardType>(preferencesKey: "progressStoryCardPreferences_v1")
-
-// MARK: - Convenience Accessors (Singleton Pattern)
-
-extension CardManager {
-    /// Singleton accessor for main tracker cards (Current Weight, Chart, Stats, etc.)
-    /// Replaces: TrackerCardManager.shared
-    ///
-    /// Usage:
-    /// ```swift
-    /// @ObservedObject private var cardManager = TrackerCards.shared
-    /// ```
-    @MainActor
-    static var trackerCards: CardManager<TrackerCardType> {
-        return trackerCardsInstance
-    }
-
-    /// Singleton accessor for Progress Story cards (7-Day, 30-Day, Banner, etc.)
-    /// Replaces: ProgressStoryCardManager.shared
-    ///
-    /// Usage:
-    /// ```swift
-    /// @ObservedObject private var progressStoryCardManager = ProgressStoryCards.shared
-    /// ```
-    @MainActor
-    static var progressStoryCards: CardManager<ProgressStoryCardType> {
-        return progressStoryCardsInstance
-    }
+///
+/// Industry Pattern: Non-generic wrapper class enables static stored property (Swift limitation workaround)
+/// Reference: Apple Foundation - URLSession.shared, NotificationCenter.default use this pattern
+@MainActor
+final class ProgressStoryCards {
+    static let shared = CardManager<ProgressStoryCardType>(preferencesKey: "progressStoryCardPreferences_v1")
+    private init() {}
 }

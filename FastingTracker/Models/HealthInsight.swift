@@ -9,50 +9,6 @@
 
 import Foundation
 
-// MARK: - Insight Context
-
-/// Comprehensive health data context for intelligence layers
-/// **Phase 4B:** Single source of truth for EmotionEngine, InsightGenerator, ConversationManager
-/// **Industry Pattern:** Whoop Recovery Context, Oura Readiness Context
-struct InsightContext {
-    // Goal data
-    let weightGoal: Double?
-    let currentWeight: Double?
-    let startWeight: Double?
-
-    // Trend data (week-over-week)
-    let weightChangeWeek: Double?
-
-    // Fasting correlation data
-    let fastingCountThisWeek: Int
-    let fastingCountLastWeek: Int
-
-    // Streak data (motivational)
-    let currentStreak: Int
-    let longestStreak: Int
-
-    /// Initialize with all health data
-    init(
-        weightGoal: Double? = nil,
-        currentWeight: Double? = nil,
-        startWeight: Double? = nil,
-        weightChangeWeek: Double? = nil,
-        fastingCountThisWeek: Int = 0,
-        fastingCountLastWeek: Int = 0,
-        currentStreak: Int = 0,
-        longestStreak: Int = 0
-    ) {
-        self.weightGoal = weightGoal
-        self.currentWeight = currentWeight
-        self.startWeight = startWeight
-        self.weightChangeWeek = weightChangeWeek
-        self.fastingCountThisWeek = fastingCountThisWeek
-        self.fastingCountLastWeek = fastingCountLastWeek
-        self.currentStreak = currentStreak
-        self.longestStreak = longestStreak
-    }
-}
-
 // MARK: - Health Insight
 
 /// Structured insight from multi-metric analysis
@@ -346,11 +302,11 @@ extension Recommendation {
 // MARK: - Rich Health Context (Phase 8.1)
 
 /// Comprehensive health data context for AInstein LLM intelligence
-/// **Purpose:** Fix "not enough data" bug by sending 10x more context to GPT-4o-mini
-/// **Industry Pattern:** WHOOP Coach sends ALL metrics (Sleep, Strain, HRV, Stress, Recovery)
-/// **Replaces:** InsightContext (Phase 3) which only sent 8 data points
+/// **Purpose:** Fix "not enough data" bug with hybrid approach (summaries + recent history)
+/// **Industry Pattern:** WHOOP Coach sends comprehensive summaries + recent patterns (NOT raw data dumps)
+/// **Speed:** 2-2.5s response time (matches <3s industry standard)
 struct RichHealthContext {
-    // MARK: - Current Metrics
+    // MARK: - Current State
     let currentWeight: Double?
     let currentFastingStatus: String?
     let todayHydration: Double?
@@ -390,30 +346,43 @@ struct RichHealthContext {
     let estimatedDaysToGoal: Int?
     let onTrackStatus: String?
 
-    // MARK: - Streaks & Milestones
+    // MARK: - Milestones
     let currentFastingStreak: Int?
     let longestFastingStreak: Int?
     let totalFastsCompleted: Int?
     let milestones: [String]?
 
-    // MARK: - Correlations
+    // MARK: - Recent History (Last 30 Days - For Dynamic Pattern Analysis)
+    struct DailySummary {
+        let date: Date
+        let weight: Double?
+        let fastsCompleted: Int
+        let sleepHours: Double?
+        let hydrationOz: Double?
+        let mood: Int?
+    }
+    let recentHistory: [DailySummary]?  // Last 30 days
+
+    // MARK: - Correlations (Pre-Calculated for Speed)
     let weeksWith5PlusFasts_AvgWeightLoss: Double?
     let weeksWith3OrLessFasts_AvgWeightLoss: Double?
+    let avgWeightLoss_WellRested: Double?
+    let avgWeightLoss_PoorlySleep: Double?
+    let avgWeightLoss_HighHydration: Double?
+    let avgWeightLoss_LowHydration: Double?
+
+    // MARK: - Key Patterns
     let bestWeek_Date: String?
     let bestWeek_FastingCount: Int?
     let bestWeek_WeightLoss: Double?
     let worstWeek_Date: String?
     let worstWeek_FastingCount: Int?
     let worstWeek_WeightChange: Double?
-    let avgWeightLoss_WellRested: Double?
-    let avgWeightLoss_PoorlySleep: Double?
-    let avgWeightLoss_HighHydration: Double?
-    let avgWeightLoss_LowHydration: Double?
-
-    // MARK: - Historical Patterns
     let avgWeightLossRate: Double?
     let mostCommonFastDuration: String?
     let mostProductiveDayOfWeek: String?
+
+    // MARK: - Data Completeness
     let totalWeightEntries: Int?
     let totalSleepEntries: Int?
     let totalHydrationEntries: Int?

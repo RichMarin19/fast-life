@@ -51,23 +51,23 @@ struct MessageBubble: View {
             .padding(.horizontal, DSSpacing.cardElementSpacing)
             .padding(.vertical, 10)
             .background(userBackgroundColor)
-            .cornerRadius(DSCornerRadius.button)
+            .cornerRadius(DSCornerRadius.banner)
             .shadow(color: Theme.ColorToken.shadowCard.opacity(0.1), radius: 2, x: 0, y: 1)
     }
 
     /// User bubble background color
     private var userBackgroundColor: Color {
-        // Simple solid color for user messages
-        colorScheme == .dark ?
-            Theme.ColorToken.accentPrimary.opacity(0.2) :
-            Theme.ColorToken.accentPrimary.opacity(0.12)
+        // User messages: Solid emerald green (iMessage pattern)
+        // Using accentPrimary (#1ABC9C) with white text
+        // Industry standard: Solid colors, no opacity for user bubbles
+        Theme.ColorToken.accentPrimary
     }
 
     /// User bubble text color
     private var userTextColor: Color {
-        colorScheme == .dark ?
-            Theme.ColorToken.textPrimaryOnDark :
-            Theme.ColorToken.textPrimary
+        // User messages: Always white text on emerald background
+        // High contrast ratio (≥4.5:1) for WCAG AA compliance
+        Theme.ColorToken.textPrimaryOnDark
     }
 
     // MARK: - Assistant Bubble
@@ -95,7 +95,7 @@ struct MessageBubble: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .background(assistantBackgroundGradient)
-        .cornerRadius(DSCornerRadius.button)
+        .cornerRadius(DSCornerRadius.banner)
         .shadow(color: Theme.ColorToken.shadowCard.opacity(0.08), radius: 3, x: 0, y: 2)
     }
 
@@ -111,7 +111,10 @@ struct MessageBubble: View {
     /// Assistant bubble background gradient (ES-5 aware)
     private var assistantBackgroundGradient: some View {
         let theme = Theme.emotion(message.emotion ?? .stable)
-        let gradientOpacity: Double = colorScheme == .dark ? 0.12 : 0.08
+        // Using design system opacity tokens for emotion-aware gradients
+        let gradientOpacity: Double = colorScheme == .dark ?
+            Theme.ColorToken.chatAssistantGradientOpacityDark :
+            Theme.ColorToken.chatAssistantGradientOpacityLight
 
         return LinearGradient(
             colors: theme.gradient.map { $0.opacity(gradientOpacity) },
@@ -201,10 +204,10 @@ struct LifeGPTInputBar: View {
         }
         .padding(DSSpacing.cardElementSpacing)
         .background(inputBackground)
-        .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.textField + 6))
+        .clipShape(RoundedRectangle(cornerRadius: DSCornerRadius.banner))
         .shadow(color: Theme.ColorToken.shadowCard.opacity(0.1), radius: 4, x: 0, y: 2)
         .overlay(
-            RoundedRectangle(cornerRadius: DSCornerRadius.textField + 6)
+            RoundedRectangle(cornerRadius: DSCornerRadius.banner)
                 .stroke(isFocused ? Theme.emotion(emotion).icon.opacity(0.3) : Color.clear, lineWidth: 1)
         )
     }
@@ -294,7 +297,7 @@ struct TypingIndicator: View {
         .padding(.vertical, DSSpacing.cardSmallSpacing)
         .padding(.horizontal, DSSpacing.cardElementSpacing)
         .background(indicatorBackground)
-        .cornerRadius(DSCornerRadius.button)
+        .cornerRadius(DSCornerRadius.banner)
         .onAppear {
             animatingDot1 = true
             animatingDot2 = true
@@ -345,7 +348,7 @@ struct LifeGPTEmptyState: View {
                     .foregroundStyle(Theme.ColorToken.accentPrimary)
 
                 Text("Meet your Coach.")
-                    .font(DSTypography.displayM)
+                    .font(DSTypography.displayS)
                     .foregroundStyle(Theme.ColorToken.textPrimary)
             }
 
@@ -363,9 +366,9 @@ struct LifeGPTEmptyState: View {
     /// Prompt chip button
     @ViewBuilder
     private func promptChip(_ prompt: String) -> some View {
-        Button(action: {
+        Button {
             onPromptTap(prompt)
-        }) {
+        } label: {
             Text(prompt)
                 .font(DSTypography.cardBody)
                 .foregroundStyle(Theme.ColorToken.accentPrimary)

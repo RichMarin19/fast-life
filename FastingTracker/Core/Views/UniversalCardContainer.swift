@@ -10,7 +10,7 @@ import SwiftUI
 /// - Consistent corner radius (16pt per Theme.Radius.card)
 /// - Consistent shadow (Theme.ColorToken.shadowCard)
 /// - Consistent padding from edges (Theme.Spacing.pad = 16pt)
-/// - Eye-slash dismiss button (Layer 3) ✅ IMPLEMENTED
+/// - Eye-slash dismiss button (Layer 3)
 /// - Expand/collapse capability (Layer 4)
 /// - Drag handle for reordering (Layer 5)
 ///
@@ -46,41 +46,19 @@ struct UniversalCardContainer<Content: View>: View {
     // MARK: - Body
 
     var body: some View {
-        VStack(spacing: 0) {
-            // LAYER 3: Header with title + eye-slash dismiss button
-            HStack {
-                // Card title
-                Text(title ?? cardType.displayName)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(Theme.ColorToken.textPrimary)
-
-                Spacer()
-
-                // Eye-slash dismiss button (following MilestoneRingCard pattern)
-                Button(action: {
-                    cardManager.hideCard(cardType)
-                }) {
-                    Image(systemName: "eye.slash")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(Theme.ColorToken.textSecondary)
-                }
-                .accessibilityLabel("Hide \(cardType.displayName)")
-            }
-            .padding(.bottom, 12)  // Space between header and content
-
-            // Card content
-            content
-                .frame(maxWidth: .infinity)  // Full width
-        }
-        .padding(Theme.Spacing.pad)  // UNIVERSAL PADDING: 16pt
-        .background(Theme.ColorToken.card)  // UNIVERSAL BACKGROUND: White
-        .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))  // UNIVERSAL RADIUS: 16pt
-        .shadow(
-            color: Theme.ColorToken.shadowCard,  // UNIVERSAL SHADOW
-            radius: 16,
-            x: 0,
-            y: 8
-        )
+        // For Layer 2: Just render content with standardized styling
+        // No header yet - that comes in Layer 3+
+        content
+            .frame(maxWidth: .infinity)  // Full width
+            .padding(Theme.Spacing.pad)  // UNIVERSAL PADDING: 16pt
+            .background(Theme.ColorToken.card)  // UNIVERSAL BACKGROUND: White
+            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.card, style: .continuous))  // UNIVERSAL RADIUS: 16pt
+            .shadow(
+                color: Theme.ColorToken.shadowCard,  // UNIVERSAL SHADOW
+                radius: 16,
+                x: 0,
+                y: 8
+            )
     }
 }
 

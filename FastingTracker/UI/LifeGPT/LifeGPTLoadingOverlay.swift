@@ -51,13 +51,13 @@ struct LifeGPTLoadingOverlay: View {
 
                 // Title
                 Text("Building Your Health Insights")
-                    .font(DSTypography.displayS)
+                    .font(Theme.Font.headline(22))
                     .foregroundStyle(Theme.ColorToken.textPrimary)
                     .multilineTextAlignment(.center)
 
                 // Subtitle
                 Text("Analyzing your HealthKit data to provide personalized insights...")
-                    .font(DSTypography.cardBody)
+                    .font(Theme.Font.body(14))
                     .foregroundStyle(Theme.ColorToken.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, DSSpacing.cardElementSpacing)
@@ -70,11 +70,11 @@ struct LifeGPTLoadingOverlay: View {
 
                 // Time estimate
                 Text("This usually takes 30-60 seconds")
-                    .font(DSTypography.cardCaption)
-                    .foregroundStyle(Theme.ColorToken.textSecondary)
+                    .font(Theme.Font.meta())
+                    .foregroundStyle(Theme.ColorToken.textSecondary.opacity(0.7))
                     .padding(.top, DSSpacing.cardSmallSpacing)
             }
-            .padding(24)
+            .padding(Theme.Spacing.sectionSpacing)
             .background(
                 RoundedRectangle(cornerRadius: DSCornerRadius.card)
                     .fill(Theme.ColorToken.card)
@@ -85,7 +85,7 @@ struct LifeGPTLoadingOverlay: View {
                         y: 10
                     )
             )
-            .padding(.horizontal, 24)
+            .padding(.horizontal, Theme.Spacing.sectionSpacing)
         }
         .onAppear {
             isAnimating = true
