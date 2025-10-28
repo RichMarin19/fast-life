@@ -938,6 +938,7 @@ struct TrackerSummaryCard: View {
     // MARK: - Mood & Energy Stability Progress Ring with Behavioral Icons
     // Following North Star pattern with 6 lifestyle factor icons positioned around ring
     @ViewBuilder
+    // swiftlint:disable:next identifier_name
     private func MoodEnergyProgressRing(stabilityPercentage: Int, avgMood: Double, avgEnergy: Double) -> some View {
         ZStack {
             // Progress ring following universal design system and HANDOFF.md pattern

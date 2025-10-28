@@ -39,7 +39,6 @@ disabled_rules:
   - todo
   - trailing_whitespace
   - large_tuple  # Some views use 3+ member tuples for state
-  - identifier_name  # Allow SwiftUI ViewBuilders to start with capitals (Apple pattern)
 
 # File length limits (relaxed to match current codebase - Google gradual adoption pattern)
 file_length:
@@ -103,6 +102,11 @@ identifier_name:
     - j
     - x
     - y
+    - a   # Alpha channel (color)
+    - r   # Red channel (color)
+    - g   # Green channel (color)
+    - b   # Blue channel (color)
+    - n   # Count (statistics)
   allowed_symbols: ["_"]  # Allow underscores in identifiers (e.g., contentID_ProgressStory)
   validates_start_with_lowercase: false  # Allow SwiftUI ViewBuilder funcs to start with capitals
 

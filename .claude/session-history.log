@@ -1343,3 +1343,34 @@ Foundation infrastructure to reach 5.5/10 code quality:
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: 3b27173 at 2025-10-28 12:38:46 - feat: Phase 8.9 Phase 1 complete + infrastructure cleanup v2.3.0
+
+Phase 0.2: Crash Reporting Infrastructure Cleanup
+- Async Firebase initialization (prevent main thread blocking)
+- Added SafeUserDefaults.swift for corruption protection
+- Removed test crash button (iOS crash loop protection)
+- Real GoogleService-Info.plist configuration
+- UserDefaults validation at app launch
+
+Phase 8.7: Weight Auto-Population Fix
+- Fixed resetAnchor in WeightSetupComponents.swift
+- Enables historical date queries for first-time setup
+
+Phase 8.9 Phase 1: Constants Extraction (2 hours)
+- Created WeightConstants.swift (116 LOC): duplication thresholds, sync timing, statistics
+- Created ChartConstants.swift (145 LOC): Y-axis padding, dimensions, animation timing
+- Created AnimationConstants.swift (134 LOC): standard durations, spring animations, delays
+- Updated WeightManager.swift: 17 magic number replacements
+- Integrated SwiftLint build phase (Google Gradual Adoption pattern)
+- Code quality improved: 4.0/10 → 4.5/10
+
+Documentation Updates
+- Updated HANDOFF.md with Phase 2 plan
+- Deferred Phase 0.3 Analytics until TestFlight (WhatsApp pattern)
+- Documented decision rationale: clean code first, analytics when we have users
+
+Build Status: 0 errors, 0 warnings
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
