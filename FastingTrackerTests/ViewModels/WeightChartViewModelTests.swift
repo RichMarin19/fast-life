@@ -1,6 +1,6 @@
 import XCTest
 import Combine
-@testable import Fast_lIFe
+@testable import FastLIFe
 
 /// Tests for WeightChartViewModel
 /// Industry Pattern: Unit tests following Apple WWDC 2017 "Testing in Xcode"

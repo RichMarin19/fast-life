@@ -1,5 +1,5 @@
 import XCTest
-@testable import Fast_lIFe
+@testable import FastLIFe
 
 /// Unit tests for WeightNotificationPlanner
 /// Target: 100% code coverage

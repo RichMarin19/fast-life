@@ -1551,3 +1551,68 @@ COMMIT: 37caef0 at 2025-10-29 14:05:13 - docs: STRATEGIC DECISION - Weight Track
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: 99850db at 2025-10-29 14:21:47 - test: Add thread safety stress tests (TDD RED phase)
+
+## Task 1A Step 1: Write Failing Tests (Prove Race Conditions)
+
+**What:**
+- Created comprehensive thread safety stress tests for WeightManager
+- Following TDD methodology: Red → Green → Refactor
+- These tests MUST FAIL with current code (proving race conditions exist)
+
+**Files Created:**
+1. FastingTrackerTests/ThreadSafety/WeightManagerThreadSafetyTests.swift (285 LOC)
+   - 5 stress tests covering all race condition scenarios
+   - Industry pattern: Facebook/Google stress testing methodology
+
+2. FastingTrackerTests/Mocks/MockHealthKitManager.swift (324 LOC)
+   - Mock implementation of HealthKitManagerProtocol
+   - Protocol-based mocking following Apple WWDC 2017 patterns
+
+**Test Coverage:**
+1. test_concurrentWeightEntryAdditions_shouldNotLoseData
+   - 100 threads adding entries concurrently
+   - Expected failure: Lost writes due to UserDefaults contention
+
+2. test_concurrentReadWriteOperations_shouldNotCrash
+   - 100 reader threads + 100 writer threads
+   - Expected failure: Array mutation during iteration crash
+
+3. test_concurrentUserDefaultsWrites_shouldNotCorruptData
+   - 50 threads writing to UserDefaults simultaneously
+   - Expected failure: Plist corruption or data loss
+
+4. test_observerSuppressionFlag_shouldBeThreadSafe
+   - Documents nonisolated(unsafe) race condition
+   - Expected: Inconsistent flag state across threads
+
+5. test_concurrentDeleteOperations_shouldNotCrash
+   - 25 threads deleting entries concurrently
+   - Expected failure: Array corruption or lost operations
+
+**Race Conditions Identified:**
+- Direct UserDefaults access without locks (lines 21, 687-706)
+- nonisolated(unsafe) flag for observer suppression (line 29)
+- Multiple DispatchQueue.main.async calls - potential race conditions
+- No synchronization around weightEntries array modifications
+
+**Next Steps:**
+1. Add test files to Xcode project via GUI (MANUAL ONLY)
+2. Run tests and verify they FAIL (TDD red phase)
+3. Create ThreadSafeUserDefaults wrapper with NSLock
+4. Fix WeightManager to use ThreadSafeUserDefaults
+5. Replace observer suppression with Actor pattern
+6. Run tests again and verify they PASS (TDD green phase)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: 0357818 at 2025-10-29 14:22:24 - docs: Update HANDOFF.md with Task 1A Step 1 complete status
+
+- Documented test file creation (285 + 324 LOC)
+- Added manual instructions for adding test files to Xcode
+- Outlined expected TDD red phase results
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

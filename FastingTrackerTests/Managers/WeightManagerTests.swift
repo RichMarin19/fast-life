@@ -7,7 +7,7 @@
 //
 
 import XCTest
-@testable import Fast_lIFe
+@testable import FastLIFe
 
 @MainActor
 final class WeightManagerTests: XCTestCase {

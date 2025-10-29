@@ -1,6 +1,6 @@
 import Foundation
 import Combine
-@testable import Fast_lIFe
+@testable import FastLIFe
 
 /// Mock WeightManager for unit testing ViewModels
 /// Industry Pattern: Subclass-based mocking for testability
