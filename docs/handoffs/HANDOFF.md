@@ -482,6 +482,58 @@ All property/method accesses inside background thread closures need to be wrappe
 
 **Status:** ⏳ REWRITING TESTS - Focus on real-world HealthKit callback scenarios
 
+**Step 7: Tests Rewritten for Production Scenarios** ✅
+
+**WHAT:** Completely rewrote all 5 thread safety tests to focus on REAL production risks
+
+**HOW:**
+1. Identified actual thread safety issues in WeightManager:
+   - Line 29: `nonisolated(unsafe) var isSuppressingObserver` (DANGEROUS)
+   - Lines 687-690: Direct UserDefaults writes without locks
+   - Line 561: HealthKit observer callback runs on background thread
+   - Lines 84, 125, 188: DispatchQueue.main.async deferrals can race
+
+2. Rewrote 5 tests for real-world scenarios:
+   - **Test 1:** Rapid HealthKit updates → UserDefaults corruption
+   - **Test 2:** Observer suppression flag → nonisolated(unsafe) race condition
+   - **Test 3:** User input during HealthKit sync → data loss
+   - **Test 4:** Rapid deletes during sync → array corruption
+   - **Test 5:** UserDefaults stress test → persistence integrity
+
+**EXPECTED:**
+```
+✅ Tests compile successfully
+❌ Tests FAIL proving real production risks exist
+✅ TDD red phase defines acceptance criteria for fixes
+```
+
+**ACTUAL:** ✅ TESTS REWRITTEN - Ready to run (⌘U)
+
+**Key Insights:**
+```
+✅ @MainActor IS CORRECT for WeightManager (publishes to UI)
+✅ Swift's type system PREVENTS unsynchronized property access
+❌ UserDefaults writes (lines 687-690) are NOT protected by @MainActor
+❌ nonisolated(unsafe) flag (line 29) bypasses ALL Swift safety checks
+❌ HealthKit observer callback (line 561) accesses flag from background thread
+```
+
+**Production Scenarios Tested:**
+1. HealthKit observer fires while user is adding weights → UserDefaults race
+2. User adds weight → saves to HealthKit → observer fires before suppression lifted → duplicate entries
+3. User deleting entries while HealthKit sync is adding → array corruption
+4. Multiple rapid operations → UserDefaults plist corruption
+
+**What Tests Will Prove (TDD Red Phase):**
+- ❌ UserDefaults can corrupt under concurrent writes (no NSLock protection)
+- ❌ Observer suppression flag read/write race causes duplicates (nonisolated(unsafe))
+- ❌ Concurrent operations lose data (no synchronization around saves)
+
+**Next Step:** Run tests (⌘U) in Xcode and verify they FAIL
+
+**Commits:**
+- `faa2d4c` - "test: Rewrite thread safety tests for real-world production scenarios"
+
 ---
 
 ### Task 1B: Comprehensive Testing (12 hours / 1.5 days)
