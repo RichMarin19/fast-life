@@ -376,6 +376,112 @@ The warnings document that:
 
 **Next:** Run tests, observe failures, then create ThreadSafeUserDefaults wrapper
 
+**Step 5: Compilation Errors Discovered (⌘U Attempted)** ❌
+
+**WHAT:** Ran tests (⌘U), discovered 62 @MainActor compilation errors blocking test execution
+
+**HOW:**
+1. User executed ⌘U to run tests
+2. Xcode attempted to compile test files
+3. Discovered 62 compilation errors (RED X's, not yellow warnings)
+4. Tests CANNOT run until these errors are fixed
+
+**EXPECTED:**
+- ✅ Tests compile successfully
+- ✅ Tests run and FAIL (proving race conditions exist - TDD red phase)
+
+**ACTUAL:** ❌ TESTS DID NOT COMPILE
+
+**Compilation Errors (62 total):**
+```
+❌ "Main actor-isolated property 'weightEntries' can not be referenced from nonisolated autoclosure"
+❌ "Main actor-isolated property 'latestWeight' can not be referenced from Sendable closure"
+❌ "Call to main actor-isolated instance method 'addWeightEntryInPreferredUnit' in synchronous nonisolated context"
+```
+
+**Root Cause:**
+- While `nonisolated(unsafe)` on sut property allows accessing sut itself from background threads
+- Accessing sut's @MainActor-isolated properties/methods from those threads STILL fails compilation
+- Every property access inside background thread closures needs synchronization
+
+**Failing Code Examples:**
+```swift
+// Line 59 - Inside concurrentQueue.async closure
+self.sut.addWeightEntryInPreferredUnit(weight: weight, date: date)
+// ❌ Call to main actor-isolated instance method in synchronous nonisolated context
+
+// Line 72 - Inside XCTAssert
+XCTAssertEqual(sut.weightEntries.count, 100, ...)
+// ❌ Main actor-isolated property 'weightEntries' can not be referenced from nonisolated autoclosure
+
+// Line 101-102 - Reading properties
+_ = self.sut.weightEntries.count
+_ = self.sut.latestWeight
+// ❌ Main actor-isolated properties accessed from nonisolated context
+```
+
+**The Fix:**
+All property/method accesses inside background thread closures need to be wrapped in `MainActor.assumeIsolated { }` blocks.
+
+**Status:** ⏳ FIXING NOW - Wrapping all property accesses in MainActor isolation
+
+**Step 6: Compilation Errors Fixed (All 62 Resolved)** ✅
+
+**WHAT:** Fixed all 62 @MainActor compilation errors by wrapping property/method accesses in MainActor.assumeIsolated blocks
+
+**HOW:**
+1. Wrapped all `sut.addWeightEntryInPreferredUnit()` calls in `MainActor.assumeIsolated { }`
+2. Wrapped all `sut.weightEntries.count` reads in `MainActor.assumeIsolated { }`
+3. Wrapped all property accesses (`sut.latestWeight`, `sut.setSyncPreference()`) in MainActor blocks
+4. Fixed all XCTAssert statements to capture values in MainActor context first
+
+**EXPECTED:**
+- ✅ Tests compile successfully
+- ✅ Tests run and prove race conditions
+
+**ACTUAL:** ⚠️ TESTS COMPILE - But fix is a BANDAID
+
+**Critical Realization:**
+```
+❌ MainActor.assumeIsolated SERIALIZES all operations onto main thread
+❌ "Concurrent" threads now run one-at-a-time (no actual concurrency)
+❌ Tests will PASS even without fixing WeightManager (defeats TDD red phase)
+❌ Race conditions CANNOT occur when everything runs sequentially
+```
+
+**Root Cause Analysis:**
+- WeightManager is `@MainActor` isolated (line 13 in WeightManager.swift)
+- @MainActor **IS the thread safety solution** for UI-layer classes
+- Swift's type system prevents unsynchronized cross-thread access at compile-time
+- **@MainActor is CORRECT** - WeightManager publishes to UI, must be main-thread-only
+
+**What This Means:**
+1. ✅ @MainActor **already solves** the primary race condition risk (concurrent property access)
+2. ✅ Swift compiler **enforces** thread safety via type system
+3. ⚠️ Remaining risks are **NOT about @MainActor** - they are:
+   - UserDefaults corruption (needs ThreadSafeUserDefaults wrapper)
+   - Observer suppression flag (line 29: `nonisolated(unsafe)` is dangerous)
+   - HealthKit callback thread mismatches
+
+**STRATEGIC DECISION: Rewrite Tests for Real-World Scenarios** 🎯
+
+**What We SHOULD Be Testing:**
+1. **HealthKit callback races** - HealthKit updates arrive on background threads
+2. **UserDefaults consistency** - Multiple rapid updates don't corrupt persisted data
+3. **Observer suppression flag** - `nonisolated(unsafe)` allows dangerous cross-thread access
+4. **No deadlocks** - Concurrent HealthKit sync during user input doesn't block UI
+
+**New Test Strategy:**
+```
+✅ Keep @MainActor on WeightManager (correct for production)
+✅ Test real scenarios: HealthKit background callbacks + rapid user input
+✅ Verify ThreadSafeUserDefaults prevents corruption
+✅ Verify observer suppression Actor pattern prevents race conditions
+✅ Focus on ACTUAL production risks, not theoretical concurrency
+```
+
+**Status:** ⏳ REWRITING TESTS - Focus on real-world HealthKit callback scenarios
+
 ---
 
 ### Task 1B: Comprehensive Testing (12 hours / 1.5 days)

@@ -1652,3 +1652,52 @@ COMMIT: 7ad9f64 at 2025-10-29 14:58:00 - docs: Update HANDOFF.md - module import
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: 03e743a at 2025-10-29 16:08:39 - fix: Resolve @MainActor isolation errors in thread safety tests
+
+## Task 1A: Fix Test Compilation Errors
+
+**Problem:**
+- WeightManager is @MainActor isolated
+- Test setUp() was calling init from non-isolated context
+- Compilation error: "Call to main actor-isolated initializer in synchronous nonisolated context"
+
+**Solution:**
+1. Mark sut property as `nonisolated(unsafe)` to allow concurrent access from test threads
+   - This is intentional for stress testing - we're testing WeightManager's thread safety
+   - Test threads need to access sut concurrently (that's the whole point)
+
+2. Use `MainActor.assumeIsolated` to create WeightManager instances
+   - Line 35-38: setUp() method
+   - Line 174-176: test_concurrentUserDefaultsWrites reload verification
+
+**Why This Works:**
+- Creates WeightManager on MainActor (satisfies @MainActor requirement)
+- Stores reference in nonisolated property (allows test thread access)
+- Intentionally tests concurrent access patterns (thread safety validation)
+
+**Next:** Run tests with ⌘U (TDD red phase - tests should FAIL)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: 91a391f at 2025-10-29 16:14:45 - docs: Update HANDOFF.md - build succeeded, ready for TDD red phase
+
+## Task 1A Progress Update
+
+**Status:** Build succeeded with expected @MainActor warnings
+
+**What Changed:**
+- Documented successful build (4:09 PM)
+- Explained 23 @MainActor warnings are EXPECTED
+- Warnings document concurrent access patterns we're testing
+- Ready to run tests (⌘U) and observe failures
+
+**Why Warnings Are Good:**
+These warnings prove WeightManager is accessed from background threads
+without proper synchronization - exactly what we're testing!
+
+**Next:** Run tests, watch them FAIL, then create ThreadSafeUserDefaults
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
