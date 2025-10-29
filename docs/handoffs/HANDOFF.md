@@ -316,7 +316,28 @@ You need to add the test files to Xcode project via GUI (following our establish
 - **Actual module name:** `FastLIFe` (no underscore)
 - **Next:** Fix all test file imports via find/replace
 
-**Status:** About to fix module imports, then run tests (TDD red phase)
+**Step 3: Module Imports Fixed** ✅
+
+**Actions Completed:**
+1. ✅ Fixed all test file imports: `Fast_lIFe` → `FastLIFe` (11 files updated)
+2. ✅ Verified: 0 files with old import, 11 files with correct import
+3. ✅ Committed: `bb3ec04` - "fix: Correct module import statements"
+
+**Ready to Run Tests (TDD Red Phase):**
+
+Now in Xcode:
+```
+⌘⇧K  # Clean build folder (optional)
+⌘B   # Build app
+⌘U   # Run tests
+```
+
+**Expected Result:**
+- ❌ All 5 thread safety tests should FAIL
+- ❌ This proves race conditions exist
+- ✅ This is GOOD (TDD red phase working correctly!)
+
+**After tests fail, we'll proceed to Step 4: Create ThreadSafeUserDefaults wrapper**
 
 ---
 
