@@ -16,7 +16,9 @@ import XCTest
 /// **Industry Pattern:** Facebook/Google stress testing methodology (concurrent operations)
 final class WeightManagerThreadSafetyTests: XCTestCase {
 
-    var sut: WeightManager!
+    // Use nonisolated(unsafe) to allow concurrent access from test threads
+    // This is intentional for stress testing - we're testing WeightManager's thread safety
+    nonisolated(unsafe) var sut: WeightManager!
     var mockHealthKit: MockHealthKitManager!
     var mockDataStore: MockDataStore!
 
@@ -28,7 +30,12 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
 
         mockHealthKit = MockHealthKitManager()
         mockDataStore = MockDataStore()
-        sut = WeightManager(healthKit: mockHealthKit, dataStore: mockDataStore)
+
+        // Create WeightManager on MainActor (required for @MainActor class)
+        let manager = MainActor.assumeIsolated {
+            WeightManager(healthKit: mockHealthKit, dataStore: mockDataStore)
+        }
+        sut = manager
     }
 
     override func tearDown() {
@@ -164,7 +171,9 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
                        "Concurrent writes to UserDefaults likely caused data loss or corruption.")
 
         // ASSERT: Verify data integrity - reload from UserDefaults
-        let reloadedManager = WeightManager(healthKit: mockHealthKit, dataStore: mockDataStore)
+        let reloadedManager = MainActor.assumeIsolated {
+            WeightManager(healthKit: mockHealthKit, dataStore: mockDataStore)
+        }
         Thread.sleep(forTimeInterval: 0.5)
 
         XCTAssertEqual(reloadedManager.weightEntries.count, 100,
