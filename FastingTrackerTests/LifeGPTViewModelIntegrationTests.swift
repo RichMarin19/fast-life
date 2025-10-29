@@ -8,7 +8,7 @@
 //
 
 import XCTest
-@testable import FastingTracker
+@testable import FastLIFe
 
 final class LifeGPTViewModelIntegrationTests: XCTestCase {
 

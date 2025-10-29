@@ -25,8 +25,8 @@ class NetworkMonitor: ObservableObject {
     @Published private(set) var isConnected: Bool = true
 
     private let monitor = NWPathMonitor()
-    private let queue = DispatchQueue(label: "com.fastlife.FastingTracker.NetworkMonitor")
-    private let logger = Logger(subsystem: "com.fastlife.FastingTracker", category: "Network")
+    private let queue = DispatchQueue(label: "com.fastlife.FastLIFe.NetworkMonitor")
+    private let logger = Logger(subsystem: "com.fastlife.FastLIFe", category: "Network")
 
     // MARK: - Initialization
 

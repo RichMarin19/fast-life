@@ -1,71 +1,90 @@
-import SwiftUI
-import Combine
+//
+// WeightControlCenterCoordinator.swift
+// FastLIFe
+//
+// Coordinator pattern for WeightControlCenterView
+// Orchestrates multiple focused ViewModels for better separation of concerns
+//
 
-/// Coordinator for Weight Control Center
-/// Orchestrates 6 focused ViewModels and provides unified interface to View layer
-/// Replaces monolithic WeightControlCenterViewModel (902 LOC → 6 focused ViewModels)
-/// Industry Pattern: Coordinator Pattern (WWDC 2020 - Building for iPad)
-/// Reference: Phase 8.9 Phase 2 - Weight Tracker Refactoring
+import SwiftUI
+import Foundation
+
+/// WeightControlCenterCoordinator
+/// Coordinates all ViewModels for the Weight Control Center
+/// Following Coordinator pattern to avoid massive ViewModels
 @MainActor
 class WeightControlCenterCoordinator: ObservableObject {
-    // MARK: - Sub-ViewModels (Focused Responsibilities)
-
-    /// Handles card order, expansion, drag/drop
-    let cardsViewModel: CardsViewModel
-
-    /// Handles weight goal input and validation
-    let goalsViewModel: GoalsViewModel
-
-    /// Handles badge interactions and highlighting
-    let badgesViewModel: BadgesViewModel
-
-    /// Handles experience opt-outs and content preferences
-    let preferencesViewModel: PreferencesViewModel
-
-    /// Handles HealthKit sync operations
-    let syncViewModel: SyncViewModel
-
-    /// Handles weight reminder notifications
-    let notificationsViewModel: NotificationsViewModel
-
-    // MARK: - Dependencies (Pass-through to sub-ViewModels)
-
+    // MARK: - Dependencies
     let weightManager: WeightManager
     let behavioralScheduler: BehavioralNotificationScheduler
 
-    // MARK: - Initialization
+    // MARK: - Child ViewModels
+    let cardsViewModel = CardsViewModel()
+    let badgesViewModel = BadgesViewModel()
+    let preferencesViewModel = PreferencesViewModel()
+    let goalsViewModel = GoalsViewModel()
+    let notificationsViewModel = NotificationsViewModel()
+    let syncViewModel: SyncViewModel
 
+    // MARK: - Initialization
     init(weightManager: WeightManager, behavioralScheduler: BehavioralNotificationScheduler) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
-
-        // Initialize all sub-ViewModels
-        self.cardsViewModel = CardsViewModel()
-        self.goalsViewModel = GoalsViewModel()
-        self.badgesViewModel = BadgesViewModel()
-        self.preferencesViewModel = PreferencesViewModel()
         self.syncViewModel = SyncViewModel(weightManager: weightManager)
-        self.notificationsViewModel = NotificationsViewModel()
     }
 
-    // MARK: - Convenience Methods (Delegate to Sub-ViewModels)
-
-    /// Cycle to next opted-out item when badge is tapped
-    /// Delegates to: BadgesViewModel, PreferencesViewModel
-    func cycleToNextOptedOutItem() {
-        let optedOutItems = preferencesViewModel.visuallyOrderedOptedOutItems
-        badgesViewModel.cycleToNextOptedOutItem(optedOutItems)
-    }
-
-    /// Computed property: Should show restore button
-    /// Delegates to: PreferencesViewModel
+    // MARK: - Computed Properties
     var shouldShowRestoreButton: Bool {
         preferencesViewModel.shouldShowRestoreButton
     }
 
-    /// Computed property: Visually ordered opted-out items
-    /// Delegates to: PreferencesViewModel
-    var visuallyOrderedOptedOutItems: [ContentItem] {
-        preferencesViewModel.visuallyOrderedOptedOutItems
+    // MARK: - Actions
+    func restoreAllToDefault() {
+        // Delegate to PreferencesViewModel which handles all restore logic
+        preferencesViewModel.restoreAllToDefault()
+
+        // Reset sync preference and data (Weight tracker specific)
+        weightManager.setSyncPreference(false)
+        weightManager.deleteAllWeightData()
+
+        // Reset cards view model states
+        cardsViewModel.cardOrder = ControlCenterCardType.allCases
+        cardsViewModel.expandedCards.removeAll()
+        cardsViewModel.draggedCard = nil
+
+        // Reset badges and goals view models
+        badgesViewModel.badgeScale = 1.0
+        badgesViewModel.highlightedItemID = nil
+        badgesViewModel.scrollViewProxy = nil
+
+        goalsViewModel.weightGoalString = ""
+
+        // Reset notification settings
+        notificationsViewModel.weightRemindersEnabled = false
+        notificationsViewModel.timingMode = .specificTime
+        notificationsViewModel.preferredReminderTime = Date()
+        notificationsViewModel.minutesOffset = 30
+        notificationsViewModel.quietHoursEnabled = false
+        notificationsViewModel.quietHoursStart = Date()
+        notificationsViewModel.quietHoursEnd = Date()
+        notificationsViewModel.skipWeekdays.removeAll()
+        notificationsViewModel.didYouKnowEnabled = false
+        notificationsViewModel.didYouKnowFrequency = .daily
+        notificationsViewModel.motivationalEnabled = false
+        notificationsViewModel.motivationalFrequency = .daily
+        notificationsViewModel.actionStepsEnabled = false
+        notificationsViewModel.actionStepsFrequency = .daily
+
+        // Reset sync view model
+        syncViewModel.localSyncEnabled = false
+        syncViewModel.userSyncPreference = false
+        syncViewModel.hasHealthKitPermission = false
+        syncViewModel.canEnableSync = true
+        syncViewModel.isSyncing = false
+        syncViewModel.permissionStatusMessage = ""
+        syncViewModel.lastSyncStatus = ""
+        syncViewModel.showingSyncAlert = false
+        syncViewModel.showingSyncPreferenceDialog = false
+        syncViewModel.syncMessage = ""
     }
 }
