@@ -38,6 +38,9 @@ class MockHealthKitManager: HealthKitManagerProtocol {
     var savedWeights: [(weight: Double, bmi: Double?, bodyFat: Double?, date: Date)] = []
     var mockWeightEntries: [WeightEntry] = []
 
+    // Configurable callback for saveWeight (for observer suppression testing)
+    var onSaveWeight: ((Double, Double?, Double?, Date, @escaping (Bool, Error?) -> Void) -> Void)?
+
     // MARK: - Authorization API
 
     func checkAuthorizationStatus() {
@@ -155,8 +158,15 @@ class MockHealthKitManager: HealthKitManagerProtocol {
     func saveWeight(weight: Double, bmi: Double?, bodyFat: Double?, date: Date, completion: @escaping (Bool, Error?) -> Void) {
         saveWeightCalled = true
         savedWeights.append((weight, bmi, bodyFat, date))
-        DispatchQueue.global(qos: .background).async {
-            completion(true, nil)
+
+        // Call custom callback if configured (for observer suppression testing)
+        if let callback = onSaveWeight {
+            callback(weight, bmi, bodyFat, date, completion)
+        } else {
+            // Default behavior: async success
+            DispatchQueue.global(qos: .background).async {
+                completion(true, nil)
+            }
         }
     }
 
@@ -291,6 +301,7 @@ class MockHealthKitManager: HealthKitManagerProtocol {
         requestAuthorizationCalled = false
         savedWeights.removeAll()
         mockWeightEntries.removeAll()
+        onSaveWeight = nil
     }
 
     func setMockWeightEntries(_ entries: [WeightEntry]) {
