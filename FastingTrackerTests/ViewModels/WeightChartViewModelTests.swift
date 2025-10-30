@@ -112,10 +112,13 @@ final class WeightChartViewModelTests: XCTestCase {
     // MARK: - Chart Data Processing Tests
 
     func testChartData_DayView_ReturnsRawEntries() {
-        // Given: Multiple entries within today
-        let today = Date()
-        let entry1 = WeightEntry(date: today, weight: 150.0, source: .manual)
-        let entry2 = WeightEntry(date: today.addingTimeInterval(-3600), weight: 150.5, source: .manual)
+        // Given: Multiple entries within today (after midnight to avoid filtering)
+        let calendar = Calendar.current
+        let startOfToday = calendar.startOfDay(for: Date())
+
+        // Create entries at 8am and 10am today (safely within same calendar day)
+        let entry1 = WeightEntry(date: calendar.date(byAdding: .hour, value: 8, to: startOfToday)!, weight: 150.0, source: .manual)
+        let entry2 = WeightEntry(date: calendar.date(byAdding: .hour, value: 10, to: startOfToday)!, weight: 150.5, source: .manual)
 
         mockWeightManager.setTestData([entry1, entry2])
 
@@ -181,21 +184,22 @@ final class WeightChartViewModelTests: XCTestCase {
     }
 
     func testSelectedEntry_ReturnsClosestEntry() {
-        // Given: Multiple entries
+        // Given: Multiple entries within today (avoid midnight boundary issues)
         let calendar = Calendar.current
-        let baseDate = Date()
+        let startOfToday = calendar.startOfDay(for: Date())
 
-        let entry1 = WeightEntry(date: calendar.date(byAdding: .hour, value: -2, to: baseDate)!, weight: 150.0, source: .manual)
-        let entry2 = WeightEntry(date: calendar.date(byAdding: .hour, value: -1, to: baseDate)!, weight: 151.0, source: .manual)
-        let entry3 = WeightEntry(date: baseDate, weight: 152.0, source: .manual)
+        // Create entries at 8am, 10am, 12pm today
+        let entry1 = WeightEntry(date: calendar.date(byAdding: .hour, value: 8, to: startOfToday)!, weight: 150.0, source: .manual)
+        let entry2 = WeightEntry(date: calendar.date(byAdding: .hour, value: 10, to: startOfToday)!, weight: 151.0, source: .manual)
+        let entry3 = WeightEntry(date: calendar.date(byAdding: .hour, value: 12, to: startOfToday)!, weight: 152.0, source: .manual)
 
         mockWeightManager.setTestData([entry1, entry2, entry3])
         sut.selectedTimeRange = .day
 
-        // When: Select date closest to entry2
-        sut.selectedDate = calendar.date(byAdding: .minute, value: -65, to: baseDate)
+        // When: Select date at 9:55am (closest to entry2 at 10am - only 5 min away)
+        sut.selectedDate = calendar.date(byAdding: .minute, value: -5, to: calendar.date(byAdding: .hour, value: 10, to: startOfToday)!)
 
-        // Then: Should return entry2 (151.0)
+        // Then: Should return entry2 (151.0) as it's closest (5 min vs 65 min to entry1, 65 min to entry3)
         XCTAssertEqual(sut.selectedEntry?.weight, 151.0)
     }
 
