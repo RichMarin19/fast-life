@@ -151,6 +151,7 @@
 		HV001001000000000000001 /* UI/Views/HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HV001002000000000000001 /* UI/Views/HubView.swift */; };
 		ID001001000000000000001 /* Core/Models/IdentifiableDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */; };
 		SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */; };
+		WHTR01001000000000001 /* Core/Models/WeightHistoryTimeRange.swift in Sources */ = {isa = PBXBuildFile; fileRef = WHTR01002000000000001 /* Core/Models/WeightHistoryTimeRange.swift */; };
 		TH001001000000000000001 /* Core/DesignSystem/Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = TH001002000000000000001 /* Core/DesignSystem/Theme.swift */; };
 		TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */; };
 /* End PBXBuildFile section */
@@ -310,6 +311,7 @@
 		HV001002000000000000001 /* UI/Views/HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HubView.swift; sourceTree = "<group>"; };
 		ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/IdentifiableDate.swift; sourceTree = "<group>"; };
 		SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StopFastConfirmationView.swift; sourceTree = "<group>"; };
+		WHTR01002000000000001 /* Core/Models/WeightHistoryTimeRange.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/WeightHistoryTimeRange.swift; sourceTree = "<group>"; };
 		TH001002000000000000001 /* Core/DesignSystem/Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/Theme.swift; sourceTree = "<group>"; };
 		TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -515,6 +517,7 @@
 				A1000014000000000000001 /* Assets.xcassets */,
 				A1000016000000000000001 /* Info.plist */,
 				ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */,
+				WHTR01002000000000001 /* Core/Models/WeightHistoryTimeRange.swift */,
 				TH001002000000000000001 /* Core/DesignSystem/Theme.swift */,
 				GS001002000000000000001 /* UI/Components/GoalSettingsView.swift */,
 				HR001002000000000000001 /* UI/Components/HistoryRowView.swift */,
@@ -793,6 +796,7 @@
 				52B2CFE32E986F7D0061FCFF /* UI/Views/WeightChartView.swift in Sources */,
 				A1000031000000000000001 /* Core/Configuration/AppSettings.swift in Sources */,
 				ID001001000000000000001 /* Core/Models/IdentifiableDate.swift in Sources */,
+				WHTR01001000000000001 /* Core/Models/WeightHistoryTimeRange.swift in Sources */,
 				TH001001000000000000001 /* Core/DesignSystem/Theme.swift in Sources */,
 				GS001001000000000000001 /* UI/Components/GoalSettingsView.swift in Sources */,
 				HR001001000000000000001 /* UI/Components/HistoryRowView.swift in Sources */,

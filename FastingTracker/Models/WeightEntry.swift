@@ -9,7 +9,12 @@ struct WeightEntry: Codable, Identifiable {
     let source: WeightSource
     let healthKitUUID: UUID?  // For precise HealthKit sample deletion (Apple best practice)
 
-    init(id: UUID = UUID(), date: Date, weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, source: WeightSource = .manual, healthKitUUID: UUID? = nil) {
+    // Task 1F Enhancement 4: Actual HealthKit source name (e.g., "Renpho Pro", "MyFitnessPal")
+    // Industry Pattern: Apple Health displays actual app/device names for transparency
+    // Reference: HKSample.sourceRevision.source.name
+    let sourceName: String?  // Optional for backward compatibility
+
+    init(id: UUID = UUID(), date: Date, weight: Double, bmi: Double? = nil, bodyFat: Double? = nil, source: WeightSource = .manual, healthKitUUID: UUID? = nil, sourceName: String? = nil) {
         self.id = id
         self.date = date
         self.weight = weight
@@ -17,6 +22,7 @@ struct WeightEntry: Codable, Identifiable {
         self.bodyFat = bodyFat
         self.source = source
         self.healthKitUUID = healthKitUUID
+        self.sourceName = sourceName
     }
 }
 

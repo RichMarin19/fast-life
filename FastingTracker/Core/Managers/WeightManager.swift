@@ -244,12 +244,14 @@ class WeightManager: ObservableObject {
 
         AppLogger.info("Adding weight entry", category: AppLogger.weightTracking)
 
+        // Task 1F Enhancement 4: Manual entries show "Fast LIFe" as source name
         let entry = WeightEntry(
             date: date,
             weight: weightInPounds,
             bmi: bmi,
             bodyFat: bodyFat,
-            source: .manual
+            source: .manual,
+            sourceName: "Fast LIFe"
         )
         addWeightEntry(entry)
     }
@@ -810,6 +812,56 @@ class WeightManager: ObservableObject {
             currentWeight: current,
             remainingWeight: max(0, current - goalWeight)
         )
+    }
+
+    // MARK: - Weight History Filtering (Task 1F + Enhancement 3)
+    // Industry Pattern: Time range filtering for performance optimization
+    // Reference: Apple Health, Spotify - default to recent data with expandable ranges
+
+    /// Filter weight entries by time range for Weight History card
+    /// Optimizes performance by loading only entries within selected range
+    /// - Parameters:
+    ///   - range: Time range to filter by (1 day, 7 days, 30 days, etc.)
+    ///   - customStartDate: Custom start date (only used when range is .custom)
+    ///   - customEndDate: Custom end date (only used when range is .custom) - Task 1F Enhancement 3
+    /// - Returns: Filtered weight entries within the specified time range
+    func weightEntries(for range: WeightHistoryTimeRange, customStartDate: Date? = nil, customEndDate: Date? = nil) -> [WeightEntry] {
+        let now = Date()
+        let calendar = Calendar.current
+
+        // Calculate start and end dates based on time range
+        let startDate: Date?
+        let endDate: Date
+
+        if range == .custom {
+            // Task 1F Enhancement 3: Use provided custom start AND end dates
+            startDate = customStartDate
+            endDate = customEndDate ?? now  // Default to now if no end date provided
+        } else if range == .allTime {
+            // Return all entries (no filtering)
+            return weightEntries
+        } else {
+            // Use dateComponents from enum for calculation
+            if let components = range.dateComponents {
+                startDate = calendar.date(byAdding: components.component, value: components.value, to: now)
+            } else {
+                // Fallback: return all entries if calculation fails
+                return weightEntries
+            }
+            endDate = now  // End date is always "now" for preset ranges
+        }
+
+        // Filter entries by start date
+        guard let start = startDate else {
+            return weightEntries  // Return all if no valid start date
+        }
+
+        // Task 1F Enhancement 3: Filter entries BETWEEN start and end dates (inclusive)
+        // Industry Pattern: Date range filtering with both bounds
+        // Reference: Apple Calendar, Banking Apps, Google Analytics
+        return weightEntries.filter { entry in
+            entry.date >= start && entry.date <= endDate
+        }
     }
 
     // MARK: - Persistence

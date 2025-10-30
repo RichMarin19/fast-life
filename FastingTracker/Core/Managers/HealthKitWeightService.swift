@@ -172,12 +172,18 @@ class HealthKitWeightService {
             let weight = sample.quantity.doubleValue(for: HKUnit.pound())
             let source = detectWeightSource(from: sample)
 
+            // Task 1F Enhancement 4: Capture actual HealthKit source name
+            // Industry Pattern: Apple Health displays actual app/device names
+            // Reference: HKSample.sourceRevision.source.name
+            let sourceName = sample.sourceRevision.source.name
+
             let entry = WeightEntry(
                 id: sample.uuid,
                 date: sample.startDate,
                 weight: weight,
                 source: source,
-                healthKitUUID: sample.uuid
+                healthKitUUID: sample.uuid,
+                sourceName: sourceName
             )
 
             // Keep the most recent sample for each day
