@@ -103,14 +103,15 @@ final class CardManagerTests: XCTestCase {
 
     func test_showCard_togglesVisibilityAndPersists() {
         // Given: Hide then show a card
-        sut.hideCard(.milestone)
-        sut.showCard(.milestone)
+        // NOTE: Using .currentWeight for test since .milestone was removed (Enhancement 7)
+        sut.hideCard(.currentWeight)
+        sut.showCard(.currentWeight)
 
         // When: Create new CardManager
         let newManager = CardManager<TrackerCardType>(preferencesKey: testPreferencesKey)
 
         // Then: Card should be visible
-        XCTAssertTrue(newManager.isCardVisible(.milestone),
+        XCTAssertTrue(newManager.isCardVisible(.currentWeight),
                      "Card shown after hiding should persist as visible")
     }
 

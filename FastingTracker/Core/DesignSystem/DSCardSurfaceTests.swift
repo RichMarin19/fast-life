@@ -12,8 +12,9 @@ import SwiftUI
         Color(red: 10/255, green: 18/255, blue: 36/255)
             .ignoresSafeArea()
 
+        // NOTE: Using .chart for test since .milestone was removed (Enhancement 7)
         DSCard(
-            cardType: .milestone,
+            cardType: .chart,
             title: "Test: Ice Surface",
             surface: Theme.ColorToken.surfaceIce,  // 🧪 TEST: Light ice background
             onDismiss: { Log.debug("Dismiss tapped", category: .general) }
@@ -79,9 +80,9 @@ import SwiftUI
 
         ScrollView {
             VStack(spacing: 20) {
-                // Ice
+                // Ice (NOTE: Using .chart since .milestone removed - Enhancement 7)
                 DSCard(
-                    cardType: .milestone,
+                    cardType: .chart,
                     title: "Ice Surface",
                     surface: Theme.ColorToken.surfaceIce,
                     onDismiss: { Log.debug("Ice dismissed", category: .general) }
@@ -91,9 +92,9 @@ import SwiftUI
                         .foregroundColor(Theme.ColorToken.textPrimary)
                 }
 
-                // Ivory (now uses Ice - Phase v1.3e)
+                // Ivory (now uses Ice - Phase v1.3e) (NOTE: Using .stats since .milestone removed - Enhancement 7)
                 DSCard(
-                    cardType: .milestone,
+                    cardType: .stats,
                     title: "Ivory → Ice (Unified)",
                     surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard
                     onDismiss: { Log.debug("Ivory dismissed", category: .general) }
@@ -103,9 +104,9 @@ import SwiftUI
                         .foregroundColor(Theme.ColorToken.textPrimary)
                 }
 
-                // Mint (now uses Ice - Phase v1.3e)
+                // Mint (now uses Ice - Phase v1.3e) (NOTE: Using .history since .milestone removed - Enhancement 7)
                 DSCard(
-                    cardType: .milestone,
+                    cardType: .history,
                     title: "Mint → Ice (Unified)",
                     surface: Theme.ColorToken.surfaceIce,  // Universal Ice standard
                     onDismiss: { Log.debug("Mint dismissed", category: .general) }

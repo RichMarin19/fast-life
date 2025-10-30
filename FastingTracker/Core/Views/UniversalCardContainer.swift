@@ -90,7 +90,8 @@ struct UniversalCardContainer<Content: View>: View {
         Color(red: 10/255, green: 18/255, blue: 36/255)
             .ignoresSafeArea()
 
-        UniversalCardContainer(cardType: .milestone) {
+        // NOTE: Using .chart for preview since .milestone was removed (Enhancement 7)
+        UniversalCardContainer(cardType: .chart) {
             VStack(spacing: 16) {
                 Text("Milestone 6/10")
                     .font(.system(size: 16, weight: .semibold))

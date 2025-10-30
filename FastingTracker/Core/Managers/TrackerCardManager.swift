@@ -26,9 +26,9 @@ class TrackerCardManager: ObservableObject {
 
     // Legacy UserDefaults keys (for backwards compatibility migration only)
     // Will be removed after migration period
+    // NOTE: .milestone removed in Enhancement 7 (redundant with Current Weight Card)
     private let legacyKeys: [TrackerCardType: String] = [
         .currentWeight: "showCurrentWeightCard",
-        .milestone: "showMilestoneCard",
         .chart: "showChartCard",
         .stats: "showStatsCard",
         .history: "showHistoryCard"

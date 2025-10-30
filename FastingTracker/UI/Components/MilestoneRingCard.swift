@@ -151,8 +151,9 @@ struct MilestoneRingCard: View {
             .ignoresSafeArea()
 
         // Wrap in DSCard for preview since MilestoneRingCard is now pure content
+        // NOTE: Using .chart for preview since .milestone was removed (Enhancement 7)
         DSCard(
-            cardType: .milestone,
+            cardType: .chart,
             title: "Milestone 6/10",
             onDismiss: { print("Dismiss tapped") }
         ) {

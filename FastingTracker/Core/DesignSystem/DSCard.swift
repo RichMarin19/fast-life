@@ -196,8 +196,9 @@ extension DSCard {
         DSColors.screenBackground
             .ignoresSafeArea()
 
+        // NOTE: Using .chart for preview since .milestone was removed (Enhancement 7)
         DSCard(
-            cardType: .milestone,
+            cardType: .chart,
             subtitle: "6 of 10 completed",
             onDismiss: { Log.debug("Dismiss tapped", category: .general) }
         ) {
