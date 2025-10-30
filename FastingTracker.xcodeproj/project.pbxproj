@@ -314,8 +314,20 @@
 		TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		524B16DE2EB310D100A27388 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				EmotionEngineTests.swift,
+				LifeGPTViewModelIntegrationTests.swift,
+				QueryClassifierTests.swift,
+			);
+			target = 52F5789C2EA8FD4C0042727E /* FastingTrackerTests */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		52F5789E2EA8FD4C0042727E /* FastingTrackerTests */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = FastingTrackerTests; sourceTree = "<group>"; };
+		52F5789E2EA8FD4C0042727E /* FastingTrackerTests */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (524B16DE2EB310D100A27388 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = FastingTrackerTests; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */

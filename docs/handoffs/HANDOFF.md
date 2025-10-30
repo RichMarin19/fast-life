@@ -1145,6 +1145,88 @@ Dimension Scores:
 
 ---
 
+**Step 3: Initial Test Run - 88 Tests Created, 13 Failures Found** ⚠️ ISSUES FOUND
+
+**WHAT:** First test run of newly created ViewModel test suites to verify functionality
+
+**HOW:**
+1. Created 3 ViewModel test suites (52 tests total):
+   - CardsViewModelTests.swift: 17 tests
+   - BadgesViewModelTests.swift: 15 tests
+   - PreferencesViewModelTests.swift: 20 tests
+2. Added test files to Xcode via GUI (FastingTrackerTests target)
+3. Fixed initial compilation error (ContentCategory.article → .educationalInsights)
+4. Ran full test suite (⌘U)
+5. Total tests: 88 (36 WeightManager + 52 ViewModel tests)
+
+**EXPECTED:**
+```
+✅ All 88 tests compile successfully
+✅ All 88 tests pass (green checkmarks)
+✅ Zero failures
+✅ Ready to continue with remaining ViewModels
+```
+
+**ACTUAL:** ⚠️ 13 FAILURES DETECTED (75 tests passed, 13 failed)
+
+**Test Results:**
+```
+✅ WeightManager: 36 tests - ALL PASSED
+✅ CardsViewModel: 17 tests - ALL PASSED
+❌ BadgesViewModel: 15 tests - 11 FAILED
+❌ PreferencesViewModel: 20 tests - 1 FATAL ERROR + 1 FAILED
+```
+
+**Issue 1: PreferencesViewModelTests - FATAL ERROR (Index out of range)**
+- **Test:** `test_visuallyOrderedOptedOutItems_ordersItemsByCategory()`
+- **Error:** Thread 1: Fatal error: Index out of range (line 239)
+- **Code:** `XCTAssertEqual(ordered[0].category, .educationalInsights, ...)`
+- **Root Cause:**
+  - The computed property `visuallyOrderedOptedOutItems` reads from `optOutManager.optedOutContentItems` (shared singleton)
+  - Tests only populate `viewModel.optedOutContentItems` (local @Published property)
+  - These two arrays are NOT automatically synced
+  - When test calls `viewModel.optOutContent()`, it only updates local array
+  - The computed property returns empty array from shared manager → index out of range
+
+**Issue 2: BadgesViewModelTests - 11 Test Failures**
+- **Category:** Async timing and state management issues
+- **Failed Tests:**
+  1. `test_cycleToNextOptedOutItem_setsHighlightedItemID()` - Expected "Optional("item1")", got "nil"
+  2. `test_cycleToNextOptedOutItem_withoutScrollViewProxy_stillUpdatesState()` - highlightedItemID not set
+  3. `test_cycleToNextOptedOutItem_multipleCycles_correctOrder()` (6 assertions failed)
+     - Expected "Optional("item1")", got "nil" (repeated for item1, item2, item3)
+  4. `test_cycleToNextOptedOutItem_singleItem_staysAtZero()` - Expected "Optional("onlyItem")", got "nil"
+  5. `test_badgeScale_animatesDuringCycle()` - Expected > 1.0, got 1.0 (animation didn't start yet)
+  6. `test_highlightedItemID_clearsAfterDelay()` - Expected "Optional("item1")", got "nil"
+  7. `test_scrollViewProxy_canBeSet()` - Mirror reflection test issue (property check)
+
+**Root Causes:**
+1. **Async Timing:** Tests check state immediately after calling `cycleToNextOptedOutItem()`, but:
+   - `highlightedItemID` is set INSIDE `withAnimation` block (delayed)
+   - `badgeScale` animations happen asynchronously
+   - Tests don't wait for animation blocks to execute
+
+2. **Guard Clause Logic:** `cycleToNextOptedOutItem()` has guard clause for scrollViewProxy:
+   ```swift
+   guard let proxy = scrollViewProxy else { return }
+   ```
+   - This guard happens BEFORE setting highlightedItemID
+   - Without scrollViewProxy, the method returns early (line 39)
+   - So highlightedItemID never gets set when scrollViewProxy is nil
+
+3. **Mirror Reflection Test:** Using Mirror to check for property existence is fragile
+
+**Fix Strategy:**
+1. **PreferencesViewModelTests:** Sync both local array AND shared optOutManager in test setup
+2. **BadgesViewModelTests:**
+   - Move highlightedItemID assignment BEFORE the scrollViewProxy guard
+   - Add proper async waits for animation tests
+   - Remove or fix Mirror-based property existence test
+
+**Status:** ⏳ FIXING - Identified all root causes, implementing fixes now
+
+---
+
 ### Task 1C: North Star Documentation (4 hours / 0.5 days)
 
 **WHAT:** Document Weight Tracker architecture as blueprint for rebuilding other trackers

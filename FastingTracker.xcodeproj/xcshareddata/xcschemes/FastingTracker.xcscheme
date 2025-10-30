@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "A1000021000000000000001"
-               BuildableName = "Fast lIFe.app"
+               BuildableName = "FastLIFe.app"
                BlueprintName = "FastingTracker"
                ReferencedContainer = "container:FastingTracker.xcodeproj">
             </BuildableReference>
@@ -58,7 +58,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A1000021000000000000001"
-            BuildableName = "Fast lIFe.app"
+            BuildableName = "FastLIFe.app"
             BlueprintName = "FastingTracker"
             ReferencedContainer = "container:FastingTracker.xcodeproj">
          </BuildableReference>
@@ -75,7 +75,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "A1000021000000000000001"
-            BuildableName = "Fast lIFe.app"
+            BuildableName = "FastLIFe.app"
             BlueprintName = "FastingTracker"
             ReferencedContainer = "container:FastingTracker.xcodeproj">
          </BuildableReference>

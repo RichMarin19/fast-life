@@ -35,15 +35,15 @@ class BadgesViewModel: ObservableObject {
         // Increment index BEFORE UI operations (so tests can verify immediately)
         currentHighlightedItemIndex = (currentHighlightedItemIndex + 1) % optedOutItems.count
 
-        // Layer 3: Smooth scroll to target item with animation (only if proxy exists)
-        guard let proxy = scrollViewProxy else { return }
-
-        withAnimation(.easeInOut(duration: AnimationConstants.Duration.standard)) {
-            proxy.scrollTo(targetItem.id, anchor: .center)
-        }
-
-        // Layer 4: Set highlighted item ID for gold border
+        // Layer 3: Set highlighted item ID for gold border (works with or without scrolling)
         highlightedItemID = targetItem.id
+
+        // Layer 4: Smooth scroll to target item with animation (only if proxy exists)
+        if let proxy = scrollViewProxy {
+            withAnimation(.easeInOut(duration: AnimationConstants.Duration.standard)) {
+                proxy.scrollTo(targetItem.id, anchor: .center)
+            }
+        }
 
         // Auto-reset highlight after 1 second
         Task {
