@@ -124,8 +124,10 @@ struct WeightTrackingView: View {
     }
 
     var body: some View {
+        #if DEBUG
         // 🔍 FORENSIC: Log body render
         AppLogger.info("⏱️ WeightTrackingView.body rendering", category: AppLogger.ui)
+        #endif
 
         return TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),
@@ -191,11 +193,15 @@ struct WeightTrackingView: View {
         .sheet(isPresented: showingTrendsBinding) {
             WeightTrendsView(weightManager: weightManager)
                 .onAppear {
+                    #if DEBUG
                     AppLogger.info("🎯 Progress Story sheet appeared", category: AppLogger.ui)
+                    #endif
                 }
         }
         .onChange(of: vm.showingTrends) { oldValue, newValue in
+            #if DEBUG
             AppLogger.info("🎯 showingTrends changed from \(oldValue) to \(newValue)", category: AppLogger.ui)
+            #endif
         }
         // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
         .sheet(isPresented: showingFirstTimeSetupBinding) {

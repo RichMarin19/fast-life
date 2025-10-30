@@ -105,15 +105,21 @@ class WeightTrackingViewModel: ObservableObject {
 
     /// Handle view appearance (replaces onAppear logic in view)
     func onViewAppear() {
+        #if DEBUG
         // 🔍 FORENSIC: Track onAppear start time
         let startTime = CFAbsoluteTimeGetCurrent()
         AppLogger.info("⏱️ WeightTrackingViewModel.onViewAppear START", category: AppLogger.ui)
+        #endif
 
         // Load saved goal settings from UserDefaults
+        #if DEBUG
         let loadSettingsStart = CFAbsoluteTimeGetCurrent()
+        #endif
         loadGoalSettings()
+        #if DEBUG
         let loadSettingsDuration = (CFAbsoluteTimeGetCurrent() - loadSettingsStart) * 1000
         AppLogger.info("⏱️ loadGoalSettings took \(String(format: "%.2f", loadSettingsDuration))ms", category: AppLogger.ui)
+        #endif
 
         // Show first-time setup if user has no weight data
         // No delay needed - weightManager loads synchronously in init
@@ -123,22 +129,28 @@ class WeightTrackingViewModel: ObservableObject {
 
         // Show HealthKit nudge for first-time users who skipped onboarding
         // Following Lose It pattern - contextual reminder on first tracker access
+        #if DEBUG
         let nudgeStart = CFAbsoluteTimeGetCurrent()
+        #endif
         showHealthKitNudge = nudgeManager.shouldShowNudge(for: .weight)
+        #if DEBUG
         let nudgeDuration = (CFAbsoluteTimeGetCurrent() - nudgeStart) * 1000
         AppLogger.info("⏱️ shouldShowNudge took \(String(format: "%.2f", nudgeDuration))ms", category: AppLogger.ui)
 
         if showHealthKitNudge {
             AppLogger.info("Showing HealthKit nudge for first-time user", category: AppLogger.ui)
         }
+        #endif
 
         // Note: Removed auto-authorization logic - now uses nudge banner pattern like HydrationTrackingView
         // User must explicitly tap "Connect" in nudge banner to authorize
         // This follows Lose It app pattern and Apple HIG contextual permission guidelines
 
+        #if DEBUG
         // 🔍 FORENSIC: Track total onAppear duration
         let totalDuration = (CFAbsoluteTimeGetCurrent() - startTime) * 1000
         AppLogger.info("⏱️ WeightTrackingViewModel.onViewAppear TOTAL: \(String(format: "%.2f", totalDuration))ms", category: AppLogger.ui)
+        #endif
     }
 
     /// Handle Progress Story auto-show task (replaces .task in view)
@@ -153,7 +165,9 @@ class WeightTrackingViewModel: ObservableObject {
         let isOptedOut = ContentOptOutManager.shared.isContentOptedOut(id: contentID)
 
         guard !isOptedOut else {
+            #if DEBUG
             AppLogger.info("🎯 Progress Story opted out - skipping auto-show", category: AppLogger.ui)
+            #endif
             return
         }
 
@@ -161,7 +175,9 @@ class WeightTrackingViewModel: ObservableObject {
         try? await Task.sleep(nanoseconds: 600_000_000)  // 0.6 seconds
 
         await MainActor.run {
+            #if DEBUG
             AppLogger.info("🎯 Auto-showing Progress Story on Weight Tracker open (delayed)", category: AppLogger.ui)
+            #endif
             showingTrends = true
         }
     }
@@ -170,15 +186,21 @@ class WeightTrackingViewModel: ObservableObject {
 
     /// Handle HealthKit nudge "Connect" button tap
     func handleHealthKitConnect() {
+        #if DEBUG
         AppLogger.info("HealthKit nudge - requesting weight authorization", category: AppLogger.healthKit)
+        #endif
         HealthKitManager.shared.requestWeightAuthorization { success, _ in
             DispatchQueue.main.async {
                 if success {
+                    #if DEBUG
                     AppLogger.info("Weight authorization granted from nudge", category: AppLogger.healthKit)
+                    #endif
                     self.weightManager.syncWithHealthKit = true
                     self.showHealthKitNudge = false
                 } else {
+                    #if DEBUG
                     AppLogger.info("Weight authorization denied from nudge", category: AppLogger.healthKit)
+                    #endif
                 }
             }
         }
@@ -186,7 +208,9 @@ class WeightTrackingViewModel: ObservableObject {
 
     /// Handle HealthKit nudge "Dismiss" button tap
     func handleHealthKitDismiss() {
+        #if DEBUG
         AppLogger.info("HealthKit nudge dismissed", category: AppLogger.ui)
+        #endif
         showHealthKitNudge = false
         nudgeManager.dismissNudge(for: .weight)
     }

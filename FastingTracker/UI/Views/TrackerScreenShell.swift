@@ -60,8 +60,10 @@ struct TrackerScreenShell<Content: View>: View {
     }
 
     var body: some View {
+        #if DEBUG
         // 🔍 FORENSIC: Log TrackerScreenShell render
         AppLogger.info("⏱️ TrackerScreenShell.body rendering (gradientStyle: \(gradientStyle == .luxury ? "luxury" : "none"))", category: AppLogger.ui)
+        #endif
 
         return ZStack {
             // Optional luxury gradient background
