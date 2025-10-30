@@ -42,7 +42,7 @@ enum ContentCategory: String, Codable, CaseIterable {
 /// Industry Pattern: Enum registry for feature toggles (Spotify, Apple Health)
 enum TrackerCardType: String, Codable, CaseIterable, Identifiable {
     case currentWeight = "current_weight_card"
-    case milestone = "milestone_card"
+    // REMOVED: milestone card (redundant - Current Weight Card already has milestone features)
     case chart = "chart_card"
     case stats = "stats_card"
     case history = "history_card"
@@ -52,7 +52,7 @@ enum TrackerCardType: String, Codable, CaseIterable, Identifiable {
     var displayName: String {
         switch self {
         case .currentWeight: return "Current Weight"
-        case .milestone: return "Milestone"
+        // REMOVED: milestone case - functionality exists in Current Weight Card
         case .chart: return "Chart"
         case .stats: return "Statistics"
         case .history: return "History"
@@ -62,7 +62,7 @@ enum TrackerCardType: String, Codable, CaseIterable, Identifiable {
     var description: String {
         switch self {
         case .currentWeight: return "Latest weight with progress tracking"
-        case .milestone: return "Progress ring with milestone tracking"
+        // REMOVED: milestone case - functionality exists in Current Weight Card
         case .chart: return "Weight trend chart"
         case .stats: return "Weight statistics summary"
         case .history: return "Weight entry history list"

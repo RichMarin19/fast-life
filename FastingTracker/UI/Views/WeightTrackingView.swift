@@ -108,27 +108,10 @@ struct WeightTrackingView: View {
         return nil
     }
 
-    /// Milestone Ring Card with computed data from weight manager
-    /// TASK 1E PHASE 3: Replaced placeholder data with actual milestone calculations
-    /// UPDATED: Migrated to DSCard pattern (Phase v1.3b) - uses cardManager for visibility control
-    private var milestoneRingCard: some View {
-        // Calculate milestone stats (all in internal pounds, converted for display)
-        let totalMilestones = 10
-        let stats = weightManager.milestoneStats(goalWeight: vm.weightGoal, totalMilestones: totalMilestones)
-
-        return MilestoneRingCard(
-            progress: stats?.progress ?? 0.0,  // Progress within current milestone (0.0-1.0)
-            milestoneIndex: stats?.currentIndex ?? 1,  // Current milestone number (1-10)
-            centerValue: weightManager.latestWeight.map { String(format: "%.1f", weightManager.displayWeight(for: $0)) } ?? "---",
-            dateText: weightManager.latestWeight.map { $0.date.formatted(date: .abbreviated, time: .omitted) } ?? "",
-            leftStat: weightManager.startWeight.map { String(format: "%.1f", weightManager.displayWeight(for: $0)) } ?? "---",
-            midStat: stats.map { "\(Int($0.progress * 100))%" } ?? "0%",  // Progress % within current milestone
-            rightStat: stats.map { "\(String(format: "%.1f", weightManager.convertWeightToDisplayUnit($0.remainingWeight))) to go" } ?? "Set goal",
-            totalMilestones: totalMilestones,
-            completedMilestones: stats?.completed ?? 0  // Number of fully completed milestones
-            // REMOVED: cardManager parameter - DSCard wrapper moved to WeightTrackingView
-        )
-    }
+    // REMOVED: milestoneRingCard property (Enhancement 7)
+    // Milestone functionality already exists in Current Weight Card - no need for separate card
+    // Cleaner UI: 3 cards (Current Weight, Chart, Stats) instead of 4
+    // Industry Pattern: Minimize redundancy (Apple Health, Google Fit)
 
     var body: some View {
         #if DEBUG
@@ -261,20 +244,9 @@ struct WeightTrackingView: View {
                 )
             }
 
-        case .milestone:
-            // Calculate milestone info for title
-            let totalMilestones = 10
-            let stats = weightManager.milestoneStats(goalWeight: vm.weightGoal, totalMilestones: totalMilestones)
-            let milestoneIndex = stats?.currentIndex ?? 1
-
-            DSCard(
-                cardType: .milestone,
-                title: "Milestone \(milestoneIndex)/\(totalMilestones)",
-                cardManager: cardManager,
-                canExpand: true
-            ) {
-                milestoneRingCard
-            }
+        // REMOVED: milestone case (Enhancement 7)
+        // Milestone functionality exists in Current Weight Card - no need for separate card
+        // Cleaner dashboard: 3 cards instead of 4
 
         case .chart:
             DSCard(

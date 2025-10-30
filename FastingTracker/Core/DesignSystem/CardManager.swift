@@ -307,10 +307,11 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
 /// ```json
 /// [
 ///   {"id": "current_weight_card", "isVisible": true, "isExpanded": true, "sortOrder": 0},
-///   {"id": "milestone_card", "isVisible": false, "isExpanded": true, "sortOrder": 1},
-///   {"id": "chart_card", "isVisible": true, "isExpanded": false, "sortOrder": 2}
+///   {"id": "chart_card", "isVisible": true, "isExpanded": false, "sortOrder": 1},
+///   {"id": "stats_card", "isVisible": true, "isExpanded": true, "sortOrder": 2}
 /// ]
 /// ```
+/// Note: milestone_card removed in Enhancement 7 (redundant with Current Weight Card)
 struct CardPreference<CardType: CardTypeProtocol>: Codable, Identifiable {
     /// Unique identifier (cardType.rawValue)
     let id: String
