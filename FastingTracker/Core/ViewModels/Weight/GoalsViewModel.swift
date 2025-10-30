@@ -36,24 +36,23 @@ class GoalsViewModel: ObservableObject {
             }
         }
 
-        // Check max value BEFORE limiting digits (for values like "1500.0")
-        let hasDecimal = formatted.contains(".")
-        let valueBeforeLimiting = Double(formatted) ?? 0
-        if hasDecimal && valueBeforeLimiting > 999.9 {
-            formatted = "999.9"
-        } else {
-            // Only apply digit limiting if we didn't already cap to 999.9
-            // Limit integer part to 3 digits (for values like "12345")
-            if let dotIndex = formatted.firstIndex(of: ".") {
-                let beforeDot = formatted.prefix(upTo: dotIndex)
-                if beforeDot.count > 3 {
-                    formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
-                }
-            } else {
-                if formatted.count > 3 {
-                    formatted = String(formatted.prefix(3))
-                }
+        // FIRST: Limit integer part to 3 digits (for values like "12345" or "12345.5")
+        if let dotIndex = formatted.firstIndex(of: ".") {
+            let beforeDot = formatted.prefix(upTo: dotIndex)
+            if beforeDot.count > 3 {
+                formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
             }
+        } else {
+            if formatted.count > 3 {
+                formatted = String(formatted.prefix(3))
+            }
+        }
+
+        // THEN: Check max value after digit limiting (for values like "999.9" or after limiting)
+        let hasDecimal = formatted.contains(".")
+        let finalValue = Double(formatted) ?? 0
+        if hasDecimal && finalValue > 999.9 {
+            formatted = "999.9"
         }
 
         // Always update to ensure consistent state
