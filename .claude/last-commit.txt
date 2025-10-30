@@ -1,21 +1,47 @@
-Last commit: 91a391f at 2025-10-29 16:14:45
-docs: Update HANDOFF.md - build succeeded, ready for TDD red phase
+Last commit: 1eb8b9b at 2025-10-29 17:14:11
+feat: Add ObserverSuppressionActor to replace nonisolated(unsafe) flag
 
-## Task 1A Progress Update
+**WHAT:** Thread-safe actor for observer suppression flag
 
-**Status:** Build succeeded with expected @MainActor warnings
+**Problem:**
+`nonisolated(unsafe) var isSuppressingObserver` (WeightManager line 29):
+- Bypasses ALL Swift concurrency safety checks
+- Accessed from background thread (HealthKit observer callback line 569)
+- Written from main thread (line 103, 108)
+- NO synchronization between read/write → race condition
 
-**What Changed:**
-- Documented successful build (4:09 PM)
-- Explained 23 @MainActor warnings are EXPECTED
-- Warnings document concurrent access patterns we're testing
-- Ready to run tests (⌘U) and observe failures
+**Solution:**
+ObserverSuppressionActor using Swift Actor pattern (~95 LOC):
+- Actor provides automatic synchronization
+- Only ONE task can access state at a time
+- Swift runtime enforces thread safety
+- Type-safe replacement for nonisolated(unsafe)
 
-**Why Warnings Are Good:**
-These warnings prove WeightManager is accessed from background threads
-without proper synchronization - exactly what we're testing!
+**Features:**
+- isSuppressed() -> Bool: Check if observer should be suppressed
+- suppress(): Enable observer suppression
+- unsuppress(): Disable observer suppression
+- suppressTemporarily(delay:): Auto-restore after delay
 
-**Next:** Run tests, watch them FAIL, then create ThreadSafeUserDefaults
+**Usage Example:**
+```swift
+let actor = ObserverSuppressionActor()
+
+// In HealthKit observer callback (background thread)
+Task {
+    let suppressed = await actor.isSuppressed()
+    guard !suppressed else { return }
+    // Proceed with sync
+}
+```
+
+**Why Actors Work:**
+- Actor methods are async - automatically synchronized
+- No manual locks needed
+- Much safer than nonisolated(unsafe) data races
+- Solves WeightManager's observer suppression race condition
+
+**Next:** Add both files to Xcode, then migrate WeightManager
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 

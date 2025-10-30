@@ -51,6 +51,8 @@
 		526B7FAA2EB1EB8900B91277 /* BadgesViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7F9F2EB1EB8900B91277 /* BadgesViewModel.swift */; };
 		526B7FAC2EB1EE5000B91277 /* WeightConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7FAB2EB1EE5000B91277 /* WeightConstants.swift */; };
 		526B7FAE2EB1EFFF00B91277 /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7FAD2EB1EFFF00B91277 /* AnimationConstants.swift */; };
+		526B7FB62EB30A6B00B91277 /* ThreadSafeUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7FB52EB30A6B00B91277 /* ThreadSafeUserDefaults.swift */; };
+		526B7FB72EB30A6B00B91277 /* ObserverSuppressionActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7FB42EB30A6B00B91277 /* ObserverSuppressionActor.swift */; };
 		527695072EAFDE5B0040DF5D /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 527695062EAFDE5B0040DF5D /* Config.xcconfig */; };
 		5288A52B2EA44CF100806BE7 /* Testing/Views/TrackerCardManagerTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52A2EA44CF100806BE7 /* Testing/Views/TrackerCardManagerTestView.swift */; };
 		5288A52D2EA44D1100806BE7 /* Core/Models/TrackerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52C2EA44D1100806BE7 /* Core/Models/TrackerCard.swift */; };
@@ -206,6 +208,8 @@
 		526B7FA42EB1EB8900B91277 /* SyncViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SyncViewModel.swift; path = Core/ViewModels/Weight/SyncViewModel.swift; sourceTree = "<group>"; };
 		526B7FAB2EB1EE5000B91277 /* WeightConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightConstants.swift; path = Core/Configuration/WeightConstants.swift; sourceTree = "<group>"; };
 		526B7FAD2EB1EFFF00B91277 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AnimationConstants.swift; path = Core/Configuration/AnimationConstants.swift; sourceTree = "<group>"; };
+		526B7FB42EB30A6B00B91277 /* ObserverSuppressionActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ObserverSuppressionActor.swift; path = Core/Utilities/ObserverSuppressionActor.swift; sourceTree = "<group>"; };
+		526B7FB52EB30A6B00B91277 /* ThreadSafeUserDefaults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ThreadSafeUserDefaults.swift; path = Core/Utilities/ThreadSafeUserDefaults.swift; sourceTree = "<group>"; };
 		527695062EAFDE5B0040DF5D /* Config.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config.xcconfig; sourceTree = "<group>"; };
 		5288A52A2EA44CF100806BE7 /* Testing/Views/TrackerCardManagerTestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Testing/Views/TrackerCardManagerTestView.swift; sourceTree = "<group>"; };
 		5288A52C2EA44D1100806BE7 /* Core/Models/TrackerCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/TrackerCard.swift; sourceTree = "<group>"; };
@@ -373,6 +377,8 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				526B7FB42EB30A6B00B91277 /* ObserverSuppressionActor.swift */,
+				526B7FB52EB30A6B00B91277 /* ThreadSafeUserDefaults.swift */,
 				525B61EF2EB1D21500BAF20D /* WeightControlCenterCoordinator.swift */,
 				52F3D16E2EABE32B00C20142 /* Core/Configuration/PerformanceTokens.swift */,
 				526B7FAD2EB1EFFF00B91277 /* AnimationConstants.swift */,
@@ -699,6 +705,8 @@
 				52B2CFB92E91B7160061FCFF /* UI/Views/NotificationSettingsView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
 				A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */,
+				526B7FB62EB30A6B00B91277 /* ThreadSafeUserDefaults.swift in Sources */,
+				526B7FB72EB30A6B00B91277 /* ObserverSuppressionActor.swift in Sources */,
 				682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */,
 				DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */,
 				5243F2422E900F440051A731 /* Models/SleepEntry.swift in Sources */,

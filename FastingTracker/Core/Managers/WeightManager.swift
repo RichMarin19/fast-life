@@ -18,15 +18,18 @@ class WeightManager: ObservableObject {
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
     private let appSettings = AppSettings.shared
 
-    private let userDefaults = UserDefaults.standard
+    // THREAD SAFETY FIX (Task 1A): Replace direct UserDefaults with thread-safe wrapper
+    // UserDefaults is NOT thread-safe - concurrent writes can corrupt plist
+    // ThreadSafeUserDefaults uses NSLock to synchronize all access
+    private let safeDefaults = ThreadSafeUserDefaults()
     private let weightEntriesKey = "weightEntries"
     private let syncHealthKitKey = "syncWithHealthKit"
     private var observerQuery: HKObserverQuery?
 
-    // Industry standard: Suppress observer during manual operations to prevent duplicate sync
-    // Following MyFitnessPal, Spotify pattern: Temporary flag during bidirectional operations
-    // NOTE: nonisolated for thread-safe access from HealthKit background contexts
-    private nonisolated(unsafe) var isSuppressingObserver: Bool = false
+    // THREAD SAFETY FIX (Task 1A): Replace nonisolated(unsafe) with Actor pattern
+    // nonisolated(unsafe) bypasses ALL Swift concurrency safety checks
+    // ObserverSuppressionActor provides type-safe synchronization across threads
+    private let observerSuppression = ObserverSuppressionActor()
 
     // MARK: - Initialization
 
@@ -98,17 +101,13 @@ class WeightManager: ObservableObject {
 
         // Sync to HealthKit if enabled and this is a manual entry
         if syncWithHealthKit && entry.source == .manual {
-            // INDUSTRY STANDARD: Temporarily suppress observer to prevent duplicate sync back
-            // Following MyFitnessPal pattern: Manual → HealthKit should not trigger HealthKit → Manual
-            isSuppressingObserver = true
+            // THREAD SAFETY FIX: Use Actor pattern for observer suppression
+            // Temporarily suppress observer to prevent duplicate sync back
+            Task {
+                await observerSuppression.suppressTemporarily(delay: WeightConstants.SyncTiming.observerSuppressionDelay)
+            }
 
-            healthKit.saveWeight(weight: entry.weight, bmi: entry.bmi, bodyFat: entry.bodyFat, date: entry.date) { [weak self] success, error in
-                // Re-enable observer after a brief delay to ensure HealthKit write completes
-                DispatchQueue.main.asyncAfter(deadline: .now() + WeightConstants.SyncTiming.observerSuppressionDelay) {
-                    self?.isSuppressingObserver = false
-                    AppLogger.info("Observer suppression lifted after manual entry sync", category: AppLogger.weightTracking)
-                }
-
+            healthKit.saveWeight(weight: entry.weight, bmi: entry.bmi, bodyFat: entry.bodyFat, date: entry.date) { success, error in
                 if !success {
                     AppLogger.error("Failed to sync weight to HealthKit", category: AppLogger.weightTracking, error: error)
                 } else {
@@ -495,7 +494,8 @@ class WeightManager: ObservableObject {
         AppLogger.info("Setting weight sync preference to \(enabled)", category: AppLogger.weightTracking)
 
         syncWithHealthKit = enabled
-        userDefaults.set(enabled, forKey: syncHealthKitKey)
+        // THREAD SAFETY FIX: Use thread-safe wrapper
+        safeDefaults.set(enabled, forKey: syncHealthKitKey)
 
         if enabled {
             // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
@@ -565,23 +565,31 @@ class WeightManager: ObservableObject {
                 return
             }
 
-            // INDUSTRY STANDARD: Check if observer is suppressed (manual operation in progress)
-            guard let self = self, !self.isSuppressingObserver else {
-                AppLogger.info("HealthKit observer suppressed during manual operation - skipping sync", category: AppLogger.weightTracking)
+            guard let self = self else {
                 completionHandler()
                 return
             }
 
-            // New weight data detected - sync with comprehensive date range
-            // Industry Standard: Use anchored query (handles deletions) with wide date range for consistency
-            AppLogger.info("New weight data detected in HealthKit, syncing with deletion support", category: AppLogger.weightTracking)
-            DispatchQueue.main.async {
-                let startDate = Calendar.current.date(byAdding: .year, value: -WeightConstants.SyncTiming.defaultHistoricalLookbackYears, to: Date()) ?? Date()
-                self.syncFromHealthKit(startDate: startDate, completion: nil)
-            }
+            // THREAD SAFETY FIX: Check observer suppression using Actor pattern
+            // Actor provides thread-safe access from HealthKit background callback
+            Task {
+                let suppressed = await self.observerSuppression.isSuppressed()
+                guard !suppressed else {
+                    AppLogger.info("HealthKit observer suppressed during manual operation - skipping sync", category: AppLogger.weightTracking)
+                    completionHandler()
+                    return
+                }
 
-            // Must call completion handler
-            completionHandler()
+                // New weight data detected - sync with comprehensive date range
+                AppLogger.info("New weight data detected in HealthKit, syncing with deletion support", category: AppLogger.weightTracking)
+                await MainActor.run {
+                    let startDate = Calendar.current.date(byAdding: .year, value: -WeightConstants.SyncTiming.defaultHistoricalLookbackYears, to: Date()) ?? Date()
+                    self.syncFromHealthKit(startDate: startDate, completion: nil)
+                }
+
+                // Must call completion handler
+                completionHandler()
+            }
         }
 
         observerQuery = query
@@ -686,12 +694,14 @@ class WeightManager: ObservableObject {
 
     private func saveWeightEntries() {
         if let encoded = try? JSONEncoder().encode(weightEntries) {
-            userDefaults.set(encoded, forKey: weightEntriesKey)
+            // THREAD SAFETY FIX: Use thread-safe wrapper
+            safeDefaults.set(encoded, forKey: weightEntriesKey)
         }
     }
 
     private func loadWeightEntries() {
-        guard let data = userDefaults.data(forKey: weightEntriesKey),
+        // THREAD SAFETY FIX: Use thread-safe wrapper
+        guard let data = safeDefaults.data(forKey: weightEntriesKey),
               let entries = try? JSONDecoder().decode([WeightEntry].self, from: data) else {
             return
         }
@@ -699,9 +709,10 @@ class WeightManager: ObservableObject {
     }
 
     private func loadSyncPreference() {
+        // THREAD SAFETY FIX: Use thread-safe wrapper
         // Default to true if not set
-        if userDefaults.object(forKey: syncHealthKitKey) != nil {
-            syncWithHealthKit = userDefaults.bool(forKey: syncHealthKitKey)
+        if safeDefaults.object(forKey: syncHealthKitKey) != nil {
+            syncWithHealthKit = safeDefaults.bool(forKey: syncHealthKitKey)
         }
     }
 

@@ -64,6 +64,7 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
         }
         Thread.sleep(forTimeInterval: 0.5)
 
+        
         let expectation = XCTestExpectation(description: "All 50 concurrent updates complete")
         expectation.expectedFulfillmentCount = 50
 
