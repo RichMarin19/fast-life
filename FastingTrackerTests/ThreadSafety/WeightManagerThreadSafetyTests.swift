@@ -122,7 +122,7 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
 
         // Configure mock to fire observer callback when weight is saved
         var observerFireCount = 0
-        mockHealthKit.onSaveWeight = { [weak self] weight, bmi, bodyFat, date, completion in
+        mockHealthKit.onSaveWeight = { [] weight, bmi, bodyFat, date, completion in
             // Simulate HealthKit observer firing on background thread BEFORE suppression is lifted
             // This mimics real HealthKit behavior: observer can fire before asyncAfter completes (line 107)
             DispatchQueue.global(qos: .background).async {
@@ -352,3 +352,4 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
                        "Expected 0 persisted entries, got \(reloadedCount). Concurrent writes corrupted plist.")
     }
 }
+

@@ -8,18 +8,10 @@ struct WeightTrackingView: View {
     @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
 
     // MVVM: ViewModel owns all state and business logic
-    // Industry Standard: @StateObject for proper SwiftUI lifecycle management
-    @StateObject private var viewModel: WeightTrackingViewModel
-
-    // MARK: - Initialization
-    // Industry Standard: Create ViewModel with temporary instances
-    // @StateObject ensures single initialization - no race conditions
-    init() {
-        _viewModel = StateObject(wrappedValue: WeightTrackingViewModel(
-            weightManager: WeightManager(),
-            behavioralScheduler: BehavioralNotificationScheduler.shared
-        ))
-    }
+    // CONSULTANT FIX: Access managers from @EnvironmentObject instead of creating duplicates
+    // SwiftUI limitation: @StateObject init happens BEFORE @EnvironmentObject injection
+    // Solution: ViewModel accesses managers passed from view's @EnvironmentObject
+    @StateObject private var viewModel = WeightTrackingViewModel()
 
     private var vm: WeightTrackingViewModel {
         return viewModel
@@ -210,6 +202,11 @@ struct WeightTrackingView: View {
             )
         }
         .onAppear {
+            // CONSULTANT FIX: Inject @EnvironmentObject managers into ViewModel
+            // Must happen AFTER SwiftUI @EnvironmentObject injection completes
+            // This fixes duplicate WeightManager creation issue
+            vm.configure(weightManager: weightManager, behavioralScheduler: behavioralScheduler)
+
             // MVVM: Delegate onAppear logic to ViewModel
             vm.onViewAppear()
         }

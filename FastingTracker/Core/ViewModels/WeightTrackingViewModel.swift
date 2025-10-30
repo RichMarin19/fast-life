@@ -8,10 +8,13 @@ import Combine
 /// Gold Standard: WeightControlCenterViewModel (903 LOC)
 @MainActor
 class WeightTrackingViewModel: ObservableObject {
-    // MARK: - Dependencies (Injected)
+    // MARK: - Dependencies (Injected via configure())
+    // CONSULTANT FIX: Managers injected AFTER init to work with SwiftUI @EnvironmentObject
+    // SwiftUI limitation: @StateObject init happens BEFORE @EnvironmentObject injection
+    // Solution: Empty init(), then configure() called from view's .onAppear with environment managers
 
-    let weightManager: WeightManager
-    let behavioralScheduler: BehavioralNotificationScheduler
+    var weightManager: WeightManager!
+    var behavioralScheduler: BehavioralNotificationScheduler!
 
     // Singleton managers (pass-through)
     let healthKitManager = HealthKitManager.shared
@@ -50,11 +53,20 @@ class WeightTrackingViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(weightManager: WeightManager, behavioralScheduler: BehavioralNotificationScheduler) {
+    /// Empty init - managers injected later via configure()
+    /// CONSULTANT FIX: SwiftUI @StateObject init happens BEFORE @EnvironmentObject injection
+    init() {
+        // Managers will be set via configure() after @EnvironmentObject becomes available
+    }
+
+    /// Configure ViewModel with injected dependencies
+    /// Must be called from view's .onAppear with @EnvironmentObject managers
+    /// CONSULTANT FIX: Fixes duplicate WeightManager creation issue
+    func configure(weightManager: WeightManager, behavioralScheduler: BehavioralNotificationScheduler) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
 
-        // Load persisted state
+        // Load persisted state after managers are set
         loadGoalSettings()
     }
 
