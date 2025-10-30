@@ -361,4 +361,258 @@ final class WeightManagerTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 1.0)
     }
+
+    // MARK: - Milestone Computation Tests (Task 1E Phase 3)
+    // Tests for milestone tracking and progress calculations
+
+    func test_startWeight_ReturnsOldestEntry() {
+        // Given - Multiple entries
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 175.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(15), weight: 185.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let startWeight = weightManager.startWeight
+
+        // Then
+        XCTAssertNotNil(startWeight, "startWeight should return the oldest entry")
+        if let weight = startWeight?.weight {
+            XCTAssertEqual(weight, 200.0, accuracy: 0.01, "startWeight should be 200.0 (oldest entry)")
+        } else {
+            XCTFail("startWeight.weight should not be nil")
+        }
+    }
+
+    func test_startWeight_ReturnsNilWhenEmpty() {
+        // Given - empty manager
+
+        // When
+        let startWeight = weightManager.startWeight
+
+        // Then
+        XCTAssertNil(startWeight, "startWeight should be nil when no entries exist")
+    }
+
+    func test_totalWeightChange_CalculatesCorrectly() {
+        // Given - Weight loss journey
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 175.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let change = weightManager.totalWeightChange
+
+        // Then
+        XCTAssertNotNil(change, "totalWeightChange should not be nil")
+        XCTAssertEqual(change!, -25.0, accuracy: 0.01, "Should show 25 lbs weight loss")
+    }
+
+    func test_totalWeightChange_ReturnsNilWithInsufficientData() {
+        // Given - only one entry
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 175.0, source: .manual))
+
+        // When
+        let change = weightManager.totalWeightChange
+
+        // Then
+        XCTAssertNil(change, "totalWeightChange should be nil with insufficient data")
+    }
+
+    func test_progressToGoal_CalculatesCorrectly() {
+        // Given - Weight loss journey: start 200 lbs, current 180 lbs, goal 160 lbs
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then
+        // Total distance: 200 - 160 = 40 lbs
+        // Progress made: 200 - 180 = 20 lbs
+        // Progress: 20 / 40 = 0.5 (50%)
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 0.5, accuracy: 0.01, "Should be 50% complete")
+    }
+
+    func test_progressToGoal_ReturnsZeroWhenNoProgress() {
+        // Given - No weight loss yet
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.01, "Should be 0% complete with no progress")
+    }
+
+    func test_progressToGoal_ClampsAt100Percent() {
+        // Given - Exceeded goal
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 150.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 1.0, accuracy: 0.01, "Should clamp at 100% when goal exceeded")
+    }
+
+    func test_progressToGoal_ReturnsNilForInvalidGoal() {
+        // Given - Goal higher than start weight (invalid for weight loss)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 220.0)
+
+        // Then
+        XCTAssertNil(progress, "progressToGoal should be nil for invalid goal (higher than start)")
+    }
+
+    func test_currentMilestoneIndex_CalculatesCorrectly() {
+        // Given - 50% progress (milestone 5)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let milestoneIndex = weightManager.currentMilestoneIndex(goalWeight: 160.0)
+
+        // Then
+        // Progress: 50% → milestone 5 (ceil of 0.5 * 10)
+        XCTAssertEqual(milestoneIndex, 5, "Should be at milestone 5 with 50% progress")
+    }
+
+    func test_currentMilestoneIndex_StartsAtOne() {
+        // Given - Just started (0% progress)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let milestoneIndex = weightManager.currentMilestoneIndex(goalWeight: 160.0)
+
+        // Then
+        XCTAssertEqual(milestoneIndex, 1, "Should start at milestone 1 with no progress")
+    }
+
+    func test_currentMilestoneIndex_EndsAtTen() {
+        // Given - Goal reached (100% progress)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 160.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let milestoneIndex = weightManager.currentMilestoneIndex(goalWeight: 160.0)
+
+        // Then
+        XCTAssertEqual(milestoneIndex, 10, "Should be at milestone 10 when goal reached")
+    }
+
+    func test_completedMilestones_CalculatesCorrectly() {
+        // Given - 50% progress (5 milestones completed)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let completed = weightManager.completedMilestones(goalWeight: 160.0)
+
+        // Then
+        // Progress: 50% → 5 completed milestones (floor of 0.5 * 10)
+        XCTAssertEqual(completed, 5, "Should have 5 completed milestones at 50% progress")
+    }
+
+    func test_completedMilestones_StartsAtZero() {
+        // Given - Just started (0% progress)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let completed = weightManager.completedMilestones(goalWeight: 160.0)
+
+        // Then
+        XCTAssertEqual(completed, 0, "Should have 0 completed milestones with no progress")
+    }
+
+    func test_milestoneProgress_CalculatesCorrectly() {
+        // Given - 55% overall progress (5 milestones + 50% of milestone 6)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 178.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let milestoneProgress = weightManager.milestoneProgress(goalWeight: 160.0)
+
+        // Then
+        // Total: 200 - 160 = 40 lbs
+        // Progress: 200 - 178 = 22 lbs (55%)
+        // Milestone progress: (0.55 - 0.5) / 0.1 = 0.5 (50% of milestone 6)
+        XCTAssertEqual(milestoneProgress, 0.5, accuracy: 0.01, "Should be 50% through current milestone")
+    }
+
+    func test_milestoneProgress_ReturnsZeroAtMilestoneStart() {
+        // Given - Exactly at milestone boundary (50% progress)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let milestoneProgress = weightManager.milestoneProgress(goalWeight: 160.0)
+
+        // Then
+        XCTAssertEqual(milestoneProgress, 0.0, accuracy: 0.01, "Should be at start of milestone 6")
+    }
+
+    func test_milestoneStats_ReturnsAllData() {
+        // Given - Weight loss journey
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let stats = weightManager.milestoneStats(goalWeight: 160.0)
+
+        // Then
+        XCTAssertNotNil(stats, "milestoneStats should not be nil")
+        XCTAssertEqual(stats!.currentIndex, 5, "Should be at milestone 5")
+        XCTAssertEqual(stats!.completed, 5, "Should have 5 completed milestones")
+        XCTAssertEqual(stats!.progress, 0.0, accuracy: 0.01, "Should be at start of milestone 6")
+        XCTAssertEqual(stats!.startWeight, 200.0, accuracy: 0.01, "Start weight should be 200 lbs")
+        XCTAssertEqual(stats!.currentWeight, 180.0, accuracy: 0.01, "Current weight should be 180 lbs")
+        XCTAssertEqual(stats!.remainingWeight, 20.0, accuracy: 0.01, "20 lbs remaining to goal")
+    }
+
+    func test_milestoneStats_ReturnsNilForInvalidGoal() {
+        // Given - Invalid goal (higher than start)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let stats = weightManager.milestoneStats(goalWeight: 220.0)
+
+        // Then
+        XCTAssertNil(stats, "milestoneStats should be nil for invalid goal")
+    }
+
+    func test_milestoneStats_ReturnsNilWithInsufficientData() {
+        // Given - only one entry
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+
+        // When
+        let stats = weightManager.milestoneStats(goalWeight: 160.0)
+
+        // Then
+        XCTAssertNil(stats, "milestoneStats should be nil with insufficient data")
+    }
 }

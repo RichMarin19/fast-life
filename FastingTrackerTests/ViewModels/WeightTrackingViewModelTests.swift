@@ -205,7 +205,7 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_onViewAppear_doesNotShowSetupWithEntries() {
         // Given: Weight entries exist
-        mockWeightManager.addWeightEntry(inPreferredUnit: 175.0, date: Date(), source: .manual, completion: { _ in })
+        mockWeightManager.addWeightEntryInPreferredUnit(weight: 175.0, date: Date())
         sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
 
         // When: View appears
