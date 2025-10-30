@@ -707,6 +707,93 @@ Even though tests passed, code analysis proves these issues exist:
 **Commits:**
 - `ead1c04` - "fix: Migrate WeightManager to use thread-safe utilities (Task 1A complete)"
 
+**Step 10: Test Filters Don't Prevent Compilation - Remove Legacy Tests from Target** ❌
+
+**WHAT:** Filtering tests in Test Navigator does NOT prevent Xcode from compiling ALL test files
+
+**HOW:**
+1. User typed "WeightManager" in Test Navigator filter
+2. Display showed only WeightManager tests
+3. User clicked play button to run tests
+4. Xcode attempted to compile ALL test files in FastingTrackerTests target
+5. 47 compilation errors in EmotionEngineTests blocked test execution
+
+**EXPECTED:**
+```
+✅ Filter prevents compilation of legacy tests
+✅ Only WeightManager tests compile and run
+✅ Tests execute successfully
+```
+
+**ACTUAL:** ❌ FILTER ONLY AFFECTS DISPLAY, NOT COMPILATION
+
+**Root Cause:**
+```
+❌ Test Navigator filter = DISPLAY filter only
+❌ Xcode ALWAYS compiles ALL files in target's "Compile Sources"
+❌ EmotionEngineTests.swift is in FastingTrackerTests target
+❌ 47 compilation errors block ALL test execution
+❌ Cannot run ANY tests until EmotionEngineTests is removed from compilation
+```
+
+**THE REAL FIX: Remove EmotionEngineTests from Target's Compile Sources**
+
+**Step-by-Step (Xcode GUI - This WILL Work):**
+
+1. **Open Xcode Project Settings:**
+   - Click on **FastingTracker** project (blue icon at very top of Project Navigator)
+   - This opens project settings in main editor area
+
+2. **Select FastingTrackerTests Target:**
+   - In the middle pane under "TARGETS", click **FastingTrackerTests**
+
+3. **Go to Build Phases Tab:**
+   - At the top, click **"Build Phases"** tab
+
+4. **Expand "Compile Sources":**
+   - Find the section called **"Compile Sources"**
+   - Click the **triangle/arrow** to expand it
+   - You'll see a list of ALL .swift files being compiled
+
+5. **Find and Remove EmotionEngineTests.swift:**
+   - Scroll through the list to find **EmotionEngineTests.swift**
+   - **Select it** (click on it)
+   - Click the **"-" (minus) button** at the bottom left
+   - This removes it from compilation (file stays on disk, just not compiled)
+
+6. **Also Remove LifeGPTViewModelIntegrationTests.swift (if present):**
+   - Look for **LifeGPTViewModelIntegrationTests.swift**
+   - If found, **select it** and click **"-" (minus)**
+   - This also has legacy errors related to EmotionEngine
+
+7. **Clean and Test:**
+   ```bash
+   ⌘⇧K  # Clean Build Folder
+   ⌘U   # Run ALL tests (now safe - broken tests won't compile)
+   ```
+
+**EXPECTED RESULTS:**
+```
+✅ EmotionEngineTests.swift removed from target compilation
+✅ LifeGPTViewModelIntegrationTests.swift removed from target compilation
+✅ Clean succeeds with no errors
+✅ ⌘U compiles successfully
+✅ All WeightManager tests run and PASS
+✅ Legacy test files remain on disk (not deleted, just not compiled)
+✅ Can be re-added later when trackers are rebuilt
+```
+
+**Why This Works:**
+- Removing from "Compile Sources" = file not compiled during build/test
+- File remains in project structure (can see it in Project Navigator)
+- File remains on disk (not deleted)
+- Can re-add to target later when Mood/Energy tracker is rebuilt
+- WeightManager tests will compile and run without interference
+
+**Status:** ⏳ AWAITING USER - Remove EmotionEngineTests from Compile Sources (Build Phases)
+
+**Next:** After this fix, ⌘U will run all tests including the 5 WeightManager thread safety tests successfully
+
 ---
 
 ### Task 1B: Comprehensive Testing (12 hours / 1.5 days)
