@@ -13,6 +13,13 @@ struct WeightTrackingView: View {
     // Solution: ViewModel accesses managers passed from view's @EnvironmentObject
     @StateObject private var viewModel = WeightTrackingViewModel()
 
+    // CRITICAL FIX (Task 1F Enhancement 6): Direct observation of cardManager
+    // Problem: @ObservedObject in ViewModel doesn't propagate changes to View
+    // Solution: View DIRECTLY observes cardManager for real-time UI updates
+    // When cardManager updates @Published properties → View re-renders immediately
+    // Industry Pattern: SwiftUI observation must be direct, not through intermediate objects
+    @ObservedObject private var cardManager = TrackerCards.shared
+
     private var vm: WeightTrackingViewModel {
         return viewModel
     }
@@ -118,8 +125,8 @@ struct WeightTrackingView: View {
             midStat: stats.map { "\(Int($0.progress * 100))%" } ?? "0%",  // Progress % within current milestone
             rightStat: stats.map { "\(String(format: "%.1f", weightManager.convertWeightToDisplayUnit($0.remainingWeight))) to go" } ?? "Set goal",
             totalMilestones: totalMilestones,
-            completedMilestones: stats?.completed ?? 0,  // Number of fully completed milestones
-            cardManager: vm.cardManager  // Phase v1.3b: Use TrackerCardManager for DSCard integration
+            completedMilestones: stats?.completed ?? 0  // Number of fully completed milestones
+            // REMOVED: cardManager parameter - DSCard wrapper moved to WeightTrackingView
         )
     }
 
@@ -146,7 +153,7 @@ struct WeightTrackingView: View {
                 // LAYER 5: Drag-to-reorder cards
                 // Cards displayed in user-customized order from TrackerCardManager
                 // Industry Pattern: Apple Health - Long-press and drag to reorder
-                ForEach(vm.cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
+                ForEach(cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
                     cardView(for: cardType)
                         .transition(.opacity.combined(with: .scale))
                         .onDrag {
@@ -157,7 +164,7 @@ struct WeightTrackingView: View {
                         .onDrop(of: [.text], delegate: TrackerCardDropDelegate(
                             card: cardType,
                             draggedCard: draggedCardBinding,
-                            cardManager: vm.cardManager
+                            cardManager: cardManager
                         ))
                 }
 
@@ -242,7 +249,7 @@ struct WeightTrackingView: View {
         case .currentWeight:
             DSCard(
                 cardType: .currentWeight,
-                cardManager: vm.cardManager,
+                cardManager: cardManager,
                 canExpand: true
             ) {
                 CurrentWeightCard(
@@ -255,9 +262,15 @@ struct WeightTrackingView: View {
             }
 
         case .milestone:
+            // Calculate milestone info for title
+            let totalMilestones = 10
+            let stats = weightManager.milestoneStats(goalWeight: vm.weightGoal, totalMilestones: totalMilestones)
+            let milestoneIndex = stats?.currentIndex ?? 1
+
             DSCard(
                 cardType: .milestone,
-                cardManager: vm.cardManager,
+                title: "Milestone \(milestoneIndex)/\(totalMilestones)",
+                cardManager: cardManager,
                 canExpand: true
             ) {
                 milestoneRingCard
@@ -266,7 +279,7 @@ struct WeightTrackingView: View {
         case .chart:
             DSCard(
                 cardType: .chart,
-                cardManager: vm.cardManager,
+                cardManager: cardManager,
                 canExpand: true
             ) {
                 WeightChartView(
@@ -280,7 +293,7 @@ struct WeightTrackingView: View {
         case .stats:
             DSCard(
                 cardType: .stats,
-                cardManager: vm.cardManager,
+                cardManager: cardManager,
                 canExpand: true
             ) {
                 WeightStatsView(weightManager: weightManager)

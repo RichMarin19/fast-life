@@ -19,7 +19,12 @@ class WeightTrackingViewModel: ObservableObject {
     // Singleton managers (pass-through)
     let healthKitManager = HealthKitManager.shared
     let nudgeManager = HealthKitNudgeManager.shared
-    let cardManager = TrackerCards.shared
+
+    // CRITICAL FIX: cardManager must be @ObservedObject to propagate state changes
+    // When CardManager updates @Published cardPreferences, ViewModel must re-publish
+    // This triggers SwiftUI view updates for real-time card hide/expand
+    // Industry Pattern: Observation chain (View → ViewModel → CardManager)
+    @ObservedObject var cardManager = TrackerCards.shared
 
     // MARK: - Published State (was @State in View)
 

@@ -23,7 +23,7 @@ struct MilestoneRingCard: View {
     let rightStat: String           // e.g., "34.2 to go"
     let totalMilestones: Int        // Total milestone count
     let completedMilestones: Int    // How many completed
-    let cardManager: CardManager<TrackerCardType>  // Card manager for visibility control
+    // REMOVED: cardManager - no longer needed since DSCard wrapper moved to WeightTrackingView
 
     @State private var animateProgress: Bool = true
 
@@ -34,13 +34,10 @@ struct MilestoneRingCard: View {
     // MARK: - Body
 
     var body: some View {
-        DSCard(
-            cardType: .milestone,
-            title: "Milestone \(milestoneIndex)/\(totalMilestones)",
-            cardManager: cardManager
-        ) {
-            // PURE CONTENT - No styling! DSCard provides padding, background, shadow
-            VStack(spacing: 16) {
+        // PURE CONTENT - No DSCard wrapper!
+        // DSCard wrapper is provided by WeightTrackingView (Universal Standardization pattern)
+        // This component returns ONLY content - no styling, no card container
+        VStack(spacing: 16) {
                 // LAYER 1: Stats row ABOVE ring
                 HStack(spacing: 8) {
                     // Left: Start
@@ -142,9 +139,8 @@ struct MilestoneRingCard: View {
                     }
                 }
             }
-        }  // DSCard provides .padding(16pt), .background(), .clipShape(), .shadow()
+        }
     }
-}
 
 // MARK: - Preview
 
@@ -154,18 +150,24 @@ struct MilestoneRingCard: View {
         Color(red: 10/255, green: 18/255, blue: 36/255)
             .ignoresSafeArea()
 
-        MilestoneRingCard(
-            progress: 0.65,
-            milestoneIndex: 6,
-            centerValue: "184.2",
-            dateText: "Oct 17, 2025",
-            leftStat: "Start weight",
-            midStat: "Progress",
-            rightStat: "34.2 to go",
-            totalMilestones: 10,
-            completedMilestones: 6,
-            cardManager: TrackerCards.shared
-        )
+        // Wrap in DSCard for preview since MilestoneRingCard is now pure content
+        DSCard(
+            cardType: .milestone,
+            title: "Milestone 6/10",
+            onDismiss: { print("Dismiss tapped") }
+        ) {
+            MilestoneRingCard(
+                progress: 0.65,
+                milestoneIndex: 6,
+                centerValue: "184.2",
+                dateText: "Oct 17, 2025",
+                leftStat: "Start weight",
+                midStat: "Progress",
+                rightStat: "34.2 to go",
+                totalMilestones: 10,
+                completedMilestones: 6
+            )
+        }
         .padding(.horizontal, 20)
     }
 }
