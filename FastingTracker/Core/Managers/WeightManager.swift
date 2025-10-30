@@ -690,6 +690,128 @@ class WeightManager: ObservableObject {
         return change
     }
 
+    // MARK: - Milestone Computation (Task 1E Phase 3)
+    // Industry Pattern: Goal-based milestone tracking for long-term weight loss
+    // Reference: Apple Health, MyFitnessPal milestone systems
+
+    /// Start weight - first (oldest) weight entry
+    /// Used as baseline for milestone calculations
+    var startWeight: WeightEntry? {
+        weightEntries.last  // Array sorted by date (most recent first)
+    }
+
+    /// Total weight change from start to current
+    /// Returns nil if insufficient data (need at least 2 entries)
+    var totalWeightChange: Double? {
+        guard let start = startWeight, let current = latestWeight else {
+            return nil
+        }
+        return current.weight - start.weight
+    }
+
+    /// Calculate progress toward goal weight (0.0 to 1.0)
+    /// - Parameter goalWeight: Target weight in pounds (internal unit)
+    /// - Returns: Progress as decimal (0.0 = no progress, 1.0 = goal reached)
+    /// Returns nil if insufficient data or invalid goal
+    func progressToGoal(goalWeight: Double) -> Double? {
+        guard let start = startWeight?.weight,
+              let current = latestWeight?.weight,
+              goalWeight > 0,
+              goalWeight < start else {  // Goal must be less than start for weight loss
+            return nil
+        }
+
+        let totalDistance = start - goalWeight
+        let progressMade = start - current
+
+        // Clamp progress between 0.0 and 1.0
+        let progress = max(0.0, min(1.0, progressMade / totalDistance))
+        return progress
+    }
+
+    /// Calculate current milestone index (1-10)
+    /// Divides weight loss journey into 10 equal milestones
+    /// - Parameter goalWeight: Target weight in pounds (internal unit)
+    /// - Returns: Current milestone number (1-10), or 1 if insufficient data
+    func currentMilestoneIndex(goalWeight: Double, totalMilestones: Int = 10) -> Int {
+        guard let progress = progressToGoal(goalWeight: goalWeight) else {
+            return 1  // Default to milestone 1 if no data
+        }
+
+        // Calculate milestone (1-based index)
+        // Progress 0.0 = Milestone 1, Progress 1.0 = Milestone 10
+        let milestoneFloat = progress * Double(totalMilestones)
+        let milestone = Int(ceil(milestoneFloat))
+
+        // Ensure milestone is between 1 and totalMilestones
+        return max(1, min(totalMilestones, milestone))
+    }
+
+    /// Calculate number of completed milestones (0-10)
+    /// Completed means fully passed (100% of that milestone segment)
+    /// - Parameter goalWeight: Target weight in pounds (internal unit)
+    /// - Returns: Count of fully completed milestones (0-10)
+    func completedMilestones(goalWeight: Double, totalMilestones: Int = 10) -> Int {
+        guard let progress = progressToGoal(goalWeight: goalWeight) else {
+            return 0  // No milestones completed if no data
+        }
+
+        // Calculate completed milestones (0-based, then convert to count)
+        // Progress 0.0 = 0 completed, Progress 0.1 = 1 completed (for 10 milestones)
+        let completed = Int(floor(progress * Double(totalMilestones)))
+
+        // Ensure count is between 0 and totalMilestones
+        return max(0, min(totalMilestones, completed))
+    }
+
+    /// Calculate progress within current milestone (0.0 to 1.0)
+    /// Shows how far along within the current milestone segment
+    /// - Parameter goalWeight: Target weight in pounds (internal unit)
+    /// - Returns: Progress within current milestone (0.0-1.0), or 0.0 if insufficient data
+    func milestoneProgress(goalWeight: Double, totalMilestones: Int = 10) -> Double {
+        guard let progress = progressToGoal(goalWeight: goalWeight) else {
+            return 0.0  // No progress if no data
+        }
+
+        // Calculate progress within current milestone segment
+        // Example: If overall progress is 0.65 (65%), and we're in milestone 7:
+        // - 6 milestones completed = 0.6 progress
+        // - Current milestone progress = (0.65 - 0.6) / 0.1 = 0.5 (50% of milestone 7)
+        let milestoneFloat = progress * Double(totalMilestones)
+        let milestoneSegmentProgress = milestoneFloat - floor(milestoneFloat)
+
+        return milestoneSegmentProgress
+    }
+
+    /// Get milestone statistics for display
+    /// Convenience method that returns all milestone-related data
+    /// - Parameter goalWeight: Target weight in pounds (internal unit)
+    /// - Returns: Tuple with all milestone stats, or nil if insufficient data
+    func milestoneStats(goalWeight: Double, totalMilestones: Int = 10) -> (
+        currentIndex: Int,
+        completed: Int,
+        progress: Double,
+        startWeight: Double,
+        currentWeight: Double,
+        remainingWeight: Double
+    )? {
+        guard let start = startWeight?.weight,
+              let current = latestWeight?.weight,
+              goalWeight > 0,
+              goalWeight < start else {
+            return nil
+        }
+
+        return (
+            currentIndex: currentMilestoneIndex(goalWeight: goalWeight, totalMilestones: totalMilestones),
+            completed: completedMilestones(goalWeight: goalWeight, totalMilestones: totalMilestones),
+            progress: milestoneProgress(goalWeight: goalWeight, totalMilestones: totalMilestones),
+            startWeight: start,
+            currentWeight: current,
+            remainingWeight: max(0, current - goalWeight)
+        )
+    }
+
     // MARK: - Persistence
 
     private func saveWeightEntries() {

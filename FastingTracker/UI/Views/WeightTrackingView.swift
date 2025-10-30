@@ -102,19 +102,23 @@ struct WeightTrackingView: View {
     }
 
     /// Milestone Ring Card with computed data from weight manager
-    /// TODO: Replace placeholder data with actual milestone calculations
+    /// TASK 1E PHASE 3: Replaced placeholder data with actual milestone calculations
     /// UPDATED: Migrated to DSCard pattern (Phase v1.3b) - uses cardManager for visibility control
     private var milestoneRingCard: some View {
-        MilestoneRingCard(
-            progress: 0.65,  // TODO: Calculate actual progress to next milestone
-            milestoneIndex: 6,  // TODO: Calculate current milestone number
+        // Calculate milestone stats (all in internal pounds, converted for display)
+        let totalMilestones = 10
+        let stats = weightManager.milestoneStats(goalWeight: vm.weightGoal, totalMilestones: totalMilestones)
+
+        return MilestoneRingCard(
+            progress: stats?.progress ?? 0.0,  // Progress within current milestone (0.0-1.0)
+            milestoneIndex: stats?.currentIndex ?? 1,  // Current milestone number (1-10)
             centerValue: weightManager.latestWeight.map { String(format: "%.1f", weightManager.displayWeight(for: $0)) } ?? "---",
             dateText: weightManager.latestWeight.map { $0.date.formatted(date: .abbreviated, time: .omitted) } ?? "",
-            leftStat: "Start weight",  // TODO: Get actual start weight
-            midStat: "Progress",  // TODO: Calculate % complete
-            rightStat: vm.weightGoal > 0 ? "\(String(format: "%.1f", max(0, (weightManager.latestWeight?.weight ?? vm.weightGoal) - vm.weightGoal))) to go" : "Set goal",
-            totalMilestones: 10,
-            completedMilestones: 6,  // TODO: Calculate actual milestones completed
+            leftStat: weightManager.startWeight.map { String(format: "%.1f", weightManager.displayWeight(for: $0)) } ?? "---",
+            midStat: stats.map { "\(Int($0.progress * 100))%" } ?? "0%",  // Progress % within current milestone
+            rightStat: stats.map { "\(String(format: "%.1f", weightManager.convertWeightToDisplayUnit($0.remainingWeight))) to go" } ?? "Set goal",
+            totalMilestones: totalMilestones,
+            completedMilestones: stats?.completed ?? 0,  // Number of fully completed milestones
             cardManager: vm.cardManager  // Phase v1.3b: Use TrackerCardManager for DSCard integration
         )
     }
