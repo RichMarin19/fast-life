@@ -136,7 +136,7 @@ struct TrackerScreenShell<Content: View>: View {
 /// Implements Fast LIFe branding with semantic colors OR luxury gradient
 /// For luxury style: Uses blue→emerald gradient (Theme.ColorToken.accentInfo → accentPrimary)
 /// For standard style: Uses three-color split pattern
-private struct TrackerTitleView: View {
+struct TrackerTitleView: View {
     let title: String
     let titleColor1: Color
     let titleColor2: Color
@@ -215,7 +215,7 @@ private struct ScrollOffsetPreferenceKey: PreferenceKey {
 
 /// Animated scrolling gradient background used for the `.luxury` style
 /// The gradient subtly shifts based on the provided `phase` (0...1)
-private struct ScrollingGradientBackground: View {
+struct ScrollingGradientBackground: View {
     var phase: CGFloat
 
     // Colors chosen to evoke a premium, deep look while staying subtle

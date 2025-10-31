@@ -221,7 +221,24 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
             return
         }
 
-        cardPreferences = decoded
+        // DATA MIGRATION (Enhancement 8 - Oct 31, 2025):
+        // Filter out stale preferences for card types that no longer exist in enum
+        // Example: .milestone card was removed in Enhancement 7, but old preferences persist
+        // This caused index mismatches during drag-to-reorder operations
+        let validPreferences = decoded.filter { preference in
+            // Keep only preferences where the card type still exists in the enum
+            CardType(rawValue: preference.id) != nil
+        }
+
+        // Log migration if stale entries were found
+        #if DEBUG
+        let staleCount = decoded.count - validPreferences.count
+        if staleCount > 0 {
+            AppLogger.debug("🔄 Data Migration: Removed \(staleCount) stale card preference(s) for \(cardPreferencesKey)", category: AppLogger.persistence)
+        }
+        #endif
+
+        cardPreferences = validPreferences
 
         // Migration: Ensure all current card types have preferences
         // Handles case where new card types are added to enum

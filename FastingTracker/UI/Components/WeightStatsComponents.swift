@@ -138,9 +138,9 @@ struct StatCard: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(DSSpacing.cardPadding)
-        .background(Theme.ColorToken.cardAlt)
-        .cornerRadius(DSSpacing.cardSmallSpacing)
+        // REMOVED: .padding(), .background(), .cornerRadius() - these block parent drag gestures
+        // DSCard wrapper provides all necessary styling and gesture handling
+        // Per Apple docs: nested interactive views prevent gesture propagation
     }
 }
 
@@ -183,8 +183,8 @@ struct WeightChangeStatCard: View {
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(DSSpacing.cardPadding)
-        .background(Theme.ColorToken.cardAlt)
-        .cornerRadius(DSSpacing.cardSmallSpacing)
+        // REMOVED: .padding(), .background(), .cornerRadius() - these block parent drag gestures
+        // DSCard wrapper provides all necessary styling and gesture handling
+        // Per Apple docs: nested interactive views prevent gesture propagation
     }
 }
