@@ -1,13 +1,46 @@
-Last commit: 10fdc34 at 2025-10-30 18:58:24
-docs: Task 1F Enhancement 7 - Add device verification confirmation
+Last commit: a1c98db at 2025-10-31 12:25:30
+Fix: Enhancement 8 - Drag-to-reorder data migration for Weight Tracker
 
-User confirmed milestone card removal working perfectly on iPhone 16 Pro Max.
-Weight Tracker now displays cleaner 3-card dashboard (Current Weight, Chart, Stats)
-with no redundant milestone card, all controls functional.
+WHAT:
+Fixed drag-to-reorder failure for Weight Tracker cards caused by stale
+enum preferences persisting in UserDefaults after Enhancement 7 removed
+.milestone card type.
 
-User feedback: "It works!"
+HOW (Root Cause):
+Enhancement 7 removed .milestone from TrackerCardType enum but did NOT
+clean up UserDefaults. CardManager loaded 4 preferences (including ghost
+.milestone) but TrackerCardType.allCases returned only 3 cards, causing
+index mismatches in drag-to-reorder operations.
 
-Task 1F Enhancement 7 now COMPLETE AND VERIFIED ON DEVICE.
+THE FIX:
+Added data migration filter in CardManager.loadCardPreferences() to
+remove stale enum cases during load:
+
+let validPreferences = decoded.filter { preference in
+    CardType(rawValue: preference.id) != nil
+}
+
+RESULT:
+- All 3 cards (Current Weight, Chart, Statistics) reorder consistently
+- First launch after fix removes stale .milestone preference
+- Debug logging tracks migration success
+- Index calculations now align perfectly
+
+FILES MODIFIED:
+- FastingTracker/Core/DesignSystem/CardManager.swift (lines 224-241)
+- FastingTracker/UI/Components/WeightStatsComponents.swift (removed gesture blockers)
+- FastingTracker/UI/Views/TrackerScreenShell.swift (visibility changes)
+- docs/handoffs/HANDOFF.md (documented fix + lesson learned)
+- docs/handoffs/HANDOFF-ARCHIVE-OCT30-ENHANCEMENT8-DRAG-ISSUE.md (new archive)
+
+CRITICAL LESSON:
+When removing enum cases from Codable types, ALWAYS add data migration
+to clean up persisted values in UserDefaults/CoreData/CloudKit.
+
+VERIFICATION:
+✅ Build succeeded
+✅ Device testing confirmed consistent reordering
+✅ Debug log shows successful migration
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 

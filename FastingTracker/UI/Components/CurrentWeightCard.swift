@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 // MARK: - Current Weight Card
 
@@ -9,20 +10,35 @@ struct CurrentWeightCard: View {
     @Binding var showingAddWeight: Bool
     @Binding var showingTrends: Bool
 
+    // MARK: - Helpers
+
+    private var unitAbbreviation: String {
+        weightManager.currentUnitAbbreviation
+    }
+
+    /// Converts internal pounds to the user's preferred display unit and formats it.
+    private func formattedWeight(_ pounds: Double, maximumFractionDigits: Int = 1) -> String {
+        let displayValue = weightManager.convertWeightToDisplayUnit(pounds)
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = maximumFractionDigits
+        formatter.minimumFractionDigits = displayValue.truncatingRemainder(dividingBy: 1).isZero ? 0 : min(1, maximumFractionDigits)
+        formatter.locale = Locale.current
+
+        return formatter.string(from: NSNumber(value: displayValue)) ?? String(format: "%.\(maximumFractionDigits)f", displayValue)
+    }
+
     /// Calculates total weight change from START (first entry) to CURRENT (latest entry)
     /// Returns: (totalChange: Double, isLoss: Bool)
     /// Positive = loss, Negative = gain
     private func calculateTotalProgress() -> (amount: Double, isLoss: Bool)? {
-        guard weightManager.weightEntries.count >= 2 else { return nil }
-
-        // Get FIRST entry (start weight from onboarding)
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
-        guard let startWeight = sortedEntries.first?.weight,
-              let currentWeight = sortedEntries.last?.weight else {
+        guard let start = weightManager.resolvedStartWeight()?.weight,
+              let current = weightManager.latestWeight?.weight else {
             return nil
         }
 
-        let change = startWeight - currentWeight
+        let change = start - current
         return (amount: abs(change), isLoss: change > 0)
     }
 
@@ -63,9 +79,7 @@ struct CurrentWeightCard: View {
 
     /// Gets starting weight (first entry from onboarding)
     private func getStartWeight() -> Double? {
-        guard weightManager.weightEntries.count >= 1 else { return nil }
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
-        return sortedEntries.first?.weight
+        return weightManager.resolvedStartWeight()?.weight
     }
 
     /// Calculates weight remaining to reach goal
@@ -82,15 +96,9 @@ struct CurrentWeightCard: View {
     /// Returns nil if insufficient data or goal not set
     private func calculateProgressPercentage() -> Double? {
         // Require goal weight to be set
-        guard weightGoal > 0 else { return nil }
-
-        // Need at least 2 entries (start and current)
-        guard weightManager.weightEntries.count >= 2 else { return nil }
-
-        // Get starting weight (earliest entry) and current weight (latest entry)
-        let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
-        guard let startingWeight = sortedEntries.first?.weight,
-              let currentWeight = sortedEntries.last?.weight else {
+        guard weightGoal > 0,
+              let startingWeight = weightManager.resolvedStartWeight()?.weight,
+              let currentWeight = weightManager.latestWeight?.weight else {
             return nil
         }
 
@@ -127,7 +135,7 @@ struct CurrentWeightCard: View {
                         Text("\(weightManager.displayWeight(for: latest), specifier: "%.1f")")
                             .font(DSTypography.displayXL)
                             .foregroundColor(Color("FLPrimary"))
-                        Text("lbs")
+                        Text(unitAbbreviation)
                             .font(.title2)
                             .foregroundColor(Color("FLSuccess"))
                     }
@@ -148,7 +156,7 @@ struct CurrentWeightCard: View {
                 if let progress = calculateTotalProgress() {
                     MotivationBanner(
                         message: progress.isLoss
-                            ? "You've lost \((progress.amount), default: "%.1f") lbs - keep it up!"
+                            ? "You've lost \(formattedWeight(progress.amount)) \(unitAbbreviation) - keep it up!"
                             : "Progress isn't always linear - you're doing great",
                         isPositive: progress.isLoss
                     )
@@ -173,7 +181,7 @@ struct CurrentWeightCard: View {
                     Button(action: {
                         showingGoalEditor = true
                     }) {
-                        GoalBadge(goalText: "\(Int(weightGoal)) lbs")
+                        GoalBadge(goalText: "\(formattedWeight(weightGoal)) \(unitAbbreviation)")
                     }
                     .buttonStyle(.plain)  // Removes default button styling
 
@@ -184,12 +192,17 @@ struct CurrentWeightCard: View {
                        let progress = calculateTotalProgress(),
                        let startWeight = getStartWeight(),
                        let weightToGo = calculateWeightToGo() {
+                        let weightLostDisplay = formattedWeight(progress.amount)
+                        let weightToGoDisplay = formattedWeight(weightToGo)
+
                         CircularProgressRing(
                             percentage: progressPercentage,
-                            weightLost: progress.amount,
-                            weightToGo: weightToGo,
+                            weightLostText: weightLostDisplay,
+                            weightToGoText: weightToGo > 0 ? weightToGoDisplay : nil,
+                            unitAbbreviation: unitAbbreviation,
                             startWeight: startWeight,
-                            goalWeight: weightGoal
+                            goalWeight: weightGoal,
+                            milestoneCount: weightManager.milestoneCount
                         )
                         .padding(.top, 8)
                     }
@@ -236,10 +249,12 @@ struct CurrentWeightCard: View {
 /// Reference: https://developer.apple.com/design/human-interface-guidelines/charts
 struct CircularProgressRing: View {
     let percentage: Double
-    let weightLost: Double
-    let weightToGo: Double?
+    let weightLostText: String
+    let weightToGoText: String?
+    let unitAbbreviation: String
     let startWeight: Double?
     let goalWeight: Double
+    let milestoneCount: Int
 
     var body: some View {
         VStack(spacing: 16) {
@@ -278,7 +293,7 @@ struct CircularProgressRing: View {
                         .font(DSTypography.displayL)
 
                     // Large percentage
-                    Text("\(percentage, specifier: "%.0f")%")
+                    Text("\(Int(round(percentage)))%")
                         .font(DSTypography.displayXLRounded)
                         .foregroundColor(progressColor(for: percentage))
 
@@ -294,7 +309,7 @@ struct CircularProgressRing: View {
             HStack(spacing: 24) {
                 // Weight Lost (left)
                 VStack(spacing: 2) {
-                    Text("\((weightLost), specifier: "%.1f") \("lbs")")
+                    Text("\(weightLostText) \(unitAbbreviation)")
                         .font(DSTypography.statValueSmall)
                         .foregroundColor(Color("FLSuccess"))
                     Text("LOST")
@@ -309,9 +324,9 @@ struct CircularProgressRing: View {
                     .frame(width: 1, height: 35)
 
                 // Weight To Go (right)
-                if let toGo = weightToGo, toGo > 0 {
+                if let toGoText = weightToGoText {
                     VStack(spacing: 2) {
-                        Text("\((toGo), specifier: "%.1f") \("lbs")")
+                        Text("\(toGoText) \(unitAbbreviation)")
                             .font(DSTypography.statValueSmall)
                             .foregroundColor(.orange)
                         Text("TO GO")
@@ -322,28 +337,29 @@ struct CircularProgressRing: View {
                 }
             }
 
-            // 10 Milestone Dots (like Image 2!)
-            VStack(spacing: 8) {
-                // Dots row
-                HStack(spacing: 12) {
-                    ForEach(1...10, id: \.self) { milestone in
-                        Circle()
-                            .fill(milestoneColor(for: milestone, percentage: percentage))
-                            .frame(width: 20, height: 20)
-                            .overlay(
-                                Circle()
-                                    .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
-                            )
-                    }
-                }
+            if milestoneCount > 0 {
+                let completed = milestonesCompleted(for: percentage, total: milestoneCount)
 
-                // Progress text
-                Text("\(milestonesCompleted(for: percentage)) OF 10 MILESTONES COMPLETE")
-                    .font(DSTypography.statLabel)
-                    .foregroundColor(.secondary)
-                    .tracking(0.5)
+                VStack(spacing: 8) {
+                    HStack(spacing: 12) {
+                        ForEach(0..<milestoneCount, id: \.self) { index in
+                            Circle()
+                                .fill(milestoneColor(for: index, total: milestoneCount, completed: completed))
+                                .frame(width: 20, height: 20)
+                                .overlay(
+                                    Circle()
+                                        .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
+                        }
+                    }
+
+                    Text("\(completed) OF \(milestoneCount) MILESTONES COMPLETE")
+                        .font(DSTypography.statLabel)
+                        .foregroundColor(.secondary)
+                        .tracking(0.5)
+                }
+                .padding(.top, 8)
             }
-            .padding(.top, 8)
         }
         .padding(.vertical, 20)
         .padding(.horizontal, 24)
@@ -371,31 +387,27 @@ struct CircularProgressRing: View {
         }
     }
 
-    /// Returns how many milestones are completed (0-10)
-    private func milestonesCompleted(for percentage: Double) -> Int {
-        return Int((percentage / 100) * 10)
+    /// Returns how many milestones are completed based on total count
+    private func milestonesCompleted(for percentage: Double, total: Int) -> Int {
+        guard total > 0 else { return 0 }
+        return Int((percentage / 100) * Double(total))
     }
 
-    /// Returns color for each milestone dot matching the ring's gradient
-    /// Creates smooth blue → cyan → green progression like the circular ring
-    private func milestoneColor(for milestone: Int, percentage: Double) -> Color {
-        let completed = milestonesCompleted(for: percentage)
+    /// Returns color for each milestone dot using a simple gradient based on position
+    private func milestoneColor(for index: Int, total: Int, completed: Int) -> Color {
+        guard index < total else { return Color.gray.opacity(0.2) }
 
-        if milestone <= completed {
-            // Filled dots: smooth gradient matching ring (blue → cyan → green)
-            // Distribute colors evenly across 10 milestones
-            switch milestone {
-            case 1...3:
+        if index < completed {
+            let ratio = total > 1 ? Double(index) / Double(max(total - 1, 1)) : 1
+            switch ratio {
+            case ..<0.33:
                 return Color("FLPrimary")
-            case 4...6:
+            case ..<0.66:
                 return .cyan
-            case 7...10:
-                return .green
             default:
-                return Color("FLPrimary")
+                return .green
             }
         } else {
-            // Empty dots: light gray
             return Color.gray.opacity(0.2)
         }
     }

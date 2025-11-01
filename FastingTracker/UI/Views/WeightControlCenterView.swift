@@ -542,6 +542,196 @@ struct WeightControlCenterView: View {
             Divider()
                 .background(Theme.ColorToken.dividerOnDark)
 
+            // Start Weight Editor
+            VStack(alignment: .leading, spacing: DSSpacing.cardElementSpacing) {
+                Text("Start Weight")
+                    .font(DSTypography.listTitle)
+                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+
+                Text("Set the baseline for your weight-loss journey. Choose a date and we’ll pull your average weight from that day automatically. If no data exists, enter it manually.")
+                    .font(DSTypography.cardCaption)
+                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
+                    DatePicker(
+                        "Start Date",
+                        selection: $viewModel.startWeightDate,
+                        in: ...Date(),
+                        displayedComponents: .date
+                    )
+                    .datePickerStyle(.compact)
+                    .labelsHidden()
+                    .colorScheme(.dark)
+                    .padding(.vertical, DSSpacing.cardElementSpacing)
+                    .padding(.horizontal, DSSpacing.cardElementSpacing)
+                    .background(Theme.ColorToken.cardHeaderOnDark)
+                    .cornerRadius(10)
+                    .accessibilityLabel("Start date")
+                    .onChange(of: viewModel.startWeightDate) { _, newDate in
+                        viewModel.handleStartWeightDateChange(newDate)
+                    }
+
+                    ZStack(alignment: .trailing) {
+                        TextField("Enter start weight", text: $viewModel.startWeightString)
+                            .keyboardType(.decimalPad)
+                            .font(DSTypography.displayS)
+                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                            .multilineTextAlignment(.center)
+                            .monospacedDigit()
+                            .padding(DSSpacing.cardElementSpacing)
+                            .background(Theme.ColorToken.cardHeaderOnDark)
+                            .cornerRadius(10)
+                            .onChange(of: viewModel.startWeightString) { _, newValue in
+                                viewModel.formatStartWeightInput(newValue)
+                            }
+
+                        if viewModel.isFetchingStartWeight {
+                            ProgressView()
+                                .scaleEffect(0.8)
+                                .padding(.trailing, DSSpacing.cardElementSpacing)
+                        }
+                    }
+
+                    Text(viewModel.unitAbbreviation)
+                        .font(DSTypography.statValueSmall)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                        .accessibilityHidden(true)
+                }
+                .padding(.horizontal, DSSpacing.cardPadding)
+                .padding(.vertical, DSSpacing.cardElementSpacing)
+                .background(Theme.ColorToken.card)
+                .cornerRadius(DSSpacing.cardSmallSpacing)
+                .shadow(color: Theme.ColorToken.shadowCard.opacity(0.2), radius: 8, x: 0, y: 4)
+
+                if let status = viewModel.startWeightStatusMessage {
+                    Text(status)
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+
+                if let error = viewModel.startWeightErrorMessage {
+                    Text(error)
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.stateError)
+                }
+
+                Button(action: {
+                    viewModel.saveStartWeight()
+                }) {
+                    Text("Save Start Weight")
+                        .font(DSTypography.buttonPrimary)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                        .frame(maxWidth: .infinity)
+                        .padding(DSSpacing.cardElementSpacing)
+                        .background(Theme.ColorToken.accentPrimary)
+                        .cornerRadius(DSSpacing.cardSmallSpacing)
+                }
+                .disabled(!viewModel.canSaveStartWeight)
+                .opacity(viewModel.canSaveStartWeight ? 1.0 : 0.5)
+            }
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // Goal weight editor
+            VStack(alignment: .center, spacing: DSSpacing.cardSmallSpacing) {
+                Text("Goal Weight")
+                    .font(DSTypography.iconButton)
+                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+                HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
+                    TextField("Enter goal", text: $viewModel.weightGoalString)
+                        .keyboardType(.decimalPad)
+                        .font(DSTypography.displayM)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                        .multilineTextAlignment(.center)
+                        .monospacedDigit()
+                        .fixedSize()
+                        .onChange(of: viewModel.weightGoalString) { _, newValue in
+                            viewModel.formatWeightGoalInput(newValue)
+                        }
+
+                    Text("lbs")
+                        .font(DSTypography.statValueSmall)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                        .accessibilityHidden(true)
+                }
+                .accessibilityElement(children: .combine)
+                .accessibilityLabel("Goal weight \(viewModel.weightGoalString) pounds")
+                .accessibilityHint("Double tap to edit")
+                .padding(.leading, 28)
+                .padding(.trailing, DSSpacing.cardPadding)
+                .padding(.vertical, DSSpacing.cardElementSpacing)
+                .background(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
+                )
+
+                if let goal = Double(viewModel.weightGoalString),
+                   goal > 0,
+                   let currentWeight = viewModel.weightManager.latestWeight?.weight {
+                    let toGo = currentWeight - goal
+                    if toGo > 0 {
+                        HStack(spacing: DSSpacing.cardSmallSpacing) {
+                            Image(systemName: "target")
+                                .font(DSTypography.iconButton)
+                                .foregroundColor(Theme.ColorToken.accentGold)
+                            Text("\(String(format: "%.1f", toGo)) lbs to go")
+                                .font(DSTypography.cardTitle)
+                                .foregroundColor(Theme.ColorToken.accentGold)
+                        }
+                        .padding(.horizontal, DSSpacing.cardPadding)
+                        .padding(.vertical, DSSpacing.cardElementSpacing)
+                        .background(
+                            Capsule()
+                                .fill(Theme.ColorToken.accentGold.opacity(0.15))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(Theme.ColorToken.accentGold.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                        .shadow(color: Theme.ColorToken.accentGold.opacity(0.2), radius: 8, x: 0, y: 4)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, DSSpacing.cardElementSpacing)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity)
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
+            // Milestone customization
+            VStack(alignment: .leading, spacing: DSSpacing.cardElementSpacing) {
+                Text("Milestones")
+                    .font(DSTypography.listTitle)
+                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+
+                Text("Choose how many milestones to show in your progress journey.")
+                    .font(DSTypography.cardCaption)
+                    .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+
+                Stepper(value: $viewModel.milestoneCount, in: 0...10) {
+                    Text(viewModel.milestoneCount == 1 ? "1 milestone" : "\(viewModel.milestoneCount) milestones")
+                        .font(DSTypography.cardTitle)
+                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
+                }
+                .colorScheme(.dark)
+                .onChange(of: viewModel.milestoneCount) { _, newValue in
+                    viewModel.updateMilestoneCount(newValue)
+                }
+
+                if viewModel.milestoneCount == 0 {
+                    Text("Milestones hidden. The progress ring will show a continuous arc.")
+                        .font(DSTypography.cardCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                }
+            }
+
+            Divider()
+                .background(Theme.ColorToken.dividerOnDark)
+
             // Show goal line toggle
             Toggle(isOn: $showGoalLine) {
                 VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
@@ -554,83 +744,9 @@ struct WeightControlCenterView: View {
                 }
             }
             .tint(Theme.ColorToken.accentPrimary)
-
-            if showGoalLine {
-                Divider()
-                    .background(Theme.ColorToken.dividerOnDark)
-
-                // Goal weight editor - Centered design with grouped value+unit
-                // UX/UI Fix #1: Value and unit grouped and centered together
-                VStack(alignment: .center, spacing: DSSpacing.cardSmallSpacing) {
-                    // "Goal Weight" label - natural width
-                    Text("Goal Weight")
-                        .font(DSTypography.iconButton)
-                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
-
-                    // Compact teal container - matches gold pill size
-                    // "150.0" perfectly centered under "Goal Weight" label
-                    HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
-                        TextField("Enter goal", text: $viewModel.weightGoalString)
-                            .keyboardType(.decimalPad)
-                            .font(DSTypography.displayM)
-                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                            .multilineTextAlignment(.center)
-                            .monospacedDigit()  // Sprint 1: Prevents jitter when digits change
-                            .fixedSize()  // Shrink to content width
-                            .onChange(of: viewModel.weightGoalString) { _, newValue in
-                                // UX/UI Fix #2: Restrict to one decimal place, max 999.9
-                                viewModel.formatWeightGoalInput(newValue)
-                            }
-
-                        Text("lbs")
-                            .font(DSTypography.statValueSmall)
-                            .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                            .accessibilityHidden(true)  // Sprint 1: Avoid redundant "lbs" announcement
-                    }
-                    .accessibilityElement(children: .combine)
-                    .accessibilityLabel("Goal weight \(viewModel.weightGoalString) pounds")
-                    .accessibilityHint("Double tap to edit")
-                    .padding(.leading, 28)  // Shift entire HStack right to center "150.0"
-                    .padding(.trailing, DSSpacing.cardPadding)
-                    .padding(.vertical, DSSpacing.cardElementSpacing)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
-                    )
-                    // REFINEMENT #3: Enhanced progress metric with pill background
-                    // Behavioral Science: Goal gradient effect + visual reward
-                    // Issue #3: Centered horizontally
-                    if let goal = Double(viewModel.weightGoalString),
-                       goal > 0,
-                       let currentWeight = viewModel.weightManager.latestWeight?.weight {
-                        let toGo = currentWeight - goal
-                        if toGo > 0 {
-                            HStack(spacing: DSSpacing.cardSmallSpacing) {
-                                Image(systemName: "target")
-                                    .font(DSTypography.iconButton)
-                                    .foregroundColor(Theme.ColorToken.accentGold)
-                                Text("\(String(format: "%.1f", toGo)) lbs to go")
-                                    .font(DSTypography.cardTitle)
-                                    .foregroundColor(Theme.ColorToken.accentGold)
-                            }
-                            .padding(.horizontal, DSSpacing.cardPadding)
-                            .padding(.vertical, DSSpacing.cardElementSpacing)
-                            .background(
-                                Capsule()
-                                    .fill(Theme.ColorToken.accentGold.opacity(0.15))
-                                    .overlay(
-                                        Capsule()
-                                            .stroke(Theme.ColorToken.accentGold.opacity(0.3), lineWidth: 1)
-                                    )
-                            )
-                            .shadow(color: Theme.ColorToken.accentGold.opacity(0.2), radius: 8, x: 0, y: 4)
-                            .frame(maxWidth: .infinity)  // Center horizontally
-                            .padding(.top, DSSpacing.cardElementSpacing)
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity)  // Center the entire VStack horizontally
-            }
+        }
+        .onAppear {
+            viewModel.prepareStartWeightDefaults()
         }
     }
 

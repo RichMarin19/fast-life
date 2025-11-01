@@ -17,6 +17,7 @@ class WeightControlCenterViewModel: ObservableObject {
     let optOutManager = ContentOptOutManager.shared
     let cardManager = TrackerCards.shared
     let progressStoryCardManager = ProgressStoryCards.shared
+    let healthKitManager = HealthKitManager.shared
 
     // MARK: - Published State (was @State in View)
 
@@ -33,6 +34,12 @@ class WeightControlCenterViewModel: ObservableObject {
 
     // Goals
     @Published var weightGoalString: String = ""
+    @Published var startWeightString: String = ""
+    @Published var startWeightDate: Date = Date()
+    @Published var isFetchingStartWeight: Bool = false
+    @Published var startWeightStatusMessage: String?
+    @Published var startWeightErrorMessage: String?
+    @Published var milestoneCount: Int = 10
 
     // Sync State
     @Published var localSyncEnabled: Bool = true
@@ -152,6 +159,7 @@ class WeightControlCenterViewModel: ObservableObject {
         loadOptedOutContent()
         loadExperienceOptOuts()
         loadWeightNotificationSettings()
+        initializeStartWeight()
     }
 
     // MARK: - Computed Properties
@@ -273,6 +281,147 @@ class WeightControlCenterViewModel: ObservableObject {
         if let encoded = try? JSONEncoder().encode(cardOrder) {
             userDefaults.set(encoded, forKey: cardOrderKey)
         }
+    }
+
+    // MARK: - Start Weight Management
+
+    var unitAbbreviation: String {
+        weightManager.currentUnitAbbreviation
+    }
+
+    var canSaveStartWeight: Bool {
+        Double(startWeightString) != nil
+    }
+
+    func prepareStartWeightDefaults() {
+        if startWeightString.isEmpty {
+            handleStartWeightDateChange(startWeightDate)
+        }
+    }
+
+    func handleStartWeightDateChange(_ date: Date) {
+        startWeightDate = date
+        fetchStartWeight(for: date)
+    }
+
+    func formatStartWeightInput(_ input: String) {
+        var formatted = input.filter { $0.isNumber || $0 == "." }
+
+        let components = formatted.components(separatedBy: ".")
+        if components.count > 2 {
+            formatted = components[0] + "." + components[1...].joined()
+        }
+
+        if let dotIndex = formatted.firstIndex(of: ".") {
+            let afterDot = formatted.suffix(from: formatted.index(after: dotIndex))
+            if afterDot.count > 1 {
+                formatted = String(formatted.prefix(upTo: formatted.index(dotIndex, offsetBy: 2)))
+            }
+        }
+
+        let hasDecimal = formatted.contains(".")
+        let valueBeforeLimiting = Double(formatted) ?? 0
+        if hasDecimal && valueBeforeLimiting > 999.9 {
+            formatted = "999.9"
+        } else {
+            if let dotIndex = formatted.firstIndex(of: ".") {
+                let beforeDot = formatted.prefix(upTo: dotIndex)
+                if beforeDot.count > 3 {
+                    formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
+                }
+            } else if formatted.count > 3 {
+                formatted = String(formatted.prefix(3))
+            }
+        }
+
+        startWeightString = formatted
+    }
+
+    func fetchStartWeight(for date: Date) {
+        startWeightErrorMessage = nil
+        isFetchingStartWeight = true
+        startWeightStatusMessage = "Fetching weight data…"
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
+            isFetchingStartWeight = false
+            startWeightStatusMessage = nil
+            startWeightErrorMessage = "Unable to calculate date range."
+            return
+        }
+
+        if healthKitManager.isWeightAuthorized() {
+            healthKitManager.fetchWeightData(startDate: startOfDay, endDate: endOfDay, resetAnchor: true) { [weak self] entries in
+                Task { @MainActor in
+                    self?.applyStartWeightData(hkEntries: entries, date: date)
+                }
+            }
+        } else {
+            applyStartWeightData(hkEntries: [], date: date)
+        }
+    }
+
+    func saveStartWeight() {
+        startWeightErrorMessage = nil
+        guard let value = Double(startWeightString), value > 0 else {
+            startWeightErrorMessage = "Enter a valid start weight."
+            return
+        }
+
+        weightManager.setStartWeightOverride(value, date: startWeightDate)
+        startWeightStatusMessage = "Start weight saved."
+    }
+
+    private func initializeStartWeight() {
+        if let override = weightManager.startWeightOverride {
+            startWeightString = formatDisplayWeight(fromPounds: override)
+            startWeightDate = weightManager.startWeightDate ?? Date()
+            startWeightStatusMessage = "Using custom start weight."
+        } else if let earliest = weightManager.weightEntries.last {
+            startWeightString = formatDisplayWeight(fromPounds: earliest.weight)
+            startWeightDate = earliest.date
+            startWeightStatusMessage = "Baseline from earliest entry."
+        } else {
+            startWeightDate = Date()
+            startWeightString = ""
+            startWeightStatusMessage = nil
+        }
+
+        milestoneCount = weightManager.milestoneCount
+    }
+
+    private func formatDisplayWeight(fromPounds pounds: Double) -> String {
+        let displayValue = weightManager.convertWeightToDisplayUnit(pounds)
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 1
+        formatter.minimumFractionDigits = displayValue.truncatingRemainder(dividingBy: 1).isZero ? 0 : 1
+        return formatter.string(from: NSNumber(value: displayValue)) ?? String(format: "%.1f", displayValue)
+    }
+
+    private func applyStartWeightData(hkEntries: [WeightEntry], date: Date) {
+        let calendar = Calendar.current
+        let localEntries = weightManager.weightEntries.filter { calendar.isDate($0.date, inSameDayAs: date) }
+        let combinedWeights = (hkEntries + localEntries).map { $0.weight }
+
+        isFetchingStartWeight = false
+
+        guard !combinedWeights.isEmpty else {
+            startWeightStatusMessage = "No weight logged for this date. Enter a value manually."
+            startWeightString = ""
+            return
+        }
+
+        let average = combinedWeights.reduce(0, +) / Double(combinedWeights.count)
+        startWeightString = formatDisplayWeight(fromPounds: average)
+        startWeightStatusMessage = "Auto-filled from \(combinedWeights.count) data source\(combinedWeights.count == 1 ? "" : "s")."
+    }
+
+    func updateMilestoneCount(_ newValue: Int) {
+        let sanitized = max(0, min(10, newValue))
+        milestoneCount = sanitized
+        weightManager.setMilestoneCount(sanitized)
     }
 
     // MARK: - HealthKit Sync Methods

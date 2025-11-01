@@ -381,14 +381,9 @@ struct TrackerCardDropDelegate: DropDelegate {
     func performDrop(info: DropInfo) -> Bool {
         guard let draggedCard = draggedCard else { return false }
 
-        // Get current visible cards in order
-        let visibleCards = cardManager.getVisibleCardsInOrder()
-
-        // Find indices of dragged and target cards
-        guard let fromIndex = visibleCards.firstIndex(of: draggedCard),
-              let toIndex = visibleCards.firstIndex(of: card) else {
-            return false
-        }
+        // Use canonical sort order so hidden cards (history) don't break index lookups
+        let fromIndex = cardManager.getCardOrder(draggedCard)
+        let toIndex = cardManager.getCardOrder(card)
 
         // Only reorder if indices are different
         if fromIndex != toIndex {

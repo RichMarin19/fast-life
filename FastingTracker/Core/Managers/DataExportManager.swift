@@ -215,9 +215,9 @@ class DataExportManager {
         stats["Longest Streak"] = "\(longestStreak) days"
 
         // Weight stats
-        if !weightEntries.isEmpty {
-            let startWeight = weightEntries.last!.weight
-            let currentWeight = weightEntries.first!.weight
+        if !weightEntries.isEmpty,
+           let startWeight = resolvedStartWeight(for: weightEntries),
+           let currentWeight = weightEntries.first?.weight {
             let weightChange = currentWeight - startWeight
             let changeSign = weightChange >= 0 ? "+" : ""
 
@@ -257,6 +257,17 @@ class DataExportManager {
         stats["App Version"] = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "Unknown"
 
         return stats
+    }
+
+    private func resolvedStartWeight(for weightEntries: [WeightEntry]) -> Double? {
+        let defaults = UserDefaults.standard
+        if let override = defaults.object(forKey: "weightStartOverride") as? Double, override > 0 {
+            return override
+        }
+        if let legacy = defaults.object(forKey: "startWeight") as? Double, legacy > 0 {
+            return legacy
+        }
+        return weightEntries.last?.weight
     }
 
     // MARK: - Formatting Helpers

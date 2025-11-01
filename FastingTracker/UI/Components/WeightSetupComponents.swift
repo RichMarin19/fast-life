@@ -231,22 +231,23 @@ struct FirstTimeWeightSetupView: View {
             return
         }
 
+        let startWeightPounds = weightManager.convertToInternalUnit(startWeight)
+
         // Save start weight entry with the selected date
         let entry = WeightEntry(
             id: UUID(),
             date: startDate,
-            weight: startWeight,
+            weight: startWeightPounds,
             bmi: nil,
             bodyFat: nil,
             source: .manual
         )
         weightManager.addWeightEntry(entry)
 
-        // Save start weight and date to UserDefaults for future reference
-        UserDefaults.standard.set(startWeight, forKey: "startWeight")
-        UserDefaults.standard.set(startDate, forKey: "startDate")
+        // Persist start weight override for downstream calculations
+        weightManager.setStartWeightOverride(startWeight, date: startDate)
 
-        AppLogger.info("Saved start weight: \(startWeight) lbs on \(startDate.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
+        AppLogger.info("Saved start weight: \(startWeightPounds) lbs on \(startDate.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
 
         // Save goal weight
         self.weightGoal = goalWeight

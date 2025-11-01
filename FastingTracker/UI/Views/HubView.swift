@@ -230,8 +230,8 @@ struct TrackerSummaryCard: View {
     private var calculateProgress: Double? {
         guard let currentWeight = weightManager.latestWeight?.weight else { return nil }
 
-        // Start weight = oldest weight entry (journey start)
-        guard let startWeight = weightManager.weightEntries.last?.weight else { return nil }
+        // Start weight = user-defined override or oldest entry
+        guard let startWeight = weightManager.resolvedStartWeight()?.weight else { return nil }
 
         // Goal weight from UserDefaults (already bound to @AppStorage)
         let totalGoal = startWeight - goalWeight

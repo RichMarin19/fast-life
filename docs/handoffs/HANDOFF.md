@@ -11,8 +11,80 @@
 > **Version:** 2.3.3 Build 18
 
 ---
+### Enhancement 15 – Start Weight Capsule Alignment (Oct 31, 2025)
+
+  - What: Align the Start Weight editor row with the Goal Weight capsule styling so both read as paired
+    milestones in the Goals card.
+  - How: Swap the Start Weight container’s neutral card background for the same
+    Theme.ColorToken.accentPrimary capsule treatment, mirror the corner radius/overlay shadow, and
+    tighten horizontal padding to match the Goal Weight block.
+  - Expected: Goals card shows two visually identical capsules (Start Weight + Goal Weight), reinforcing
+    single-source-of-truth messaging and reducing UI drift.
+  - Actual: Start Weight still lives in a gray card with nested dark boxes, so it looks detached from the
+    goal capsule; styling pass pending once workspace-write access is available.
 
 ## ✅ RECENTLY RESOLVED ISSUE - Enhancement 8
+
+### ✅ Task 1F Enhancement 9 - Canonical Card Reorder Indices (Oct 31, 2025)
+
+**WHAT:**  
+Weight Tracker drag-and-drop sporadically failed—especially for the Statistics card—after the milestone card was retired. Long-press showed the “+” lift affordance, but dropping snapped the card back into its original slot.
+
+**HOW (Root Cause):**  
+`TrackerCardDropDelegate.performDrop` looked up source/destination positions from `cardManager.getVisibleCardsInOrder()`. When a hidden card (e.g., History) still existed in persisted preferences, the visible array indices no longer matched the canonical `CardManager` ordering, so `reorderCards(from:to:)` received mismatched indices and ignored the move.
+
+**EXPECTED:**  
+- Long-press any visible card → drag with lift animation  
+- Dropping between other cards → updates order immediately  
+- Persistence reflects the new order across app restarts
+
+**ACTUAL (Before Fix):**  
+- Current Weight & Chart: drag worked, drop succeeded intermittently  
+- Statistics: drag worked, drop almost always snapped back  
+- UserDefaults retained old order despite attempted moves
+
+**THE FIX:**  
+**File:** `/FastingTracker/UI/Views/WeightTrackingView.swift:382-399`  
+Replaced visible-array lookups with canonical indices:
+
+```swift
+let fromIndex = cardManager.getCardOrder(draggedCard)
+let toIndex = cardManager.getCardOrder(card)
+
+if fromIndex != toIndex {
+    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+        cardManager.reorderCards(from: fromIndex, to: toIndex)
+    }
+}
+```
+
+This uses the authoritative sort order (which includes hidden cards) so the manager always receives valid indices.
+
+**VERIFICATION:**  
+- ✅ Simulator & device: all visible cards reorder reliably  
+- ✅ Multiple hidden/visible combinations tested (History toggled off/on)  
+- ✅ App relaunch preserves the new order
+
+**STATUS:** ✅ COMPLETE – Drag-and-drop honors canonical preferences and persists correctly.
+
+### ✅ Task 1F Enhancement 10 - Weight Tracker Units Respect User Preference (Oct 31, 2025)
+
+**WHAT:**  
+The Current Weight card still hard-coded “lbs” in multiple spots (banner, goal badge, progress ring). Metric users saw pound units and raw pound values (e.g., 5.4273… lbs) even when their preference was kilograms.
+
+**HOW (Root Cause):**  
+`CurrentWeightCard` calculated weight deltas in internal pounds and rendered them directly (`Text(... "lbs")`). Neither the motivation banner nor the circular progress ring converted through `WeightManager`’s unit helpers, so UI ignored the user’s preferred unit.
+
+**EXPECTED:**  
+All weight surfaces in the card (banner copy, goal badge, progress ring stats) should display in the user’s selected unit with clean formatting (no excessive decimals).
+
+**ACTUAL (Fix):**  
+- Added `formattedWeight(_:)` helper using `WeightManager.convertWeightToDisplayUnit` + `NumberFormatter` to trim trailing zeroes.  
+- Introduced `unitAbbreviation` binding to reuse the manager’s abbreviation everywhere.  
+- Updated MotivationBanner, GoalBadge, and `CircularProgressRing` to consume formatted strings instead of raw pounds.  
+- Progress ring now accepts pre-formatted labels (`weightLostText`, `weightToGoText`) and renders `kg/lbs` dynamically.
+
+**STATUS:** ✅ COMPLETE – Weight tracker UI reflects user-selected units and rounds values cleanly.
 
 ### ✅ Task 1F Enhancement 8 - Drag/Drop Fixed (Data Migration Implemented) - Oct 31, 2025
 
@@ -136,6 +208,82 @@ cardPreferences = validPreferences
 **WHAT:** Comprehensive testing on iPhone 16 Pro Max
 **Scope:** Functional testing, stress testing, performance testing
 **Status:** Blocked by Enhancement 8 drag issue
+
+### Task 1F Enhancement 12 - Progress Ring Percentage Uses Goal Completion ✅ COMPLETE
+
+**WHAT:**  
+The Progress Journey ring now reflects true goal completion. Previously it displayed 16% despite only 2.4 lbs being lost toward a 31 lb goal (~7.7%).
+
+**HOW:**  
+- `calculateProgressPercentage()` now uses `WeightManager.resolvedStartWeight()` and the latest weight instead of the earliest entry list.  
+- Rounded display to `Int(round(percentage))` so the ring shows ~8% in this scenario.  
+- Updated data export helper to rely on the same canonical baseline (see Enhancement 11).
+
+**EXPECTED:**  
+Progress percentage equals `(start – current) / (start – goal)` using the user-defined baseline and goal weight.
+
+**ACTUAL:**
+Local build reflects the corrected ~8% completion; ring, labels, and stats stay in sync. No automated tests added yet—manual verification complete.
+
+### Task 1F Enhancement 13 - Goal Card Reorder & Milestone Selector ✅ COMPLETE
+
+**WHAT:**  
+Reordered the Goals card so the goal-weight inputs appear before the chart toggle and added a user-facing milestone selector (0–10 milestones) to customize the progress journey.
+
+**HOW:**  
+- Persisted milestone count in `WeightManager` (with migration).  
+- Added a Stepper + messaging in the Goals card, wiring changes through `WeightControlCenterViewModel`.  
+- Updated `CurrentWeightCard`/`CircularProgressRing` to respect the selected milestone count (including hiding dots when set to zero).
+
+**EXPECTED:**  
+Users first set baseline and goal details, then choose milestone granularity before deciding whether to show the chart goal line—matching industry UX flows.
+
+**ACTUAL:**  
+Device build confirms the new layout and milestone picker behave correctly; progress ring updates immediately and the Stepper icons tint to the on-dark text color. Automated tests still pending.
+
+### Task 1F Enhancement 14 - Compact Start Weight Inputs ✅ COMPLETE
+
+**WHAT:**  
+Place the start-date picker and start-weight field on a single horizontal row to reduce vertical space in the Goals card.
+
+**HOW:**  
+- Converted the start-date and start-weight fields into an `HStack` with matching capsule backgrounds and dark color scheme.  
+- Preserved HealthKit averaging/manual entry behavior and ensured accessibility remains intact.
+
+**EXPECTED:**  
+Start weight controls share one row, reducing vertical space without altering behavior.
+
+**ACTUAL:**  
+Layout updated to place the DatePicker, weight field, and unit label in a single row with consistent styling; HealthKit averaging and save workflow remain unchanged. No automated tests added yet.
+
+### Task 1F Enhancement 15 - Start Weight Inputs Match Goal Card ⏳ PLANNING
+
+**WHAT:**  
+Restyle the start-date and weight inputs so they visually match the Goal Weight container (same background, corner radius, and sizing) while keeping existing functionality.
+
+**HOW (Plan):**  
+- Wrap the date picker, weight field, and unit label in a unified capsule-style container that uses the same palette and spacing as the goal weight block.  
+- Ensure the layout remains responsive, accessible, and compatible with HealthKit autofill and manual entry.
+
+**EXPECTED:**  
+Start weight controls adopt the same premium visual treatment as the Goal Weight component, delivering a consistent look-and-feel.
+
+**NEXT STEPS:**  
+Implement the shared container styling, verify on-device, and adjust tests if needed.
+
+**WHAT:**  
+Add a dedicated “Start Weight” control to the Weight Tracker Goals card so users can set or adjust their baseline after onboarding. Selecting a date should auto-fill the average weight logged that day (HealthKit + local data) and fall back to manual entry when no data exists.
+
+**HOW:**  
+- `WeightManager` now persists an override (with legacy migration) and exposes `setStartWeightOverride` / `resolvedStartWeight()`.  
+- The Goals card includes a date picker, unit-aware text field, HealthKit/local averaging, status messaging, and a save action wired through `WeightControlCenterViewModel`.  
+- Current Weight card, hub progress, and data export read the override, keeping “lost/to go” consistent across the app.
+
+**EXPECTED:**  
+Users choose their true start (e.g., 181 lbs on Oct 1) and every progress metric reflects that baseline, regardless of historical imports.
+
+**ACTUAL:**  
+Device build now succeeds and the Goals card start-weight flow works end-to-end (date selection, HealthKit averaging, manual override, and persistence). Progress stats update immediately. Formal unit tests still pending.
 
 ---
 

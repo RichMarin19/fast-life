@@ -6,6 +6,9 @@ import HealthKit
 class WeightManager: ObservableObject {
     @Published var weightEntries: [WeightEntry] = []
     @Published var syncWithHealthKit: Bool = true
+    @Published private(set) var startWeightOverride: Double?
+    @Published private(set) var startWeightDate: Date?
+    @Published var milestoneCount: Int = 10
 
     // MARK: - Dependencies (Protocol-Based for Testability)
     // Phase 2 of MVVM Strategy: Dependency Injection
@@ -25,6 +28,9 @@ class WeightManager: ObservableObject {
     private let weightEntriesKey = "weightEntries"
     private let syncHealthKitKey = "syncWithHealthKit"
     private var observerQuery: HKObserverQuery?
+    private let startWeightKey = "weightStartOverride"
+    private let startWeightDateKey = "weightStartDate"
+    private let milestoneCountKey = "weightMilestoneCount"
 
     // THREAD SAFETY FIX (Task 1A): Replace nonisolated(unsafe) with Actor pattern
     // nonisolated(unsafe) bypasses ALL Swift concurrency safety checks
@@ -50,6 +56,8 @@ class WeightManager: ObservableObject {
 
         loadWeightEntries()
         loadSyncPreference()
+        loadStartWeightOverride()
+        loadMilestoneCount()
 
         // REMOVED auto-sync on init per Apple HealthKit Best Practices
         // Sync only when user explicitly enables it via setSyncPreference()
@@ -221,6 +229,21 @@ class WeightManager: ObservableObject {
     /// Helper method for UI components that need to display weights
     func convertWeightToDisplayUnit(_ weightInPounds: Double) -> Double {
         return appSettings.weightUnit.fromPounds(weightInPounds)
+    }
+
+    /// Returns whichever start weight should be considered authoritative.
+    /// Prefers the user override, otherwise falls back to the earliest entry.
+    func resolvedStartWeight() -> WeightEntry? {
+        if let override = startWeightOverride {
+            return WeightEntry(
+                id: UUID(),
+                date: startWeightDate ?? Date(),
+                weight: override,
+                source: .manual,
+                sourceName: "Fast LIFe"
+            )
+        }
+        return weightEntries.last
     }
 
     /// Add weight entry from user input in preferred unit
@@ -699,16 +722,16 @@ class WeightManager: ObservableObject {
     /// Start weight - first (oldest) weight entry
     /// Used as baseline for milestone calculations
     var startWeight: WeightEntry? {
-        weightEntries.last  // Array sorted by date (most recent first)
+        resolvedStartWeight()
     }
 
     /// Total weight change from start to current
     /// Returns nil if insufficient data (need at least 2 entries)
     var totalWeightChange: Double? {
-        guard let start = startWeight, let current = latestWeight else {
+        guard let start = resolvedStartWeight()?.weight, let current = latestWeight?.weight else {
             return nil
         }
-        return current.weight - start.weight
+        return current - start
     }
 
     /// Calculate progress toward goal weight (0.0 to 1.0)
@@ -716,7 +739,7 @@ class WeightManager: ObservableObject {
     /// - Returns: Progress as decimal (0.0 = no progress, 1.0 = goal reached)
     /// Returns nil if insufficient data or invalid goal
     func progressToGoal(goalWeight: Double) -> Double? {
-        guard let start = startWeight?.weight,
+        guard let start = resolvedStartWeight()?.weight,
               let current = latestWeight?.weight,
               goalWeight > 0,
               goalWeight < start else {  // Goal must be less than start for weight loss
@@ -797,7 +820,7 @@ class WeightManager: ObservableObject {
         currentWeight: Double,
         remainingWeight: Double
     )? {
-        guard let start = startWeight?.weight,
+        guard let start = resolvedStartWeight()?.weight,
               let current = latestWeight?.weight,
               goalWeight > 0,
               goalWeight < start else {
@@ -888,6 +911,58 @@ class WeightManager: ObservableObject {
         if safeDefaults.object(forKey: syncHealthKitKey) != nil {
             syncWithHealthKit = safeDefaults.bool(forKey: syncHealthKitKey)
         }
+    }
+
+    private func loadStartWeightOverride() {
+        if let stored = safeDefaults.object(forKey: startWeightKey) as? Double, stored > 0 {
+            startWeightOverride = stored
+        } else if let legacy = safeDefaults.object(forKey: "startWeight") as? Double, legacy > 0 {
+            startWeightOverride = legacy
+            safeDefaults.removeObject(forKey: "startWeight")
+        }
+
+        if let storedDate = safeDefaults.object(forKey: startWeightDateKey) as? Date {
+            startWeightDate = storedDate
+        } else if let legacyDate = safeDefaults.object(forKey: "startDate") as? Date {
+            startWeightDate = legacyDate
+            safeDefaults.removeObject(forKey: "startDate")
+        }
+    }
+
+    private func loadMilestoneCount() {
+        if let stored = safeDefaults.object(forKey: milestoneCountKey) as? Int {
+            milestoneCount = sanitizedMilestoneCount(stored)
+        } else {
+            milestoneCount = 10
+        }
+    }
+
+    private func sanitizedMilestoneCount(_ value: Int) -> Int {
+        return max(0, min(10, value))
+    }
+
+    func setStartWeightOverride(_ displayWeight: Double?, date: Date?) {
+        if let weight = displayWeight, weight > 0 {
+            let internalValue = convertToInternalUnit(weight)
+            startWeightOverride = internalValue
+            startWeightDate = date
+            safeDefaults.set(internalValue, forKey: startWeightKey)
+            safeDefaults.set(date, forKey: startWeightDateKey)
+            AppLogger.info("Updated start weight override: \(internalValue) lbs", category: AppLogger.weightTracking)
+        } else {
+            startWeightOverride = nil
+            startWeightDate = nil
+            safeDefaults.removeObject(forKey: startWeightKey)
+            safeDefaults.removeObject(forKey: startWeightDateKey)
+            AppLogger.info("Cleared start weight override", category: AppLogger.weightTracking)
+        }
+    }
+
+    func setMilestoneCount(_ count: Int) {
+        let sanitized = sanitizedMilestoneCount(count)
+        milestoneCount = sanitized
+        safeDefaults.set(sanitized, forKey: milestoneCountKey)
+        AppLogger.info("Milestone count updated: \(sanitized)", category: AppLogger.weightTracking)
     }
 
     // MARK: - HealthKit Deletion Handling

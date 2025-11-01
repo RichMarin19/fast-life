@@ -198,6 +198,16 @@
 - New feature additions (scope changes)
 - Major architectural changes (MVVM → different pattern)
 - Breaking changes to public APIs
+
+---
+
+## 🤝 Collaboration Workflow Notes
+
+- **Batch related work** before logging: combine fixes or insights under a single What/How/Expected/Actual entry so the active handoff reads like a narrative instead of a log stream.
+- **Highlight next actions** when archiving: every time content moves out of `HANDOFF.md`, leave a one-line pointer to the archive plus any open follow-ups.
+- **Surface blockers immediately** in the handoff entry (what we tried, why it stalled, what’s still needed) to avoid rework later.
+- **Drop periodic “State of Play” summaries** in `HANDOFF.md` so both of us can regain context quickly after pruning.
+- **Keep long-lived reference material** (env setup, credentials, reusable scripts) in dedicated docs and just link to them from `HANDOFF.md` to minimize churn.
 - Changes to deferred work (Performance Recovery, Phase C)
 - Git operations (commits, pushes, branch changes)
 
