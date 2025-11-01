@@ -4,13 +4,218 @@
 >
 > **Current Phase:** ✅ PHASE 1 - Weight Tracker Perfection - Task 1F Enhancement 8 COMPLETE - Awaiting Device Validation
 >
-> **Code Quality Rating:** 7.5/10 🎯 ENTERPRISE-GRADE+
+> **Code Quality Rating:** 5.5/10 ⚠️ BELOW TARGET (External Assistance Audit)
 >
-> **Last Updated:** October 31, 2025 - 10:45 AM
+> **Quality Target:** 8.5/10 🎯 ENTERPRISE-GRADE+ (Gap: +3.0 points)
 >
-> **Version:** 2.3.3 Build 18
+> **Last Updated:** October 31, 2025 - 11:45 PM
+>
+> **Version:** 2.3.3 Build 19
 
 ---
+
+## 🚨 CODE QUALITY AUDIT - External Assistance Review (Oct 31, 2025)
+
+### **Code Quality Drop: 7.5/10 → 5.5/10** ⚠️
+
+**WHAT:**
+External assistance completed Enhancements 9-15 (6 features) to Weight Tracker. All features work, but code quality audit revealed critical issues: force unwraps (crash risk), zero test coverage for new features, architecture violations (direct UserDefaults), and hardcoded values still present.
+
+**HOW (Root Cause):**
+External assistance prioritized feature delivery over code quality standards. They did NOT follow established patterns:
+- **YOUR Standard:** 269/269 tests passing (100%) → **Their Delivery:** 0 new tests (coverage dropped to ~95%)
+- **YOUR Standard:** No force unwraps → **Their Delivery:** 3+ force unwraps (production crash risk)
+- **YOUR Standard:** MVVM with ViewModels → **Their Delivery:** View directly accesses UserDefaults (SSOT violation)
+- **YOUR Standard:** Design system (DSSpacing) → **Their Delivery:** Magic numbers (200, 14, 20 hardcoded)
+
+**EXPECTED:**
+Code should meet 8.5/10 quality standard (new target):
+- ✅ Thread safety (NSLock, Actor patterns)
+- ✅ 100% test coverage for critical features
+- ✅ No force unwraps (defensive programming)
+- ✅ MVVM architecture maintained
+- ✅ Design system compliance (no magic numbers)
+- ✅ Accessibility labels for VoiceOver
+
+**ACTUAL (Delivery):**
+**Score: 5.5/10** (-3.0 points from 8.5 target)
+
+**What Works:** ✅
+- Thread safety maintained (NSLock, Actor patterns)
+- Drag-to-reorder fixed (canonical indices)
+- Unit conversion respects user preference (kg/lbs)
+- Progress tracking accurate
+- Milestones customizable (0-10)
+- Legacy data migration handled
+
+**What's Broken:** ❌
+- **3+ force unwraps** (WeightManager.swift:305, 637-638) - CRASH RISK 🔴
+- **Zero test coverage** for 5 new features - violates Task 1B standard 🔴
+- **Hardcoded "lbs"** in WeightSetupComponents (ironic - Enhancement 10 was about fixing this!)
+- **Direct UserDefaults access** breaks MVVM (WeightSetupComponents.swift:254)
+- **Magic numbers** everywhere (200, 14, 20) - violates DSSpacing
+- **No accessibility labels** for CircularProgressRing (VoiceOver users blocked)
+- **Enhancement 15 incomplete** (listed as done, actually ⏳ PLANNING)
+
+**DETAILED AUDIT:**
+📄 **[EXTERNAL-ASSISTANCE-AUDIT-OCT31-2025.md](./EXTERNAL-ASSISTANCE-AUDIT-OCT31-2025.md)**
+- Full analysis (400+ lines)
+- Code examples for each issue
+- Industry comparisons (Apple, Google, Netflix patterns)
+- Fix recommendations with time estimates
+
+**STATUS:** ⚠️ CODE REQUIRES FIXES BEFORE PRODUCTION - See gameplan below
+
+---
+
+## 🎯 GAMEPLAN: 5.5/10 → 8.5/10 Quality (11 hours)
+
+### **PHASE 1: CRITICAL FIXES** (2 hours) → 7.5/10
+**Must complete before ANY merge to production**
+
+#### Task 1.1: Remove Force Unwraps (30 min) 🔴 CRITICAL
+**WHAT:** Replace 3+ force unwraps with defensive `guard let` + error logging
+**FILES:** `WeightManager.swift:305, 637-638, 692`
+**WHY:** Production crashes = 1-star reviews, user trust lost
+**PRIORITY:** P0 - BLOCKS PRODUCTION
+
+```swift
+// BEFORE (CRASH RISK):
+let start = Calendar.current.date(...)!  // ❌ Force unwrap
+
+// AFTER (DEFENSIVE):
+guard let start = Calendar.current.date(...) else {
+    AppLogger.error("Date calculation failed", ...)
+    completion?(0, NSError(...))
+    return
+}
+```
+
+#### Task 1.2: Fix Hardcoded "lbs" (15 min) 🟡
+**WHAT:** Replace hardcoded "lbs" with `weightManager.currentUnitAbbreviation`
+**FILES:** `WeightSetupComponents.swift:78, 124`
+**WHY:** Metric users see wrong units (defeats Enhancement 10 purpose)
+**PRIORITY:** P1 - USER EXPERIENCE
+
+#### Task 1.3: Move UserDefaults to ViewModel (30 min) 🟡
+**WHAT:** Create `saveWeightSetup()` in ViewModel, remove direct UserDefaults from View
+**FILES:** `WeightSetupComponents.swift:254`
+**WHY:** Violates MVVM, breaks Single Source of Truth
+**PRIORITY:** P1 - ARCHITECTURE
+
+#### Task 1.4: Add Defensive Logging (30 min) 🟠
+**WHAT:** Log when milestone count clamped, calculations return nil
+**FILES:** `WeightManager.swift:940-942`, `CurrentWeightCard.swift:86-92`
+**WHY:** Silent failures make production debugging impossible
+**PRIORITY:** P2 - DEBUGGABILITY
+
+**Phase 1 Impact:** +2.0 points → **7.5/10** (production-ready minimum)
+
+---
+
+### **PHASE 2: TESTING & STANDARDS** (6 hours) → 9.0/10
+**Should complete within 1-2 sprints**
+
+#### Task 2.1: Add Unit Tests (4 hours) 🔴 HIGH PRIORITY
+**WHAT:** Restore 100% test coverage for critical features
+**TESTS NEEDED:**
+- `formattedWeight()` - kg/lbs conversion, trailing zero trimming
+- `resolvedStartWeight()` - override vs. fallback logic
+- Milestone count validation - bounds checking (0-10)
+- Progress percentage - edge cases (0%, 100%, over-goal)
+
+**TARGET:** 269 → 285+ tests passing (100% coverage restored)
+**PRIORITY:** P1 - QUALITY STANDARD
+
+#### Task 2.2: Replace Magic Numbers (1 hour) 🟡
+**WHAT:** Add DSSpacing constants for all hardcoded values
+**FILES:** `CurrentWeightCard.swift` (CircularProgressRing)
+**ADD TO DSSpacing.swift:**
+```swift
+static let progressRingSize: CGFloat = 200
+static let progressRingStrokeWidth: CGFloat = 14
+static let milestoneDotSize: CGFloat = 20
+```
+**PRIORITY:** P2 - DESIGN SYSTEM
+
+#### Task 2.3: Refactor formattedWeight() (1 hour) 🟡
+**WHAT:** Move to WeightManager, create static formatter (performance + testability)
+**FILES:** `CurrentWeightCard.swift:20-30` → `WeightManager.swift`
+**WHY:** NumberFormatter expensive, called 10+ times per render
+**PRIORITY:** P2 - PERFORMANCE
+
+**Phase 2 Impact:** +1.5 points → **9.0/10** (enterprise-grade)
+
+---
+
+### **PHASE 3: POLISH** (3 hours) → 9.5/10
+**Nice to have - improves accessibility & completeness**
+
+#### Task 3.1: Add Accessibility Labels (1.5 hours) 🟠
+**WHAT:** VoiceOver support for CircularProgressRing and milestone dots
+**FILES:** `CurrentWeightCard.swift:340-362`
+**WHY:** Health apps MUST be accessible (Apple HIG requirement)
+**PRIORITY:** P2 - ACCESSIBILITY
+
+#### Task 3.2: Complete Enhancement 15 (1.5 hours) 🟠
+**WHAT:** Finish start weight capsule styling OR remove incomplete feature
+**FILES:** `WeightSetupComponents.swift`
+**WHY:** UI inconsistency (Goal Weight = premium, Start Weight = basic)
+**PRIORITY:** P3 - UI CONSISTENCY
+
+**Phase 3 Impact:** +0.5 points → **9.5/10** (polished, production-ready)
+
+---
+
+## 📚 POSITIVE PATTERNS TO PRESERVE
+
+**What External Assistance Did WELL** - Incorporate into coding standards:
+
+### ✅ 1. Thread Safety Patterns
+```swift
+// Use ThreadSafeUserDefaults for all persistence
+private let safeDefaults = ThreadSafeUserDefaults()
+
+// Use Actor pattern for background thread flags
+private let observerSuppression = ObserverSuppressionActor()
+
+// Proper async/await with Task
+Task {
+    await observerSuppression.suppressTemporarily(delay: 2.0)
+}
+```
+**ADD TO STANDARDS:** All UserDefaults access must use ThreadSafeUserDefaults wrapper
+
+### ✅ 2. Debug Logging with Emojis
+```swift
+AppLogger.info("🔍 [HealthKit Sync] Received \(count) entries", ...)
+AppLogger.debug("✅ Auto-populated weight: \(weight) lbs", ...)
+AppLogger.warning("⚠️ No HealthKit data found", ...)
+```
+**ADD TO STANDARDS:** Use emoji prefixes for scannable logs (🔍 🆔 ✅ ⚠️ ❌)
+
+### ✅ 3. Legacy Data Migration
+```swift
+// Check new key first, fallback to old, cleanup
+if let stored = safeDefaults.object(forKey: newKey) as? Double {
+    property = stored
+} else if let legacy = safeDefaults.object(forKey: oldKey) as? Double {
+    property = legacy
+    safeDefaults.removeObject(forKey: oldKey)  // ✅ Cleanup
+}
+```
+**ADD TO STANDARDS:** Always migrate + cleanup old keys when changing UserDefaults
+
+### ✅ 4. Bounds Validation
+```swift
+private func sanitized(_ value: Int) -> Int {
+    return max(0, min(10, value))  // Clamp to valid range
+}
+```
+**ADD TO STANDARDS:** Validate all user input, clamp to safe ranges
+
+---
+
 ### Enhancement 15 – Start Weight Capsule Alignment (Oct 31, 2025)
 
   - What: Align the Start Weight editor row with the Goal Weight capsule styling so both read as paired
