@@ -225,6 +225,10 @@ struct WeightControlCenterView: View {
     @Binding var weightGoal: Double
     @State private var showDeleteAllConfirmation = false
 
+    // ISSUE #5: Track goal weight changes for save confirmation
+    @State private var originalGoalWeight: String = ""
+    @State private var showUnsavedChangesAlert = false
+
     // MARK: - Initialization
 
     init(weightManager: WeightManager,
@@ -257,23 +261,40 @@ struct WeightControlCenterView: View {
             VStack(spacing: 0) {
                 // Header section (fixed at top)
                 VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
-                    // UX/UI Fix #3: Match Weight Tracker title size (34pt)
-                    // Issue #1: Center title + apply Weight Tracker cyan gradient styling
-                    Text("Control Center")
-                        .font(DSTypography.screenTitle)
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [
-                                    Theme.ColorToken.accentCyan,
-                                    Theme.ColorToken.accentLightBlue
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                    // ISSUE #5 FIX: Add visible Done button in header
+                    // Toolbar buttons don't render reliably in sheet presentations
+                    // Following Apple Health pattern - prominent action button in header
+                    HStack {
+                        Spacer()
+
+                        // UX/UI Fix #3: Match Weight Tracker title size (34pt)
+                        // Issue #1: Center title + apply Weight Tracker cyan gradient styling
+                        Text("Control Center")
+                            .font(DSTypography.screenTitle)
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [
+                                        Theme.ColorToken.accentCyan,
+                                        Theme.ColorToken.accentLightBlue
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .frame(maxWidth: .infinity, alignment: .center)  // Centered
-                        .padding(.horizontal, DSSpacing.cardSectionSpacing)
-                        .padding(.top, DSSpacing.cardSmallSpacing)
+
+                        Spacer()
+
+                        // Visible Done button (replaces unreliable toolbar button)
+                        Button(action: handleDoneButtonTap) {
+                            Text("Done")
+                                .font(DSTypography.buttonPrimary)
+                                .foregroundColor(Theme.ColorToken.accentCyan)
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, DSSpacing.cardSectionSpacing)
+                    .padding(.top, DSSpacing.cardSmallSpacing)
 
                     // REFINEMENT #1: Split instructions into 2 lines
                     // Behavioral Science: Chunking for cognitive fluency
@@ -296,6 +317,7 @@ struct WeightControlCenterView: View {
                 // Using .onDrag/.onDrop instead of List+.onMove to avoid layout issues
                 // Reference: HubView.swift lines 65-88
                 // Layer 3: Wrapped in ScrollViewReader for smooth scroll-to-item functionality
+                // ISSUE #4 FIX: Add tap gesture to dismiss keyboard (Apple Health pattern)
                 ScrollView {
                     ScrollViewReader { proxy in
                         LazyVStack(spacing: DSSpacing.cardSectionSpacing) {
@@ -325,6 +347,15 @@ struct WeightControlCenterView: View {
                         }
                     }
                 }
+                // ISSUE #4 FIX: Dismiss keyboard when tapping content
+                // Following Apple Health pattern - keyboard dismisses on content tap
+                // Reference: Apple HIG - Keyboard Dismissal Best Practices
+                .simultaneousGesture(
+                    TapGesture()
+                        .onEnded { _ in
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        }
+                )
             }
         }
         .navigationBarTitleDisplayMode(.inline)
@@ -359,6 +390,8 @@ struct WeightControlCenterView: View {
             viewModel.loadExpandedCards()
             viewModel.loadOptedOutContent()
             viewModel.weightGoalString = String(format: "%.1f", weightGoal)
+            // ISSUE #5: Store original goal weight for change detection
+            originalGoalWeight = viewModel.weightGoalString
             viewModel.userSyncPreference = viewModel.weightManager.syncWithHealthKit
             viewModel.updatePermissionStatus()
             viewModel.loadLastSyncStatus()
@@ -412,6 +445,48 @@ struct WeightControlCenterView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("This will delete all \(viewModel.weightManager.weightEntries.count) weight entries from Fast LIFe. You can resync from HealthKit afterward. This action cannot be undone.")
+        }
+        .alert("Save Goal Weight Changes?", isPresented: $showUnsavedChangesAlert) {
+            // ISSUE #5: Save confirmation dialog following Apple Settings app pattern
+            // Reference: Apple HIG - Alerts (three-button confirmation for data loss prevention)
+            Button("Don't Save", role: .destructive) {
+                // Revert to original value
+                viewModel.weightGoalString = originalGoalWeight
+                dismiss()
+            }
+            Button("Cancel", role: .cancel) {
+                // Stay in Control Center with edited value
+            }
+            Button("Save") {
+                // Persist via WeightManager and dismiss
+                if let newGoal = Double(viewModel.weightGoalString), newGoal > 0 {
+                    let goalWeightPounds = viewModel.weightManager.convertToInternalUnit(newGoal)
+                    viewModel.weightManager.setGoalWeight(goalWeightPounds)
+                    weightGoal = newGoal
+                    AppLogger.info("Goal weight saved: \(goalWeightPounds) lbs (displayed as \(newGoal) \(viewModel.unitAbbreviation))", category: AppLogger.weightTracking)
+                }
+                dismiss()
+            }
+        } message: {
+            Text("You've changed your goal weight. Would you like to save this change?")
+        }
+    }
+
+    // MARK: - Actions
+
+    /// Handle Done button tap - check for unsaved goal weight changes
+    /// Following Apple Settings app pattern for unsaved changes confirmation
+    private func handleDoneButtonTap() {
+        // Dismiss keyboard first
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+
+        // Check if goal weight has changed
+        if viewModel.weightGoalString != originalGoalWeight {
+            // Show save confirmation alert
+            showUnsavedChangesAlert = true
+        } else {
+            // No changes, dismiss directly
+            dismiss()
         }
     }
 
@@ -600,7 +675,9 @@ struct WeightControlCenterView: View {
                 }
                 .padding(.horizontal, DSSpacing.cardPadding)
                 .padding(.vertical, DSSpacing.cardElementSpacing)
-                .background(Theme.ColorToken.card)
+                // RECOVERY TASK #3: Fix invisible weight field - use dark background to match white text
+                // BUG: Was using .card (light background) with .textPrimaryOnDark (white text)
+                .background(Theme.ColorToken.cardHeaderOnDark)
                 .cornerRadius(DSSpacing.cardSmallSpacing)
                 .shadow(color: Theme.ColorToken.shadowCard.opacity(0.2), radius: 8, x: 0, y: 4)
 
@@ -652,7 +729,8 @@ struct WeightControlCenterView: View {
                             viewModel.formatWeightGoalInput(newValue)
                         }
 
-                    Text("lbs")
+                    // RECOVERY TASK #2: Dynamic unit abbreviation (not hardcoded "lbs")
+                    Text(viewModel.unitAbbreviation)
                         .font(DSTypography.statValueSmall)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                         .accessibilityHidden(true)

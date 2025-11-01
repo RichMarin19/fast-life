@@ -83,10 +83,17 @@ struct CurrentWeightCard: View {
     }
 
     /// Calculates weight remaining to reach goal
+    // PHASE 1 FIX (Task 1.4): Defensive logging - alert when calculation fails
     private func calculateWeightToGo() -> Double? {
-        guard weightManager.weightEntries.count >= 1, weightGoal > 0 else { return nil }
+        guard weightManager.weightEntries.count >= 1, weightGoal > 0 else {
+            AppLogger.debug("⚠️ Cannot calculate weight to go - entries: \(weightManager.weightEntries.count), goal: \(weightGoal)", category: AppLogger.ui)
+            return nil
+        }
         let sortedEntries = weightManager.weightEntries.sorted { $0.date < $1.date }
-        guard let currentWeight = sortedEntries.last?.weight else { return nil }
+        guard let currentWeight = sortedEntries.last?.weight else {
+            AppLogger.warning("⚠️ Cannot calculate weight to go - no current weight after sorting", category: AppLogger.ui)
+            return nil
+        }
         let remaining = currentWeight - weightGoal
         return remaining > 0 ? remaining : 0
     }

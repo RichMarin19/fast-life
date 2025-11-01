@@ -12,7 +12,15 @@ final class AppSettings: ObservableObject {
     // Reference: https://developer.apple.com/documentation/swiftui/appstorage
 
     @AppStorage("hydrationUnit") var hydrationUnit: HydrationUnit = .ounces
-    @AppStorage("weightUnit") var weightUnit: WeightUnit = .pounds
+
+    // RECOVERY TASK #2: System locale detection - app ALWAYS follows iPhone system locale
+    // Following Apple Internationalization and Localization Guide
+    // Locale.current.measurementSystem: .metric (most of world) or .us (US/Liberia/Myanmar)
+    // Reference: https://developer.apple.com/documentation/foundation/locale/2293761-measurementsystem
+    // User Decision (Q1): No manual override - app follows iPhone Settings > General > Language & Region
+    var weightUnit: WeightUnit {
+        return Locale.current.measurementSystem == .metric ? .kilograms : .pounds
+    }
 
     // MARK: - Default Tracker (Phase 3 Roadmap Implementation)
     // Following roadmap specification for default start tracker

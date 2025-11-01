@@ -75,7 +75,8 @@ struct FirstTimeWeightSetupView: View {
                                         }
                                     )
 
-                                Text("lbs")
+                                // PHASE 1 FIX (Task 1.2): Dynamic unit abbreviation instead of hardcoded "lbs"
+                                Text(weightManager.currentUnitAbbreviation)
                                     .font(DSTypography.displayS)
                                     .foregroundColor(Theme.ColorToken.textSecondary)
                             }
@@ -121,7 +122,8 @@ struct FirstTimeWeightSetupView: View {
                                 .background(Theme.ColorToken.cardAlt)
                                 .cornerRadius(DSSpacing.cardSmallSpacing)
 
-                            Text("lbs")
+                            // PHASE 1 FIX (Task 1.2): Dynamic unit abbreviation instead of hardcoded "lbs"
+                            Text(weightManager.currentUnitAbbreviation)
                                 .font(DSTypography.displayS)
                                 .foregroundColor(Theme.ColorToken.textSecondary)
                         }
@@ -249,9 +251,15 @@ struct FirstTimeWeightSetupView: View {
 
         AppLogger.info("Saved start weight: \(startWeightPounds) lbs on \(startDate.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
 
-        // Save goal weight
+        // RECOVERY TASK #1: Restore goal weight persistence via WeightManager
+        // Following industry standard MVVM pattern - Manager owns persistence, View calls manager
+        // WeightManager.setGoalWeight() persists to ThreadSafeUserDefaults + updates @Published property
+        // Reference: Apple's Data Management in SwiftUI guide
+        let goalWeightPounds = weightManager.convertToInternalUnit(goalWeight)
+        weightManager.setGoalWeight(goalWeightPounds)
+
+        // Update parent binding (for backward compatibility with existing views)
         self.weightGoal = goalWeight
-        UserDefaults.standard.set(goalWeight, forKey: "goalWeight")
 
         // Enable goal line by default
         showGoalLine = true

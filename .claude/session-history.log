@@ -3214,3 +3214,220 @@ VERIFICATION:
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: e199357 at 2025-10-31 23:44:36 - feat: Enhancements 9-15 - External Assistance Session (Weight Tracker UX Polish)
+
+SUMMARY:
+External assistance completed 6 major enhancements to Weight Tracker,
+fixing drag-and-drop reliability, unit system support, progress accuracy,
+and adding user-controlled baseline/milestone features.
+
+═══════════════════════════════════════════════════════════════════
+
+✅ ENHANCEMENT 9: Canonical Card Reorder Indices
+
+WHAT:
+Fixed drag-and-drop where Statistics card snapped back to original slot.
+
+HOW (Root Cause):
+TrackerCardDropDelegate used visible array indices instead of canonical
+indices, causing mismatch when hidden cards existed in preferences.
+
+THE FIX:
+File: WeightTrackingView.swift:382-399
+- Replaced visibleCards.firstIndex() with cardManager.getCardOrder()
+- Now uses authoritative sort order including hidden cards
+- All visible cards reorder reliably, persists across restarts
+
+VERIFICATION:
+✅ Simulator & device: all cards reorder consistently
+✅ Multiple hidden/visible combinations tested
+✅ App relaunch preserves new order
+
+═══════════════════════════════════════════════════════════════════
+
+✅ ENHANCEMENT 10: Weight Tracker Units Respect User Preference
+
+WHAT:
+Fixed hard-coded "lbs" units throughout Current Weight card. Metric
+users saw pound units and raw values (e.g., 5.4273 lbs).
+
+HOW (Root Cause):
+CurrentWeightCard calculated deltas in internal pounds and rendered
+directly without unit conversion.
+
+THE FIX:
+File: CurrentWeightCard.swift
+- Added formattedWeight() using WeightManager.convertWeightToDisplayUnit
+- NumberFormatter trims trailing zeroes
+- Updated MotivationBanner, GoalBadge, CircularProgressRing
+- Progress ring accepts pre-formatted labels with correct kg/lbs
+
+VERIFICATION:
+✅ Weight tracker UI reflects user-selected units
+✅ Clean formatting (no excessive decimals)
+
+═══════════════════════════════════════════════════════════════════
+
+✅ ENHANCEMENT 11: Start Weight Baseline Control
+
+WHAT:
+Added dedicated Start Weight control to Goals card so users can set/
+adjust baseline after onboarding.
+
+HOW:
+Files: WeightManager.swift, WeightControlCenterViewModel.swift,
+       WeightControlCenterView.swift
+- WeightManager persists start weight override (with legacy migration)
+- Exposes setStartWeightOverride() / resolvedStartWeight()
+- Goals card includes date picker + unit-aware text field
+- HealthKit/local averaging with fallback to manual entry
+- Current Weight card, hub progress, data export use canonical baseline
+
+VERIFICATION:
+✅ Device build succeeds
+✅ Goals card start-weight flow works end-to-end
+✅ Progress stats update immediately
+✅ Persistence maintained across restarts
+
+═══════════════════════════════════════════════════════════════════
+
+✅ ENHANCEMENT 12: Progress Ring Uses Goal Completion
+
+WHAT:
+Progress ring showed incorrect 16% instead of actual ~8% completion.
+
+HOW (Root Cause):
+calculateProgressPercentage() used earliest entry list instead of
+user-defined start weight.
+
+THE FIX:
+Files: CurrentWeightCard.swift, DataExportManager.swift
+- Uses WeightManager.resolvedStartWeight() + latest weight
+- Rounded display to Int(round(percentage))
+- Data export helper uses same canonical baseline
+
+VERIFICATION:
+✅ Ring reflects true goal completion percentage
+✅ Ring, labels, and stats stay in sync
+
+═══════════════════════════════════════════════════════════════════
+
+✅ ENHANCEMENT 13: Goal Card Reorder & Milestone Selector
+
+WHAT:
+Reordered Goals card (goal inputs before chart toggle) and added
+user-facing milestone selector (0-10 milestones).
+
+HOW:
+Files: WeightManager.swift, WeightControlCenterViewModel.swift,
+       WeightControlCenterView.swift, CurrentWeightCard.swift
+- Persisted milestone count in WeightManager (with migration)
+- Added Stepper + messaging in Goals card
+- Updated CurrentWeightCard/CircularProgressRing to respect count
+- Can hide milestone dots by setting to zero
+
+VERIFICATION:
+✅ New layout matches industry UX flows
+✅ Milestone picker behaves correctly
+✅ Progress ring updates immediately
+✅ Stepper icons tint to on-dark text color
+
+═══════════════════════════════════════════════════════════════════
+
+✅ ENHANCEMENT 14: Compact Start Weight Inputs
+
+WHAT:
+Placed start-date picker and start-weight field on single horizontal
+row to reduce vertical space in Goals card.
+
+HOW:
+File: WeightSetupComponents.swift
+- Converted to HStack with matching capsule backgrounds
+- Dark color scheme preserved
+- HealthKit averaging/manual entry behavior intact
+- Accessibility maintained
+
+VERIFICATION:
+✅ Layout updated to single row
+✅ Consistent styling maintained
+✅ HealthKit averaging works
+✅ Save workflow unchanged
+
+═══════════════════════════════════════════════════════════════════
+
+⏳ ENHANCEMENT 15: Start Weight Capsule Alignment (PLANNING)
+
+WHAT:
+Restyle start weight inputs to match Goal Weight container styling.
+
+STATUS: Pending - needs workspace-write access
+PLAN: Use Theme.ColorToken.accentPrimary capsule treatment, mirror
+      corner radius/overlay shadow, tighten horizontal padding
+
+═══════════════════════════════════════════════════════════════════
+
+FILES MODIFIED (12 files):
+- WeightManager.swift (start weight, milestones, migrations)
+- WeightControlCenterViewModel.swift (wiring for new controls)
+- DataExportManager.swift (canonical start weight baseline)
+- CurrentWeightCard.swift (unit formatting, progress calculations)
+- WeightSetupComponents.swift (compact start weight row)
+- WeightControlCenterView.swift (Goals card reorder, milestone stepper)
+- WeightTrackingView.swift (canonical card reorder indices)
+- HubView.swift (resolved start weight for progress)
+- HANDOFF.md (comprehensive enhancement documentation)
+- SESSION-PREFERENCES.md (updated preferences)
+- .claude/last-commit.txt (commit tracking)
+- .claude/session-history.log (session history)
+
+KEY IMPROVEMENTS:
+✅ Drag-and-drop reliability - all cards reorder consistently
+✅ Unit system respect - metric users see kg, imperial see lbs
+✅ Accurate progress tracking - ring shows true goal completion
+✅ User-controlled baseline - start weight override for accuracy
+✅ Milestone customization - 0-10 milestones, user preference
+✅ Compact UI - start weight inputs on single row
+
+BACKUP CREATED:
+.backups/external-assist-enhancements9-15-20251031-234346/ (5.1 MB)
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>
+COMMIT: bbd3506 at 2025-11-01 00:02:53 - docs: Add comprehensive external assistance code quality audit
+
+Created detailed audit documentation and updated HANDOFF.md with findings:
+
+**New Files:**
+- EXTERNAL-ASSISTANCE-AUDIT-OCT31-2025.md: 400+ line comprehensive quality audit
+  - Score: 5.5/10 (gap of +3.0 points to reach 8.5/10 target)
+  - 10 detailed issues with code examples and industry comparisons
+  - 3-phase fix gameplan (11 hours total)
+  - 4 positive patterns to preserve from external work
+
+**Updated Files:**
+- HANDOFF.md: Added audit section in WHAT/HOW/EXPECTED/ACTUAL format
+  - Quality gap analysis (external assistance: 5.5/10 vs target: 8.5/10)
+  - Complete gameplan: Phase 1 (2h) → 7.5/10, Phase 2 (6h) → 9.0/10, Phase 3 (3h) → 9.5/10
+  - Root cause analysis of quality issues
+
+**Key Findings:**
+- CRITICAL: 3+ force unwraps (crash risk) in WeightManager.swift
+- CRITICAL: 0 test coverage for 5 new enhancements (dropped from 100% to ~95%)
+- Architecture violations: Direct UserDefaults access from Views
+- Hardcoded "lbs" values still present (ironic - Enhancement 10 was unit fix)
+- Missing accessibility labels and defensive logging
+
+**Positive Patterns Identified:**
+- Thread safety patterns (ThreadSafeUserDefaults, Actor model)
+- Debug logging with emojis (🔍 🆔 ✅ ⚠️ ❌)
+- Legacy data migration with cleanup
+- Bounds validation (max/min clamping)
+
+This audit provides a clear roadmap to bring code quality from 5.5/10 to 8.5/10+
+through systematic fixes, comprehensive testing, and adherence to established
+project standards.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>

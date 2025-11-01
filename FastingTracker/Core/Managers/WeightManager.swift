@@ -10,6 +10,11 @@ class WeightManager: ObservableObject {
     @Published private(set) var startWeightDate: Date?
     @Published var milestoneCount: Int = 10
 
+    // RECOVERY TASK #1: Restore goal weight persistence
+    // Following industry standard MVVM pattern - WeightManager owns goal weight persistence
+    // Reference: Apple's Data Management in SwiftUI guide
+    @Published private(set) var goalWeight: Double = 0
+
     // MARK: - Dependencies (Protocol-Based for Testability)
     // Phase 2 of MVVM Strategy: Dependency Injection
     // Following Apple's protocol-oriented programming patterns
@@ -31,6 +36,7 @@ class WeightManager: ObservableObject {
     private let startWeightKey = "weightStartOverride"
     private let startWeightDateKey = "weightStartDate"
     private let milestoneCountKey = "weightMilestoneCount"
+    private let goalWeightKey = "goalWeight"
 
     // THREAD SAFETY FIX (Task 1A): Replace nonisolated(unsafe) with Actor pattern
     // nonisolated(unsafe) bypasses ALL Swift concurrency safety checks
@@ -58,6 +64,7 @@ class WeightManager: ObservableObject {
         loadSyncPreference()
         loadStartWeightOverride()
         loadMilestoneCount()
+        loadGoalWeight()
 
         // REMOVED auto-sync on init per Apple HealthKit Best Practices
         // Sync only when user explicitly enables it via setSyncPreference()
@@ -302,7 +309,17 @@ class WeightManager: ObservableObject {
 
         // Default to comprehensive sync (10 years) for data consistency with manual sync
         // Industry Standard: Use same wide date range as manual sync to ensure identical results
-        let start = startDate ?? Calendar.current.date(byAdding: .year, value: -WeightConstants.SyncTiming.defaultHistoricalLookbackYears, to: Date())!
+        // PHASE 1 FIX (Task 1.1): Defensive date calculation - Calendar.date() can return nil
+        let start: Date
+        if let providedStart = startDate {
+            start = providedStart
+        } else if let calculatedStart = Calendar.current.date(byAdding: .year, value: -WeightConstants.SyncTiming.defaultHistoricalLookbackYears, to: Date()) {
+            start = calculatedStart
+        } else {
+            // Fallback: If Calendar calculation fails (rare), use current date
+            AppLogger.error("❌ Calendar date calculation failed in syncFromHealthKit - using Date() as fallback", category: AppLogger.weightTracking)
+            start = Date()
+        }
 
         healthKit.fetchWeightData(startDate: start, endDate: Date(), resetAnchor: false) { [weak self] healthKitEntries in
             guard let self = self else {
@@ -634,8 +651,12 @@ class WeightManager: ObservableObject {
         let recentEntries = Array(weightEntries.prefix(7)) // Last 7 entries
         guard recentEntries.count >= WeightConstants.Statistics.minimumEntriesForTrend else { return nil }
 
-        let oldestRecent = recentEntries.last!.weight
-        let newest = recentEntries.first!.weight
+        // PHASE 1 FIX (Task 1.1): Defensive programming - explicit guards instead of force unwraps
+        guard let oldestRecent = recentEntries.last?.weight,
+              let newest = recentEntries.first?.weight else {
+            AppLogger.error("❌ Unexpected nil in weightTrend after count validation", category: AppLogger.weightTracking)
+            return nil
+        }
 
         return newest - oldestRecent
     }
@@ -937,8 +958,34 @@ class WeightManager: ObservableObject {
         }
     }
 
+    // PHASE 1 FIX (Task 1.4): Defensive logging - alert when values are clamped
     private func sanitizedMilestoneCount(_ value: Int) -> Int {
-        return max(0, min(10, value))
+        let sanitized = max(0, min(10, value))
+        if sanitized != value {
+            AppLogger.warning("⚠️ Milestone count clamped from \(value) to \(sanitized) (valid range: 0-10)", category: AppLogger.weightTracking)
+        }
+        return sanitized
+    }
+
+    // RECOVERY TASK #1: Load goal weight from persistent storage
+    private func loadGoalWeight() {
+        if let stored = safeDefaults.object(forKey: goalWeightKey) as? Double {
+            goalWeight = stored
+            AppLogger.info("Loaded goal weight: \(stored) lbs", category: AppLogger.weightTracking)
+        } else {
+            goalWeight = 0
+            AppLogger.info("No stored goal weight found, defaulting to 0", category: AppLogger.weightTracking)
+        }
+    }
+
+    // RECOVERY TASK #1: Set goal weight with persistence
+    // Following industry standard MVVM pattern - Manager owns persistence
+    // View layer updates binding, Manager handles UserDefaults
+    // Reference: Apple's Data Management in SwiftUI guide
+    func setGoalWeight(_ weight: Double) {
+        goalWeight = weight
+        safeDefaults.set(weight, forKey: goalWeightKey)
+        AppLogger.info("Goal weight updated: \(weight) lbs", category: AppLogger.weightTracking)
     }
 
     func setStartWeightOverride(_ displayWeight: Double?, date: Date?) {
