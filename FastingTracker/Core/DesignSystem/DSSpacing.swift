@@ -78,4 +78,27 @@ enum DSSpacing {
     /// Padding inside list items (12pt)
     /// Used by: List row content padding
     static let listItemPadding: CGFloat = 12
+
+    // MARK: - Progress Ring Spacing
+    // Phase 2 Task 2.2: Replace Magic Numbers
+
+    /// Size of circular progress ring (200pt diameter)
+    /// Used by: CircularProgressRing in CurrentWeightCard
+    static let progressRingSize: CGFloat = 200
+
+    /// Stroke width for progress ring arc (14pt)
+    /// Used by: CircularProgressRing background and progress arc
+    static let progressRingStrokeWidth: CGFloat = 14
+
+    /// Size of milestone indicator dots (20pt diameter)
+    /// Used by: Milestone dots below CircularProgressRing
+    static let milestoneDotSize: CGFloat = 20
+
+    /// Vertical padding for progress ring container (20pt)
+    /// Used by: CircularProgressRing outer VStack
+    static let progressRingPaddingVertical: CGFloat = 20
+
+    /// Horizontal padding for progress ring container (24pt)
+    /// Used by: CircularProgressRing outer VStack
+    static let progressRingPaddingHorizontal: CGFloat = 24
 }

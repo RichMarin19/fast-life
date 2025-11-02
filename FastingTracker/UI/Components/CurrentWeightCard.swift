@@ -231,8 +231,8 @@ struct CircularProgressRing: View {
             ZStack {
                 // Background circle (gray)
                 Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 14)
-                    .frame(width: 200, height: 200)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: DSSpacing.progressRingStrokeWidth)
+                    .frame(width: DSSpacing.progressRingSize, height: DSSpacing.progressRingSize)
 
                 // Progress arc (BLUE → GREEN gradient - shows progression!)
                 Circle()
@@ -244,9 +244,9 @@ struct CircularProgressRing: View {
                             startAngle: .degrees(0),
                             endAngle: .degrees(360 * (percentage / 100))
                         ),
-                        style: StrokeStyle(lineWidth: 14, lineCap: .round)
+                        style: StrokeStyle(lineWidth: DSSpacing.progressRingStrokeWidth, lineCap: .round)
                     )
-                    .frame(width: 200, height: 200)
+                    .frame(width: DSSpacing.progressRingSize, height: DSSpacing.progressRingSize)
                     .rotationEffect(.degrees(-90))
                     .animation(.spring(response: 0.6, dampingFraction: 0.8), value: percentage)
 
@@ -309,7 +309,7 @@ struct CircularProgressRing: View {
                         ForEach(0..<milestoneCount, id: \.self) { index in
                             Circle()
                                 .fill(milestoneColor(for: index, total: milestoneCount, completed: completed))
-                                .frame(width: 20, height: 20)
+                                .frame(width: DSSpacing.milestoneDotSize, height: DSSpacing.milestoneDotSize)
                                 .overlay(
                                     Circle()
                                         .strokeBorder(Color.gray.opacity(0.3), lineWidth: 1)
@@ -325,8 +325,8 @@ struct CircularProgressRing: View {
                 .padding(.top, 8)
             }
         }
-        .padding(.vertical, 20)
-        .padding(.horizontal, 24)
+        .padding(.vertical, DSSpacing.progressRingPaddingVertical)
+        .padding(.horizontal, DSSpacing.progressRingPaddingHorizontal)
     }
 
     /// Returns motivational emoji based on progress percentage
