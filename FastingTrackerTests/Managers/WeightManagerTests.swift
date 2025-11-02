@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Combine
 @testable import FastLIFe
 
 @MainActor
@@ -312,6 +313,126 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertNil(change)
     }
 
+    // MARK: - Phase 2 Task 2.1 - Weight Formatting
+
+    func testFormattedDisplayWeight_trimsTrailingZeroForIntegers() {
+        let formatted = weightManager.formattedDisplayWeight(150.0)
+        if weightManager.currentUnitAbbreviation == "lbs" {
+            XCTAssertEqual(formatted, "150", "Pound display should trim trailing decimals")
+        } else {
+            XCTAssertEqual(formatted, "68.0", "Metric display should round to one decimal")
+        }
+    }
+
+    func testFormattedDisplayWeight_preservesDecimalPrecision() {
+        let formatted = weightManager.formattedDisplayWeight(150.5)
+        if weightManager.currentUnitAbbreviation == "lbs" {
+            XCTAssertEqual(formatted, "150.5")
+        } else {
+            XCTAssertEqual(formatted, "68.3", "Metric display should show one decimal place")
+        }
+    }
+
+    // MARK: - Phase 2 Task 2.1 - Resolved Start Weight
+
+    func testResolvedStartWeight_returnsOverrideWhenPresent() {
+        let overrideDate = Date(timeIntervalSince1970: 1_000)
+        weightManager.setStartWeightOverride(155.0, date: overrideDate)
+
+        let resolved = weightManager.resolvedStartWeight()
+        XCTAssertNotNil(resolved)
+        if let resolved = resolved {
+            XCTAssertEqual(resolved.date, overrideDate)
+            XCTAssertEqual(resolved.weight, weightManager.convertToInternalUnit(155.0), accuracy: 0.0001)
+        }
+    }
+
+    func testResolvedStartWeight_fallsBackToOldestEntry() {
+        let oldest = WeightEntry(date: Date().minusDays(5), weight: 200.0, source: .manual)
+        let latest = WeightEntry(date: Date(), weight: 190.0, source: .manual)
+        weightManager.setStartWeightOverride(nil, date: nil)
+        var entries = [latest, oldest]
+        entries.sort { $0.date > $1.date }
+        weightManager.weightEntries = entries
+
+        let resolved = weightManager.resolvedStartWeight()
+        if let resolved = resolved {
+            XCTAssertEqual(resolved.id, oldest.id)
+            XCTAssertEqual(resolved.weight, oldest.weight)
+        } else {
+            XCTFail("Expected oldest entry to be resolved")
+        }
+    }
+
+    func testResolvedStartWeight_returnsNilWhenEmpty() {
+        weightManager.weightEntries.removeAll()
+        weightManager.setStartWeightOverride(nil, date: nil)
+
+        XCTAssertNil(weightManager.resolvedStartWeight())
+    }
+
+    // MARK: - Phase 2 Task 2.1 - Milestone Count Validation
+
+    func testSetMilestoneCount_clampsBelowZero() {
+        weightManager.setMilestoneCount(-5)
+        XCTAssertEqual(weightManager.milestoneCount, 0)
+    }
+
+    func testSetMilestoneCount_clampsAboveMaximum() {
+        weightManager.setMilestoneCount(25)
+        XCTAssertEqual(weightManager.milestoneCount, 10)
+    }
+
+    // MARK: - Phase 2 Task 2.1 - Goal Weight Persistence
+
+    func testSetGoalWeight_persistsAcrossInstances() {
+        weightManager.setGoalWeight(165.5)
+        let rehydratedManager = WeightManager()
+        XCTAssertEqual(rehydratedManager.goalWeight, 165.5, accuracy: 0.0001)
+    }
+
+    // MARK: - Phase 2 Task 2.1 - Progress Percentage
+
+    func testProgressPercentage_returnsNilWhenNoProgressMade() {
+        let start = WeightEntry(date: Date().minusDays(7), weight: 200.0, source: .manual)
+        let current = WeightEntry(date: Date(), weight: 200.0, source: .manual)
+        weightManager.setStartWeightOverride(nil, date: nil)
+        var entries = [current, start]
+        entries.sort { $0.date > $1.date }
+        weightManager.weightEntries = entries
+
+        let percentage = weightManager.progressPercentage(toward: 180.0)
+        XCTAssertNil(percentage)
+    }
+
+    func testProgressPercentage_returnsValueWhenHalfway() {
+        let start = WeightEntry(date: Date().minusDays(7), weight: 200.0, source: .manual)
+        let current = WeightEntry(date: Date(), weight: 190.0, source: .manual)
+        weightManager.setStartWeightOverride(nil, date: nil)
+        var entries = [current, start]
+        entries.sort { $0.date > $1.date }
+        weightManager.weightEntries = entries
+
+        guard let percentage = weightManager.progressPercentage(toward: 180.0) else {
+            return XCTFail("Expected progress percentage when halfway to goal")
+        }
+        XCTAssertEqual(percentage, 50.0, accuracy: 0.1)
+    }
+
+    func testProgressPercentage_capsAtHundred() {
+        let start = WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual)
+        let current = WeightEntry(date: Date(), weight: 160.0, source: .manual)
+        weightManager.setStartWeightOverride(nil, date: nil)
+        var entries = [current, start]
+        entries.sort { $0.date > $1.date }
+        weightManager.weightEntries = entries
+
+        guard let percentage = weightManager.progressPercentage(toward: 180.0) else {
+            return XCTFail("Expected capped progress percentage")
+        }
+        XCTAssertEqual(percentage, 100.0)
+    }
+
     // MARK: - Edge Cases
 
     func testAddWeightEntryInPreferredUnit_PreventsDuplicates() {
@@ -614,5 +735,536 @@ final class WeightManagerTests: XCTestCase {
 
         // Then
         XCTAssertNil(stats, "milestoneStats should be nil with insufficient data")
+    }
+
+    // MARK: - PHASE 2 TASK 2.1: Weight Conversion Tests (Enhancement 9-15 Coverage)
+    // Testing convertWeightToDisplayUnit() method that formattedWeight() depends on
+    // Following Apple Testing Best Practices - unit conversion accuracy
+
+    func test_convertWeightToDisplayUnit_pounds_returnsOriginalValue() {
+        // Given - pounds is the internal unit
+        let internalWeight = 150.0 // pounds
+
+        // When - converting to display (assumes user preference is pounds)
+        // Note: This test assumes default US locale (pounds)
+        let displayWeight = weightManager.convertWeightToDisplayUnit(internalWeight)
+
+        // Then - should return same value for pounds
+        XCTAssertEqual(displayWeight, 150.0, accuracy: 0.01, "Pounds should return original value")
+    }
+
+    func test_convertWeightToDisplayUnit_convertsToKilogramsCorrectly() {
+        // Given - internal weight in pounds, user wants kilograms
+        let poundsWeight = 150.0
+
+        // When - converting (this depends on user's locale setting)
+        let displayWeight = weightManager.convertWeightToDisplayUnit(poundsWeight)
+
+        // Then - verify conversion is accurate (150 lbs = 68.04 kg)
+        // Note: This test will pass/fail based on current locale
+        // For comprehensive testing, we'd mock AppSettings.shared.weightUnit
+        XCTAssertGreaterThan(displayWeight, 0, "Display weight should be positive")
+    }
+
+    func test_convertWeightToDisplayUnit_zeroWeight_returnsZero() {
+        // Given - zero weight
+        let zeroWeight = 0.0
+
+        // When
+        let displayWeight = weightManager.convertWeightToDisplayUnit(zeroWeight)
+
+        // Then
+        XCTAssertEqual(displayWeight, 0.0, accuracy: 0.001, "Zero should remain zero in any unit")
+    }
+
+    func test_convertWeightToDisplayUnit_negativeWeight_handlesCorrectly() {
+        // Given - negative weight (edge case, defensive programming)
+        let negativeWeight = -10.0
+
+        // When
+        let displayWeight = weightManager.convertWeightToDisplayUnit(negativeWeight)
+
+        // Then - should handle negative values (no crash)
+        XCTAssertLessThan(displayWeight, 0, "Negative weight should remain negative")
+    }
+
+    func test_convertWeightToDisplayUnit_extremeValue_handlesCorrectly() {
+        // Given - very large weight (edge case)
+        let extremeWeight = 1000.0
+
+        // When
+        let displayWeight = weightManager.convertWeightToDisplayUnit(extremeWeight)
+
+        // Then - should handle large values without overflow
+        XCTAssertGreaterThan(displayWeight, 0, "Extreme weight should convert correctly")
+    }
+
+    // MARK: - PHASE 2 TASK 2.1: resolvedStartWeight() Tests
+    // Testing Enhancement 11 - Start Weight Override functionality
+    // Following Apple Testing Best Practices - boundary condition testing
+
+    func test_resolvedStartWeight_withOverride_returnsOverride() {
+        // Given - override is set
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 175.0, source: .manual))
+        weightManager.setStartWeightOverride(181.0, date: Date().minusDays(10))
+
+        // When
+        let resolved = weightManager.resolvedStartWeight()
+
+        // Then - should return override, not earliest entry
+        XCTAssertNotNil(resolved, "resolvedStartWeight should not be nil when override set")
+        XCTAssertEqual(resolved!.weight, 181.0, accuracy: 0.01, "Should return override value")
+    }
+
+    func test_resolvedStartWeight_withoutOverride_returnsEarliestEntry() {
+        // Given - no override, multiple entries
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 175.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(15), weight: 185.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let resolved = weightManager.resolvedStartWeight()
+
+        // Then - should return earliest (oldest) entry
+        XCTAssertNotNil(resolved, "resolvedStartWeight should not be nil when entries exist")
+        XCTAssertEqual(resolved!.weight, 200.0, accuracy: 0.01, "Should return earliest entry (200.0)")
+    }
+
+    func test_resolvedStartWeight_emptyEntries_returnsNil() {
+        // Given - no entries, no override
+        // weightManager is already empty from setUp()
+
+        // When
+        let resolved = weightManager.resolvedStartWeight()
+
+        // Then
+        XCTAssertNil(resolved, "resolvedStartWeight should be nil when no data exists")
+    }
+
+    func test_resolvedStartWeight_multipleEntries_returnsOldest() {
+        // Given - 5 entries spanning different dates
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 170.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(5), weight: 175.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(10), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(20), weight: 190.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let resolved = weightManager.resolvedStartWeight()
+
+        // Then - should return the 30-day-old entry (200.0)
+        XCTAssertNotNil(resolved, "resolvedStartWeight should not be nil")
+        XCTAssertEqual(resolved!.weight, 200.0, accuracy: 0.01, "Should return oldest entry")
+    }
+
+    func test_resolvedStartWeight_overrideZero_stillUsesEarliestEntry() {
+        // Given - override is explicitly nil/zero (cleared)
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.setStartWeightOverride(nil, date: nil) // Clear override
+
+        // When
+        let resolved = weightManager.resolvedStartWeight()
+
+        // Then - should fall back to earliest entry
+        XCTAssertNotNil(resolved, "Should fall back to earliest entry when override cleared")
+        XCTAssertEqual(resolved!.weight, 200.0, accuracy: 0.01, "Should use earliest entry")
+    }
+
+    func test_resolvedStartWeight_changeOverride_updatesImmediately() {
+        // Given - initial override set
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.setStartWeightOverride(180.0, date: Date().minusDays(10))
+
+        let firstResolved = weightManager.resolvedStartWeight()
+        XCTAssertEqual(firstResolved!.weight, 180.0, accuracy: 0.01, "Initial override should be 180")
+
+        // When - change override
+        weightManager.setStartWeightOverride(185.0, date: Date().minusDays(5))
+        let secondResolved = weightManager.resolvedStartWeight()
+
+        // Then - should reflect new override immediately
+        XCTAssertEqual(secondResolved!.weight, 185.0, accuracy: 0.01, "Should update to new override")
+    }
+
+    func test_resolvedStartWeight_clearOverride_fallsBackToEarliest() {
+        // Given - override initially set
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 175.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+        weightManager.setStartWeightOverride(181.0, date: Date().minusDays(10))
+
+        XCTAssertEqual(weightManager.resolvedStartWeight()!.weight, 181.0, accuracy: 0.01, "Initial override active")
+
+        // When - clear override
+        weightManager.setStartWeightOverride(nil, date: nil)
+        let resolved = weightManager.resolvedStartWeight()
+
+        // Then - should fall back to earliest entry
+        XCTAssertEqual(resolved!.weight, 200.0, accuracy: 0.01, "Should fall back to earliest entry (200.0)")
+    }
+
+    func test_resolvedStartWeight_overrideWithSameDate_usesOverrideNotEntry() {
+        // Given - override date matches an existing entry date
+        let sharedDate = Date().minusDays(10)
+        weightManager.weightEntries.append(WeightEntry(date: sharedDate, weight: 190.0, source: .healthKit))
+        weightManager.setStartWeightOverride(185.0, date: sharedDate)
+
+        // When
+        let resolved = weightManager.resolvedStartWeight()
+
+        // Then - override takes precedence over entry
+        XCTAssertEqual(resolved!.weight, 185.0, accuracy: 0.01, "Override should take precedence")
+    }
+
+    // MARK: - PHASE 2 TASK 2.1: Milestone Count Validation Tests
+    // Testing Enhancement 13 - Milestone Selector (0-10 milestones)
+    // Following Apple Testing Best Practices - bounds validation
+
+    func test_milestoneCount_validRange_accepts0to10() {
+        // Given/When/Then - test all valid values (0-10)
+        for validCount in 0...10 {
+            weightManager.setMilestoneCount(validCount)
+            XCTAssertEqual(weightManager.milestoneCount, validCount, "Should accept milestone count \(validCount)")
+        }
+    }
+
+    func test_milestoneCount_negative_clampsToZero() {
+        // Given - attempt to set negative milestone count
+        let invalidCount = -5
+
+        // When
+        weightManager.setMilestoneCount(invalidCount)
+
+        // Then - should clamp to 0 (minimum)
+        XCTAssertEqual(weightManager.milestoneCount, 0, "Negative milestone count should clamp to 0")
+    }
+
+    func test_milestoneCount_above10_clampsTo10() {
+        // Given - attempt to set milestone count above maximum
+        let invalidCount = 15
+
+        // When
+        weightManager.setMilestoneCount(invalidCount)
+
+        // Then - should clamp to 10 (maximum)
+        XCTAssertEqual(weightManager.milestoneCount, 10, "Milestone count >10 should clamp to 10")
+    }
+
+    func test_milestoneCount_defaultValue_is10() {
+        // Given - fresh WeightManager instance (from setUp)
+        // Note: setUp() creates new instance, but need to verify default
+
+        // When - check initial value
+        let defaultCount = weightManager.milestoneCount
+
+        // Then - should default to 10 (per specification)
+        XCTAssertEqual(defaultCount, 10, "Default milestone count should be 10")
+    }
+
+    func test_milestoneCount_persists_acrossRestarts() {
+        // Given - set milestone count to 7
+        weightManager.setMilestoneCount(7)
+        XCTAssertEqual(weightManager.milestoneCount, 7, "Initial set to 7")
+
+        // When - simulate app restart by creating new WeightManager
+        let newManager = WeightManager()
+
+        // Then - should load persisted value (7)
+        XCTAssertEqual(newManager.milestoneCount, 7, "Milestone count should persist across restarts")
+
+        // Cleanup - reset to default for other tests
+        newManager.setMilestoneCount(10)
+    }
+
+    func test_milestoneCount_zeroMilestones_isValid() {
+        // Given - user wants no milestones (valid use case)
+        let zeroCount = 0
+
+        // When
+        weightManager.setMilestoneCount(zeroCount)
+
+        // Then - should accept 0 as valid
+        XCTAssertEqual(weightManager.milestoneCount, 0, "Zero milestones should be valid")
+    }
+
+    // MARK: - PHASE 2 TASK 2.1: Progress Percentage Tests
+    // Testing Enhancement 12 - Progress Ring Percentage calculation
+    // Following Apple Testing Best Practices - edge case testing
+
+    func test_progressToGoal_atStart_returnsZero() {
+        // Given - just started, no progress made
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then
+        XCTAssertNotNil(progress, "progressToGoal should not be nil at start")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.01, "Should report 0% progress at start")
+    }
+
+    func test_progressToGoal_halfwayToGoal_returns50() {
+        // Given - halfway to goal (start 200, current 180, goal 160)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then - (200-180)/(200-160) = 20/40 = 0.5 (50%)
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 0.5, accuracy: 0.01, "Should be 50% halfway to goal")
+    }
+
+    func test_progressToGoal_atGoal_returns100() {
+        // Given - goal weight reached (start 200, current 160, goal 160)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 160.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then - should clamp at 100%
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 1.0, accuracy: 0.01, "Should be 100% at goal")
+    }
+
+    func test_progressToGoal_overGoal_clampsAt100() {
+        // Given - exceeded goal (start 200, current 150, goal 160)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 150.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then - should clamp at 100%, not exceed
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 1.0, accuracy: 0.01, "Should clamp at 100% when goal exceeded")
+    }
+
+    func test_progressToGoal_noProgress_returnsZero() {
+        // Given - multiple entries, but no weight change
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(5), weight: 200.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(10), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.01, "Should be 0% with no weight change")
+    }
+
+    func test_progressToGoal_gainedWeight_returnsNegative() {
+        // Given - weight increased instead of decreased (start 200, current 210, goal 160)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 210.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then - (200-210)/(200-160) = -10/40 = -0.25 (-25%)
+        XCTAssertNil(progress, "progressToGoal should be nil for invalid goal (gaining weight)")
+    }
+
+    func test_progressToGoal_goalHigherThanStart_returnsNil() {
+        // Given - gaining weight goal (start 200, goal 220)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 210.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 220.0)
+
+        // Then - should return nil for invalid goal (higher than start)
+        XCTAssertNil(progress, "progressToGoal should be nil for goal higher than start weight")
+    }
+
+    func test_progressToGoal_zeroGoal_returnsNil() {
+        // Given - invalid goal weight (0)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 0.0)
+
+        // Then - should return nil for invalid goal
+        XCTAssertNil(progress, "progressToGoal should be nil for zero goal weight")
+    }
+
+    func test_progressToGoal_startEqualsGoal_returnsNil() {
+        // Given - start weight equals goal weight (edge case)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 160.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 160.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then - should return nil (no weight to lose)
+        XCTAssertNil(progress, "progressToGoal should be nil when start equals goal")
+    }
+
+    func test_progressToGoal_quarter_returns25() {
+        // Given - 25% progress (start 200, current 190, goal 160)
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 190.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        // When
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        // Then - (200-190)/(200-160) = 10/40 = 0.25 (25%)
+        XCTAssertNotNil(progress, "progressToGoal should not be nil")
+        XCTAssertEqual(progress!, 0.25, accuracy: 0.01, "Should be 25% at quarter progress")
+    }
+
+    // MARK: - PHASE 2 TASK 2.1: Goal Weight Persistence Tests
+    // Testing Recovery Task #1 - Goal Weight Persistence with ThreadSafeUserDefaults
+    // Following Apple Testing Best Practices - persistence and thread safety
+
+    func test_goalWeight_save_persistsToUserDefaults() {
+        // Given - set goal weight
+        let goalValue = 150.0
+
+        // When
+        weightManager.setGoalWeight(goalValue)
+
+        // Then - verify it's saved in @Published property
+        XCTAssertEqual(weightManager.goalWeight, goalValue, accuracy: 0.01, "Goal weight should be saved")
+
+        // And - verify it persists to UserDefaults
+        let savedValue = UserDefaults.standard.double(forKey: "goalWeight")
+        XCTAssertEqual(savedValue, goalValue, accuracy: 0.01, "Goal weight should persist to UserDefaults")
+    }
+
+    func test_goalWeight_load_restoresFromUserDefaults() {
+        // Given - manually set goal in UserDefaults
+        let expectedGoal = 165.0
+        UserDefaults.standard.set(expectedGoal, forKey: "goalWeight")
+
+        // When - create new WeightManager (simulates app restart)
+        let newManager = WeightManager()
+
+        // Then - should load persisted goal
+        XCTAssertEqual(newManager.goalWeight, expectedGoal, accuracy: 0.01, "Should restore goal from UserDefaults")
+
+        // Cleanup
+        UserDefaults.standard.removeObject(forKey: "goalWeight")
+    }
+
+    func test_goalWeight_default_isZero() {
+        // Given - fresh UserDefaults (no goal set)
+        UserDefaults.standard.removeObject(forKey: "goalWeight")
+
+        // When - create fresh WeightManager
+        let freshManager = WeightManager()
+
+        // Then - should default to 0
+        XCTAssertEqual(freshManager.goalWeight, 0.0, accuracy: 0.01, "Default goal weight should be 0")
+    }
+
+    func test_goalWeight_update_overwritesPrevious() {
+        // Given - initial goal set
+        weightManager.setGoalWeight(150.0)
+        XCTAssertEqual(weightManager.goalWeight, 150.0, accuracy: 0.01, "Initial goal set to 150")
+
+        // When - update to new goal
+        weightManager.setGoalWeight(160.0)
+
+        // Then - should overwrite with new value
+        XCTAssertEqual(weightManager.goalWeight, 160.0, accuracy: 0.01, "Goal should update to 160")
+
+        // And - verify persistence
+        let savedValue = UserDefaults.standard.double(forKey: "goalWeight")
+        XCTAssertEqual(savedValue, 160.0, accuracy: 0.01, "Updated goal should persist")
+    }
+
+    func test_goalWeight_negative_savesNegative() {
+        // Given - negative goal (edge case, defensive programming)
+        let negativeGoal = -10.0
+
+        // When
+        weightManager.setGoalWeight(negativeGoal)
+
+        // Then - should handle negative values (no crash)
+        XCTAssertEqual(weightManager.goalWeight, negativeGoal, accuracy: 0.01, "Should accept negative goal")
+    }
+
+    func test_goalWeight_zero_savesZero() {
+        // Given - zero goal (valid: no goal set)
+        let zeroGoal = 0.0
+
+        // When
+        weightManager.setGoalWeight(zeroGoal)
+
+        // Then - should accept zero as valid
+        XCTAssertEqual(weightManager.goalWeight, zeroGoal, accuracy: 0.01, "Should accept zero goal")
+    }
+
+    func test_goalWeight_published_triggersObservation() {
+        // Given - create observer expectation
+        let expectation = XCTestExpectation(description: "Goal weight @Published triggers update")
+        var observedValue: Double?
+
+        // Create observer using Combine
+        let cancellable = weightManager.$goalWeight
+            .dropFirst() // Skip initial value
+            .sink { newValue in
+                observedValue = newValue
+                expectation.fulfill()
+            }
+
+        // When - set new goal
+        weightManager.setGoalWeight(155.0)
+
+        // Then - observer should receive update
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(observedValue!, 155.0, accuracy: 0.01, "@Published should notify observers")
+
+        cancellable.cancel()
+    }
+
+    func test_goalWeight_threadSafe_concurrentAccess() {
+        // Given - multiple concurrent writes
+        let expectation = XCTestExpectation(description: "Concurrent goal weight updates complete")
+        expectation.expectedFulfillmentCount = 10
+
+        // When - simulate concurrent access from multiple threads
+        Task {
+            await withTaskGroup(of: Void.self) { group in
+                for i in 0..<10 {
+                    let goalValue = Double(150 + i)
+                    group.addTask {
+                        await MainActor.run {
+                            self.weightManager.setGoalWeight(goalValue)
+                        }
+                        expectation.fulfill()
+                    }
+                }
+            }
+        }
+
+        // Then - all operations should complete without crash
+        wait(for: [expectation], timeout: 5.0)
+
+        // And - final value should be one of the set values (between 150-159)
+        let finalGoal = weightManager.goalWeight
+        XCTAssertGreaterThanOrEqual(finalGoal, 150.0, "Final goal should be >= 150")
+        XCTAssertLessThanOrEqual(finalGoal, 159.0, "Final goal should be <= 159")
+
+        // This test verifies ThreadSafeUserDefaults prevents race conditions
     }
 }

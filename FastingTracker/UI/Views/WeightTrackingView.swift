@@ -28,84 +28,11 @@ struct WeightTrackingView: View {
     // SwiftUI requires Bindings to be created from @State/@Published properties
     // Since vm is a computed property, we create these helper bindings
 
-    private var showingAddWeightBinding: Binding<Bool> {
+    private func binding<Value>(_ keyPath: ReferenceWritableKeyPath<WeightTrackingViewModel, Value>) -> Binding<Value> {
         Binding(
-            get: { self.vm.showingAddWeight },
-            set: { self.vm.showingAddWeight = $0 }
+            get: { vm[keyPath: keyPath] },
+            set: { vm[keyPath: keyPath] = $0 }
         )
-    }
-
-    private var showingSettingsBinding: Binding<Bool> {
-        Binding(
-            get: { self.vm.showingSettings },
-            set: { self.vm.showingSettings = $0 }
-        )
-    }
-
-    private var showingGoalEditorBinding: Binding<Bool> {
-        Binding(
-            get: { self.vm.showingGoalEditor },
-            set: { self.vm.showingGoalEditor = $0 }
-        )
-    }
-
-    private var showingTrendsBinding: Binding<Bool> {
-        Binding(
-            get: { self.vm.showingTrends },
-            set: { self.vm.showingTrends = $0 }
-        )
-    }
-
-    private var showingFirstTimeSetupBinding: Binding<Bool> {
-        Binding(
-            get: { self.vm.showingFirstTimeSetup },
-            set: { self.vm.showingFirstTimeSetup = $0 }
-        )
-    }
-
-    private var showGoalLineBinding: Binding<Bool> {
-        Binding(
-            get: { self.vm.showGoalLine },
-            set: { self.vm.showGoalLine = $0 }
-        )
-    }
-
-    private var weightGoalBinding: Binding<Double> {
-        Binding(
-            get: { self.vm.weightGoal },
-            set: { self.vm.weightGoal = $0 }
-        )
-    }
-
-    private var selectedTimeRangeBinding: Binding<WeightTimeRange> {
-        Binding(
-            get: { self.vm.selectedTimeRange },
-            set: { self.vm.selectedTimeRange = $0 }
-        )
-    }
-
-    private var draggedCardBinding: Binding<TrackerCardType?> {
-        Binding(
-            get: { self.vm.draggedCard },
-            set: { self.vm.draggedCard = $0 }
-        )
-    }
-
-    private var healthKitNudgeView: AnyView? {
-        if vm.shouldShowHealthKitNudge {
-            return AnyView(
-                HealthKitNudgeView(
-                    dataType: .weight,
-                    onConnect: {
-                        vm.handleHealthKitConnect()
-                    },
-                    onDismiss: {
-                        vm.handleHealthKitDismiss()
-                    }
-                )
-            )
-        }
-        return nil
     }
 
     // REMOVED: milestoneRingCard property (Enhancement 7)
@@ -122,13 +49,21 @@ struct WeightTrackingView: View {
         return TrackerScreenShell(
             title: ("Weight Tr", "ac", "ker"),
             hasData: !weightManager.weightEntries.isEmpty,
-            nudge: healthKitNudgeView,
+            nudge: vm.shouldShowHealthKitNudge
+                ? AnyView(
+                    HealthKitNudgeView(
+                        dataType: .weight,
+                        onConnect: vm.handleHealthKitConnect,
+                        onDismiss: vm.handleHealthKitDismiss
+                    )
+                )
+                : nil,
             gradientStyle: .luxury,  // 🔥 LUXURY UI ACTIVATED
             settingsAction: { vm.showingSettings = true }
         ) {
             if weightManager.weightEntries.isEmpty {
                 EmptyWeightStateView(
-                    showingAddWeight: showingAddWeightBinding,
+                    showingAddWeight: binding(\.showingAddWeight),
                     healthKitManager: vm.healthKitManager,
                     weightManager: weightManager
                 )
@@ -144,9 +79,9 @@ struct WeightTrackingView: View {
                             vm.draggedCard = cardType
                             return NSItemProvider(object: cardType.rawValue as NSString)
                         }
-                        .onDrop(of: [.text], delegate: TrackerCardDropDelegate(
+                        .onDrop(of: [.text], delegate: WeightTrackerCardDropDelegate(
                             card: cardType,
-                            draggedCard: draggedCardBinding,
+                            draggedCard: binding(\.draggedCard),
                             cardManager: cardManager
                         ))
                 }
@@ -162,25 +97,25 @@ struct WeightTrackingView: View {
                 // Users access history via: Gear Icon → Control Center → History section
             }
         }
-        .sheet(isPresented: showingAddWeightBinding) {
+        .sheet(isPresented: binding(\.showingAddWeight)) {
             AddWeightView(weightManager: weightManager)
         }
-        .sheet(isPresented: showingSettingsBinding) {
+        .sheet(isPresented: binding(\.showingSettings)) {
             WeightControlCenterView(
                 weightManager: weightManager,
-                showGoalLine: showGoalLineBinding,
-                weightGoal: weightGoalBinding
+                showGoalLine: binding(\.showGoalLine),
+                weightGoal: binding(\.weightGoal)
             )
             .environmentObject(behavioralScheduler)
         }
-        .sheet(isPresented: showingGoalEditorBinding) {
+        .sheet(isPresented: binding(\.showingGoalEditor)) {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
-                weightGoal: weightGoalBinding,
-                showGoalLine: showGoalLineBinding
+                weightGoal: binding(\.weightGoal),
+                showGoalLine: binding(\.showGoalLine)
             )
         }
-        .sheet(isPresented: showingTrendsBinding) {
+        .sheet(isPresented: binding(\.showingTrends)) {
             WeightTrendsView(weightManager: weightManager)
                 .onAppear {
                     #if DEBUG
@@ -194,11 +129,11 @@ struct WeightTrackingView: View {
             #endif
         }
         // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
-        .sheet(isPresented: showingFirstTimeSetupBinding) {
+        .sheet(isPresented: binding(\.showingFirstTimeSetup)) {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
-                weightGoal: weightGoalBinding,
-                showGoalLine: showGoalLineBinding
+                weightGoal: binding(\.weightGoal),
+                showGoalLine: binding(\.showGoalLine)
             )
         }
         .onAppear {
@@ -238,9 +173,9 @@ struct WeightTrackingView: View {
                 CurrentWeightCard(
                     weightManager: weightManager,
                     weightGoal: vm.weightGoal,
-                    showingGoalEditor: showingGoalEditorBinding,
-                    showingAddWeight: showingAddWeightBinding,
-                    showingTrends: showingTrendsBinding
+                    showingGoalEditor: binding(\.showingGoalEditor),
+                    showingAddWeight: binding(\.showingAddWeight),
+                    showingTrends: binding(\.showingTrends)
                 )
             }
 
@@ -256,9 +191,9 @@ struct WeightTrackingView: View {
             ) {
                 WeightChartView(
                     weightManager: weightManager,
-                    selectedTimeRange: selectedTimeRangeBinding,
-                    showGoalLine: showGoalLineBinding,
-                    weightGoal: weightGoalBinding
+                    selectedTimeRange: binding(\.selectedTimeRange),
+                    showGoalLine: binding(\.showGoalLine),
+                    weightGoal: binding(\.weightGoal)
                 )
             }
 
@@ -283,129 +218,7 @@ struct WeightTrackingView: View {
     // Business logic now in WeightTrackingViewModel following MVVM pattern
 }
 
-// MARK: - Empty State View
-
-struct EmptyWeightStateView: View {
-    @Binding var showingAddWeight: Bool
-    let healthKitManager: HealthKitManager
-    let weightManager: WeightManager
-    // Removed: @State private var showingHealthDataSelection - no longer needed
-
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "scalemass")
-                .font(DSTypography.displayXXL)
-                .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.6))
-
-            Text("No Weight Data Yet")
-                .font(DSTypography.displayM)
-                .foregroundColor(Theme.ColorToken.textSecondary)
-
-            Text("Add your first weight entry or sync with Apple Health")
-                .font(DSTypography.cardBody)
-                .foregroundColor(Theme.ColorToken.textSecondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-
-            VStack(spacing: 12) {
-                Button(action: { showingAddWeight = true }) {
-                    Label("Add Weight Manually", systemImage: "plus.circle.fill")
-                        .font(DSTypography.buttonPrimary)
-                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Theme.ColorToken.accentPrimary)
-                        .cornerRadius(DSCornerRadius.button)
-                }
-                .accessibilityLabel("Add weight entry manually")
-
-                Button(action: {
-                    // DIRECT AUTHORIZATION: Apple HIG contextual permission pattern
-                    // Request weight permissions immediately when user wants to sync weight data
-                    AppLogger.info("EmptyState: Sync button tapped - requesting weight authorization", category: AppLogger.healthKit)
-
-                    // CRITICAL FIX: Enable sync preference FIRST so syncFromHealthKit() doesn't early-return
-                    // This ensures the sync actually runs and logs appear
-                    weightManager.setSyncPreference(true)
-                    AppLogger.info("EmptyState: Enabled sync preference", category: AppLogger.healthKit)
-
-                    HealthKitManager.shared.requestWeightAuthorization { success, _ in
-                        if success {
-                            AppLogger.info("EmptyState: Weight authorization granted - starting sync", category: AppLogger.healthKit)
-                            DispatchQueue.main.async {
-                                // Use syncFromHealthKitWithReset to reset anchor and get all data fresh
-                                let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
-                                weightManager.syncFromHealthKitWithReset(startDate: startDate) { addedCount, error in
-                                    if let error = error {
-                                        AppLogger.error("EmptyState: Sync failed", category: AppLogger.healthKit, error: error)
-                                    } else {
-                                        AppLogger.info("EmptyState: Sync completed - added \(addedCount) entries", category: AppLogger.healthKit)
-                                    }
-                                }
-                            }
-                        } else {
-                            AppLogger.info("EmptyState: Weight authorization denied", category: AppLogger.healthKit)
-                        }
-                    }
-                }) {
-                    Label("Sync with Apple Health", systemImage: "heart.fill")
-                        .font(DSTypography.buttonPrimary)
-                        .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Theme.ColorToken.stateSuccess)
-                        .cornerRadius(DSCornerRadius.button)
-                }
-                .accessibilityLabel("Sync weight data with Apple Health")
-            }
-            .padding(.horizontal, 40)
-        }
-        .frame(maxHeight: .infinity)
-        .padding(.top, 60)
-        // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
-    }
-
-    // Removed: handleHealthDataSelection - no longer needed with direct authorization
-}
-
-// MARK: - Tracker Card Drop Delegate (Layer 5)
-
-/// Drop delegate for drag-and-drop tracker card reordering on main screen
-/// Industry Pattern: Apple Health - Drag cards to customize dashboard order
-/// Note: Different from ControlCenterCardDropDelegate (used in Control Center settings)
-struct TrackerCardDropDelegate: DropDelegate {
-    let card: TrackerCardType
-    @Binding var draggedCard: TrackerCardType?
-    let cardManager: CardManager<TrackerCardType>
-
-    func performDrop(info: DropInfo) -> Bool {
-        guard let draggedCard = draggedCard else { return false }
-
-        // Use canonical sort order so hidden cards (history) don't break index lookups
-        let fromIndex = cardManager.getCardOrder(draggedCard)
-        let toIndex = cardManager.getCardOrder(card)
-
-        // Only reorder if indices are different
-        if fromIndex != toIndex {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                cardManager.reorderCards(from: fromIndex, to: toIndex)
-            }
-        }
-
-        self.draggedCard = nil
-        return true
-    }
-
-    func dropEntered(info: DropInfo) {
-        // Optional: Add visual feedback during drag (e.g., scale effect)
-    }
-
-    func dropExited(info: DropInfo) {
-        // Optional: Remove visual feedback
-    }
-}
-
-// MARK: - View Modifier for Conditional X-Axis Scale
+// MARK: - Preview
 
 #Preview {
     WeightTrackingView()

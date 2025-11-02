@@ -23,9 +23,10 @@ class GoalsViewModel: ObservableObject {
         formatted = formatted.filter { $0.isNumber || $0 == "." }
 
         // Ensure only one decimal point
-        let components = formatted.components(separatedBy: ".")
+        var components = formatted.components(separatedBy: ".")
         if components.count > 2 {
             formatted = components[0] + "." + components[1...].joined()
+            components = formatted.components(separatedBy: ".")
         }
 
         // Limit to one decimal place
@@ -34,6 +35,19 @@ class GoalsViewModel: ObservableObject {
             if afterDot.count > 1 {
                 formatted = String(formatted.prefix(upTo: formatted.index(dotIndex, offsetBy: 2)))
             }
+            components = formatted.components(separatedBy: ".")
+        }
+
+        let hasDecimal = formatted.contains(".")
+        let integerDigits = components.first?.count ?? 0
+
+        // Clamp values that exceed the max but were entered with <=4 integer digits (e.g. 1000.5)
+        if hasDecimal,
+           integerDigits <= 4,
+           let value = Double(formatted),
+           value > 999.9 {
+            weightGoalString = "999.9"
+            return
         }
 
         // FIRST: Limit integer part to 3 digits (for values like "12345" or "12345.5")
@@ -49,7 +63,6 @@ class GoalsViewModel: ObservableObject {
         }
 
         // THEN: Check max value after digit limiting (for values like "999.9" or after limiting)
-        let hasDecimal = formatted.contains(".")
         let finalValue = Double(formatted) ?? 0
         if hasDecimal && finalValue > 999.9 {
             formatted = "999.9"

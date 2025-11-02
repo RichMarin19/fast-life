@@ -238,6 +238,47 @@ class WeightManager: ObservableObject {
         return appSettings.weightUnit.fromPounds(weightInPounds)
     }
 
+    /// Format a weight value (stored internally as pounds) for display in the user's preferred unit.
+    /// Mirrors Apple's Formatting best practices by reusing NumberFormatter and trimming trailing zeros.
+    /// - Parameters:
+    ///   - weightInPounds: The internal weight (pounds).
+    ///   - maximumFractionDigits: Max decimals to display (default: 1).
+    /// - Returns: Localized weight string (e.g., "150", "68.3 kg").
+    func formattedDisplayWeight(_ weightInPounds: Double, maximumFractionDigits: Int = 1) -> String {
+        let displayValue = convertWeightToDisplayUnit(weightInPounds)
+
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = maximumFractionDigits
+        formatter.minimumFractionDigits = displayValue.truncatingRemainder(dividingBy: 1).isZero ? 0 : min(1, maximumFractionDigits)
+        formatter.locale = Locale.current
+
+        let number = NSNumber(value: displayValue)
+        return formatter.string(from: number) ?? String(format: "%.\(maximumFractionDigits)f", displayValue)
+    }
+
+    /// Calculate progress percentage toward a goal weight using the authoritative baseline.
+    /// Returns nil when baseline/goal are missing or when progress shouldn't be visualised yet.
+    func progressPercentage(toward goalWeight: Double) -> Double? {
+        guard goalWeight > 0,
+              let startingWeight = resolvedStartWeight()?.weight,
+              let currentWeight = latestWeight?.weight else {
+            return nil
+        }
+
+        let totalWeightToLose = startingWeight - goalWeight
+        let weightLostSoFar = startingWeight - currentWeight
+
+        guard totalWeightToLose > 0,
+              weightLostSoFar > 0,
+              currentWeight > goalWeight else {
+            return nil
+        }
+
+        let percentage = (weightLostSoFar / totalWeightToLose) * 100.0
+        return min(percentage, 100.0)
+    }
+
     /// Returns whichever start weight should be considered authoritative.
     /// Prefers the user override, otherwise falls back to the earliest entry.
     func resolvedStartWeight() -> WeightEntry? {
@@ -749,10 +790,14 @@ class WeightManager: ObservableObject {
     /// Total weight change from start to current
     /// Returns nil if insufficient data (need at least 2 entries)
     var totalWeightChange: Double? {
-        guard let start = resolvedStartWeight()?.weight, let current = latestWeight?.weight else {
+        guard let startEntry = resolvedStartWeight()?.weight,
+              let current = latestWeight?.weight else {
             return nil
         }
-        return current - start
+        if weightEntries.count < 2 && startWeightOverride == nil {
+            return nil
+        }
+        return current - startEntry
     }
 
     /// Calculate progress toward goal weight (0.0 to 1.0)
@@ -769,6 +814,10 @@ class WeightManager: ObservableObject {
 
         let totalDistance = start - goalWeight
         let progressMade = start - current
+
+        guard progressMade > 0 else {
+            return nil
+        }
 
         // Clamp progress between 0.0 and 1.0
         let progress = max(0.0, min(1.0, progressMade / totalDistance))
@@ -845,6 +894,9 @@ class WeightManager: ObservableObject {
               let current = latestWeight?.weight,
               goalWeight > 0,
               goalWeight < start else {
+            return nil
+        }
+        if weightEntries.count < 2 && startWeightOverride == nil {
             return nil
         }
 

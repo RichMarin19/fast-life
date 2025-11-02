@@ -16,19 +16,6 @@ struct CurrentWeightCard: View {
         weightManager.currentUnitAbbreviation
     }
 
-    /// Converts internal pounds to the user's preferred display unit and formats it.
-    private func formattedWeight(_ pounds: Double, maximumFractionDigits: Int = 1) -> String {
-        let displayValue = weightManager.convertWeightToDisplayUnit(pounds)
-
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = maximumFractionDigits
-        formatter.minimumFractionDigits = displayValue.truncatingRemainder(dividingBy: 1).isZero ? 0 : min(1, maximumFractionDigits)
-        formatter.locale = Locale.current
-
-        return formatter.string(from: NSNumber(value: displayValue)) ?? String(format: "%.\(maximumFractionDigits)f", displayValue)
-    }
-
     /// Calculates total weight change from START (first entry) to CURRENT (latest entry)
     /// Returns: (totalChange: Double, isLoss: Bool)
     /// Positive = loss, Negative = gain
@@ -99,36 +86,6 @@ struct CurrentWeightCard: View {
     }
 
     /// Calculates progress percentage toward goal weight
-    /// Formula: (Starting Weight - Current Weight) / (Starting Weight - Goal Weight) × 100
-    /// Returns nil if insufficient data or goal not set
-    private func calculateProgressPercentage() -> Double? {
-        // Require goal weight to be set
-        guard weightGoal > 0,
-              let startingWeight = weightManager.resolvedStartWeight()?.weight,
-              let currentWeight = weightManager.latestWeight?.weight else {
-            return nil
-        }
-
-        // Calculate progress
-        let totalWeightToLose = startingWeight - weightGoal
-        let weightLostSoFar = startingWeight - currentWeight
-
-        // Only show progress if:
-        // 1. User is trying to lose weight (start > goal)
-        // 2. Some progress has been made (current != start)
-        // 3. Haven't already passed the goal
-        guard totalWeightToLose > 0,
-              weightLostSoFar > 0,
-              currentWeight > weightGoal else {
-            return nil
-        }
-
-        let percentage = (weightLostSoFar / totalWeightToLose) * 100.0
-
-        // Cap at 100% even if they've made more progress than expected
-        return min(percentage, 100.0)
-    }
-
     var body: some View {
         VStack(spacing: 8) {
             if let latest = weightManager.latestWeight {
@@ -139,7 +96,7 @@ struct CurrentWeightCard: View {
                 // Industry Pattern: Pure content component (Apple Health, Spotify)
                 VStack(spacing: 6) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(weightManager.displayWeight(for: latest), specifier: "%.1f")")
+                        Text(weightManager.formattedDisplayWeight(latest.weight))
                             .font(DSTypography.displayXL)
                             .foregroundColor(Color("FLPrimary"))
                         Text(unitAbbreviation)
@@ -163,7 +120,7 @@ struct CurrentWeightCard: View {
                 if let progress = calculateTotalProgress() {
                     MotivationBanner(
                         message: progress.isLoss
-                            ? "You've lost \(formattedWeight(progress.amount)) \(unitAbbreviation) - keep it up!"
+                            ? "You've lost \(weightManager.formattedDisplayWeight(progress.amount)) \(unitAbbreviation) - keep it up!"
                             : "Progress isn't always linear - you're doing great",
                         isPositive: progress.isLoss
                     )
@@ -188,19 +145,19 @@ struct CurrentWeightCard: View {
                     Button(action: {
                         showingGoalEditor = true
                     }) {
-                        GoalBadge(goalText: "\(formattedWeight(weightGoal)) \(unitAbbreviation)")
+                        GoalBadge(goalText: "\(weightManager.formattedDisplayWeight(weightGoal)) \(unitAbbreviation)")
                     }
                     .buttonStyle(.plain)  // Removes default button styling
 
                     // Progress Ring - Beautiful circular visual progress indicator
                     // Inspired by milestone concept with sexy color scheme
                     // Per Apple HIG: "Use visual metaphors to communicate meaning"
-                    if let progressPercentage = calculateProgressPercentage(),
+                    if let progressPercentage = weightManager.progressPercentage(toward: weightGoal),
                        let progress = calculateTotalProgress(),
                        let startWeight = getStartWeight(),
                        let weightToGo = calculateWeightToGo() {
-                        let weightLostDisplay = formattedWeight(progress.amount)
-                        let weightToGoDisplay = formattedWeight(weightToGo)
+                        let weightLostDisplay = weightManager.formattedDisplayWeight(progress.amount)
+                        let weightToGoDisplay = weightManager.formattedDisplayWeight(weightToGo)
 
                         CircularProgressRing(
                             percentage: progressPercentage,

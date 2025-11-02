@@ -36,7 +36,9 @@ final class CardManagerTests: XCTestCase {
     func test_cardOrdering_persistsAfterReorder() {
         // Given: Initial default order
         let initialOrder = sut.getVisibleCardsInOrder()
-        XCTAssertEqual(initialOrder.count, 4, "Should have 4 visible tracker cards by default")
+        let expectedVisibleCount = TrackerCardType.allCases.filter { $0 != .history }.count
+        XCTAssertEqual(initialOrder.count, expectedVisibleCount,
+                      "Should have \(expectedVisibleCount) visible tracker cards by default")
 
         // When: Reorder cards (move first card to last position)
         sut.reorderCards(from: 0, to: 3)

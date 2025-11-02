@@ -259,10 +259,12 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
     /// Called on first launch when no saved preferences exist
     private func initializeDefaults() {
         cardPreferences = CardType.allCases.enumerated().map { (index, cardType) in
-            // Special case: ProgressStoryCardType.banner hidden by default (keep only CoachBar)
-            // User feedback: Duplicate motivational messages confusing, keep only top CoachBar
+            // Special cases: ProgressStoryCardType.banner hidden by default (coach bar only)
+            //                TrackerCardType.history hidden by default (loaded on demand)
             let isVisibleByDefault: Bool
             if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
+                isVisibleByDefault = false
+            } else if let trackerCard = cardType as? TrackerCardType, trackerCard == .history {
                 isVisibleByDefault = false
             } else {
                 isVisibleByDefault = true
@@ -290,6 +292,8 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
                 // Special case: ProgressStoryCardType.banner hidden by default
                 let isVisibleByDefault: Bool
                 if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
+                    isVisibleByDefault = false
+                } else if let trackerCard = cardType as? TrackerCardType, trackerCard == .history {
                     isVisibleByDefault = false
                 } else {
                     isVisibleByDefault = true
