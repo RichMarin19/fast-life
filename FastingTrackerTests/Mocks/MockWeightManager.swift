@@ -23,7 +23,8 @@ class MockWeightManager: WeightManager {
         // Call parent's convenience init which uses HealthKitManager.shared and AppDataStore.shared
         super.init(
             healthKit: HealthKitManager.shared,
-            dataStore: AppDataStore.shared
+            dataStore: AppDataStore.shared,
+            appSettings: AppSettings()
         )
         // Start with empty state for clean test environment
         self.weightEntries = []

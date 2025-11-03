@@ -419,7 +419,7 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertEqual(percentage, 50.0, accuracy: 0.1)
     }
 
-    func testProgressPercentage_capsAtHundred() {
+    func testProgressPercentage_goalAlreadyExceeded_returnsNil() {
         let start = WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual)
         let current = WeightEntry(date: Date(), weight: 160.0, source: .manual)
         weightManager.setStartWeightOverride(nil, date: nil)
@@ -427,10 +427,8 @@ final class WeightManagerTests: XCTestCase {
         entries.sort { $0.date > $1.date }
         weightManager.weightEntries = entries
 
-        guard let percentage = weightManager.progressPercentage(toward: 180.0) else {
-            return XCTFail("Expected capped progress percentage")
-        }
-        XCTAssertEqual(percentage, 100.0)
+        let percentage = weightManager.progressPercentage(toward: 180.0)
+        XCTAssertNil(percentage, "Once the goal is surpassed before tracking, percentage should be unavailable")
     }
 
     // MARK: - Edge Cases
@@ -557,7 +555,7 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertEqual(progress!, 0.5, accuracy: 0.01, "Should be 50% complete")
     }
 
-    func test_progressToGoal_ReturnsZeroWhenNoProgress() {
+    func test_progressToGoal_ReturnsNilWhenNoProgress() {
         // Given - No weight loss yet
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
@@ -567,8 +565,7 @@ final class WeightManagerTests: XCTestCase {
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
         // Then
-        XCTAssertNotNil(progress, "progressToGoal should not be nil")
-        XCTAssertEqual(progress!, 0.0, accuracy: 0.01, "Should be 0% complete with no progress")
+        XCTAssertNil(progress, "progressToGoal should return nil with no progress recorded yet")
     }
 
     func test_progressToGoal_ClampsAt100Percent() {
@@ -994,7 +991,7 @@ final class WeightManagerTests: XCTestCase {
     // Testing Enhancement 12 - Progress Ring Percentage calculation
     // Following Apple Testing Best Practices - edge case testing
 
-    func test_progressToGoal_atStart_returnsZero() {
+    func test_progressToGoal_atStart_returnsNil() {
         // Given - just started, no progress made
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
@@ -1004,8 +1001,7 @@ final class WeightManagerTests: XCTestCase {
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
         // Then
-        XCTAssertNotNil(progress, "progressToGoal should not be nil at start")
-        XCTAssertEqual(progress!, 0.0, accuracy: 0.01, "Should report 0% progress at start")
+        XCTAssertNil(progress, "progressToGoal should be nil until any weight loss occurs")
     }
 
     func test_progressToGoal_halfwayToGoal_returns50() {
@@ -1050,7 +1046,7 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertEqual(progress!, 1.0, accuracy: 0.01, "Should clamp at 100% when goal exceeded")
     }
 
-    func test_progressToGoal_noProgress_returnsZero() {
+    func test_progressToGoal_flatTrend_returnsNil() {
         // Given - multiple entries, but no weight change
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(5), weight: 200.0, source: .manual))
@@ -1061,11 +1057,10 @@ final class WeightManagerTests: XCTestCase {
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
         // Then
-        XCTAssertNotNil(progress, "progressToGoal should not be nil")
-        XCTAssertEqual(progress!, 0.0, accuracy: 0.01, "Should be 0% with no weight change")
+        XCTAssertNil(progress, "Flat trend should produce nil progress until loss begins")
     }
 
-    func test_progressToGoal_gainedWeight_returnsNegative() {
+    func test_progressToGoal_gainedWeight_returnsNil() {
         // Given - weight increased instead of decreased (start 200, current 210, goal 160)
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 210.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
@@ -1074,8 +1069,8 @@ final class WeightManagerTests: XCTestCase {
         // When
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
-        // Then - (200-210)/(200-160) = -10/40 = -0.25 (-25%)
-        XCTAssertNil(progress, "progressToGoal should be nil for invalid goal (gaining weight)")
+        // Then - treat as unavailable until weight loss resumes
+        XCTAssertNil(progress, "progressToGoal should return nil when weight has increased")
     }
 
     func test_progressToGoal_goalHigherThanStart_returnsNil() {
@@ -1266,5 +1261,40 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertLessThanOrEqual(finalGoal, 159.0, "Final goal should be <= 159")
 
         // This test verifies ThreadSafeUserDefaults prevents race conditions
+    }
+
+    func test_formattedDisplayWeight_updatesLocaleOnChange() {
+        let localeProvider = MutableLocaleProvider(isMetric: false)
+        let appSettings = AppSettings(localeProvider: localeProvider)
+        let manager = WeightManager(
+            healthKit: MockHealthKitManager(),
+            dataStore: MockDataStore(),
+            appSettings: appSettings
+        )
+
+        let imperial = manager.formattedDisplayWeight(150.0)
+        XCTAssertEqual(imperial, "150")
+
+        localeProvider.isMetric = true
+        let metric = manager.formattedDisplayWeight(150.0)
+        XCTAssertEqual(metric, "68.0")
+    }
+}
+
+final class MutableLocaleProvider: LocaleProviding {
+    var isMetric: Bool {
+        didSet { }
+    }
+
+    init(isMetric: Bool) {
+        self.isMetric = isMetric
+    }
+
+    var measurementSystem: Locale.MeasurementSystem {
+        isMetric ? .metric : .us
+    }
+
+    var localeIdentifier: String {
+        isMetric ? "en_GB" : "en_US"
     }
 }

@@ -4,8 +4,20 @@ import SwiftUI
 /// Global application settings following Apple's single source of truth principle
 /// Reference: https://developer.apple.com/documentation/swiftui/appstorage
 /// Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
+protocol LocaleProviding {
+    var measurementSystem: Locale.MeasurementSystem { get }
+    var localeIdentifier: String { get }
+}
+
+struct SystemLocaleProvider: LocaleProviding {
+    var measurementSystem: Locale.MeasurementSystem { Locale.current.measurementSystem }
+    var localeIdentifier: String { Locale.current.identifier }
+}
+
 final class AppSettings: ObservableObject {
     static let shared = AppSettings()
+
+    private let localeProvider: LocaleProviding
 
     // MARK: - Unit Preferences
     // Following Apple @AppStorage pattern for persistent user preferences
@@ -19,7 +31,11 @@ final class AppSettings: ObservableObject {
     // Reference: https://developer.apple.com/documentation/foundation/locale/2293761-measurementsystem
     // User Decision (Q1): No manual override - app follows iPhone Settings > General > Language & Region
     var weightUnit: WeightUnit {
-        return Locale.current.measurementSystem == .metric ? .kilograms : .pounds
+        return localeProvider.measurementSystem == .metric ? .kilograms : .pounds
+    }
+
+    var localeIdentifier: String {
+        localeProvider.localeIdentifier
     }
 
     // MARK: - Default Tracker (Phase 3 Roadmap Implementation)
@@ -33,7 +49,8 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    private init() {
+    init(localeProvider: LocaleProviding = SystemLocaleProvider()) {
+        self.localeProvider = localeProvider
         // Initialize default tracker from stored raw value
         // Following Apple pattern for enum persistence via raw values
         if !defaultTrackerRawValue.isEmpty {

@@ -16,7 +16,8 @@ final class AppSettingsTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        appSettings = AppSettings.shared
+        LocaleTestProvider.reset()
+        appSettings = makeSettings(metric: false)
     }
 
     override func tearDown() {
@@ -29,71 +30,34 @@ final class AppSettingsTests: XCTestCase {
     // Following Apple Testing Best Practices - locale handling
 
     func test_weightUnit_currentLocale_returnsWeightUnit() {
-        // Given - current system locale
-        // Note: Locale.current is read implicitly by appSettings.weightUnit
-
-        // When
+        // Given
+        appSettings = makeSettings(metric: false)
         let weightUnit = appSettings.weightUnit
 
-        // Then - should return either kilograms or pounds based on locale
-        // Note: This test verifies the method works, but result depends on test environment locale
-        XCTAssert(weightUnit == .kilograms || weightUnit == .pounds,
-                  "Weight unit should be either kilograms or pounds")
-
-        // And - verify consistency
-        let secondCall = appSettings.weightUnit
-        XCTAssertEqual(weightUnit, secondCall, "Weight unit should be consistent for same locale")
+        // Then
+        XCTAssertEqual(weightUnit, .pounds)
+        XCTAssertEqual(appSettings.weightUnit, weightUnit)
     }
 
     func test_weightUnit_metricSystem_returnsKilograms() {
-        // Note: This test documents expected behavior for metric systems
-        // Given - a system with metric measurement system
-        // Locale examples: en_GB (UK), en_CA (Canada), de_DE (Germany), fr_FR (France)
-
-        // When - checking if current locale is metric
-        if Locale.current.measurementSystem == .metric {
-            // Then - weight unit should be kilograms
-            XCTAssertEqual(appSettings.weightUnit, .kilograms,
-                          "Metric locale should return kilograms")
-            XCTAssertEqual(appSettings.weightUnit.abbreviation, "kg",
-                          "Metric unit abbreviation should be 'kg'")
-        } else {
-            // Document that test environment is not metric
-            print("⚠️ Test environment locale is not metric - skipping metric-specific assertion")
-        }
+        appSettings = makeSettings(metric: true)
+        XCTAssertEqual(appSettings.weightUnit, .kilograms)
+        XCTAssertEqual(appSettings.weightUnit.abbreviation, "kg")
     }
 
     func test_weightUnit_imperialSystem_returnsPounds() {
-        // Note: This test documents expected behavior for imperial systems
-        // Given - a system with US measurement system
-        // Locale examples: en_US (USA), en_LR (Liberia), my_MM (Myanmar)
-
-        // When - checking if current locale is imperial (US)
-        if Locale.current.measurementSystem == .us {
-            // Then - weight unit should be pounds
-            XCTAssertEqual(appSettings.weightUnit, .pounds,
-                          "Imperial/US locale should return pounds")
-            XCTAssertEqual(appSettings.weightUnit.abbreviation, "lbs",
-                          "Imperial unit abbreviation should be 'lbs'")
-        } else {
-            // Document that test environment is not imperial
-            print("⚠️ Test environment locale is not imperial - skipping imperial-specific assertion")
-        }
+        appSettings = makeSettings(metric: false)
+        XCTAssertEqual(appSettings.weightUnit, .pounds)
+        XCTAssertEqual(appSettings.weightUnit.abbreviation, "lbs")
     }
 
     func test_weightUnit_abbreviation_matchesLocale() {
         // Given - current weight unit from locale
-        let weightUnit = appSettings.weightUnit
+        appSettings = makeSettings(metric: false)
+        XCTAssertEqual(appSettings.weightUnit.abbreviation, "lbs")
 
-        // When
-        let abbreviation = weightUnit.abbreviation
-
-        // Then - should match expected abbreviation for unit
-        if weightUnit == .kilograms {
-            XCTAssertEqual(abbreviation, "kg", "Kilograms abbreviation should be 'kg'")
-        } else if weightUnit == .pounds {
-            XCTAssertEqual(abbreviation, "lbs", "Pounds abbreviation should be 'lbs'")
-        }
+        appSettings = makeSettings(metric: true)
+        XCTAssertEqual(appSettings.weightUnit.abbreviation, "kg")
     }
 
     func test_weightUnit_conversion_accurateForBothSystems() {
@@ -121,35 +85,58 @@ final class AppSettingsTests: XCTestCase {
 
     func test_weightUnit_displayName_matchesUnit() {
         // Given - current weight unit
-        let weightUnit = appSettings.weightUnit
+        appSettings = makeSettings(metric: true)
+        XCTAssertEqual(appSettings.weightUnit.displayName, "Kilograms (kg)")
 
-        // When
-        let displayName = weightUnit.displayName
-
-        // Then - should have proper display name
-        if weightUnit == .kilograms {
-            XCTAssertEqual(displayName, "Kilograms (kg)",
-                          "Kilograms display name should be 'Kilograms (kg)'")
-        } else if weightUnit == .pounds {
-            XCTAssertEqual(displayName, "Pounds (lbs)",
-                          "Pounds display name should be 'Pounds (lbs)'")
-        }
+        appSettings = makeSettings(metric: false)
+        XCTAssertEqual(appSettings.weightUnit.displayName, "Pounds (lbs)")
     }
 
     // MARK: - Additional Locale Tests
 
     func test_weightUnit_multipleAccesses_consistent() {
-        // Given - multiple rapid accesses
-        var units: [WeightUnit] = []
-
-        // When - accessing multiple times
+        appSettings = makeSettings(metric: false)
+        let first = appSettings.weightUnit
         for _ in 0..<10 {
-            units.append(appSettings.weightUnit)
+            XCTAssertEqual(appSettings.weightUnit, first)
         }
-
-        // Then - all should be the same
-        let firstUnit = units.first!
-        XCTAssert(units.allSatisfy { $0 == firstUnit },
-                  "Weight unit should be consistent across multiple accesses")
     }
+}
+
+// MARK: - Locale Test Provider
+
+private final class LocaleTestProvider: LocaleProviding {
+    private static var isMetric: Bool = false
+
+    static var current: LocaleTestProvider {
+        LocaleTestProvider(metric: isMetric)
+    }
+
+    static func set(metric: Bool) {
+        isMetric = metric
+    }
+
+    static func reset() {
+        isMetric = false
+    }
+
+    init(metric: Bool) {
+        self.metric = metric
+    }
+
+    private let metric: Bool
+
+    var measurementSystem: Locale.MeasurementSystem {
+        metric ? .metric : .us
+    }
+
+    var localeIdentifier: String {
+        metric ? "en_GB" : "en_US"
+    }
+
+}
+
+private func makeSettings(metric: Bool) -> AppSettings {
+    LocaleTestProvider.set(metric: metric)
+    return AppSettings(localeProvider: LocaleTestProvider.current)
 }

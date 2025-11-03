@@ -24,7 +24,7 @@ class WeightManager: ObservableObject {
     // MARK: - Unit Preference Integration
     // Following Apple single source of truth pattern for global settings
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
-    private let appSettings = AppSettings.shared
+    private let appSettings: AppSettings
 
     // PHASE 2 TASK 2.3: Performance optimization - reusable NumberFormatter
     // Following Apple best practices: NumberFormatter is expensive to create
@@ -62,15 +62,17 @@ class WeightManager: ObservableObject {
     convenience init() {
         self.init(
             healthKit: HealthKitManager.shared,
-            dataStore: AppDataStore.shared
+            dataStore: AppDataStore.shared,
+            appSettings: AppSettings.shared
         )
     }
 
     /// Test init - protocol injection for mocking
     /// Phase 2 of MVVM Strategy: Enable testability
-    init(healthKit: HealthKitManagerProtocol, dataStore: DataStore) {
+    init(healthKit: HealthKitManagerProtocol, dataStore: DataStore, appSettings: AppSettings = AppSettings.shared) {
         self.healthKit = healthKit
         self.dataStore = dataStore
+        self.appSettings = appSettings
 
         loadWeightEntries()
         loadSyncPreference()
@@ -110,20 +112,14 @@ class WeightManager: ObservableObject {
     // MARK: - Add/Update Weight Entry
 
     func addWeightEntry(_ entry: WeightEntry) {
-        // Industry Standard: All @Published property updates must be on main thread
-        DispatchQueue.main.async {
-            // Simply add the entry - allow multiple entries per day
-            self.weightEntries.append(entry)
+        // Industry Standard: All @Published property updates must be on main actor (class already @MainActor)
+        weightEntries.append(entry)
+        weightEntries.sort { $0.date > $1.date }
+        saveWeightEntries()
 
-            // Sort by date (most recent first)
-            self.weightEntries.sort { $0.date > $1.date }
-
-            self.saveWeightEntries()
-
-            // Phase 2a: Cancel today's weight reminder after successful log
-            Task {
-                await WeightNotificationManager.shared.cancelTodayReminder()
-            }
+        // Phase 2a: Cancel today's weight reminder after successful log
+        Task {
+            await WeightNotificationManager.shared.cancelTodayReminder()
         }
 
         // Sync to HealthKit if enabled and this is a manual entry
@@ -147,11 +143,8 @@ class WeightManager: ObservableObject {
     // MARK: - Delete Weight Entry
 
     func deleteWeightEntry(_ entry: WeightEntry) {
-        // Industry Standard: All @Published property updates must be on main thread
-        DispatchQueue.main.async {
-            self.weightEntries.removeAll { $0.id == entry.id }
-            self.saveWeightEntries()
-        }
+        weightEntries.removeAll { $0.id == entry.id }
+        saveWeightEntries()
 
         // BIDIRECTIONAL DELETION: Delete from HealthKit for ANY entry when sync is enabled
         // Following Apple HealthKit best practices: Use UUID-based deletion for precision
@@ -262,6 +255,7 @@ class WeightManager: ObservableObject {
 
         // Reuse static formatter (configured once at class load)
         // Only update dynamic properties (fraction digits change per call)
+        WeightManager.weightFormatter.locale = Locale(identifier: appSettings.localeIdentifier)
         WeightManager.weightFormatter.maximumFractionDigits = maximumFractionDigits
         WeightManager.weightFormatter.minimumFractionDigits = displayValue.truncatingRemainder(dividingBy: 1).isZero ? 0 : min(1, maximumFractionDigits)
 
@@ -778,6 +772,10 @@ class WeightManager: ObservableObject {
 
         // Step 3: Calculate average weight for that day
         guard !entriesOnOldestDay.isEmpty else { return nil }
+        if entriesOnOldestDay.count == 1, let singleEntry = entriesOnOldestDay.first, singleEntry.id == latestEntry.id {
+            // No historical data before the latest entry
+            return nil
+        }
         let sumWeight = entriesOnOldestDay.map { $0.weight }.reduce(0.0, +)
         let avgWeightOnOldestDay = sumWeight / Double(entriesOnOldestDay.count)
 
