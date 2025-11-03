@@ -297,15 +297,185 @@ All three remedial tasks remain before we can promote to Phase 3.
 
 ---
 
+## 🧾 Weight Tracker Audit – Oct 31 2025 (What / How / Expected / Actual)
+
+**WHAT:** Capture the external consultant’s follow-up audit for the Weight Tracker and track the outstanding internationalization/logging items.
+
+**HOW:** Added [WEIGHT_TRACKER_AUDIT_OCT31_2025](reports/WEIGHT_TRACKER_AUDIT_OCT31_2025.md) summarizing score, highlights, and regressions.
+
+**EXPECTED:** Use the report to sequence future fixes: locale-aware input utilities, progress ring clamping, and logging cleanup before cloning patterns to other trackers.
+
+**ACTUAL:** Report documented; recommended fixes scheduled after current Phase 3 accessibility/polish tasks so we have device QA bandwidth and can bundle them with the upcoming multi-locale keyboard pass.
+
+## 🧾 Weight Tracker Audit – Nov 3 2025 (What / How / Expected / Actual)
+
+**WHAT:** Capture the follow-up developer audit highlighting locale parsing, logging noise, and progress ring regressions.
+
+**HOW:** Logged the new findings in [WEIGHT_TRACKER_AUDIT_2025-11-03](reports/WEIGHT_TRACKER_AUDIT_2025-11-03.md) with Good/Bad/Ugly breakdown and severity notes.
+
+**EXPECTED:** Address high-severity items (locale-aware input, progress clamping, logging gate) immediately after the current Phase 3 accessibility/polish tasks so the pattern is clean before cloning to other trackers.
+
+**ACTUAL:** Report recorded; fixes scheduled for the next engineering block once Task 3.1/3.2 wrap so validation can happen alongside the multi-locale keyboard QA pass.
+
+
 ## 🚀 Phase 3 Kickoff (What / How / Expected / Actual)
 
 **WHAT:** Transition from Phase 2 remediation to Phase 3 accessibility + polish.
 
 **HOW:** With tests green and persistence stabilized, begin Task 3.1 (accessibility labels for CircularProgressRing) followed by Task 3.2 (Goal/Start capsule parity), following Apple HIG for VoiceOver.
 
-**EXPECTED:** Accessibility improvements validated via VoiceOver/Unit tests; UI polish matches North Star baseline; Command‑U remains green.
+**EXPECTED:** Accessibility improvements validated via VoiceOver (Apple HIG), UI polish matches North Star baseline, Command‑U stays green.
+
+**ACTUAL:** Phase 2 wrap-up complete—ready to tackle Task 3.1 (accessibility) next.
 
 **ACTUAL:** Phase 2 wrap-up complete—ready to start Phase 3 accessibility work.
+## ♿ Phase 3 Task 3.1 – Accessibility Labels (What / How / Expected / Actual)
+
+**WHAT:** Make the CircularProgressRing fully VoiceOver compliant per Apple HIG.
+
+**HOW:** Added combined accessibility element with descriptive label/value/hint (`CurrentWeightCard.swift`), covering percentage, weight lost/remaining, and milestone summary; reused milestone count helper for hints.
+
+**EXPECTED:** VoiceOver announces progress contextually (percentage, lost, remaining, milestones) without double-reading inner labels; Command‑U stays green after change.
+
+**ACTUAL:** Implementation complete; ready for device VoiceOver validation alongside next Command‑U run.
+
+
+## 🔁 Task 3.2 Revert (What / How / Expected / Actual)
+
+**WHAT:** Restore the pre-task capsule layout after design review.
+
+**HOW:** Reverted Task 3.2 styling changes so the original start-weight layout returns.
+
+**EXPECTED:** Control Center matches the prior baseline while we revisit alignment in a future pass.
+
+**ACTUAL:** Reverted locally; rebuilding should show the original layout.
+
+
+## 🎨 Start Weight Date Alignment Request (What / How / Expected / Actual)
+
+**WHAT:** Align the date selector within the start-weight capsule so the date pill sits on the same horizontal centerline as the weight value (per new design feedback).
+
+**HOW:** Adjust layout spacing/stacking inside the start-weight capsule (WeightControlCenterGoalsCard.swift) so the date container and weight value share a consistent baseline while preserving the capsule styling introduced in Task 3.2.
+
+**EXPECTED:** Visual parity between date and weight within the capsule; screen matches the latest mock.
+
+**ACTUAL:** Request captured—implementation next.
+
+## 🧾 Post-Audit Remediation Plan – Nov 3 2025 (What / How / Expected / Actual)
+
+**WHAT:** Address the outstanding issues identified by the latest expert audit before any further refactors.
+
+**HOW:** Logged the action items in [WEIGHT_TRACKER_AUDIT_2025-11-03](reports/WEIGHT_TRACKER_AUDIT_2025-11-03.md) and scheduled fixes as follows:
+1. Locale-safe parsing for start-weight override (`WeightControlCenterViewModel.formatStageWeightInput`) using `NumberFormatter`.
+2. Regression tests for comma-decimal input & goal-complete progress.
+3. Clamp `WeightManager.progressPercentage` at 100% instead of returning `nil`.
+4. Gate `weightChange` debug logging so production logs stay clean.
+5. Run a physical-device smoke after refs.
+
+**EXPECTED:** Complete the above before broader refactors; ensures we stay within Apple/industry QA standards.
+
+**ACTUAL:** Plan documented; fixes queued after Phase 3 capsule alignment work.
+
+## ✅ Locale-Safe Start Weight Parsing (What / How / Expected / Actual)
+
+**WHAT:** Replace the manual string filter in `formatStartWeightInput` with a locale-aware `NumberFormatter`.
+
+**HOW:** Updated `WeightControlCenterViewModel` to honor the current decimal separator, limit to one fractional digit, clamp to 999.9, and leave in-progress input (trailing separator) untouched.
+
+**EXPECTED:** Users entering comma decimals (e.g., 82,5 kg) see accurate values; foundation for upcoming regression tests.
+
+**ACTUAL:** Implementation complete; ready for on-device verification before we proceed to audit item #2.
+
+## ✅ Regression Tests – Locale & Goal Completion (What / How / Expected / Actual)
+
+**WHAT:** Protect the locale parsing and progress clamping fixes from future regressions.
+
+**HOW:** Add tests covering comma-decimal input and goal-complete progress (`WeightControlCenterViewModelTests`, `WeightManagerTests`) per the Nov 3 audit plan.
+
+**EXPECTED:** Automated guards flag regressions immediately during future refactors.
+
+**ACTUAL:** Added comma-decimal and trailing-separator tests in `WeightControlCenterViewModelTests`; goal-complete progress test will follow after the clamp fix.
+## 🛠 Locale Regression Follow-up (What / How / Expected / Actual)
+
+**WHAT:** Investigate why the fr_FR regression test still outputs `82.5` instead of `82,5`.
+
+**HOW:** Review `formatStartWeightInput` and the test setup; confirm the formatter returns locale-specific strings even when the default Locale is reused.
+
+**EXPECTED:** Identify mismatch (likely formatter using default `.decimal` without grouping) and update test/implementation accordingly.
+
+**ACTUAL:** Formatter now honors the injected locale; fr_FR regression test passes.
+
+
+## ✅ Progress Percentage Clamp (What / How / Expected / Actual)
+
+**WHAT:** Clamp `WeightManager.progressPercentage` at 100% so the progress ring/celebration stay visible once users meet their goal.
+
+**HOW:** Removed the `currentWeight > goalWeight` guard, computed percentage, and capped it at 100%; updated unit tests to expect 100% when the goal is met or exceeded.
+
+**EXPECTED:** Goal celebrations remain visible; regression tests cover the behaviour.
+
+**ACTUAL:** Code and tests updated; ready for on-device validation.
+
+## ✅ WeightChange Logging Gate (What / How / Expected / Actual)
+
+**WHAT:** Move the verbose `weightChange` entry dump behind a debug-only guard so production logs stay clean.
+
+**HOW:** Wrap the full-entry logging block with `#if DEBUG` in `WeightManager.weightChange(since:)`.
+
+**EXPECTED:** Developers get detailed logs locally, while production builds avoid PII-heavy noise.
+
+**ACTUAL:** Logging now gated behind `#if DEBUG`; production builds stay clean.
+## 🧾 Weight Tracker Audit Follow-Up – Nov 3 2025 (What / How / Expected / Actual)
+
+**WHAT:** Document the consultant’s follow-up findings (comma-locale save regression and additional guardrails).
+
+**HOW:** Added [WEIGHT_TRACKER_AUDIT_2025-11-03-followup](reports/WEIGHT_TRACKER_AUDIT_2025-11-03-followup.md) summarizing the regression and recommended actions.
+
+**EXPECTED:** Patch `saveStartWeight()` with the locale-aware formatter, add regression coverage, consider caching the formatter, and rerun device QA before refactoring.
+
+**ACTUAL:** Findings logged—ready to implement the persistence fix and tests next.
+
+## ✅ Locale-Aware Start Weight Save (What / How / Expected / Actual)
+
+**WHAT:** Fix the save-path regression called out by the consultant so comma decimals persist.
+
+**HOW:** Replaced `Double(startWeightString)` with a locale-aware `NumberFormatter` in `saveStartWeight()`, matching the input formatter.
+
+**EXPECTED:** `saveStartWeight()` accepts comma decimals and keeps international overrides intact.
+
+**ACTUAL:** Implementation complete; ready for device validation alongside regression test addition.
+
+## ✅ Regression Test – Comma Start Weight Save (What / How / Expected / Actual)
+
+**WHAT:** Add automated coverage to ensure `saveStartWeight()` persists comma-based overrides.
+
+**HOW:** Extend `WeightControlCenterViewModelTests` to validate saving an `fr_FR` start weight succeeds.
+
+**EXPECTED:** Future regressions are caught immediately during CI.
+
+**ACTUAL:** Added fr_FR save regression test; comma decimals now covered end-to-end.
+
+## 🔄 Formatter Reuse Optimization (What / How / Expected / Actual)
+
+**WHAT:** Cache the NumberFormatter inside `WeightControlCenterViewModel` instead of rebuilding it on each keystroke, per Apple formatter reuse best practices.
+
+**HOW:** Introduce a stored formatter property wired to the injected locale and reuse it for input/save paths.
+
+**EXPECTED:** Reduced overhead during typing and cleaner conformance to Apple guidance.
+
+**ACTUAL:** Formatter now cached per view model; input/save reuse the same NumberFormatter.
+
+
+## ❗ Progress Clamp Test Fix (What / How / Expected / Actual)
+
+**WHAT:** Address the test failure introduced when clamping `progressPercentage` at 100%.
+
+**HOW:** Update `testProgressPercentage_goalReachedOrExceeded_returnsHundred` to unwrap the optional before calling `XCTAssertEqual`.
+
+**EXPECTED:** Gain compiler/test green state so we can proceed with device validation.
+
+**ACTUAL:** Optional unwrap added; tests compile again.
+
 
 ## 🧪 PHASE 2 TASK 2.1: ADD UNIT TESTS - Implementation (What / How / Expected / Actual)
 

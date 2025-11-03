@@ -18,6 +18,15 @@ class WeightControlCenterViewModel: ObservableObject {
     let cardManager = TrackerCards.shared
     let progressStoryCardManager = ProgressStoryCards.shared
     let healthKitManager = HealthKitManager.shared
+    private let locale: Locale
+    private lazy var startWeightFormatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.locale = locale
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 1
+        formatter.generatesDecimalNumbers = true
+        return formatter
+    }()
 
     // MARK: - Published State (was @State in View)
 
@@ -149,9 +158,12 @@ class WeightControlCenterViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init(weightManager: WeightManager, behavioralScheduler: BehavioralNotificationScheduler) {
+    init(weightManager: WeightManager,
+         behavioralScheduler: BehavioralNotificationScheduler,
+         locale: Locale = .current) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
+        self.locale = locale
 
         // Load persisted state
         loadCardOrder()
@@ -305,36 +317,41 @@ class WeightControlCenterViewModel: ObservableObject {
     }
 
     func formatStartWeightInput(_ input: String) {
-        var formatted = input.filter { $0.isNumber || $0 == "." }
-
-        let components = formatted.components(separatedBy: ".")
-        if components.count > 2 {
-            formatted = components[0] + "." + components[1...].joined()
+        guard !input.isEmpty else {
+            startWeightString = ""
+            return
         }
 
-        if let dotIndex = formatted.firstIndex(of: ".") {
-            let afterDot = formatted.suffix(from: formatted.index(after: dotIndex))
-            if afterDot.count > 1 {
-                formatted = String(formatted.prefix(upTo: formatted.index(dotIndex, offsetBy: 2)))
-            }
+        let formatter = startWeightFormatter
+        let decimalSeparator = Character(formatter.decimalSeparator ?? ".")
+        var allowed = Set("0123456789")
+        allowed.insert(decimalSeparator)
+
+        var sanitized = input.filter { allowed.contains($0) }
+
+        if let firstSep = sanitized.firstIndex(of: decimalSeparator),
+           let extraSep = sanitized[sanitized.index(after: firstSep)...].firstIndex(of: decimalSeparator) {
+            sanitized.remove(at: extraSep)
         }
 
-        let hasDecimal = formatted.contains(".")
-        let valueBeforeLimiting = Double(formatted) ?? 0
-        if hasDecimal && valueBeforeLimiting > 999.9 {
-            formatted = "999.9"
-        } else {
-            if let dotIndex = formatted.firstIndex(of: ".") {
-                let beforeDot = formatted.prefix(upTo: dotIndex)
-                if beforeDot.count > 3 {
-                    formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
-                }
-            } else if formatted.count > 3 {
-                formatted = String(formatted.prefix(3))
-            }
+        if sanitized.isEmpty {
+            startWeightString = sanitized
+            return
         }
 
-        startWeightString = formatted
+        if sanitized.last == decimalSeparator {
+            startWeightString = sanitized
+            return
+        }
+
+        guard let number = formatter.number(from: sanitized)?.doubleValue else {
+            startWeightString = sanitized
+            return
+        }
+
+        let clamped = min(number, 999.9)
+        formatter.minimumFractionDigits = clamped.truncatingRemainder(dividingBy: 1).isZero ? 0 : 1
+        startWeightString = formatter.string(from: NSNumber(value: clamped)) ?? sanitized
     }
 
     func fetchStartWeight(for date: Date) {
@@ -364,12 +381,14 @@ class WeightControlCenterViewModel: ObservableObject {
 
     func saveStartWeight() {
         startWeightErrorMessage = nil
-        guard let value = Double(startWeightString), value > 0 else {
+        let formatter = startWeightFormatter
+
+        guard let number = formatter.number(from: startWeightString)?.doubleValue, number > 0 else {
             startWeightErrorMessage = "Enter a valid start weight."
             return
         }
 
-        weightManager.setStartWeightOverride(value, date: startWeightDate)
+        weightManager.setStartWeightOverride(number, date: startWeightDate)
         startWeightStatusMessage = "Start weight saved."
     }
 

@@ -276,8 +276,7 @@ class WeightManager: ObservableObject {
         let weightLostSoFar = startingWeight - currentWeight
 
         guard totalWeightToLose > 0,
-              weightLostSoFar > 0,
-              currentWeight > goalWeight else {
+              weightLostSoFar > 0 else {
             return nil
         }
 
@@ -731,10 +730,12 @@ class WeightManager: ObservableObject {
         // DEBUG: Dump ALL entries to see where the missing ones are
         let detailedFormatter = DateFormatter()
         detailedFormatter.dateFormat = "MMM d, yyyy HH:mm:ss"
+#if DEBUG
         AppLogger.info("🔍 [WeightManager.weightChange] FULL DUMP - Total entries: \(weightEntries.count)", category: AppLogger.weightTracking)
         for (index, entry) in weightEntries.enumerated() {
             AppLogger.info("🔍 Entry #\(index): \(entry.weight) lbs on \(detailedFormatter.string(from: entry.date)) (source: \(entry.source.rawValue))", category: AppLogger.weightTracking)
         }
+#endif
 
         // Find oldest entry WITHIN the time window (on or after the cutoff date)
         // Step 1: Find the oldest DATE in the window

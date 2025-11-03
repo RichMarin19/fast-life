@@ -419,7 +419,7 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertEqual(percentage, 50.0, accuracy: 0.1)
     }
 
-    func testProgressPercentage_goalAlreadyExceeded_returnsNil() {
+    func testProgressPercentage_goalReachedOrExceeded_returnsHundred() {
         let start = WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual)
         let current = WeightEntry(date: Date(), weight: 160.0, source: .manual)
         weightManager.setStartWeightOverride(nil, date: nil)
@@ -427,8 +427,10 @@ final class WeightManagerTests: XCTestCase {
         entries.sort { $0.date > $1.date }
         weightManager.weightEntries = entries
 
-        let percentage = weightManager.progressPercentage(toward: 180.0)
-        XCTAssertNil(percentage, "Once the goal is surpassed before tracking, percentage should be unavailable")
+        guard let percentage = weightManager.progressPercentage(toward: 180.0) else {
+            return XCTFail("Expected percentage when goal reached")
+        }
+        XCTAssertEqual(percentage, 100.0, accuracy: 0.01)
     }
 
     // MARK: - Edge Cases
