@@ -12,21 +12,15 @@ class WeightControlCenterViewModel: ObservableObject {
 
     let weightManager: WeightManager
     let behavioralScheduler: BehavioralNotificationScheduler
+    let goalCoordinator: WeightGoalCoordinator
+    let notificationCoordinator: WeightNotificationCoordinator
 
     // Singleton managers (pass-through)
     let optOutManager = ContentOptOutManager.shared
     let cardManager = TrackerCards.shared
     let progressStoryCardManager = ProgressStoryCards.shared
     let healthKitManager = HealthKitManager.shared
-    private let locale: Locale
-    private lazy var startWeightFormatter: NumberFormatter = {
-        let formatter = NumberFormatter()
-        formatter.locale = locale
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 1
-        formatter.generatesDecimalNumbers = true
-        return formatter
-    }()
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Published State (was @State in View)
 
@@ -40,15 +34,6 @@ class WeightControlCenterViewModel: ObservableObject {
     @Published var highlightedItemID: String?
     @Published var scrollViewProxy: ScrollViewProxy?
     @Published var badgeScale: CGFloat = 1.0
-
-    // Goals
-    @Published var weightGoalString: String = ""
-    @Published var startWeightString: String = ""
-    @Published var startWeightDate: Date = Date()
-    @Published var isFetchingStartWeight: Bool = false
-    @Published var startWeightStatusMessage: String?
-    @Published var startWeightErrorMessage: String?
-    @Published var milestoneCount: Int = 10
 
     // Sync State
     @Published var localSyncEnabled: Bool = true
@@ -78,49 +63,6 @@ class WeightControlCenterViewModel: ObservableObject {
 
     // MARK: - Phase 2a: Weight Tracker Notifications
 
-    /// Timing mode for weight reminders
-    enum TimingMode: String, Codable, CaseIterable {
-        case specificTime = "Specific Time"
-        case beforeFastingGoal = "Before Fasting Goal"
-        case afterWakingUp = "After Waking Up"
-    }
-
-    /// Notification frequency options for user-configurable scheduling
-    enum NotificationFrequency: String, Codable, CaseIterable {
-        case daily = "Daily"
-        case everyOtherDay = "Every Other Day"
-        case twiceWeek = "Twice a Week"
-        case weekly = "Weekly"
-    }
-
-    @Published var weightRemindersEnabled: Bool = false
-    @Published var timingMode: TimingMode = .specificTime
-    @Published var minutesOffset: Int = 30 // For beforeFastingGoal / afterWakingUp modes
-    @Published var preferredReminderTime: Date = Date()
-    @Published var quietHoursEnabled: Bool = false
-    @Published var quietHoursStart: Date = Date()
-    @Published var quietHoursEnd: Date = Date()
-    @Published var skipWeekdays: Set<Int> = []
-
-    // New notification types (Phase 2a enhancement - variable messaging)
-    @Published var didYouKnowEnabled: Bool = false
-    @Published var didYouKnowFrequency: NotificationFrequency = .daily
-    @Published var motivationalEnabled: Bool = false
-    @Published var motivationalFrequency: NotificationFrequency = .daily
-    @Published var actionStepsEnabled: Bool = false
-    @Published var actionStepsFrequency: NotificationFrequency = .daily
-
-    // Weekday display data for UI
-    let weekdays: [(number: Int, name: String)] = [
-        (1, "Sunday"),
-        (2, "Monday"),
-        (3, "Tuesday"),
-        (4, "Wednesday"),
-        (5, "Thursday"),
-        (6, "Friday"),
-        (7, "Saturday")
-    ]
-
     // MARK: - Private Properties (was @AppStorage in View)
 
     private let userDefaults = UserDefaults.standard
@@ -138,40 +80,37 @@ class WeightControlCenterViewModel: ObservableObject {
     private let optOutMotivationalMessagesKey = "experienceOptOut_motivationalMessages"
     private let optOutProgressSummariesKey = "experienceOptOut_progressSummaries"
 
-    // Phase 2a: Weight notification keys (reuse WeightNotificationManager keys for consistency)
-    private let weightRemindersEnabledKey = "weightRemindersEnabled"
-    private let timingModeKey = "weightReminderTimingMode"
-    private let minutesOffsetKey = "weightReminderMinutesOffset"
-    private let weightReminderTimeKey = "weightReminderTime"
-    private let quietHoursEnabledKey = "quietHoursEnabled"
-    private let quietHoursStartKey = "quietHoursStart"
-    private let quietHoursEndKey = "quietHoursEnd"
-    private let skipWeekdaysKey = "skipWeekdays"
-
-    // New notification type keys (Phase 2a enhancement - variable messaging)
-    private let didYouKnowEnabledKey = "didYouKnowEnabled"
-    private let didYouKnowFrequencyKey = "didYouKnowFrequency"
-    private let motivationalEnabledKey = "motivationalEnabled"
-    private let motivationalFrequencyKey = "motivationalFrequency"
-    private let actionStepsEnabledKey = "actionStepsEnabled"
-    private let actionStepsFrequencyKey = "actionStepsFrequency"
-
     // MARK: - Initialization
 
     init(weightManager: WeightManager,
          behavioralScheduler: BehavioralNotificationScheduler,
-         locale: Locale = .current) {
+         locale: Locale = .current,
+         notificationCoordinator: WeightNotificationCoordinator? = nil) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
-        self.locale = locale
+        self.goalCoordinator = WeightGoalCoordinator(weightManager: weightManager, locale: locale)
+        self.notificationCoordinator = notificationCoordinator ?? WeightNotificationCoordinator(weightManager: weightManager)
 
         // Load persisted state
         loadCardOrder()
         loadExpandedCards()
         loadOptedOutContent()
         loadExperienceOptOuts()
-        loadWeightNotificationSettings()
-        initializeStartWeight()
+
+        goalCoordinator.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        self.notificationCoordinator.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    deinit {
     }
 
     // MARK: - Computed Properties
@@ -298,151 +237,72 @@ class WeightControlCenterViewModel: ObservableObject {
     // MARK: - Start Weight Management
 
     var unitAbbreviation: String {
-        weightManager.currentUnitAbbreviation
+        goalCoordinator.unitAbbreviation
+    }
+
+    var startWeightString: String {
+        get { goalCoordinator.startWeightString }
+        set { goalCoordinator.startWeightString = newValue }
+    }
+
+    var startWeightDate: Date {
+        get { goalCoordinator.startWeightDate }
+        set { goalCoordinator.startWeightDate = newValue }
+    }
+
+    var isFetchingStartWeight: Bool {
+        goalCoordinator.isFetchingStartWeight
+    }
+
+    var startWeightStatusMessage: String? {
+        goalCoordinator.startWeightStatusMessage
+    }
+
+    var startWeightErrorMessage: String? {
+        goalCoordinator.startWeightErrorMessage
+    }
+
+    var milestoneCount: Int {
+        get { goalCoordinator.milestoneCount }
+        set { goalCoordinator.milestoneCount = newValue }
+    }
+
+    var weightGoalString: String {
+        get { goalCoordinator.weightGoalString }
+        set { goalCoordinator.weightGoalString = newValue }
     }
 
     var canSaveStartWeight: Bool {
-        Double(startWeightString) != nil
+        goalCoordinator.canSaveStartWeight
     }
 
     func prepareStartWeightDefaults() {
-        if startWeightString.isEmpty {
-            handleStartWeightDateChange(startWeightDate)
-        }
+        goalCoordinator.prepareStartWeightDefaults()
     }
 
     func handleStartWeightDateChange(_ date: Date) {
-        startWeightDate = date
-        fetchStartWeight(for: date)
+        goalCoordinator.handleStartWeightDateChange(date)
     }
 
     func formatStartWeightInput(_ input: String) {
-        guard !input.isEmpty else {
-            startWeightString = ""
-            return
-        }
-
-        let formatter = startWeightFormatter
-        let decimalSeparator = Character(formatter.decimalSeparator ?? ".")
-        var allowed = Set("0123456789")
-        allowed.insert(decimalSeparator)
-
-        var sanitized = input.filter { allowed.contains($0) }
-
-        if let firstSep = sanitized.firstIndex(of: decimalSeparator),
-           let extraSep = sanitized[sanitized.index(after: firstSep)...].firstIndex(of: decimalSeparator) {
-            sanitized.remove(at: extraSep)
-        }
-
-        if sanitized.isEmpty {
-            startWeightString = sanitized
-            return
-        }
-
-        if sanitized.last == decimalSeparator {
-            startWeightString = sanitized
-            return
-        }
-
-        guard let number = formatter.number(from: sanitized)?.doubleValue else {
-            startWeightString = sanitized
-            return
-        }
-
-        let clamped = min(number, 999.9)
-        formatter.minimumFractionDigits = clamped.truncatingRemainder(dividingBy: 1).isZero ? 0 : 1
-        startWeightString = formatter.string(from: NSNumber(value: clamped)) ?? sanitized
+        goalCoordinator.formatStartWeightInput(input)
     }
 
     func fetchStartWeight(for date: Date) {
-        startWeightErrorMessage = nil
-        isFetchingStartWeight = true
-        startWeightStatusMessage = "Fetching weight data…"
-
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: date)
-        guard let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) else {
-            isFetchingStartWeight = false
-            startWeightStatusMessage = nil
-            startWeightErrorMessage = "Unable to calculate date range."
-            return
-        }
-
-        if healthKitManager.isWeightAuthorized() {
-            healthKitManager.fetchWeightData(startDate: startOfDay, endDate: endOfDay, resetAnchor: true) { [weak self] entries in
-                Task { @MainActor in
-                    self?.applyStartWeightData(hkEntries: entries, date: date)
-                }
-            }
-        } else {
-            applyStartWeightData(hkEntries: [], date: date)
-        }
+        goalCoordinator.fetchStartWeight(for: date)
     }
 
     func saveStartWeight() {
-        startWeightErrorMessage = nil
-        let formatter = startWeightFormatter
-
-        guard let number = formatter.number(from: startWeightString)?.doubleValue, number > 0 else {
-            startWeightErrorMessage = "Enter a valid start weight."
-            return
-        }
-
-        weightManager.setStartWeightOverride(number, date: startWeightDate)
-        startWeightStatusMessage = "Start weight saved."
+        goalCoordinator.saveStartWeight()
     }
 
-    private func initializeStartWeight() {
-        if let override = weightManager.startWeightOverride {
-            startWeightString = formatDisplayWeight(fromPounds: override)
-            startWeightDate = weightManager.startWeightDate ?? Date()
-            startWeightStatusMessage = "Using custom start weight."
-        } else if let earliest = weightManager.weightEntries.last {
-            startWeightString = formatDisplayWeight(fromPounds: earliest.weight)
-            startWeightDate = earliest.date
-            startWeightStatusMessage = "Baseline from earliest entry."
-        } else {
-            startWeightDate = Date()
-            startWeightString = ""
-            startWeightStatusMessage = nil
-        }
-
-        milestoneCount = weightManager.milestoneCount
-    }
-
-    private func formatDisplayWeight(fromPounds pounds: Double) -> String {
-        let displayValue = weightManager.convertWeightToDisplayUnit(pounds)
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        formatter.maximumFractionDigits = 1
-        formatter.minimumFractionDigits = displayValue.truncatingRemainder(dividingBy: 1).isZero ? 0 : 1
-        return formatter.string(from: NSNumber(value: displayValue)) ?? String(format: "%.1f", displayValue)
-    }
-
-    private func applyStartWeightData(hkEntries: [WeightEntry], date: Date) {
-        let calendar = Calendar.current
-        let localEntries = weightManager.weightEntries.filter { calendar.isDate($0.date, inSameDayAs: date) }
-        let combinedWeights = (hkEntries + localEntries).map { $0.weight }
-
-        isFetchingStartWeight = false
-
-        guard !combinedWeights.isEmpty else {
-            startWeightStatusMessage = "No weight logged for this date. Enter a value manually."
-            startWeightString = ""
-            return
-        }
-
-        let average = combinedWeights.reduce(0, +) / Double(combinedWeights.count)
-        startWeightString = formatDisplayWeight(fromPounds: average)
-        startWeightStatusMessage = "Auto-filled from \(combinedWeights.count) data source\(combinedWeights.count == 1 ? "" : "s")."
+    func formatWeightGoalInput(_ input: String) {
+        goalCoordinator.formatWeightGoalInput(input)
     }
 
     func updateMilestoneCount(_ newValue: Int) {
-        let sanitized = max(0, min(10, newValue))
-        milestoneCount = sanitized
-        weightManager.setMilestoneCount(sanitized)
+        goalCoordinator.updateMilestoneCount(newValue)
     }
-
     // MARK: - HealthKit Sync Methods
 
     func syncWithHealthKit() {
@@ -617,54 +477,6 @@ class WeightControlCenterViewModel: ObservableObject {
         userDefaults.synchronize()
     }
 
-    // MARK: - Weight Goal Input Formatting
-
-    /// Format weight goal input to one decimal place, max 999.9
-    /// UX/UI Fix #2: Industry standard for health apps
-    func formatWeightGoalInput(_ input: String) {
-        var formatted = input
-
-        // Remove any non-numeric characters except decimal point
-        formatted = formatted.filter { $0.isNumber || $0 == "." }
-
-        // Ensure only one decimal point
-        let components = formatted.components(separatedBy: ".")
-        if components.count > 2 {
-            formatted = components[0] + "." + components[1...].joined()
-        }
-
-        // Limit to one decimal place
-        if let dotIndex = formatted.firstIndex(of: ".") {
-            let afterDot = formatted.suffix(from: formatted.index(after: dotIndex))
-            if afterDot.count > 1 {
-                formatted = String(formatted.prefix(upTo: formatted.index(dotIndex, offsetBy: 2)))
-            }
-        }
-
-        // Check max value BEFORE limiting digits (for values like "1500.0")
-        let hasDecimal = formatted.contains(".")
-        let valueBeforeLimiting = Double(formatted) ?? 0
-        if hasDecimal && valueBeforeLimiting > 999.9 {
-            formatted = "999.9"
-        } else {
-            // Only apply digit limiting if we didn't already cap to 999.9
-            // Limit integer part to 3 digits (for values like "12345")
-            if let dotIndex = formatted.firstIndex(of: ".") {
-                let beforeDot = formatted.prefix(upTo: dotIndex)
-                if beforeDot.count > 3 {
-                    formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
-                }
-            } else {
-                if formatted.count > 3 {
-                    formatted = String(formatted.prefix(3))
-                }
-            }
-        }
-
-        // Always update to ensure consistent state
-        weightGoalString = formatted
-    }
-
     // MARK: - Badge Interaction: Cycle Through Opted-Out Items
 
     /// Cycle to next opted-out item when badge is tapped
@@ -808,263 +620,4 @@ class WeightControlCenterViewModel: ObservableObject {
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
     }
 
-    // MARK: - Phase 2a: Weight Notification Settings
-
-    /// Load weight notification settings from UserDefaults
-    private func loadWeightNotificationSettings() {
-        // Load enabled state
-        weightRemindersEnabled = userDefaults.bool(forKey: weightRemindersEnabledKey)
-
-        // Load timing mode (default: specificTime)
-        if let modeString = userDefaults.string(forKey: timingModeKey),
-           let mode = TimingMode(rawValue: modeString) {
-            timingMode = mode
-        } else {
-            timingMode = .specificTime
-        }
-
-        // Load minutes offset (default: 30)
-        let savedOffset = userDefaults.integer(forKey: minutesOffsetKey)
-        minutesOffset = savedOffset > 0 ? savedOffset : 30
-
-        // Load preferred time (default: 7:30 AM)
-        if let timeData = userDefaults.data(forKey: weightReminderTimeKey),
-           let components = try? JSONDecoder().decode(DateComponents.self, from: timeData),
-           let hour = components.hour,
-           let minute = components.minute {
-            let calendar = Calendar.current
-            var dateComponents = DateComponents()
-            dateComponents.hour = hour
-            dateComponents.minute = minute
-            if let date = calendar.date(from: dateComponents) {
-                preferredReminderTime = date
-            } else {
-                preferredReminderTime = makeDefaultTime(hour: 7, minute: 30)
-            }
-        } else {
-            preferredReminderTime = makeDefaultTime(hour: 7, minute: 30)
-        }
-
-        // Load quiet hours
-        quietHoursEnabled = userDefaults.bool(forKey: quietHoursEnabledKey)
-
-        if let startData = userDefaults.data(forKey: quietHoursStartKey),
-           let startComponents = try? JSONDecoder().decode(DateComponents.self, from: startData),
-           let hour = startComponents.hour,
-           let minute = startComponents.minute {
-            quietHoursStart = makeDefaultTime(hour: hour, minute: minute)
-        } else {
-            quietHoursStart = makeDefaultTime(hour: 21, minute: 0) // Default: 9 PM
-        }
-
-        if let endData = userDefaults.data(forKey: quietHoursEndKey),
-           let endComponents = try? JSONDecoder().decode(DateComponents.self, from: endData),
-           let hour = endComponents.hour,
-           let minute = endComponents.minute {
-            quietHoursEnd = makeDefaultTime(hour: hour, minute: minute)
-        } else {
-            quietHoursEnd = makeDefaultTime(hour: 6, minute: 30) // Default: 6:30 AM
-        }
-
-        // Load skip weekdays
-        if let array = userDefaults.array(forKey: skipWeekdaysKey) as? [Int] {
-            skipWeekdays = Set(array)
-        } else {
-            skipWeekdays = []
-        }
-
-        // Load new notification types (Phase 2a enhancement)
-        didYouKnowEnabled = userDefaults.bool(forKey: didYouKnowEnabledKey)
-        if let frequencyString = userDefaults.string(forKey: didYouKnowFrequencyKey),
-           let frequency = NotificationFrequency(rawValue: frequencyString) {
-            didYouKnowFrequency = frequency
-        } else {
-            didYouKnowFrequency = .daily
-        }
-
-        motivationalEnabled = userDefaults.bool(forKey: motivationalEnabledKey)
-        if let frequencyString = userDefaults.string(forKey: motivationalFrequencyKey),
-           let frequency = NotificationFrequency(rawValue: frequencyString) {
-            motivationalFrequency = frequency
-        } else {
-            motivationalFrequency = .daily
-        }
-
-        actionStepsEnabled = userDefaults.bool(forKey: actionStepsEnabledKey)
-        if let frequencyString = userDefaults.string(forKey: actionStepsFrequencyKey),
-           let frequency = NotificationFrequency(rawValue: frequencyString) {
-            actionStepsFrequency = frequency
-        } else {
-            actionStepsFrequency = .daily
-        }
-    }
-
-    /// Helper to create a Date from hour/minute for DatePicker binding
-    private func makeDefaultTime(hour: Int, minute: Int) -> Date {
-        let calendar = Calendar.current
-        var components = DateComponents()
-        components.hour = hour
-        components.minute = minute
-        return calendar.date(from: components) ?? Date()
-    }
-
-    /// Handle reminder toggle (enable/disable)
-    func handleReminderToggle(_ enabled: Bool) {
-        userDefaults.set(enabled, forKey: weightRemindersEnabledKey)
-
-        if enabled {
-            // Request authorization and schedule
-            WeightNotificationManager.shared.requestAuthorization { granted in
-                Task<Void, Never> { @MainActor in
-                    if granted {
-                        self.scheduleNextReminder()
-                        AppLogger.notifications.info("Weight reminders enabled")
-                    } else {
-                        // Authorization denied - reset toggle
-                        self.weightRemindersEnabled = false
-                        self.userDefaults.set(false, forKey: self.weightRemindersEnabledKey)
-                        AppLogger.notifications.warning("User denied notification authorization")
-                    }
-                }
-            }
-        } else {
-            // Disable - cancel all weight reminders
-            Task<Void, Never> {
-                await WeightNotificationManager.shared.cancelAllWeightReminders()
-                AppLogger.notifications.info("Weight reminders disabled")
-            }
-        }
-    }
-
-    /// Save timing mode to UserDefaults and reschedule
-    func saveTimingMode() {
-        userDefaults.set(timingMode.rawValue, forKey: timingModeKey)
-
-        if weightRemindersEnabled {
-            scheduleNextReminder()
-            AppLogger.notifications.debug("Timing mode updated to \(self.timingMode.rawValue)")
-        }
-    }
-
-    /// Save minutes offset to UserDefaults and reschedule
-    func saveMinutesOffset() {
-        userDefaults.set(minutesOffset, forKey: minutesOffsetKey)
-
-        if weightRemindersEnabled {
-            scheduleNextReminder()
-            AppLogger.notifications.debug("Minutes offset updated to \(self.minutesOffset)")
-        }
-    }
-
-    /// Save preferred reminder time to UserDefaults and reschedule
-    func savePreferredTime() {
-        let calendar = Calendar.current
-        let components = calendar.dateComponents([.hour, .minute], from: preferredReminderTime)
-
-        if let timeData = try? JSONEncoder().encode(components) {
-            userDefaults.set(timeData, forKey: weightReminderTimeKey)
-        }
-
-        if weightRemindersEnabled {
-            scheduleNextReminder()
-            AppLogger.notifications.debug("Preferred reminder time updated")
-        }
-    }
-
-    /// Save quiet hours to UserDefaults and reschedule
-    func saveQuietHours() {
-        userDefaults.set(quietHoursEnabled, forKey: quietHoursEnabledKey)
-
-        let calendar = Calendar.current
-
-        let startComponents = calendar.dateComponents([.hour, .minute], from: quietHoursStart)
-        if let startData = try? JSONEncoder().encode(startComponents) {
-            userDefaults.set(startData, forKey: quietHoursStartKey)
-        }
-
-        let endComponents = calendar.dateComponents([.hour, .minute], from: quietHoursEnd)
-        if let endData = try? JSONEncoder().encode(endComponents) {
-            userDefaults.set(endData, forKey: quietHoursEndKey)
-        }
-
-        if weightRemindersEnabled {
-            scheduleNextReminder()
-            AppLogger.notifications.debug("Quiet hours updated")
-        }
-    }
-
-    /// Save skip weekdays to UserDefaults and reschedule
-    func saveSkipWeekdays() {
-        let array = Array(skipWeekdays)
-        userDefaults.set(array, forKey: skipWeekdaysKey)
-
-        if weightRemindersEnabled {
-            scheduleNextReminder()
-            AppLogger.notifications.debug("Skip weekdays updated")
-        }
-    }
-
-    // MARK: - New Notification Types Save Methods (Phase 2a enhancement)
-
-    /// Save Did You Know notification settings
-    func saveDidYouKnowSettings() {
-        userDefaults.set(didYouKnowEnabled, forKey: didYouKnowEnabledKey)
-        userDefaults.set(didYouKnowFrequency.rawValue, forKey: didYouKnowFrequencyKey)
-
-        // TODO: Reschedule Did You Know notifications when WeightNotificationManager supports them
-        AppLogger.notifications.debug("Did You Know settings updated: enabled=\(self.didYouKnowEnabled), frequency=\(self.didYouKnowFrequency.rawValue)")
-    }
-
-    /// Save Motivational notification settings
-    func saveMotivationalSettings() {
-        userDefaults.set(motivationalEnabled, forKey: motivationalEnabledKey)
-        userDefaults.set(motivationalFrequency.rawValue, forKey: motivationalFrequencyKey)
-
-        // TODO: Reschedule Motivational notifications when WeightNotificationManager supports them
-        AppLogger.notifications.debug("Motivational settings updated: enabled=\(self.motivationalEnabled), frequency=\(self.motivationalFrequency.rawValue)")
-    }
-
-    /// Save Action Steps notification settings
-    func saveActionStepsSettings() {
-        userDefaults.set(actionStepsEnabled, forKey: actionStepsEnabledKey)
-        userDefaults.set(actionStepsFrequency.rawValue, forKey: actionStepsFrequencyKey)
-
-        // TODO: Reschedule Action Steps notifications when WeightNotificationManager supports them
-        AppLogger.notifications.debug("Action Steps settings updated: enabled=\(self.actionStepsEnabled), frequency=\(self.actionStepsFrequency.rawValue)")
-    }
-
-    /// Schedule next weight reminder using current settings
-    private func scheduleNextReminder() {
-        Task<Void, Never> {
-            let calendar = Calendar.current
-            let preferredComponents = calendar.dateComponents([.hour, .minute], from: preferredReminderTime)
-
-            // Build quiet hours if enabled (supports midnight-spanning)
-            var quietHours: WeightQuietHours?
-            if quietHoursEnabled {
-                let start = calendar.dateComponents([.hour, .minute], from: quietHoursStart)
-                let end = calendar.dateComponents([.hour, .minute], from: quietHoursEnd)
-                quietHours = WeightQuietHours(start: start, end: end)
-            }
-
-            do {
-                try await WeightNotificationManager.shared.scheduleNextReminder(
-                    preferredTime: preferredComponents,
-                    quietHours: quietHours,
-                    skipWeekdays: skipWeekdays
-                )
-                AppLogger.notifications.info("Next weight reminder scheduled successfully")
-
-                // Debug: Print notification status
-                await debugPendingNotifications()
-            } catch {
-                AppLogger.notifications.error("Failed to schedule weight reminder: \(error.localizedDescription)")
-            }
-        }
-    }
-
-    /// Debug helper: Print pending notifications to help troubleshoot
-    func debugPendingNotifications() async {
-        await WeightNotificationManager.shared.debugPrintPendingWeightReminders()
-    }
 }

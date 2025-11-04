@@ -210,6 +210,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         frViewModel.formatStartWeightInput("82,5")
 
         XCTAssertEqual(frViewModel.startWeightString, "82,5")
+        XCTAssertTrue(frViewModel.canSaveStartWeight)
     }
 
     func testSaveStartWeight_persistsCommaDecimalLocale() {
@@ -224,12 +225,27 @@ final class WeightControlCenterViewModelTests: XCTestCase {
 
         XCTAssertEqual(frViewModel.startWeightStatusMessage, "Start weight saved.")
         XCTAssertNil(frViewModel.startWeightErrorMessage)
+        XCTAssertEqual(frViewModel.startWeightString, "82,5")
+    }
+
+    func testFormatStartWeightInput_RemovesGroupingSeparators() {
+        let deViewModel = WeightControlCenterViewModel(
+            weightManager: MockWeightManager(),
+            behavioralScheduler: mockScheduler,
+            locale: Locale(identifier: "de_DE")
+        )
+
+        deViewModel.formatStartWeightInput("1.234,5")
+
+        XCTAssertEqual(deViewModel.startWeightString, "999,9")
+        XCTAssertTrue(deViewModel.canSaveStartWeight)
     }
 
     func testFormatStartWeightInput_AllowsTrailingSeparatorDuringEdit() {
         sut.formatStartWeightInput("82.")
 
         XCTAssertEqual(sut.startWeightString, "82.")
+        XCTAssertFalse(sut.canSaveStartWeight)
     }
 
     func testFormatWeightGoalInput_AllowsSingleDecimalPoint() {

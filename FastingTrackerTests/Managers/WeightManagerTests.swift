@@ -393,7 +393,7 @@ final class WeightManagerTests: XCTestCase {
 
     // MARK: - Phase 2 Task 2.1 - Progress Percentage
 
-    func testProgressPercentage_returnsNilWhenNoProgressMade() {
+    func testProgressPercentage_returnsZeroWhenNoProgressMade() {
         let start = WeightEntry(date: Date().minusDays(7), weight: 200.0, source: .manual)
         let current = WeightEntry(date: Date(), weight: 200.0, source: .manual)
         weightManager.setStartWeightOverride(nil, date: nil)
@@ -402,7 +402,21 @@ final class WeightManagerTests: XCTestCase {
         weightManager.weightEntries = entries
 
         let percentage = weightManager.progressPercentage(toward: 180.0)
-        XCTAssertNil(percentage)
+        XCTAssertNotNil(percentage)
+        XCTAssertEqual(percentage!, 0.0, accuracy: 0.0001)
+    }
+
+    func testProgressPercentage_weightGain_clampsToZero() {
+        let start = WeightEntry(date: Date().minusDays(7), weight: 200.0, source: .manual)
+        let current = WeightEntry(date: Date(), weight: 205.0, source: .manual)
+        weightManager.setStartWeightOverride(nil, date: nil)
+        var entries = [current, start]
+        entries.sort { $0.date > $1.date }
+        weightManager.weightEntries = entries
+
+        let percentage = weightManager.progressPercentage(toward: 180.0)
+        XCTAssertNotNil(percentage)
+        XCTAssertEqual(percentage!, 0.0, accuracy: 0.0001)
     }
 
     func testProgressPercentage_returnsValueWhenHalfway() {
@@ -431,6 +445,24 @@ final class WeightManagerTests: XCTestCase {
             return XCTFail("Expected percentage when goal reached")
         }
         XCTAssertEqual(percentage, 100.0, accuracy: 0.01)
+    }
+
+    func testProgressPercentage_partialProgress_matchesObservedLoss() {
+        // Scenario mirrors screenshot: start ≈ 184.2, current 179.6, goal 150
+        let start = WeightEntry(date: Date().minusDays(30), weight: 184.2, source: .manual)
+        let current = WeightEntry(date: Date(), weight: 179.6, source: .manual)
+        weightManager.setStartWeightOverride(nil, date: nil)
+        var entries = [current, start]
+        entries.sort { $0.date > $1.date }
+        weightManager.weightEntries = entries
+
+        guard let percentage = weightManager.progressPercentage(toward: 150.0) else {
+            return XCTFail("Expected progress percentage for partial loss")
+        }
+
+        let expectedPercentage = ((start.weight - current.weight) / (start.weight - 150.0)) * 100.0
+        XCTAssertEqual(percentage, expectedPercentage, accuracy: 0.0001)
+        XCTAssertGreaterThan(percentage, 0.0)
     }
 
     // MARK: - Edge Cases
@@ -557,7 +589,7 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertEqual(progress!, 0.5, accuracy: 0.01, "Should be 50% complete")
     }
 
-    func test_progressToGoal_ReturnsNilWhenNoProgress() {
+    func test_progressToGoal_ReturnsZeroWhenNoProgress() {
         // Given - No weight loss yet
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
@@ -567,7 +599,8 @@ final class WeightManagerTests: XCTestCase {
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
         // Then
-        XCTAssertNil(progress, "progressToGoal should return nil with no progress recorded yet")
+        XCTAssertNotNil(progress, "progressToGoal should return baseline progress")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.0001)
     }
 
     func test_progressToGoal_ClampsAt100Percent() {
@@ -993,7 +1026,7 @@ final class WeightManagerTests: XCTestCase {
     // Testing Enhancement 12 - Progress Ring Percentage calculation
     // Following Apple Testing Best Practices - edge case testing
 
-    func test_progressToGoal_atStart_returnsNil() {
+    func test_progressToGoal_atStart_returnsZero() {
         // Given - just started, no progress made
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
@@ -1003,7 +1036,19 @@ final class WeightManagerTests: XCTestCase {
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
         // Then
-        XCTAssertNil(progress, "progressToGoal should be nil until any weight loss occurs")
+        XCTAssertNotNil(progress, "progressToGoal should return baseline progress")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.0001)
+    }
+
+    func test_progressToGoal_weightGain_clampsToZero() {
+        weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 205.0, source: .manual))
+        weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
+        weightManager.weightEntries.sort { $0.date > $1.date }
+
+        let progress = weightManager.progressToGoal(goalWeight: 160.0)
+
+        XCTAssertNotNil(progress, "progressToGoal should return baseline when weight increases")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.0001)
     }
 
     func test_progressToGoal_halfwayToGoal_returns50() {
@@ -1048,7 +1093,7 @@ final class WeightManagerTests: XCTestCase {
         XCTAssertEqual(progress!, 1.0, accuracy: 0.01, "Should clamp at 100% when goal exceeded")
     }
 
-    func test_progressToGoal_flatTrend_returnsNil() {
+    func test_progressToGoal_flatTrend_returnsZero() {
         // Given - multiple entries, but no weight change
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(5), weight: 200.0, source: .manual))
@@ -1059,10 +1104,11 @@ final class WeightManagerTests: XCTestCase {
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
         // Then
-        XCTAssertNil(progress, "Flat trend should produce nil progress until loss begins")
+        XCTAssertNotNil(progress, "Flat trend should still report baseline progress")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.0001)
     }
 
-    func test_progressToGoal_gainedWeight_returnsNil() {
+    func test_progressToGoal_gainedWeight_returnsZero() {
         // Given - weight increased instead of decreased (start 200, current 210, goal 160)
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 210.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
@@ -1072,7 +1118,8 @@ final class WeightManagerTests: XCTestCase {
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
 
         // Then - treat as unavailable until weight loss resumes
-        XCTAssertNil(progress, "progressToGoal should return nil when weight has increased")
+        XCTAssertNotNil(progress, "progressToGoal should return baseline when weight has increased")
+        XCTAssertEqual(progress!, 0.0, accuracy: 0.0001)
     }
 
     func test_progressToGoal_goalHigherThanStart_returnsNil() {
@@ -1280,6 +1327,353 @@ final class WeightManagerTests: XCTestCase {
         localeProvider.isMetric = true
         let metric = manager.formattedDisplayWeight(150.0)
         XCTAssertEqual(metric, "68.0")
+    }
+}
+
+final class WeightSyncCoordinatorTests: XCTestCase {
+
+    private let coordinator = WeightSyncCoordinator()
+
+    func test_mergeNewEntries_addsUniqueEntriesAndKeepsMostRecentFirst() {
+        let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
+        var current = [
+            WeightEntry(date: baseDate, weight: 180.0, source: .manual)
+        ]
+        let manualID = current.first!.id
+        let duplicate = WeightEntry(date: baseDate.addingTimeInterval(30),
+                                    weight: 180.05,
+                                    source: .healthKit)
+        let newEntry = WeightEntry(date: baseDate.addingTimeInterval(3_600),
+                                   weight: 178.4,
+                                   source: .healthKit)
+
+        let added = coordinator.mergeNewEntries(
+            currentEntries: &current,
+            healthKitEntries: [duplicate, newEntry],
+            duplicateChecker: Self.duplicateChecker(
+                timeThreshold: WeightConstants.DuplicationThreshold.tightTimeInterval,
+                weightThreshold: WeightConstants.DuplicationThreshold.weightDelta
+            )
+        )
+
+        XCTAssertEqual(added, 1)
+        XCTAssertEqual(current.count, 2)
+        XCTAssertEqual(current.first?.id, newEntry.id)
+        XCTAssertTrue(current.contains(where: { $0.id == manualID }))
+        XCTAssertFalse(current.contains(where: { $0.id == duplicate.id }))
+    }
+
+    func test_mergeHistoricalEntries_usesRelaxedThresholds() {
+        let baseDate = Date(timeIntervalSince1970: 1_700_100_000)
+        var current = [
+            WeightEntry(date: baseDate, weight: 182.0, source: .healthKit)
+        ]
+        let originalID = current.first!.id
+        let nearDuplicate = WeightEntry(date: baseDate.addingTimeInterval(120),
+                                        weight: 182.15,
+                                        source: .healthKit)
+        let historicalNew = WeightEntry(date: baseDate.addingTimeInterval(-86_400),
+                                        weight: 185.0,
+                                        source: .healthKit)
+
+        let added = coordinator.mergeHistoricalEntries(
+            currentEntries: &current,
+            healthKitEntries: [nearDuplicate, historicalNew],
+            duplicateChecker: Self.duplicateChecker(
+                timeThreshold: WeightConstants.DuplicationThreshold.historicalTimeInterval,
+                weightThreshold: WeightConstants.DuplicationThreshold.historicalWeightDelta
+            )
+        )
+
+        XCTAssertEqual(added, 1)
+        XCTAssertEqual(current.count, 2)
+        XCTAssertTrue(current.contains(where: { $0.id == originalID }))
+        XCTAssertTrue(current.contains(where: { $0.id == historicalNew.id }))
+    }
+
+    func test_reconcileAfterReset_preservesManualEntriesAndReportsCounts() {
+        let baseDate = Date(timeIntervalSince1970: 1_700_200_000)
+        let manual = WeightEntry(date: baseDate, weight: 190.0, source: .manual)
+        let staleHealthKit = WeightEntry(date: baseDate.addingTimeInterval(-7_200),
+                                         weight: 188.0,
+                                         source: .healthKit)
+        let retainedHealthKit = WeightEntry(date: baseDate.addingTimeInterval(-3_600),
+                                            weight: 187.5,
+                                            source: .healthKit)
+        var current = [manual, staleHealthKit, retainedHealthKit]
+
+        let matchingRetained = WeightEntry(date: retainedHealthKit.date,
+                                           weight: retainedHealthKit.weight,
+                                           source: .healthKit)
+        let brandNew = WeightEntry(date: baseDate.addingTimeInterval(1_800),
+                                   weight: 186.0,
+                                   source: .healthKit)
+
+        let result = coordinator.reconcileAfterReset(
+            currentEntries: &current,
+            healthKitEntries: [matchingRetained, brandNew],
+            duplicateChecker: Self.duplicateChecker(
+                timeThreshold: WeightConstants.DuplicationThreshold.tightTimeInterval,
+                weightThreshold: WeightConstants.DuplicationThreshold.weightDelta
+            )
+        )
+
+        XCTAssertEqual(result.deleted, 1)
+        XCTAssertEqual(result.added, 1)
+        XCTAssertTrue(current.contains(where: { $0.id == manual.id }))
+        XCTAssertTrue(current.contains(where: { $0.weight == brandNew.weight }))
+        XCTAssertFalse(current.contains(where: { $0.id == staleHealthKit.id }))
+    }
+
+    private static func duplicateChecker(timeThreshold: TimeInterval,
+                                         weightThreshold: Double) -> (WeightEntry, WeightEntry) -> Bool {
+        { existing, newEntry in
+            let timeDiff = abs(existing.date.timeIntervalSince(newEntry.date))
+            guard timeDiff < timeThreshold else { return false }
+
+            let epsilon = 0.00001
+            let adjustedThreshold = max(0, weightThreshold - epsilon)
+            return abs(existing.weight - newEntry.weight) < adjustedThreshold
+        }
+    }
+}
+
+@MainActor
+final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
+
+    func test_syncFromHealthKit_delegatesToCoordinatorAndPersistsEntries() {
+        let expectation = XCTestExpectation(description: "Manual sync completion")
+
+        let mockHealthKit = MockHealthKitManager()
+        let dataStore = MockDataStore()
+        let existing = WeightEntry(date: Date(timeIntervalSince1970: 1_700_300_000),
+                                   weight: 200.0,
+                                   source: .manual)
+        let persistence = InMemoryWeightPersistence(entries: [existing])
+        let coordinator = MockWeightSyncCoordinator()
+
+        let hkEntries = [
+            WeightEntry(date: existing.date.addingTimeInterval(-600), weight: 198.0, source: .healthKit),
+            WeightEntry(date: existing.date.addingTimeInterval(-1_200), weight: 197.5, source: .healthKit)
+        ]
+        mockHealthKit.setMockWeightEntries(hkEntries)
+
+        coordinator.mergeNewEntriesHandler = { currentEntries, healthKitEntries, _ in
+            currentEntries.append(contentsOf: healthKitEntries)
+            return healthKitEntries.count
+        }
+
+        let manager = WeightManager(
+            healthKit: mockHealthKit,
+            dataStore: dataStore,
+            persistence: persistence,
+            syncCoordinator: coordinator
+        )
+
+        manager.syncFromHealthKit(startDate: nil) { added, error in
+            XCTAssertNil(error)
+            XCTAssertEqual(added, hkEntries.count)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 2.0)
+
+        XCTAssertEqual(coordinator.mergeNewEntriesCallCount, 1)
+        XCTAssertEqual(persistence.entries.count, 3)
+        XCTAssertEqual(manager.weightEntries.count, 3)
+    }
+
+    func test_syncFromHealthKitHistorical_usesCoordinatorResult() {
+        let expectation = XCTestExpectation(description: "Historical sync completion")
+
+        let mockHealthKit = MockHealthKitManager()
+        let dataStore = MockDataStore()
+        let persistence = InMemoryWeightPersistence()
+        let coordinator = MockWeightSyncCoordinator()
+
+        let hkEntries = [
+            WeightEntry(date: Date(timeIntervalSince1970: 1_699_000_000), weight: 210.0, source: .healthKit),
+            WeightEntry(date: Date(timeIntervalSince1970: 1_699_100_000), weight: 211.0, source: .healthKit)
+        ]
+        mockHealthKit.setMockWeightEntries(hkEntries)
+
+        coordinator.mergeHistoricalEntriesHandler = { currentEntries, healthKitEntries, _ in
+            currentEntries.append(contentsOf: healthKitEntries)
+            return healthKitEntries.count
+        }
+
+        let manager = WeightManager(
+            healthKit: mockHealthKit,
+            dataStore: dataStore,
+            persistence: persistence,
+            syncCoordinator: coordinator
+        )
+
+        manager.syncFromHealthKitHistorical(startDate: Date(timeIntervalSince1970: 1_690_000_000)) { added, error in
+            XCTAssertNil(error)
+            XCTAssertEqual(added, hkEntries.count)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 2.0)
+
+        XCTAssertEqual(coordinator.mergeHistoricalEntriesCallCount, 1)
+        XCTAssertEqual(persistence.entries.count, hkEntries.count)
+        XCTAssertEqual(manager.weightEntries.count, hkEntries.count)
+    }
+
+    func test_syncFromHealthKitWithReset_reportsCoordinatorTuple() {
+        let expectation = XCTestExpectation(description: "Manual reset sync completion")
+
+        let mockHealthKit = MockHealthKitManager()
+        let dataStore = MockDataStore()
+
+        let staleHealthKit = WeightEntry(date: Date(timeIntervalSince1970: 1_698_000_000),
+                                         weight: 205.0,
+                                         source: .healthKit)
+        let manual = WeightEntry(date: Date(timeIntervalSince1970: 1_698_100_000),
+                                 weight: 204.5,
+                                 source: .manual)
+        let persistence = InMemoryWeightPersistence(entries: [staleHealthKit, manual])
+        let coordinator = MockWeightSyncCoordinator()
+
+        let hkEntries = [
+            WeightEntry(date: staleHealthKit.date, weight: staleHealthKit.weight, source: .healthKit),
+            WeightEntry(date: manual.date.addingTimeInterval(-3_600), weight: 203.0, source: .healthKit)
+        ]
+        mockHealthKit.setMockWeightEntries(hkEntries)
+
+        coordinator.reconcileAfterResetHandler = { currentEntries, healthKitEntries, _ in
+            currentEntries.removeAll { $0.id == staleHealthKit.id }
+            if let newest = healthKitEntries.last {
+                currentEntries.append(newest)
+            }
+            return (added: 1, deleted: 1)
+        }
+
+        let manager = WeightManager(
+            healthKit: mockHealthKit,
+            dataStore: dataStore,
+            persistence: persistence,
+            syncCoordinator: coordinator
+        )
+
+        manager.syncFromHealthKitWithReset(startDate: Date(timeIntervalSince1970: 1_690_000_000)) { added, error in
+            XCTAssertNil(error)
+            XCTAssertEqual(added, 1)
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 2.0)
+
+        XCTAssertEqual(coordinator.reconcileAfterResetCallCount, 1)
+        XCTAssertEqual(persistence.entries.count, 2)
+        XCTAssertTrue(persistence.entries.contains(where: { $0.source == .manual }))
+        XCTAssertFalse(persistence.entries.contains(where: { $0.id == staleHealthKit.id }))
+    }
+}
+
+private final class MockWeightSyncCoordinator: WeightSyncCoordinating {
+    var mergeNewEntriesCallCount = 0
+    var mergeHistoricalEntriesCallCount = 0
+    var reconcileAfterResetCallCount = 0
+
+    var mergeNewEntriesHandler: ((inout [WeightEntry], [WeightEntry], (WeightEntry, WeightEntry) -> Bool) -> Int)?
+    var mergeHistoricalEntriesHandler: ((inout [WeightEntry], [WeightEntry], (WeightEntry, WeightEntry) -> Bool) -> Int)?
+    var reconcileAfterResetHandler: ((inout [WeightEntry], [WeightEntry], (WeightEntry, WeightEntry) -> Bool) -> (added: Int, deleted: Int))?
+
+    var mergeNewEntriesResult: Int = 0
+    var mergeHistoricalEntriesResult: Int = 0
+    var reconcileAfterResetResult: (added: Int, deleted: Int) = (0, 0)
+
+    func mergeNewEntries(currentEntries: inout [WeightEntry],
+                         healthKitEntries: [WeightEntry],
+                         duplicateChecker: (WeightEntry, WeightEntry) -> Bool) -> Int {
+        mergeNewEntriesCallCount += 1
+        if let handler = mergeNewEntriesHandler {
+            return handler(&currentEntries, healthKitEntries, duplicateChecker)
+        }
+        return mergeNewEntriesResult
+    }
+
+    func mergeHistoricalEntries(currentEntries: inout [WeightEntry],
+                                healthKitEntries: [WeightEntry],
+                                duplicateChecker: (WeightEntry, WeightEntry) -> Bool) -> Int {
+        mergeHistoricalEntriesCallCount += 1
+        if let handler = mergeHistoricalEntriesHandler {
+            return handler(&currentEntries, healthKitEntries, duplicateChecker)
+        }
+        return mergeHistoricalEntriesResult
+    }
+
+    func reconcileAfterReset(currentEntries: inout [WeightEntry],
+                             healthKitEntries: [WeightEntry],
+                             duplicateChecker: (WeightEntry, WeightEntry) -> Bool) -> (added: Int, deleted: Int) {
+        reconcileAfterResetCallCount += 1
+        if let handler = reconcileAfterResetHandler {
+            return handler(&currentEntries, healthKitEntries, duplicateChecker)
+        }
+        return reconcileAfterResetResult
+    }
+}
+
+private final class InMemoryWeightPersistence: WeightPersistenceManaging {
+    private(set) var entries: [WeightEntry]
+    private var syncPreference: Bool?
+    private var startOverride: (Double?, Date?)
+    private var milestoneCount: Int?
+    private var goalWeight: Double?
+
+    init(entries: [WeightEntry] = [],
+         syncPreference: Bool? = nil,
+         startOverride: (Double?, Date?) = (nil, nil),
+         milestoneCount: Int? = nil,
+         goalWeight: Double? = nil) {
+        self.entries = entries
+        self.syncPreference = syncPreference
+        self.startOverride = startOverride
+        self.milestoneCount = milestoneCount
+        self.goalWeight = goalWeight
+    }
+
+    func loadWeightEntries() -> [WeightEntry] {
+        entries
+    }
+
+    func saveWeightEntries(_ entries: [WeightEntry]) {
+        self.entries = entries
+    }
+
+    func loadSyncPreference() -> Bool? {
+        syncPreference
+    }
+
+    func saveSyncPreference(_ value: Bool) {
+        syncPreference = value
+    }
+
+    func loadStartWeightOverride() -> (weight: Double?, date: Date?) {
+        startOverride
+    }
+
+    func saveStartWeightOverride(weight: Double?, date: Date?) {
+        startOverride = (weight, date)
+    }
+
+    func loadMilestoneCount() -> Int? {
+        milestoneCount
+    }
+
+    func saveMilestoneCount(_ count: Int) {
+        milestoneCount = count
+    }
+
+    func loadGoalWeight() -> Double? {
+        goalWeight
+    }
+
+    func saveGoalWeight(_ weight: Double) {
+        goalWeight = weight
     }
 }
 

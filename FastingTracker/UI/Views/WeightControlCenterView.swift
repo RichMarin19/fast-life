@@ -35,94 +35,21 @@ struct WeightControlCenterView: View {
 
     var body: some View {
         ZStack {
-            // Luxury gradient background (matches Weight Tracker)
-            LinearGradient(
-                colors: [
-                    Theme.ColorToken.bgDeepStart,
-                    Theme.ColorToken.bgDeepMid
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+            WeightControlCenterGradientBackground()
 
             VStack(spacing: 0) {
-                // Header section (fixed at top)
-                VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
-                    // ISSUE #5 FIX: Add visible Done button in header
-                    // Toolbar buttons don't render reliably in sheet presentations
-                    // Following Apple Health pattern - prominent action button in header
-                    HStack {
-                        Spacer()
-
-                        // UX/UI Fix #3: Match Weight Tracker title size (34pt)
-                        // Issue #1: Center title + apply Weight Tracker cyan gradient styling
-                        Text("Control Center")
-                            .font(DSTypography.screenTitle)
-                            .foregroundStyle(
-                                LinearGradient(
-                                    colors: [
-                                        Theme.ColorToken.accentCyan,
-                                        Theme.ColorToken.accentLightBlue
-                                    ],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-
-                        Spacer()
-
-                        // Visible Done button (replaces unreliable toolbar button)
-                        Button(action: handleDoneButtonTap) {
-                            Text("Done")
-                                .font(DSTypography.buttonPrimary)
-                                .foregroundColor(Theme.ColorToken.accentCyan)
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.horizontal, DSSpacing.cardSectionSpacing)
-                    .padding(.top, DSSpacing.cardSmallSpacing)
-
-                    // REFINEMENT #1: Split instructions into 2 lines
-                    // Behavioral Science: Chunking for cognitive fluency
-                    // UX/UI Fix #4: Increased subtitle font sizes for accessibility
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Customize your Weight Tracker experience.")
-                            .font(DSTypography.subtitleLarge)  // Increased from 17
-                            .foregroundColor(Theme.ColorToken.textSecondary)
-
-                        Text("Drag cards to reorder.")
-                            .font(DSTypography.subtitleEmphasized)  // Increased from 16
-                            .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, DSSpacing.cardSectionSpacing)
-                    .padding(.bottom, DSSpacing.cardElementSpacing)
-                }
+                WeightControlCenterHeaderView(onDone: handleDoneButtonTap)
 
                 // ScrollView with reorderable cards (Hub pattern - perfect alignment)
-                // Using .onDrag/.onDrop instead of List+.onMove to avoid layout issues
-                // Reference: HubView.swift lines 65-88
-                // Layer 3: Wrapped in ScrollViewReader for smooth scroll-to-item functionality
+                // WeightControlCenterCardList owns the ScrollViewReader + drag/drop wiring
                 // ISSUE #4 FIX: Add tap gesture to dismiss keyboard (Apple Health pattern)
                 ScrollView {
-                    ScrollViewReader { proxy in
-                        LazyVStack(spacing: DSSpacing.cardSectionSpacing) {
-                            ForEach(viewModel.cardOrder) { cardType in
-                                cardView(for: cardType)
-                            }
-
-                            // About section (fixed at bottom)
-                            WeightControlCenterAboutCard(viewModel: viewModel)
-                        }
-                        .padding(.horizontal, DSSpacing.cardSectionSpacing)  // Single container padding (Hub pattern)
-                        .padding(.top, DSSpacing.cardSmallSpacing)
-                        .onAppear {
-                            // Capture ScrollViewProxy for badge interaction
-                            viewModel.scrollViewProxy = proxy
-                        }
-                    }
+                    WeightControlCenterCardList(
+                        viewModel: viewModel,
+                        showGoalLine: $showGoalLine,
+                        weightGoal: $weightGoal,
+                        showDeleteAllConfirmation: $showDeleteAllConfirmation
+                    )
                 }
                 // ISSUE #4 FIX: Dismiss keyboard when tapping content
                 // Following Apple Health pattern - keyboard dismisses on content tap
@@ -143,7 +70,7 @@ struct WeightControlCenterView: View {
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                     // Update weight goal if valid
-                    if let newGoal = Double(viewModel.weightGoalString), newGoal > 0 {
+                    if let newGoal = Double(viewModel.goalCoordinator.weightGoalString), newGoal > 0 {
                         weightGoal = newGoal
                     }
                     dismiss()
@@ -166,9 +93,9 @@ struct WeightControlCenterView: View {
             viewModel.loadCardOrder()
             viewModel.loadExpandedCards()
             viewModel.loadOptedOutContent()
-            viewModel.weightGoalString = String(format: "%.1f", weightGoal)
+            viewModel.goalCoordinator.weightGoalString = String(format: "%.1f", weightGoal)
             // ISSUE #5: Store original goal weight for change detection
-            originalGoalWeight = viewModel.weightGoalString
+            originalGoalWeight = viewModel.goalCoordinator.weightGoalString
             viewModel.userSyncPreference = viewModel.weightManager.syncWithHealthKit
             viewModel.updatePermissionStatus()
             viewModel.loadLastSyncStatus()
@@ -228,7 +155,7 @@ struct WeightControlCenterView: View {
             // Reference: Apple HIG - Alerts (three-button confirmation for data loss prevention)
             Button("Don't Save", role: .destructive) {
                 // Revert to original value
-                viewModel.weightGoalString = originalGoalWeight
+                viewModel.goalCoordinator.weightGoalString = originalGoalWeight
                 dismiss()
             }
             Button("Cancel", role: .cancel) {
@@ -236,7 +163,7 @@ struct WeightControlCenterView: View {
             }
             Button("Save") {
                 // Persist via WeightManager and dismiss
-                if let newGoal = Double(viewModel.weightGoalString), newGoal > 0 {
+                if let newGoal = Double(viewModel.goalCoordinator.weightGoalString), newGoal > 0 {
                     let goalWeightPounds = viewModel.weightManager.convertToInternalUnit(newGoal)
                     viewModel.weightManager.setGoalWeight(goalWeightPounds)
                     weightGoal = newGoal
@@ -258,64 +185,12 @@ struct WeightControlCenterView: View {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
         // Check if goal weight has changed
-        if viewModel.weightGoalString != originalGoalWeight {
+        if viewModel.goalCoordinator.weightGoalString != originalGoalWeight {
             // Show save confirmation alert
             showUnsavedChangesAlert = true
         } else {
             // No changes, dismiss directly
             dismiss()
-        }
-    }
-
-    // MARK: - Card Views
-
-    @ViewBuilder
-    private func cardView(for cardType: ControlCenterCardType) -> some View {
-        WeightControlCenterCard(
-            cardType: cardType,
-            viewModel: viewModel,
-            title: cardType.title,
-            subtitle: cardSubtitle(for: cardType),
-            icon: cardType.icon
-        ) {
-            switch cardType {
-            case .goals:
-                WeightControlCenterGoalsCard(
-                    viewModel: viewModel,
-                    showGoalLine: $showGoalLine,
-                    weightGoal: $weightGoal
-                )
-            case .notifications:
-                WeightControlCenterNotificationsCard(viewModel: viewModel)
-            case .sync:
-                WeightControlCenterSyncCard(
-                    viewModel: viewModel,
-                    showDeleteAllConfirmation: $showDeleteAllConfirmation
-                )
-            case .insights:
-                WeightControlCenterInsightsCard()
-            case .experience:
-                WeightControlCenterExperienceCard(viewModel: viewModel)
-            case .history:
-                WeightControlCenterHistoryCard(viewModel: viewModel)
-            }
-        }
-    }
-
-    private func cardSubtitle(for type: ControlCenterCardType) -> String? {
-        switch type {
-        case .goals:
-            return "Set your start point, goal, and milestones"
-        case .notifications:
-            return "Fine-tune reminders so they feel personal"
-        case .insights:
-            return "Choose the guidance you want to see most"
-        case .sync:
-            return "Control how Apple Health powers your data"
-        case .history:
-            return "Review and manage logged weight entries"
-        case .experience:
-            return "Opt in to the motivation styles that work for you"
         }
     }
 }

@@ -46,14 +46,7 @@ class BadgesViewModel: ObservableObject {
         }
 
         // Auto-reset highlight after 1 second
-        Task {
-            try? await Task.sleep(nanoseconds: 1_000_000_000)
-            await MainActor.run {
-                withAnimation {
-                    highlightedItemID = nil
-                }
-            }
-        }
+        scheduleHighlightReset()
 
         // Layer 5: Haptic feedback - Light tap for premium feel
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -62,13 +55,35 @@ class BadgesViewModel: ObservableObject {
         withAnimation(.spring(response: AnimationConstants.Spring.quickResponse, dampingFraction: AnimationConstants.Spring.lightDamping)) {
             badgeScale = 1.15
         }
-        Task {
-            try? await Task.sleep(nanoseconds: 150_000_000)
+        scheduleBounceReset()
+    }
+
+    private func scheduleHighlightReset() {
+        highlightedResetTask?.cancel()
+        highlightedResetTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 1_000_000_000)
+            guard let self else { return }
             await MainActor.run {
-                withAnimation(.spring(response: AnimationConstants.Spring.quickResponse, dampingFraction: AnimationConstants.Spring.lightDamping)) {
-                    badgeScale = 1.0
+                withAnimation {
+                    self.highlightedItemID = nil
                 }
             }
         }
     }
+
+    private func scheduleBounceReset() {
+        badgeResetTask?.cancel()
+        badgeResetTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            guard let self else { return }
+            await MainActor.run {
+                withAnimation(.spring(response: AnimationConstants.Spring.quickResponse, dampingFraction: AnimationConstants.Spring.lightDamping)) {
+                    self.badgeScale = 1.0
+                }
+            }
+        }
+    }
+
+    private var highlightedResetTask: Task<Void, Never>?
+    private var badgeResetTask: Task<Void, Never>?
 }

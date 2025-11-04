@@ -305,3 +305,7 @@ class WeightNotificationManager {
     // - Integrate frequency-based scheduling logic
     // - Update ViewModel save methods to call scheduling functions
 }
+
+// MARK: - Protocol Conformance
+
+extension WeightNotificationManager: WeightNotificationManaging {}

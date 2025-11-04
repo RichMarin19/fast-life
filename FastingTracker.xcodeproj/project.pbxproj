@@ -11,7 +11,6 @@
 		10E1776D356C4CDF8F542AC3 /* UI/Views/WeightControlCenterCardDropDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = FA836C6B98274F51B5AF990D /* UI/Views/WeightControlCenterCardDropDelegate.swift */; };
 		1BB9C6CC95834D649B4291B1 /* UI/Views/WeightControlCenterModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6EA6D263D3743DABD37686A /* UI/Views/WeightControlCenterModels.swift */; };
 		33B38386A7AB4B358A23C870 /* UI/Views/WeightControlCenterNotificationsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 779245F84A5942708DC20CE7 /* UI/Views/WeightControlCenterNotificationsCard.swift */; };
-		521608AE2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AB2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift */; };
 		521608AF2EAB1B8B0085B852 /* UI/Components/WeightStatsComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AD2EAB1B8B0085B852 /* UI/Components/WeightStatsComponents.swift */; };
 		521608B02EAB1B8B0085B852 /* UI/Components/WeightHistoryComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AA2EAB1B8B0085B852 /* UI/Components/WeightHistoryComponents.swift */; };
 		521608B12EAB1B8B0085B852 /* UI/Components/WeightSetupComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521608AC2EAB1B8B0085B852 /* UI/Components/WeightSetupComponents.swift */; };
@@ -34,6 +33,8 @@
 		521D18112EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift in Sources */ = {isa = PBXBuildFile; fileRef = 521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */; };
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
+		522FFE472EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */; };
+		A1B2C3D43E5F678900ABCDE7 /* WeightProgressStoryCardStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */; };
 		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* Models/SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* Models/SleepEntry.swift */; };
 		5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */; };
@@ -42,7 +43,6 @@
 		5243F24B2E9029970051A731 /* Core/Managers/MoodManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2482E9029970051A731 /* Core/Managers/MoodManager.swift */; };
 		5243F24C2E9029970051A731 /* UI/Views/MoodTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2492E9029970051A731 /* UI/Views/MoodTrackingView.swift */; };
 		524976192EA2133E00632E28 /* UI/Views/WeightControlCenterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 524976182EA2133E00632E28 /* UI/Views/WeightControlCenterView.swift */; };
-		B1E0CC8D2B27B7B800C157B0 /* UI/Views/WeightControlCenterCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E0CC8C2B27B7B800C157B0 /* UI/Views/WeightControlCenterCard.swift */; };
 		525A7C972EA329A200E724F4 /* UI/Components/MilestoneRingCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525A7C962EA329A200E724F4 /* UI/Components/MilestoneRingCard.swift */; };
 		525B61EE2EB1D1CB00BAF20D /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B61ED2EB1D1CB00BAF20D /* ContentView.swift */; };
 		525B61F02EB1D21500BAF20D /* WeightControlCenterCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 525B61EF2EB1D21500BAF20D /* WeightControlCenterCoordinator.swift */; };
@@ -122,12 +122,16 @@
 		52F578972EA8E2AD0042727E /* Core/Managers/WeightNotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578952EA8E2AD0042727E /* Core/Managers/WeightNotificationManager.swift */; };
 		52F578982EA8E2AD0042727E /* Core/Managers/WeightNotificationPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F578962EA8E2AD0042727E /* Core/Managers/WeightNotificationPlanner.swift */; };
 		52FA00022EAD00000085B999 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */; };
+		53841FAAAA2AB744A5BE8444 /* WeightProgressStoryCardDropDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = A59207A636C9E47C5504F3F4 /* WeightProgressStoryCardDropDelegate.swift */; };
+		58BA968F6C09FFB86AFB636F /* WeightProgressStoryMilestoneCards.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C12FC51DD65D4A772CC6D04 /* WeightProgressStoryMilestoneCards.swift */; };
+		5F1053B2EACD7CF07E79CFFD /* WeightProgressStoryLightCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FF7023AC8F7D568C55657D8 /* WeightProgressStoryLightCard.swift */; };
 		5F77F1CD078045B7A78FE75B /* UI/Views/WeightControlCenterHistoryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23545D240A9C49EEB0B69E1F /* UI/Views/WeightControlCenterHistoryCard.swift */; };
 		6119E0A3CBBC401CA890CA00 /* UI/Views/WeightControlCenterSyncCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19358E88A98F4544916757BB /* UI/Views/WeightControlCenterSyncCard.swift */; };
 		682D3A2BD2DF47BAA5A58DA8 /* Core/ViewModels/WeightTrackingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */; };
 		769DC2E8156D4FA2CEE51A90 /* UI/Components/AInsteinPresenceModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 769DC2E8156D4FA2CEE51A91 /* UI/Components/AInsteinPresenceModifier.swift */; };
 		7DD29F2C28F125F7C45DF9F7 /* UI/Components/AInsteinPresenceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7DD29F2C28F125F7C45DF9F8 /* UI/Components/AInsteinPresenceView.swift */; };
 		85B5B8E671604E3BA1623411 /* UI/Views/WeightControlCenterInsightsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = F57E1E5ACA7F4A4E9319E1BC /* UI/Views/WeightControlCenterInsightsCard.swift */; };
+		9C063B0303FC1DC47E4C96B5 /* WeightProgressStoryProgressBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD113914A9C2381B1440B53D /* WeightProgressStoryProgressBanner.swift */; };
 		A1000001000000000000001 /* FastingTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000002000000000000001 /* FastingTrackerApp.swift */; };
 		A1000005000000000000001 /* UI/Views/HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000006000000000000001 /* UI/Views/HistoryView.swift */; };
 		A1000007000000000000001 /* Models/FastingSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000008000000000000001 /* Models/FastingSession.swift */; };
@@ -135,14 +139,27 @@
 		A1000011000000000000001 /* Core/Managers/NotificationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000012000000000000001 /* Core/Managers/NotificationManager.swift */; };
 		A1000013000000000000001 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1000014000000000000001 /* Assets.xcassets */; };
 		A1000031000000000000001 /* Core/Configuration/AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000032000000000000001 /* Core/Configuration/AppSettings.swift */; };
+		A1B2C3D43E5F678900ABCDE1 /* UI/Components/WeightControlCenterHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE0 /* UI/Components/WeightControlCenterHeaderView.swift */; };
+		A1B2C3D43E5F678900ABCDE3 /* UI/Components/WeightControlCenterCardList.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE2 /* UI/Components/WeightControlCenterCardList.swift */; };
+		A405A5047C03FF4BB5B9379D /* WeightProgressStoryRecapRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF332DB102A754A5675C7AD6 /* WeightProgressStoryRecapRow.swift */; };
 		A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */; };
 		A62491EA2BAB48DCB3C21552 /* Core/Managers/NotificationIdentifierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */; };
 		AB4BF544F5114441A00F68B2 /* UI/Views/WeightControlCenterAboutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 489B18B77C1748F295B2ABA7 /* UI/Views/WeightControlCenterAboutCard.swift */; };
 		ABB07D0592C3479ABF190279 /* UI/Views/WeightControlCenterGoalsCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B473EC4E98914F1FB966F577 /* UI/Views/WeightControlCenterGoalsCard.swift */; };
 		B12AA0A86D764A8F800345F3 /* UI/Components/WeightTrackerCardDropDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = D13DF7A539904F5A8BF67CBD /* UI/Components/WeightTrackerCardDropDelegate.swift */; };
+		B1E0CC8D2B27B7B800C157B0 /* UI/Views/WeightControlCenterCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1E0CC8C2B27B7B800C157B0 /* UI/Views/WeightControlCenterCard.swift */; };
 		B3154D57947632A5BB927807 /* SafeUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = F359651881524D4E6CC4DA24 /* SafeUserDefaults.swift */; };
+		C2752583773F6449B4ABCB25 /* WeightProgressStoryDidYouKnowBanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6825F9C0272B6A8910A38E75 /* WeightProgressStoryDidYouKnowBanner.swift */; };
+		C96C829FFB9D486ED0279750 /* WeightTrendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6004B3FC451ACD79F446A9B9 /* WeightTrendsView.swift */; };
+		CF316E767914B519D24CC6C0 /* WeightProgressStoryCoachBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1241C8187269B4E874511D80 /* WeightProgressStoryCoachBar.swift */; };
 		CV001001000000000000001 /* UI/Views/CoachView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CV001002000000000000001 /* UI/Views/CoachView.swift */; };
+		D5B539B5790347E96BBEF96F /* WeightProgressStoryReflection.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7E7E988F75F786D0FBE98F6 /* WeightProgressStoryReflection.swift */; };
 		DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */; };
+		E3B065802EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B0657F2EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift */; };
+		E5A1C3B22EB50F0F004C1234 /* WeightPersistenceAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B12EB50F0F004C1234 /* WeightPersistenceAdapter.swift */; };
+		E5A1C3B42EB50F0F004C1234 /* WeightSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */; };
+		E5A1C3B62EB50F0F004C1234 /* WeightAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */; };
+		E5A1C3B92EB50F0F004C1234 /* WeightGoalCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B82EB50F0F004C1234 /* WeightGoalCoordinator.swift */; };
 		ES001001000000000000001 /* UI/Components/EditStartTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */; };
 		FC001001000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC001002000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift */; };
 		FC002001000000000000001 /* UI/Components/EditFastTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC002002000000000000001 /* UI/Components/EditFastTimesView.swift */; };
@@ -180,12 +197,13 @@
 
 /* Begin PBXFileReference section */
 		00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightChartViewModel.swift; sourceTree = "<group>"; };
+		0C12FC51DD65D4A772CC6D04 /* WeightProgressStoryMilestoneCards.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryMilestoneCards.swift; sourceTree = "<group>"; };
+		1241C8187269B4E874511D80 /* WeightProgressStoryCoachBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryCoachBar.swift; sourceTree = "<group>"; };
 		19358E88A98F4544916757BB /* UI/Views/WeightControlCenterSyncCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterSyncCard.swift; sourceTree = "<group>"; };
 		23545D240A9C49EEB0B69E1F /* UI/Views/WeightControlCenterHistoryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterHistoryCard.swift; sourceTree = "<group>"; };
 		38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/NotificationIdentifierBuilder.swift; sourceTree = "<group>"; };
 		489B18B77C1748F295B2ABA7 /* UI/Views/WeightControlCenterAboutCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterAboutCard.swift; sourceTree = "<group>"; };
 		521608AA2EAB1B8B0085B852 /* UI/Components/WeightHistoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightHistoryComponents.swift; sourceTree = "<group>"; };
-		521608AB2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightProgressStoryComponents.swift; sourceTree = "<group>"; };
 		521608AC2EAB1B8B0085B852 /* UI/Components/WeightSetupComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightSetupComponents.swift; sourceTree = "<group>"; };
 		521608AD2EAB1B8B0085B852 /* UI/Components/WeightStatsComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightStatsComponents.swift; sourceTree = "<group>"; };
 		521608B22EAB41470085B852 /* Models/ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/ChatMessage.swift; sourceTree = "<group>"; };
@@ -205,6 +223,7 @@
 		521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/LifeGPT/LifeGPTComponents.swift; sourceTree = "<group>"; };
 		521608DC2EAB5F0B0085B852 /* Core/Services/HealthDataAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/HealthDataAnalyzer.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
+		522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightProgressStoryTrendPalette.swift; path = UI/Components/WeightProgressStory/WeightProgressStoryTrendPalette.swift; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		5243F23F2E900F440051A731 /* Models/SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SleepEntry.swift; sourceTree = "<group>"; };
 		5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
@@ -213,7 +232,6 @@
 		5243F2482E9029970051A731 /* Core/Managers/MoodManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/MoodManager.swift; sourceTree = "<group>"; };
 		5243F2492E9029970051A731 /* UI/Views/MoodTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/MoodTrackingView.swift; sourceTree = "<group>"; };
 		524976182EA2133E00632E28 /* UI/Views/WeightControlCenterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterView.swift; sourceTree = "<group>"; };
-		B1E0CC8C2B27B7B800C157B0 /* UI/Views/WeightControlCenterCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterCard.swift; sourceTree = "<group>"; };
 		525A7C962EA329A200E724F4 /* UI/Components/MilestoneRingCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/MilestoneRingCard.swift; sourceTree = "<group>"; };
 		525B61ED2EB1D1CB00BAF20D /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentView.swift; path = UI/Views/ContentView.swift; sourceTree = "<group>"; };
 		525B61EF2EB1D21500BAF20D /* WeightControlCenterCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightControlCenterCoordinator.swift; path = Core/ViewModels/Weight/WeightControlCenterCoordinator.swift; sourceTree = "<group>"; };
@@ -293,10 +311,14 @@
 		52F578962EA8E2AD0042727E /* Core/Managers/WeightNotificationPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightNotificationPlanner.swift; sourceTree = "<group>"; };
 		52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FastingTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		6004B3FC451ACD79F446A9B9 /* WeightTrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendsView.swift; sourceTree = "<group>"; };
+		6825F9C0272B6A8910A38E75 /* WeightProgressStoryDidYouKnowBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryDidYouKnowBanner.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryCardStack.swift; sourceTree = "<group>"; };
 		769DC2E8156D4FA2CEE51A91 /* UI/Components/AInsteinPresenceModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AInsteinPresenceModifier.swift; sourceTree = "<group>"; };
 		779245F84A5942708DC20CE7 /* UI/Views/WeightControlCenterNotificationsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterNotificationsCard.swift; sourceTree = "<group>"; };
 		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
 		7DD29F2C28F125F7C45DF9F8 /* UI/Components/AInsteinPresenceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AInsteinPresenceView.swift; sourceTree = "<group>"; };
+		7FF7023AC8F7D568C55657D8 /* WeightProgressStoryLightCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryLightCard.swift; sourceTree = "<group>"; };
 		94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightTrackingViewModel.swift; sourceTree = "<group>"; };
 		A1000002000000000000001 /* FastingTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FastingTrackerApp.swift; sourceTree = "<group>"; };
 		A1000006000000000000001 /* UI/Views/HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HistoryView.swift; sourceTree = "<group>"; };
@@ -307,12 +329,23 @@
 		A1000015000000000000001 /* FastLIFe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FastLIFe.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A1000016000000000000001 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1000032000000000000001 /* Core/Configuration/AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Configuration/AppSettings.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDE0 /* UI/Components/WeightControlCenterHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightControlCenterHeaderView.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDE2 /* UI/Components/WeightControlCenterCardList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightControlCenterCardList.swift; sourceTree = "<group>"; };
+		A59207A636C9E47C5504F3F4 /* WeightProgressStoryCardDropDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryCardDropDelegate.swift; sourceTree = "<group>"; };
+		A7E7E988F75F786D0FBE98F6 /* WeightProgressStoryReflection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryReflection.swift; sourceTree = "<group>"; };
 		AF63A2CCBF78452C8E18AD5A /* UI/Views/WeightControlCenterExperienceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterExperienceCard.swift; sourceTree = "<group>"; };
+		B1E0CC8C2B27B7B800C157B0 /* UI/Views/WeightControlCenterCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterCard.swift; sourceTree = "<group>"; };
 		B473EC4E98914F1FB966F577 /* UI/Views/WeightControlCenterGoalsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterGoalsCard.swift; sourceTree = "<group>"; };
+		BF332DB102A754A5675C7AD6 /* WeightProgressStoryRecapRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryRecapRow.swift; sourceTree = "<group>"; };
 		CV001002000000000000001 /* UI/Views/CoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/CoachView.swift; sourceTree = "<group>"; };
 		D13DF7A539904F5A8BF67CBD /* UI/Components/WeightTrackerCardDropDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightTrackerCardDropDelegate.swift; sourceTree = "<group>"; };
 		D6EA6D263D3743DABD37686A /* UI/Views/WeightControlCenterModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterModels.swift; sourceTree = "<group>"; };
 		D8CA2E00A104497085E45B53 /* UI/Components/WeightEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightEmptyStateView.swift; sourceTree = "<group>"; };
+		E3B0657F2EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/Weight/WeightNotificationCoordinator.swift; sourceTree = "<group>"; };
+		E5A1C3B12EB50F0F004C1234 /* WeightPersistenceAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightPersistenceAdapter.swift; sourceTree = "<group>"; };
+		E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSyncCoordinator.swift; sourceTree = "<group>"; };
+		E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightAnalyticsService.swift; sourceTree = "<group>"; };
+		E5A1C3B82EB50F0F004C1234 /* WeightGoalCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightGoalCoordinator.swift; path = Core/ViewModels/Weight/WeightGoalCoordinator.swift; sourceTree = "<group>"; };
 		ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditStartTimeView.swift; sourceTree = "<group>"; };
 		F359651881524D4E6CC4DA24 /* SafeUserDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SafeUserDefaults.swift; path = Core/Utilities/SafeUserDefaults.swift; sourceTree = "<group>"; };
 		F57E1E5ACA7F4A4E9319E1BC /* UI/Views/WeightControlCenterInsightsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterInsightsCard.swift; sourceTree = "<group>"; };
@@ -324,6 +357,7 @@
 		FC005002000000000000001 /* UI/Components/FastingGraphView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/FastingGraphView.swift; sourceTree = "<group>"; };
 		FC006002000000000000001 /* UI/Components/TotalStatsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TotalStatsView.swift; sourceTree = "<group>"; };
 		FC007002000000000000001 /* UI/Components/AddEditFastView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AddEditFastView.swift; sourceTree = "<group>"; };
+		FD113914A9C2381B1440B53D /* WeightProgressStoryProgressBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryProgressBanner.swift; sourceTree = "<group>"; };
 		FF00000200000000000000A1 /* Models/FastingStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/FastingStage.swift; sourceTree = "<group>"; };
 		FF00000400000000000000A1 /* UI/Views/FastingStageDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/FastingStageDetailView.swift; sourceTree = "<group>"; };
 		FF00000600000000000000A1 /* UI/Views/AnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/AnalyticsView.swift; sourceTree = "<group>"; };
@@ -378,6 +412,25 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		09B57CF4D02F92C73A766091 /* WeightProgressStory */ = {
+			isa = PBXGroup;
+			children = (
+				6004B3FC451ACD79F446A9B9 /* WeightTrendsView.swift */,
+				7FF7023AC8F7D568C55657D8 /* WeightProgressStoryLightCard.swift */,
+				1241C8187269B4E874511D80 /* WeightProgressStoryCoachBar.swift */,
+				FD113914A9C2381B1440B53D /* WeightProgressStoryProgressBanner.swift */,
+				0C12FC51DD65D4A772CC6D04 /* WeightProgressStoryMilestoneCards.swift */,
+				BF332DB102A754A5675C7AD6 /* WeightProgressStoryRecapRow.swift */,
+				A7E7E988F75F786D0FBE98F6 /* WeightProgressStoryReflection.swift */,
+				6825F9C0272B6A8910A38E75 /* WeightProgressStoryDidYouKnowBanner.swift */,
+				A59207A636C9E47C5504F3F4 /* WeightProgressStoryCardDropDelegate.swift */,
+				A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */,
+				522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */,
+			);
+			name = WeightProgressStory;
+			path = UI/Components/WeightProgressStory;
+			sourceTree = "<group>";
+		};
 		33C03EF668CDF7C3E0E02142 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
@@ -415,9 +468,11 @@
 		A1000019000000000000001 /* FastingTracker */ = {
 			isa = PBXGroup;
 			children = (
+				522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */,
 				526B7FB42EB30A6B00B91277 /* ObserverSuppressionActor.swift */,
 				526B7FB52EB30A6B00B91277 /* ThreadSafeUserDefaults.swift */,
 				525B61EF2EB1D21500BAF20D /* WeightControlCenterCoordinator.swift */,
+				E5A1C3B82EB50F0F004C1234 /* WeightGoalCoordinator.swift */,
 				52F3D16E2EABE32B00C20142 /* Core/Configuration/PerformanceTokens.swift */,
 				526B7FAD2EB1EFFF00B91277 /* AnimationConstants.swift */,
 				526B7FAB2EB1EE5000B91277 /* WeightConstants.swift */,
@@ -444,15 +499,18 @@
 				521608B62EAB416A0085B852 /* Core/Services/BehavioralCopy.swift */,
 				521608B72EAB416A0085B852 /* Core/Services/HealthDataAggregator.swift */,
 				521608B82EAB416A0085B852 /* Core/Services/UnifiedHealthDataService.swift */,
+				E5A1C3B02EB50F0F004C1234 /* Weight */,
 				521608AA2EAB1B8B0085B852 /* UI/Components/WeightHistoryComponents.swift */,
 				521608B22EAB41470085B852 /* Models/ChatMessage.swift */,
 				521608D62EAB47ED0085B852 /* UI/LifeGPT/CoachInviteCard.swift */,
 				521608D72EAB47ED0085B852 /* UI/LifeGPT/LifeGPTComponents.swift */,
 				521608B32EAB41470085B852 /* Models/EmotionState.swift */,
-				521608AB2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift */,
+				09B57CF4D02F92C73A766091 /* WeightProgressStory */,
 				521608AC2EAB1B8B0085B852 /* UI/Components/WeightSetupComponents.swift */,
 				521608AD2EAB1B8B0085B852 /* UI/Components/WeightStatsComponents.swift */,
 				D8CA2E00A104497085E45B53 /* UI/Components/WeightEmptyStateView.swift */,
+				A1B2C3D43E5F678900ABCDE0 /* UI/Components/WeightControlCenterHeaderView.swift */,
+				A1B2C3D43E5F678900ABCDE2 /* UI/Components/WeightControlCenterCardList.swift */,
 				D13DF7A539904F5A8BF67CBD /* UI/Components/WeightTrackerCardDropDelegate.swift */,
 				52CB2D1A2EAAE64400815CAD /* UI/Components/HubComponents.swift */,
 				52CB2D182EAADD4000815CAD /* Core/DesignSystem/DSCornerRadius.swift */,
@@ -540,6 +598,7 @@
 				5289E0712E8D5F6500254E70 /* Models/WeightEntry.swift */,
 				5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */,
 				7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */,
+				E3B0657F2EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift */,
 				94BFB82C20914BC086078772 /* Core/ViewModels/WeightTrackingViewModel.swift */,
 				00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */,
 				5289E0732E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift */,
@@ -582,6 +641,17 @@
 				52F5789D2EA8FD4C0042727E /* FastingTrackerTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		E5A1C3B02EB50F0F004C1234 /* Weight */ = {
+			isa = PBXGroup;
+			children = (
+				E5A1C3B12EB50F0F004C1234 /* WeightPersistenceAdapter.swift */,
+				E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */,
+				E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */,
+			);
+			name = Weight;
+			path = Core/Managers/Weight;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -734,9 +804,20 @@
 				AB4BF544F5114441A00F68B2 /* UI/Views/WeightControlCenterAboutCard.swift in Sources */,
 				10E1776D356C4CDF8F542AC3 /* UI/Views/WeightControlCenterCardDropDelegate.swift in Sources */,
 				52B2CFE72E9880B50061FCFF /* UI/Views/HydrationChartView.swift in Sources */,
-				521608AE2EAB1B8B0085B852 /* UI/Components/WeightProgressStoryComponents.swift in Sources */,
+				C96C829FFB9D486ED0279750 /* WeightTrendsView.swift in Sources */,
+				5F1053B2EACD7CF07E79CFFD /* WeightProgressStoryLightCard.swift in Sources */,
+				CF316E767914B519D24CC6C0 /* WeightProgressStoryCoachBar.swift in Sources */,
+				9C063B0303FC1DC47E4C96B5 /* WeightProgressStoryProgressBanner.swift in Sources */,
+				58BA968F6C09FFB86AFB636F /* WeightProgressStoryMilestoneCards.swift in Sources */,
+				A405A5047C03FF4BB5B9379D /* WeightProgressStoryRecapRow.swift in Sources */,
+				D5B539B5790347E96BBEF96F /* WeightProgressStoryReflection.swift in Sources */,
+				C2752583773F6449B4ABCB25 /* WeightProgressStoryDidYouKnowBanner.swift in Sources */,
+				53841FAAAA2AB744A5BE8444 /* WeightProgressStoryCardDropDelegate.swift in Sources */,
+				A1B2C3D43E5F678900ABCDE7 /* WeightProgressStoryCardStack.swift in Sources */,
 				521608AF2EAB1B8B0085B852 /* UI/Components/WeightStatsComponents.swift in Sources */,
 				100F74007D21446E9C6A5900 /* UI/Components/WeightEmptyStateView.swift in Sources */,
+				A1B2C3D43E5F678900ABCDE1 /* UI/Components/WeightControlCenterHeaderView.swift in Sources */,
+				A1B2C3D43E5F678900ABCDE3 /* UI/Components/WeightControlCenterCardList.swift in Sources */,
 				B12AA0A86D764A8F800345F3 /* UI/Components/WeightTrackerCardDropDelegate.swift in Sources */,
 				521608C32EAB41920085B852 /* UI/LifeGPT/LIFeGPTChatView.swift in Sources */,
 				521608C52EABC1000085B852 /* Core/ViewModels/LifeGPTViewModel.swift in Sources */,
@@ -766,6 +847,11 @@
 				5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */,
 				52B2CFB92E91B7160061FCFF /* UI/Views/NotificationSettingsView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
+				E5A1C3B22EB50F0F004C1234 /* WeightPersistenceAdapter.swift in Sources */,
+				E5A1C3B92EB50F0F004C1234 /* WeightGoalCoordinator.swift in Sources */,
+				E3B065802EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift in Sources */,
+				E5A1C3B62EB50F0F004C1234 /* WeightAnalyticsService.swift in Sources */,
+				E5A1C3B42EB50F0F004C1234 /* WeightSyncCoordinator.swift in Sources */,
 				A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */,
 				526B7FB62EB30A6B00B91277 /* ThreadSafeUserDefaults.swift in Sources */,
 				526B7FB72EB30A6B00B91277 /* ObserverSuppressionActor.swift in Sources */,
@@ -789,6 +875,7 @@
 				5289E07A2E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift in Sources */,
 				52D684202EA077D5002C5736 /* Core/Managers/BehavioralNotificationRule.swift in Sources */,
 				525B61F02EB1D21500BAF20D /* WeightControlCenterCoordinator.swift in Sources */,
+				522FFE472EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift in Sources */,
 				A62491EA2BAB48DCB3C21552 /* Core/Managers/NotificationIdentifierBuilder.swift in Sources */,
 				5288A5312EA44D3800806BE7 /* Core/Views/UniversalCardContainer.swift in Sources */,
 				524976192EA2133E00632E28 /* UI/Views/WeightControlCenterView.swift in Sources */,

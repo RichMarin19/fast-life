@@ -26,6 +26,10 @@ class WeightManager: ObservableObject {
     // Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
     private let appSettings: AppSettings
 
+    // HealthKit sync orchestration
+    private let syncCoordinator: WeightSyncCoordinating
+    private let analytics: WeightAnalyticsServicing
+
     // PHASE 2 TASK 2.3: Performance optimization - reusable NumberFormatter
     // Following Apple best practices: NumberFormatter is expensive to create
     // Create once and reuse for all weight formatting operations
@@ -38,17 +42,9 @@ class WeightManager: ObservableObject {
         return formatter
     }()
 
-    // THREAD SAFETY FIX (Task 1A): Replace direct UserDefaults with thread-safe wrapper
-    // UserDefaults is NOT thread-safe - concurrent writes can corrupt plist
-    // ThreadSafeUserDefaults uses NSLock to synchronize all access
-    private let safeDefaults = ThreadSafeUserDefaults()
-    private let weightEntriesKey = "weightEntries"
-    private let syncHealthKitKey = "syncWithHealthKit"
+    // Persistence adapter encapsulates ThreadSafeUserDefaults access
+    private let persistence: WeightPersistenceManaging
     private var observerQuery: HKObserverQuery?
-    private let startWeightKey = "weightStartOverride"
-    private let startWeightDateKey = "weightStartDate"
-    private let milestoneCountKey = "weightMilestoneCount"
-    private let goalWeightKey = "goalWeight"
 
     // THREAD SAFETY FIX (Task 1A): Replace nonisolated(unsafe) with Actor pattern
     // nonisolated(unsafe) bypasses ALL Swift concurrency safety checks
@@ -63,16 +59,26 @@ class WeightManager: ObservableObject {
         self.init(
             healthKit: HealthKitManager.shared,
             dataStore: AppDataStore.shared,
-            appSettings: AppSettings.shared
+            appSettings: AppSettings.shared,
+            syncCoordinator: WeightSyncCoordinator(),
+            analytics: WeightAnalyticsService()
         )
     }
 
     /// Test init - protocol injection for mocking
     /// Phase 2 of MVVM Strategy: Enable testability
-    init(healthKit: HealthKitManagerProtocol, dataStore: DataStore, appSettings: AppSettings = AppSettings.shared) {
+    init(healthKit: HealthKitManagerProtocol,
+         dataStore: DataStore,
+         appSettings: AppSettings = AppSettings.shared,
+         persistence: WeightPersistenceManaging = WeightPersistenceAdapter(),
+         syncCoordinator: WeightSyncCoordinating = WeightSyncCoordinator(),
+         analytics: WeightAnalyticsServicing = WeightAnalyticsService()) {
         self.healthKit = healthKit
         self.dataStore = dataStore
         self.appSettings = appSettings
+        self.persistence = persistence
+        self.syncCoordinator = syncCoordinator
+        self.analytics = analytics
 
         loadWeightEntries()
         loadSyncPreference()
@@ -275,9 +281,20 @@ class WeightManager: ObservableObject {
         let totalWeightToLose = startingWeight - goalWeight
         let weightLostSoFar = startingWeight - currentWeight
 
-        guard totalWeightToLose > 0,
-              weightLostSoFar > 0 else {
+        guard totalWeightToLose > 0 else {
             return nil
+        }
+
+        if weightLostSoFar <= 0 {
+#if DEBUG
+            AppLogger.debug(
+                """
+                Progress percentage clamped to 0 – start: \(startingWeight), current: \(currentWeight), goal: \(goalWeight), lost: \(weightLostSoFar), totalToLose: \(totalWeightToLose)
+                """,
+                category: AppLogger.weightTracking
+            )
+#endif
+            return 0.0
         }
 
         let percentage = (weightLostSoFar / totalWeightToLose) * 100.0
@@ -307,11 +324,15 @@ class WeightManager: ObservableObject {
 
         // Following roadmap requirement: "ensure edits do not create duplicates"
         // FIXED: Check across ALL sources, not just manual (Industry standard pattern)
-        let isDuplicate = weightEntries.contains(where: {
-            // Check ANY existing entry (Manual OR HealthKit) to prevent bidirectional duplicates
-            abs($0.date.timeIntervalSince(date)) < WeightConstants.DuplicationThreshold.timeInterval && // Within 30 minutes
-                abs($0.weight - weightInPounds) < WeightConstants.DuplicationThreshold.weightDelta // Within 0.1 lbs
-        })
+        let isDuplicate = weightEntries.contains { entry in
+            let withinTimeWindow = abs(entry.date.timeIntervalSince(date)) < WeightConstants.DuplicationThreshold.timeInterval
+            let sameWeight = isWeightWithinDuplicateThreshold(
+                existingWeight: entry.weight,
+                newWeight: weightInPounds,
+                threshold: WeightConstants.DuplicationThreshold.weightDelta
+            )
+            return withinTimeWindow && sameWeight
+        }
 
         guard !isDuplicate else {
             AppLogger.warning("Prevented duplicate weight entry within 30 minutes", category: AppLogger.weightTracking)
@@ -337,12 +358,15 @@ class WeightManager: ObservableObject {
     /// Reference: https://developer.apple.com/documentation/foundation/formatter/creating_a_custom_formatter
     func wouldCreateDuplicate(weight: Double, date: Date = Date()) -> Bool {
         let weightInPounds = appSettings.weightUnit.toPounds(weight)
-        return weightEntries.contains(where: {
-            // FIXED: Check across ALL sources, not just manual (Industry standard pattern)
-            // This prevents Manual vs HealthKit duplicates that were causing the issue
-            abs($0.date.timeIntervalSince(date)) < WeightConstants.DuplicationThreshold.timeInterval && // Within 30 minutes
-                abs($0.weight - weightInPounds) < WeightConstants.DuplicationThreshold.weightDelta // Within 0.1 lbs
-        })
+        return weightEntries.contains { entry in
+            let withinTimeWindow = abs(entry.date.timeIntervalSince(date)) < WeightConstants.DuplicationThreshold.timeInterval
+            let sameWeight = isWeightWithinDuplicateThreshold(
+                existingWeight: entry.weight,
+                newWeight: weightInPounds,
+                threshold: WeightConstants.DuplicationThreshold.weightDelta
+            )
+            return withinTimeWindow && sameWeight
+        }
     }
 
     // MARK: - Sync with HealthKit
@@ -375,55 +399,19 @@ class WeightManager: ObservableObject {
 
             // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
-                // DEBUG: Log what HealthKit returned BEFORE duplicate check
-                let detailedFormatter = DateFormatter()
-                detailedFormatter.dateFormat = "MMM d, yyyy HH:mm:ss"
-                AppLogger.info("🔍 [HealthKit Sync] Received \(healthKitEntries.count) entries from HealthKit", category: AppLogger.weightTracking)
-                for (index, hkEntry) in healthKitEntries.enumerated() {
-                    AppLogger.info("🔍 HK Entry #\(index): \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) (source: \(hkEntry.source.rawValue))", category: AppLogger.weightTracking)
-                }
-                AppLogger.info("🔍 [HealthKit Sync] Fast LIFe currently has \(self.weightEntries.count) entries", category: AppLogger.weightTracking)
-
-                // Track newly added entries for accurate reporting
-                var newlyAddedCount = 0
-
-                // Merge HealthKit entries with local entries
-                for hkEntry in healthKitEntries {
-                    // Check if we already have this exact entry (by date AND time, not just day)
-                    // FIXED: Check across ALL sources to prevent Manual vs HealthKit duplicates
-                    // Following Apple HealthKit best practices for duplicate detection
-                    // Reference: https://developer.apple.com/documentation/healthkit/about_the_healthkit_framework
-
-                    // DEBUG: Check for duplicates with detailed logging
-                    var matchDetails = ""
-                    let isDuplicate = self.weightEntries.contains(where: {
-                        let timeDiff = abs($0.date.timeIntervalSince(hkEntry.date))
-                        let weightDiff = abs($0.weight - hkEntry.weight)
-                        let matches = timeDiff < WeightConstants.DuplicationThreshold.tightTimeInterval && weightDiff < WeightConstants.DuplicationThreshold.weightDelta
-
-                        if matches {
-                            matchDetails = "matches existing entry \($0.weight) lbs on \(detailedFormatter.string(from: $0.date)) (timeDiff: \(String(format: "%.1f", timeDiff))s, weightDiff: \(String(format: "%.3f", weightDiff)) lbs)"
-                        }
-                        return matches
-                    })
-
-                    if isDuplicate {
-                        AppLogger.info("🔍 [Duplicate Check] SKIPPING HK entry \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) - \(matchDetails)", category: AppLogger.weightTracking)
-                    } else {
-                        AppLogger.info("🔍 [Duplicate Check] ADDING HK entry \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) - not a duplicate", category: AppLogger.weightTracking)
-                        // Add new HealthKit entry (allows multiple per day)
-                        self.weightEntries.append(hkEntry)
-                        newlyAddedCount += 1
-                    }
-                }
-
-                // Sort by date (most recent first)
-                self.weightEntries.sort { $0.date > $1.date }
+                let added = self.syncCoordinator.mergeNewEntries(
+                    currentEntries: &self.weightEntries,
+                    healthKitEntries: healthKitEntries,
+                    duplicateChecker: self.makeDuplicateChecker(
+                        timeThreshold: WeightConstants.DuplicationThreshold.tightTimeInterval,
+                        weightThreshold: WeightConstants.DuplicationThreshold.weightDelta
+                    )
+                )
                 self.saveWeightEntries()
 
                 // Report actual sync results
-                AppLogger.info("HealthKit sync completed: \(newlyAddedCount) new weight entries added", category: AppLogger.weightTracking)
-                completion?(newlyAddedCount, nil)
+                AppLogger.info("HealthKit sync completed: \(added) new weight entries added", category: AppLogger.weightTracking)
+                completion?(added, nil)
             }
         }
     }
@@ -447,35 +435,20 @@ class WeightManager: ObservableObject {
 
             // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
-                // Track newly added entries for accurate reporting
-                var newlyAddedCount = 0
-
-                // Merge HealthKit entries with local entries using robust deduplication
-                for hkEntry in healthKitEntries {
-                    // More comprehensive duplicate check for historical data
-                    // FIXED: Check across ALL sources to prevent Manual vs HealthKit duplicates
-                    let isDuplicate = self.weightEntries.contains(where: {
-                        // Check if entry already exists across ANY source (Manual OR HealthKit)
-                        // Following Apple HealthKit historical sync best practices
-                        abs($0.date.timeIntervalSince(hkEntry.date)) < WeightConstants.DuplicationThreshold.historicalTimeInterval && // Within 5 minutes (more flexible for historical)
-                            abs($0.weight - hkEntry.weight) < WeightConstants.DuplicationThreshold.historicalWeightDelta // Within 0.2 lbs (≈0.09 kg) account for rounding
-                    })
-
-                    if !isDuplicate {
-                        // Add new HealthKit entry from historical import
-                        self.weightEntries.append(hkEntry)
-                        newlyAddedCount += 1
-                    }
-                }
-
-                // Sort by date (most recent first)
-                self.weightEntries.sort { $0.date > $1.date }
+                let added = self.syncCoordinator.mergeHistoricalEntries(
+                    currentEntries: &self.weightEntries,
+                    healthKitEntries: healthKitEntries,
+                    duplicateChecker: self.makeDuplicateChecker(
+                        timeThreshold: WeightConstants.DuplicationThreshold.historicalTimeInterval,
+                        weightThreshold: WeightConstants.DuplicationThreshold.historicalWeightDelta
+                    )
+                )
                 self.saveWeightEntries()
 
                 // Report actual sync results
-                AppLogger.info("Historical HealthKit sync completed: \(newlyAddedCount) new weight entries imported from \(healthKitEntries.count) total entries", category: AppLogger.weightTracking)
+                AppLogger.info("Historical HealthKit sync completed: \(added) new weight entries imported from \(healthKitEntries.count) total entries", category: AppLogger.weightTracking)
 
-                completion(newlyAddedCount, nil)
+                completion(added, nil)
             }
         }
     }
@@ -499,81 +472,20 @@ class WeightManager: ObservableObject {
 
             // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
-                // Industry Standard: Complete sync with deletion detection
-                // Step 1: Remove HealthKit entries that are no longer in Apple Health
-                let originalCount = self.weightEntries.count
-                let formatter = DateFormatter()
-                formatter.dateFormat = "MMM d 'at' h:mm a"
-
-                AppLogger.info("DELETION CHECK: Starting with \(originalCount) Fast LIFe entries, \(healthKitEntries.count) HealthKit entries", category: AppLogger.weightTracking)
-
-                self.weightEntries.removeAll { fastLifeEntry in
-                    // Only remove HealthKit-sourced entries (preserve manual entries)
-                    guard fastLifeEntry.source != .manual else {
-                        AppLogger.info("PRESERVING manual entry: \(fastLifeEntry.weight)lbs on \(formatter.string(from: fastLifeEntry.date))", category: AppLogger.weightTracking)
-                        return false
-                    }
-
-                    // Check if this Fast LIFe entry still exists in current HealthKit data
-                    let stillExistsInHealthKit = healthKitEntries.contains { healthKitEntry in
-                        let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
-                        let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
-                        return timeDiff < WeightConstants.DuplicationThreshold.tightTimeInterval && weightDiff < WeightConstants.DuplicationThreshold.weightDelta
-                    }
-
-                    let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
-
-                    if !stillExistsInHealthKit {
-                        AppLogger.info("DELETING entry: \(fastLifeEntry.weight)lbs on \(fastLifeDateString) (source: \(fastLifeEntry.source.rawValue)) - not found in current HealthKit data", category: AppLogger.weightTracking)
-                    } else {
-                        AppLogger.info("KEEPING entry: \(fastLifeEntry.weight)lbs on \(fastLifeDateString) (source: \(fastLifeEntry.source.rawValue)) - still exists in HealthKit", category: AppLogger.weightTracking)
-                    }
-
-                    return !stillExistsInHealthKit
-                }
-                let deletedCount = originalCount - self.weightEntries.count
-                AppLogger.info("DELETION COMPLETE: Removed \(deletedCount) entries, \(self.weightEntries.count) entries remaining", category: AppLogger.weightTracking)
-
-                // Step 2: Add new HealthKit entries not already in Fast LIFe
-                var addedCount = 0
-                AppLogger.info("Starting comparison: HealthKit has \(healthKitEntries.count) entries, Fast LIFe has \(self.weightEntries.count) entries", category: AppLogger.weightTracking)
-
-                for healthKitEntry in healthKitEntries {
-                    let formatter = DateFormatter()
-                    formatter.dateFormat = "MMM d 'at' h:mm a"
-                    let healthKitDateString = formatter.string(from: healthKitEntry.date)
-
-                    let alreadyExists = self.weightEntries.contains { fastLifeEntry in
-                        let timeDiff = abs(fastLifeEntry.date.timeIntervalSince(healthKitEntry.date))
-                        let weightDiff = abs(fastLifeEntry.weight - healthKitEntry.weight)
-                        let fastLifeDateString = formatter.string(from: fastLifeEntry.date)
-
-                        let matches = timeDiff < WeightConstants.DuplicationThreshold.tightTimeInterval && weightDiff < WeightConstants.DuplicationThreshold.weightDelta
-
-                        if matches {
-                            AppLogger.info("MATCH FOUND: HealthKit(\(healthKitEntry.weight)lbs \(healthKitDateString)) matches Fast LIFe(\(fastLifeEntry.weight)lbs \(fastLifeDateString)) - timeDiff:\(timeDiff)s weightDiff:\(weightDiff)lbs", category: AppLogger.weightTracking)
-                        }
-
-                        return matches
-                    }
-
-                    if !alreadyExists {
-                        AppLogger.info("MISSING ENTRY DETECTED: Adding HealthKit entry \(healthKitEntry.weight)lbs on \(healthKitDateString) (source: \(healthKitEntry.source.rawValue))", category: AppLogger.weightTracking)
-                        self.weightEntries.append(healthKitEntry)
-                        addedCount += 1
-                    } else {
-                        AppLogger.info("Entry already exists: \(healthKitEntry.weight)lbs on \(healthKitDateString)", category: AppLogger.weightTracking)
-                    }
-                }
-
-                // Sort by date (most recent first) and save
-                self.weightEntries.sort { $0.date > $1.date }
+                let result = self.syncCoordinator.reconcileAfterReset(
+                    currentEntries: &self.weightEntries,
+                    healthKitEntries: healthKitEntries,
+                    duplicateChecker: self.makeDuplicateChecker(
+                        timeThreshold: WeightConstants.DuplicationThreshold.tightTimeInterval,
+                        weightThreshold: WeightConstants.DuplicationThreshold.weightDelta
+                    )
+                )
                 self.saveWeightEntries()
 
                 // Report comprehensive sync results
-                AppLogger.info("Manual HealthKit sync completed: \(addedCount) entries added, \(deletedCount) entries removed, \(healthKitEntries.count) total HealthKit entries", category: AppLogger.weightTracking)
+                AppLogger.info("Manual HealthKit sync completed: \(result.added) entries added, \(result.deleted) entries removed, \(healthKitEntries.count) total HealthKit entries", category: AppLogger.weightTracking)
 
-                completion(addedCount, nil)
+                completion(result.added, nil)
             }
         }
     }
@@ -582,8 +494,7 @@ class WeightManager: ObservableObject {
         AppLogger.info("Setting weight sync preference to \(enabled)", category: AppLogger.weightTracking)
 
         syncWithHealthKit = enabled
-        // THREAD SAFETY FIX: Use thread-safe wrapper
-        safeDefaults.set(enabled, forKey: syncHealthKitKey)
+        persistence.saveSyncPreference(enabled)
 
         if enabled {
             // BLOCKER 5 FIX: Request WEIGHT authorization only (not all permissions)
@@ -692,100 +603,15 @@ class WeightManager: ObservableObject {
     }
 
     var weightTrend: Double? {
-        guard weightEntries.count >= WeightConstants.Statistics.minimumEntriesForTrend else { return nil }
-
-        let recentEntries = Array(weightEntries.prefix(7)) // Last 7 entries
-        guard recentEntries.count >= WeightConstants.Statistics.minimumEntriesForTrend else { return nil }
-
-        // PHASE 1 FIX (Task 1.1): Defensive programming - explicit guards instead of force unwraps
-        guard let oldestRecent = recentEntries.last?.weight,
-              let newest = recentEntries.first?.weight else {
-            AppLogger.error("❌ Unexpected nil in weightTrend after count validation", category: AppLogger.weightTracking)
-            return nil
-        }
-
-        return newest - oldestRecent
+        analytics.weightTrend(for: weightEntries)
     }
 
     var averageWeight: Double? {
-        guard !weightEntries.isEmpty else { return nil }
-
-        // Optimized: use lazy to avoid creating intermediate array
-        let sum = weightEntries.lazy.map { $0.weight }.reduce(0.0, +)
-        return sum / Double(weightEntries.count)
+        analytics.averageWeight(for: weightEntries)
     }
 
     func weightChange(since date: Date) -> Double? {
-        guard let latestEntry = latestWeight else {
-            AppLogger.info("🔍 [WeightManager.weightChange] NO DATA - latestEntry is nil", category: AppLogger.weightTracking)
-            return nil
-        }
-
-        let calendar = Calendar.current
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d, yyyy"
-
-        AppLogger.info("🔍 [WeightManager.weightChange] START - since: \(formatter.string(from: date)) | current weight: \(latestEntry.weight) lbs", category: AppLogger.weightTracking)
-
-        // DEBUG: Dump ALL entries to see where the missing ones are
-        let detailedFormatter = DateFormatter()
-        detailedFormatter.dateFormat = "MMM d, yyyy HH:mm:ss"
-#if DEBUG
-        AppLogger.info("🔍 [WeightManager.weightChange] FULL DUMP - Total entries: \(weightEntries.count)", category: AppLogger.weightTracking)
-        for (index, entry) in weightEntries.enumerated() {
-            AppLogger.info("🔍 Entry #\(index): \(entry.weight) lbs on \(detailedFormatter.string(from: entry.date)) (source: \(entry.source.rawValue))", category: AppLogger.weightTracking)
-        }
-#endif
-
-        // Find oldest entry WITHIN the time window (on or after the cutoff date)
-        // Step 1: Find the oldest DATE in the window
-        var oldestEntry: WeightEntry?
-        for entry in weightEntries.reversed() {
-            let comparison = calendar.compare(entry.date, to: date, toGranularity: .day)
-            if comparison == .orderedDescending || comparison == .orderedSame {
-                oldestEntry = entry
-                break
-            }
-        }
-
-        guard let oldestEntry = oldestEntry else {
-            AppLogger.info("🔍 [WeightManager.weightChange] NO DATA - no entries found in date range", category: AppLogger.weightTracking)
-            return nil
-        }
-
-        AppLogger.info("🔍 [WeightManager.weightChange] Oldest date in window: \(formatter.string(from: oldestEntry.date))", category: AppLogger.weightTracking)
-
-        // Step 2: Get ALL entries from that same day using date range (more robust than isDate)
-        // Get start and end of the oldest day
-        let startOfOldestDay = calendar.startOfDay(for: oldestEntry.date)
-        guard let endOfOldestDay = calendar.date(byAdding: .day, value: 1, to: startOfOldestDay) else {
-            AppLogger.info("🔍 [WeightManager.weightChange] ERROR - Could not calculate end of day", category: AppLogger.weightTracking)
-            return nil
-        }
-
-        // Filter all entries that fall within this 24-hour period
-        let entriesOnOldestDay = weightEntries.filter {
-            $0.date >= startOfOldestDay && $0.date < endOfOldestDay
-        }
-
-        AppLogger.info("🔍 [WeightManager.weightChange] Date range: \(formatter.string(from: startOfOldestDay)) to \(formatter.string(from: endOfOldestDay))", category: AppLogger.weightTracking)
-        AppLogger.info("🔍 [WeightManager.weightChange] Entries on oldest day: \(entriesOnOldestDay.count) - weights: \(entriesOnOldestDay.map { $0.weight })", category: AppLogger.weightTracking)
-
-        // Step 3: Calculate average weight for that day
-        guard !entriesOnOldestDay.isEmpty else { return nil }
-        if entriesOnOldestDay.count == 1, let singleEntry = entriesOnOldestDay.first, singleEntry.id == latestEntry.id {
-            // No historical data before the latest entry
-            return nil
-        }
-        let sumWeight = entriesOnOldestDay.map { $0.weight }.reduce(0.0, +)
-        let avgWeightOnOldestDay = sumWeight / Double(entriesOnOldestDay.count)
-
-        AppLogger.info("🔍 [WeightManager.weightChange] Average weight on oldest day: \(avgWeightOnOldestDay) lbs", category: AppLogger.weightTracking)
-
-        // Step 4: Calculate change using daily average (not single entry)
-        let change = latestEntry.weight - avgWeightOnOldestDay
-        AppLogger.info("🔍 [WeightManager.weightChange] RESULT: \(change) lbs (\(latestEntry.weight) - \(avgWeightOnOldestDay))", category: AppLogger.weightTracking)
-        return change
+        analytics.weightChange(for: weightEntries, latestEntry: latestWeight, since: date)
     }
 
     // MARK: - Milestone Computation (Task 1E Phase 3)
@@ -801,14 +627,12 @@ class WeightManager: ObservableObject {
     /// Total weight change from start to current
     /// Returns nil if insufficient data (need at least 2 entries)
     var totalWeightChange: Double? {
-        guard let startEntry = resolvedStartWeight()?.weight,
-              let current = latestWeight?.weight else {
-            return nil
-        }
-        if weightEntries.count < 2 && startWeightOverride == nil {
-            return nil
-        }
-        return current - startEntry
+        analytics.totalWeightChange(
+            startWeight: resolvedStartWeight()?.weight,
+            currentWeight: latestWeight?.weight,
+            entryCount: weightEntries.count,
+            hasStartWeightOverride: startWeightOverride != nil
+        )
     }
 
     /// Calculate progress toward goal weight (0.0 to 1.0)
@@ -816,23 +640,11 @@ class WeightManager: ObservableObject {
     /// - Returns: Progress as decimal (0.0 = no progress, 1.0 = goal reached)
     /// Returns nil if insufficient data or invalid goal
     func progressToGoal(goalWeight: Double) -> Double? {
-        guard let start = resolvedStartWeight()?.weight,
-              let current = latestWeight?.weight,
-              goalWeight > 0,
-              goalWeight < start else {  // Goal must be less than start for weight loss
-            return nil
-        }
-
-        let totalDistance = start - goalWeight
-        let progressMade = start - current
-
-        guard progressMade > 0 else {
-            return nil
-        }
-
-        // Clamp progress between 0.0 and 1.0
-        let progress = max(0.0, min(1.0, progressMade / totalDistance))
-        return progress
+        analytics.progressToGoal(
+            startWeight: resolvedStartWeight()?.weight,
+            currentWeight: latestWeight?.weight,
+            goalWeight: goalWeight
+        )
     }
 
     /// Calculate current milestone index (1-10)
@@ -840,17 +652,8 @@ class WeightManager: ObservableObject {
     /// - Parameter goalWeight: Target weight in pounds (internal unit)
     /// - Returns: Current milestone number (1-10), or 1 if insufficient data
     func currentMilestoneIndex(goalWeight: Double, totalMilestones: Int = 10) -> Int {
-        guard let progress = progressToGoal(goalWeight: goalWeight) else {
-            return 1  // Default to milestone 1 if no data
-        }
-
-        // Calculate milestone (1-based index)
-        // Progress 0.0 = Milestone 1, Progress 1.0 = Milestone 10
-        let milestoneFloat = progress * Double(totalMilestones)
-        let milestone = Int(ceil(milestoneFloat))
-
-        // Ensure milestone is between 1 and totalMilestones
-        return max(1, min(totalMilestones, milestone))
+        let progress = progressToGoal(goalWeight: goalWeight)
+        return analytics.currentMilestoneIndex(progress: progress, totalMilestones: totalMilestones)
     }
 
     /// Calculate number of completed milestones (0-10)
@@ -858,16 +661,8 @@ class WeightManager: ObservableObject {
     /// - Parameter goalWeight: Target weight in pounds (internal unit)
     /// - Returns: Count of fully completed milestones (0-10)
     func completedMilestones(goalWeight: Double, totalMilestones: Int = 10) -> Int {
-        guard let progress = progressToGoal(goalWeight: goalWeight) else {
-            return 0  // No milestones completed if no data
-        }
-
-        // Calculate completed milestones (0-based, then convert to count)
-        // Progress 0.0 = 0 completed, Progress 0.1 = 1 completed (for 10 milestones)
-        let completed = Int(floor(progress * Double(totalMilestones)))
-
-        // Ensure count is between 0 and totalMilestones
-        return max(0, min(totalMilestones, completed))
+        let progress = progressToGoal(goalWeight: goalWeight)
+        return analytics.completedMilestones(progress: progress, totalMilestones: totalMilestones)
     }
 
     /// Calculate progress within current milestone (0.0 to 1.0)
@@ -875,18 +670,8 @@ class WeightManager: ObservableObject {
     /// - Parameter goalWeight: Target weight in pounds (internal unit)
     /// - Returns: Progress within current milestone (0.0-1.0), or 0.0 if insufficient data
     func milestoneProgress(goalWeight: Double, totalMilestones: Int = 10) -> Double {
-        guard let progress = progressToGoal(goalWeight: goalWeight) else {
-            return 0.0  // No progress if no data
-        }
-
-        // Calculate progress within current milestone segment
-        // Example: If overall progress is 0.65 (65%), and we're in milestone 7:
-        // - 6 milestones completed = 0.6 progress
-        // - Current milestone progress = (0.65 - 0.6) / 0.1 = 0.5 (50% of milestone 7)
-        let milestoneFloat = progress * Double(totalMilestones)
-        let milestoneSegmentProgress = milestoneFloat - floor(milestoneFloat)
-
-        return milestoneSegmentProgress
+        let progress = progressToGoal(goalWeight: goalWeight)
+        return analytics.milestoneProgress(progress: progress, totalMilestones: totalMilestones)
     }
 
     /// Get milestone statistics for display
@@ -901,23 +686,26 @@ class WeightManager: ObservableObject {
         currentWeight: Double,
         remainingWeight: Double
     )? {
-        guard let start = resolvedStartWeight()?.weight,
-              let current = latestWeight?.weight,
-              goalWeight > 0,
-              goalWeight < start else {
-            return nil
-        }
-        if weightEntries.count < 2 && startWeightOverride == nil {
+        let progress = progressToGoal(goalWeight: goalWeight)
+        guard let stats = analytics.milestoneStats(
+            startWeight: resolvedStartWeight()?.weight,
+            currentWeight: latestWeight?.weight,
+            goalWeight: goalWeight,
+            totalMilestones: totalMilestones,
+            progress: progress,
+            entryCount: weightEntries.count,
+            hasStartWeightOverride: startWeightOverride != nil
+        ) else {
             return nil
         }
 
         return (
-            currentIndex: currentMilestoneIndex(goalWeight: goalWeight, totalMilestones: totalMilestones),
-            completed: completedMilestones(goalWeight: goalWeight, totalMilestones: totalMilestones),
-            progress: milestoneProgress(goalWeight: goalWeight, totalMilestones: totalMilestones),
-            startWeight: start,
-            currentWeight: current,
-            remainingWeight: max(0, current - goalWeight)
+            currentIndex: stats.currentIndex,
+            completed: stats.completedCount,
+            progress: stats.currentMilestoneProgress,
+            startWeight: stats.startWeight,
+            currentWeight: stats.currentWeight,
+            remainingWeight: stats.remainingWeight
         )
     }
 
@@ -974,47 +762,58 @@ class WeightManager: ObservableObject {
     // MARK: - Persistence
 
     private func saveWeightEntries() {
-        if let encoded = try? JSONEncoder().encode(weightEntries) {
-            // THREAD SAFETY FIX: Use thread-safe wrapper
-            safeDefaults.set(encoded, forKey: weightEntriesKey)
+        persistence.saveWeightEntries(weightEntries)
+    }
+
+    private func makeDuplicateChecker(timeThreshold: TimeInterval,
+                                      weightThreshold: Double) -> (WeightEntry, WeightEntry) -> Bool {
+        { existing, newEntry in
+            self.isDuplicateEntry(
+                existing: existing,
+                newEntry: newEntry,
+                timeThreshold: timeThreshold,
+                weightThreshold: weightThreshold
+            )
         }
+    }
+
+    private func isWeightWithinDuplicateThreshold(existingWeight: Double,
+                                                  newWeight: Double,
+                                                  threshold: Double) -> Bool {
+        let epsilon = 0.00001
+        let adjustedThreshold = max(0, threshold - epsilon)
+        return abs(existingWeight - newWeight) < adjustedThreshold
+    }
+
+    private func isDuplicateEntry(existing: WeightEntry,
+                                  newEntry: WeightEntry,
+                                  timeThreshold: TimeInterval,
+                                  weightThreshold: Double) -> Bool {
+        let timeDiff = abs(existing.date.timeIntervalSince(newEntry.date))
+        guard timeDiff < timeThreshold else { return false }
+        return isWeightWithinDuplicateThreshold(existingWeight: existing.weight,
+                                                newWeight: newEntry.weight,
+                                                threshold: weightThreshold)
     }
 
     private func loadWeightEntries() {
-        // THREAD SAFETY FIX: Use thread-safe wrapper
-        guard let data = safeDefaults.data(forKey: weightEntriesKey),
-              let entries = try? JSONDecoder().decode([WeightEntry].self, from: data) else {
-            return
-        }
-        weightEntries = entries.sorted { $0.date > $1.date }
+        weightEntries = persistence.loadWeightEntries()
     }
 
     private func loadSyncPreference() {
-        // THREAD SAFETY FIX: Use thread-safe wrapper
-        // Default to true if not set
-        if safeDefaults.object(forKey: syncHealthKitKey) != nil {
-            syncWithHealthKit = safeDefaults.bool(forKey: syncHealthKitKey)
+        if let stored = persistence.loadSyncPreference() {
+            syncWithHealthKit = stored
         }
     }
 
     private func loadStartWeightOverride() {
-        if let stored = safeDefaults.object(forKey: startWeightKey) as? Double, stored > 0 {
-            startWeightOverride = stored
-        } else if let legacy = safeDefaults.object(forKey: "startWeight") as? Double, legacy > 0 {
-            startWeightOverride = legacy
-            safeDefaults.removeObject(forKey: "startWeight")
-        }
-
-        if let storedDate = safeDefaults.object(forKey: startWeightDateKey) as? Date {
-            startWeightDate = storedDate
-        } else if let legacyDate = safeDefaults.object(forKey: "startDate") as? Date {
-            startWeightDate = legacyDate
-            safeDefaults.removeObject(forKey: "startDate")
-        }
+        let stored = persistence.loadStartWeightOverride()
+        startWeightOverride = stored.weight
+        startWeightDate = stored.date
     }
 
     private func loadMilestoneCount() {
-        if let stored = safeDefaults.object(forKey: milestoneCountKey) as? Int {
+        if let stored = persistence.loadMilestoneCount() {
             milestoneCount = sanitizedMilestoneCount(stored)
         } else {
             milestoneCount = 10
@@ -1032,7 +831,7 @@ class WeightManager: ObservableObject {
 
     // RECOVERY TASK #1: Load goal weight from persistent storage
     private func loadGoalWeight() {
-        if let stored = safeDefaults.object(forKey: goalWeightKey) as? Double {
+        if let stored = persistence.loadGoalWeight() {
             goalWeight = stored
             AppLogger.info("Loaded goal weight: \(stored) lbs", category: AppLogger.weightTracking)
         } else {
@@ -1047,7 +846,7 @@ class WeightManager: ObservableObject {
     // Reference: Apple's Data Management in SwiftUI guide
     func setGoalWeight(_ weight: Double) {
         goalWeight = weight
-        safeDefaults.set(weight, forKey: goalWeightKey)
+        persistence.saveGoalWeight(weight)
         AppLogger.info("Goal weight updated: \(weight) lbs", category: AppLogger.weightTracking)
     }
 
@@ -1056,14 +855,12 @@ class WeightManager: ObservableObject {
             let internalValue = convertToInternalUnit(weight)
             startWeightOverride = internalValue
             startWeightDate = date
-            safeDefaults.set(internalValue, forKey: startWeightKey)
-            safeDefaults.set(date, forKey: startWeightDateKey)
+            persistence.saveStartWeightOverride(weight: internalValue, date: date)
             AppLogger.info("Updated start weight override: \(internalValue) lbs", category: AppLogger.weightTracking)
         } else {
             startWeightOverride = nil
             startWeightDate = nil
-            safeDefaults.removeObject(forKey: startWeightKey)
-            safeDefaults.removeObject(forKey: startWeightDateKey)
+            persistence.saveStartWeightOverride(weight: nil, date: nil)
             AppLogger.info("Cleared start weight override", category: AppLogger.weightTracking)
         }
     }
@@ -1071,7 +868,7 @@ class WeightManager: ObservableObject {
     func setMilestoneCount(_ count: Int) {
         let sanitized = sanitizedMilestoneCount(count)
         milestoneCount = sanitized
-        safeDefaults.set(sanitized, forKey: milestoneCountKey)
+        persistence.saveMilestoneCount(sanitized)
         AppLogger.info("Milestone count updated: \(sanitized)", category: AppLogger.weightTracking)
     }
 

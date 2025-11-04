@@ -87,6 +87,9 @@ struct CurrentWeightCard: View {
 
     /// Calculates progress percentage toward goal weight
     var body: some View {
+        let progressPercentage = weightManager.progressPercentage(toward: weightGoal)
+        let hasPositiveProgress = (progressPercentage ?? 0) > 0.0001
+
         VStack(spacing: 8) {
             if let latest = weightManager.latestWeight {
                 // TAPPABLE Current Weight Section - opens Add Weight sheet
@@ -119,10 +122,10 @@ struct CurrentWeightCard: View {
                 // Reference: FastLIFe_WeightTracker_Consolidated_Spec.md §4
                 if let progress = calculateTotalProgress() {
                     MotivationBanner(
-                        message: progress.isLoss
+                        message: hasPositiveProgress
                             ? "You've lost \(weightManager.formattedDisplayWeight(progress.amount)) \(unitAbbreviation) - keep it up!"
                             : "Progress isn't always linear - you're doing great",
-                        isPositive: progress.isLoss
+                        isPositive: hasPositiveProgress
                     )
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -152,16 +155,21 @@ struct CurrentWeightCard: View {
                     // Progress Ring - Beautiful circular visual progress indicator
                     // Inspired by milestone concept with sexy color scheme
                     // Per Apple HIG: "Use visual metaphors to communicate meaning"
-                    if let progressPercentage = weightManager.progressPercentage(toward: weightGoal),
+                    if let progressPercentage,
                        let progress = calculateTotalProgress(),
                        let startWeight = getStartWeight(),
                        let weightToGo = calculateWeightToGo() {
-                        let weightLostDisplay = weightManager.formattedDisplayWeight(progress.amount)
+                        let weightChangeDisplay = weightManager.formattedDisplayWeight(progress.amount)
                         let weightToGoDisplay = weightManager.formattedDisplayWeight(weightToGo)
+                        let weightChangeLabel = hasPositiveProgress ? "LOST" : "GAINED"
+                        let weightChangeColor = hasPositiveProgress ? Theme.ColorToken.stateSuccess : Theme.ColorToken.accentCoral
+                        let effectivePercentage = hasPositiveProgress ? progressPercentage : 0.0
 
                         CircularProgressRing(
-                            percentage: progressPercentage,
-                            weightLostText: weightLostDisplay,
+                            percentage: effectivePercentage,
+                            weightChangeText: weightChangeDisplay,
+                            weightChangeLabel: weightChangeLabel,
+                            weightChangeColor: weightChangeColor,
                             weightToGoText: weightToGo > 0 ? weightToGoDisplay : nil,
                             unitAbbreviation: unitAbbreviation,
                             startWeight: startWeight,
@@ -213,7 +221,9 @@ struct CurrentWeightCard: View {
 /// Reference: https://developer.apple.com/design/human-interface-guidelines/charts
 struct CircularProgressRing: View {
     let percentage: Double
-    let weightLostText: String
+    let weightChangeText: String
+    let weightChangeLabel: String
+    let weightChangeColor: Color
     let weightToGoText: String?
     let unitAbbreviation: String
     let startWeight: Double?
@@ -273,10 +283,10 @@ struct CircularProgressRing: View {
             HStack(spacing: 24) {
                 // Weight Lost (left)
                 VStack(spacing: 2) {
-                    Text("\(weightLostText) \(unitAbbreviation)")
+                    Text("\(weightChangeText) \(unitAbbreviation)")
                         .font(DSTypography.statValueSmall)
-                        .foregroundColor(Color("FLSuccess"))
-                    Text("LOST")
+                        .foregroundColor(weightChangeColor)
+                    Text(weightChangeLabel.uppercased())
                         .font(DSTypography.listCaption)
                         .foregroundColor(.secondary)
                         .tracking(0.5)

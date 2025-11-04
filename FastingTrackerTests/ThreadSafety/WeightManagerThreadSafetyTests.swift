@@ -37,19 +37,30 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
     nonisolated(unsafe) var sut: WeightManager!
     var mockHealthKit: MockHealthKitManager!
     var mockDataStore: MockDataStore!
+    var persistence: WeightPersistenceManaging!
+    var suiteName: String!
 
     override func setUp() {
         super.setUp()
-        // Clear UserDefaults to start fresh
-        UserDefaults.standard.removeObject(forKey: "weightEntries")
-        UserDefaults.standard.removeObject(forKey: "syncWithHealthKit")
-
         mockHealthKit = MockHealthKitManager()
         mockDataStore = MockDataStore()
 
+        suiteName = "WeightManagerThreadSafetyTests-\(UUID().uuidString)"
+
+        guard let suiteDefaults = UserDefaults(suiteName: suiteName) else {
+            XCTFail("Unable to create isolated UserDefaults suite")
+            return
+        }
+        suiteDefaults.removePersistentDomain(forName: suiteName)
+        persistence = WeightPersistenceAdapter(defaults: ThreadSafeUserDefaults(userDefaults: suiteDefaults))
+
         // Create WeightManager on MainActor (required for @MainActor class)
         let manager = MainActor.assumeIsolated {
-            WeightManager(healthKit: mockHealthKit, dataStore: mockDataStore)
+            WeightManager(
+                healthKit: mockHealthKit,
+                dataStore: mockDataStore,
+                persistence: persistence
+            )
         }
         sut = manager
     }
@@ -58,6 +69,12 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
         sut = nil
         mockHealthKit = nil
         mockDataStore = nil
+        if let suiteName,
+           let suiteDefaults = UserDefaults(suiteName: suiteName) {
+            suiteDefaults.removePersistentDomain(forName: suiteName)
+        }
+        persistence = nil
+        suiteName = nil
         super.tearDown()
     }
 
@@ -95,7 +112,7 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
 
         // ASSERT: Verify persistence integrity by reloading
         let reloadedManager = await MainActor.run {
-            WeightManager(healthKit: mockHealthKit, dataStore: mockDataStore)
+            WeightManager(healthKit: mockHealthKit, dataStore: mockDataStore, persistence: persistence)
         }
 
         let reloadedCount = await MainActor.run { reloadedManager.weightEntries.count }
@@ -294,7 +311,7 @@ final class WeightManagerThreadSafetyTests: XCTestCase {
 
         // ASSERT: Verify UserDefaults wasn't corrupted by rapid writes
         let reloadedManager = await MainActor.run {
-            WeightManager(healthKit: self.mockHealthKit, dataStore: self.mockDataStore)
+            WeightManager(healthKit: self.mockHealthKit, dataStore: self.mockDataStore, persistence: self.persistence)
         }
 
         await Task.yield()

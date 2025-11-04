@@ -223,6 +223,7 @@ final class BadgesViewModelTests: XCTestCase {
 
         // Wait for auto-reset delay (1 second in implementation)
         try? await Task.sleep(nanoseconds: 1_100_000_000) // 1.1 seconds
+        await MainActor.run {}
 
         // Then - highlightedItemID should be cleared
         XCTAssertNil(viewModel.highlightedItemID,

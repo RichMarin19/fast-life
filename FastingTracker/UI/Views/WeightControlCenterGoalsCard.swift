@@ -3,6 +3,7 @@ import SwiftUI
 /// Goals configuration card within the Weight Control Center.
 struct WeightControlCenterGoalsCard: View {
     @ObservedObject var viewModel: WeightControlCenterViewModel
+    @ObservedObject var goalCoordinator: WeightGoalCoordinator
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
 
@@ -44,7 +45,7 @@ struct WeightControlCenterGoalsCard: View {
             .tint(Theme.ColorToken.accentPrimary)
         }
         .onAppear {
-            viewModel.prepareStartWeightDefaults()
+            goalCoordinator.prepareStartWeightDefaults()
         }
     }
 
@@ -62,7 +63,7 @@ struct WeightControlCenterGoalsCard: View {
             HStack(alignment: .center, spacing: DSSpacing.cardSmallSpacing) {
                 DatePicker(
                     "Start Date",
-                    selection: $viewModel.startWeightDate,
+                    selection: $goalCoordinator.startWeightDate,
                     in: ...Date(),
                     displayedComponents: .date
                 )
@@ -73,12 +74,12 @@ struct WeightControlCenterGoalsCard: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
                 .accessibilityLabel("Start date")
-                .onChange(of: viewModel.startWeightDate) { _, newDate in
-                    viewModel.handleStartWeightDateChange(newDate)
+                .onChange(of: goalCoordinator.startWeightDate) { _, newDate in
+                    goalCoordinator.handleStartWeightDateChange(newDate)
                 }
 
                 ZStack(alignment: .trailing) {
-                    TextField("Enter start weight", text: $viewModel.startWeightString)
+                    TextField("Enter start weight", text: $goalCoordinator.startWeightString)
                         .keyboardType(.decimalPad)
                         .font(DSTypography.displayS)
                         .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -86,18 +87,18 @@ struct WeightControlCenterGoalsCard: View {
                         .monospacedDigit()
                         .fixedSize()
                         .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
-                        .onChange(of: viewModel.startWeightString) { _, newValue in
-                            viewModel.formatStartWeightInput(newValue)
+                        .onChange(of: goalCoordinator.startWeightString) { _, newValue in
+                            goalCoordinator.formatStartWeightInput(newValue)
                         }
 
-                    if viewModel.isFetchingStartWeight {
+                    if goalCoordinator.isFetchingStartWeight {
                         ProgressView()
                             .scaleEffect(0.8)
                             .padding(.trailing, DSSpacing.cardExtraSmallSpacing)
                     }
                 }
 
-                Text(viewModel.unitAbbreviation)
+                Text(goalCoordinator.unitAbbreviation)
                     .font(DSTypography.statValueSmall)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
@@ -116,19 +117,19 @@ struct WeightControlCenterGoalsCard: View {
             )
             .shadow(color: Theme.ColorToken.accentPrimary.opacity(0.25), radius: 12, x: 0, y: 6)
 
-            if let status = viewModel.startWeightStatusMessage {
+            if let status = goalCoordinator.startWeightStatusMessage {
                 Text(status)
                     .font(DSTypography.cardCaption)
                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
             }
 
-            if let error = viewModel.startWeightErrorMessage {
+            if let error = goalCoordinator.startWeightErrorMessage {
                 Text(error)
                     .font(DSTypography.cardCaption)
                     .foregroundColor(Theme.ColorToken.stateError)
             }
 
-            Button(action: viewModel.saveStartWeight) {
+            Button(action: goalCoordinator.saveStartWeight) {
                 Text("Save Start Weight")
                     .font(DSTypography.buttonPrimary)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
@@ -137,8 +138,8 @@ struct WeightControlCenterGoalsCard: View {
                     .background(Theme.ColorToken.accentPrimary)
                     .cornerRadius(DSSpacing.cardSmallSpacing)
             }
-            .disabled(!viewModel.canSaveStartWeight)
-            .opacity(viewModel.canSaveStartWeight ? 1.0 : 0.5)
+            .disabled(!goalCoordinator.canSaveStartWeight)
+            .opacity(goalCoordinator.canSaveStartWeight ? 1.0 : 0.5)
         }
     }
 
@@ -149,24 +150,24 @@ struct WeightControlCenterGoalsCard: View {
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
             HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
-                TextField("Enter goal", text: $viewModel.weightGoalString)
+                TextField("Enter goal", text: $goalCoordinator.weightGoalString)
                     .keyboardType(.decimalPad)
                     .font(DSTypography.displayM)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     .multilineTextAlignment(.center)
                     .monospacedDigit()
                     .fixedSize()
-                    .onChange(of: viewModel.weightGoalString) { _, newValue in
-                        viewModel.formatWeightGoalInput(newValue)
-                    }
+                .onChange(of: goalCoordinator.weightGoalString) { _, newValue in
+                    goalCoordinator.formatWeightGoalInput(newValue)
+                }
 
-                Text(viewModel.unitAbbreviation)
+                Text(goalCoordinator.unitAbbreviation)
                     .font(DSTypography.statValueSmall)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     .accessibilityHidden(true)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Goal weight \(viewModel.weightGoalString) pounds")
+            .accessibilityLabel("Goal weight \(goalCoordinator.weightGoalString) pounds")
             .accessibilityHint("Double tap to edit")
             .padding(.leading, 28)
             .padding(.trailing, DSSpacing.cardPadding)
@@ -176,7 +177,7 @@ struct WeightControlCenterGoalsCard: View {
                     .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
             )
 
-            if let goal = Double(viewModel.weightGoalString),
+            if let goal = Double(goalCoordinator.weightGoalString),
                goal > 0,
                let currentWeight = viewModel.weightManager.latestWeight?.weight {
                 let toGo = currentWeight - goal
@@ -218,17 +219,17 @@ struct WeightControlCenterGoalsCard: View {
                 .font(DSTypography.cardCaption)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
-            Stepper(value: $viewModel.milestoneCount, in: 0...10) {
-                Text(viewModel.milestoneCount == 1 ? "1 milestone" : "\(viewModel.milestoneCount) milestones")
+            Stepper(value: $goalCoordinator.milestoneCount, in: 0...10) {
+                Text(goalCoordinator.milestoneCount == 1 ? "1 milestone" : "\(goalCoordinator.milestoneCount) milestones")
                     .font(DSTypography.cardTitle)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
             }
             .colorScheme(.dark)
-            .onChange(of: viewModel.milestoneCount) { _, newValue in
-                viewModel.updateMilestoneCount(newValue)
+            .onChange(of: goalCoordinator.milestoneCount) { _, newValue in
+                goalCoordinator.updateMilestoneCount(newValue)
             }
 
-            if viewModel.milestoneCount == 0 {
+            if goalCoordinator.milestoneCount == 0 {
                 Text("Milestones hidden. The progress ring will show a continuous arc.")
                     .font(DSTypography.cardCaption)
                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
