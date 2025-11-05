@@ -195,6 +195,7 @@ final class BadgesViewModelTests: XCTestCase {
 
         // Wait briefly for animation to start
         try? await Task.sleep(nanoseconds: 50_000_000) // 50ms
+        await MainActor.run {}
 
         // Then - badgeScale should animate to 1.15 (bounce effect)
         XCTAssertGreaterThan(viewModel.badgeScale, 1.0,
@@ -202,6 +203,7 @@ final class BadgesViewModelTests: XCTestCase {
 
         // Wait for animation to complete (150ms total in implementation)
         try? await Task.sleep(nanoseconds: 200_000_000) // 200ms
+        await MainActor.run {}
 
         // Then - badgeScale should return to 1.0
         XCTAssertEqual(viewModel.badgeScale, 1.0, accuracy: 0.05,

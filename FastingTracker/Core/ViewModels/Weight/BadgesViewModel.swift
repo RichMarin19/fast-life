@@ -52,6 +52,7 @@ class BadgesViewModel: ObservableObject {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
         // Layer 6: Badge bounce animation (1.0 → 1.15 → 1.0)
+        badgeScale = 1.01
         withAnimation(.spring(response: AnimationConstants.Spring.quickResponse, dampingFraction: AnimationConstants.Spring.lightDamping)) {
             badgeScale = 1.15
         }

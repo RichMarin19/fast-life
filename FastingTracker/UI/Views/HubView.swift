@@ -260,7 +260,8 @@ struct TrackerSummaryCard: View {
         let newestDate = last7DaysWeights.first!.date
 
         let daysDiff = newestDate.timeIntervalSince(oldestDate) / 86400 // Convert to days
-        guard daysDiff > 0 else { return "--" }
+        // Require at least ~1 full day between entries to avoid noisy extrapolations.
+        guard daysDiff >= 1 else { return "--" }
 
         let weightChange = oldestWeight - newestWeight // positive = weight loss
         let weeklyRate = weightChange / daysDiff * 7.0 // lbs per week

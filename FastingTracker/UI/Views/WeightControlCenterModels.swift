@@ -117,6 +117,32 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
         case .didYouKnow: return "Educational weight loss tip"
         }
     }
+
+    var optOutContentID: String? {
+        switch self {
+        case .coachBar: return "progress_story_coach_bar_v1"
+        case .sevenDay: return "progress_story_7day_v1"
+        case .thirtyDay: return "progress_story_30day_v1"
+        case .banner: return "progress_story_banner_v1"
+        case .reflection: return "progress_story_reflection_v1"
+        case .recap: return "progress_story_recap_v1"
+        case .didYouKnow: return "progress_story_tip_v1"
+        }
+    }
+}
+
+extension ProgressStoryCardType {
+    /// Default light-surface style for cards that use the shared surface component.
+    var surfaceStyle: WeightProgressStorySurfaceStyle? {
+        switch self {
+        case .sevenDay:
+            return .ice
+        case .thirtyDay:
+            return .ivory
+        case .banner, .reflection, .recap, .didYouKnow, .coachBar:
+            return nil
+        }
+    }
 }
 
 // MARK: - ProgressStoryCardType + CardTypeProtocol

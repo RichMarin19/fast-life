@@ -17,6 +17,7 @@ class WeightChartViewModel: ObservableObject {
     @Published var showGoalLine: Bool
     @Published var weightGoal: Double
     @Published var selectedDate: Date?
+    private var currentVisibleDomain: ClosedRange<Date>?
 
     // MARK: - Initialization
 
@@ -30,6 +31,7 @@ class WeightChartViewModel: ObservableObject {
         self.selectedTimeRange = selectedTimeRange
         self.showGoalLine = showGoalLine
         self.weightGoal = weightGoal
+        self.currentVisibleDomain = nil
     }
 
     // MARK: - Computed Properties (Chart Data Calculations)
@@ -143,6 +145,77 @@ class WeightChartViewModel: ObservableObject {
         return entriesForDay.count == 1 ? entriesForDay.first?.date : nil
     }
 
+    // MARK: - Formatting Helpers
+
+    /// Current unit abbreviation (e.g., "lbs", "kg")
+    var unitAbbreviation: String {
+        weightManager.currentUnitAbbreviation
+    }
+
+    /// Localized weight string for chart entries
+    func formattedWeight(for entry: WeightEntry, maximumFractionDigits: Int = 1) -> String {
+        weightManager.formattedDisplayWeight(entry.weight, maximumFractionDigits: maximumFractionDigits)
+    }
+
+    /// Localized weight string for raw pound values (axis ticks, goal line)
+    func formattedWeightValue(_ pounds: Double, maximumFractionDigits: Int = 1) -> String {
+        weightManager.formattedDisplayWeight(pounds, maximumFractionDigits: maximumFractionDigits)
+    }
+
+    /// Axis label helper applying localization and unit suffix
+    func axisLabel(for pounds: Double) -> String {
+        "\(formattedWeightValue(pounds, maximumFractionDigits: 0)) \(unitAbbreviation)"
+    }
+
+    func goalLineAccessibilityLabel(goalWeight: Double) -> String {
+        "Goal weight \(formattedWeightValue(goalWeight, maximumFractionDigits: 0)) \(unitAbbreviation)"
+    }
+
+    func chartAccessibilitySummary(showGoalLine: Bool) -> String {
+        guard let first = chartData.first, let last = chartData.last else {
+            return "Weight chart has no data for the selected time range."
+        }
+
+        let weights = chartData.map(\.weight)
+        guard let minWeight = weights.min(), let maxWeight = weights.max() else {
+            return "Weight chart has no data for the selected time range."
+        }
+
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        let startDate = dateFormatter.string(from: first.date)
+        let endDate = dateFormatter.string(from: last.date)
+
+        let minText = formattedWeightValue(minWeight, maximumFractionDigits: 1)
+        let maxText = formattedWeightValue(maxWeight, maximumFractionDigits: 1)
+
+        var summary = "Weight chart from \(startDate) to \(endDate). Range \(minText) \(unitAbbreviation) to \(maxText) \(unitAbbreviation)."
+
+        if showGoalLine {
+            let goalText = formattedWeightValue(weightGoal, maximumFractionDigits: 1)
+            summary += " Goal line at \(goalText) \(unitAbbreviation)."
+        }
+
+        return summary
+    }
+
+    func selectedEntryAccessibilityLabel(for entry: WeightEntry, displayTime: Date?) -> String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateStyle = .medium
+        let dateText = dateFormatter.string(from: entry.date)
+
+        var components = ["Selected weight \(formattedWeight(for: entry))"]
+        components.append("on \(dateText)")
+
+        if let displayTime {
+            let timeFormatter = DateFormatter()
+            timeFormatter.timeStyle = .short
+            components.append("at \(timeFormatter.string(from: displayTime))")
+        }
+
+        return components.joined(separator: " ")
+    }
+
     // MARK: - X-Axis Label Formatting
     // Following Apple WWDC 2022: Use narrow formats and intuitive time divisions
 
@@ -214,6 +287,10 @@ class WeightChartViewModel: ObservableObject {
     /// Day view: 6am to 12am (midnight) by default, adjusts if entries before 6am
     /// Month view: Extends slightly beyond data range for easier point selection
     var xAxisDomain: ClosedRange<Date>? {
+        if let currentVisibleDomain {
+            return currentVisibleDomain
+        }
+
         let calendar = Calendar.current
 
         switch selectedTimeRange {
@@ -301,6 +378,74 @@ class WeightChartViewModel: ObservableObject {
         default:
             return nil
         }
+    }
+
+    func updateVisibleDomain(_ domain: ClosedRange<Date>?) {
+        currentVisibleDomain = domain
+    }
+
+    func defaultDomain() -> ClosedRange<Date>? {
+        guard !chartData.isEmpty else { return nil }
+
+        let dates = chartData.map { $0.date }
+        guard let minDate = dates.min(), let maxDate = dates.max() else { return nil }
+        return minDate...maxDate
+    }
+
+    func zoomedDomain(startDomain: ClosedRange<Date>, fullDomain: ClosedRange<Date>, scale: CGFloat) -> ClosedRange<Date> {
+        guard chartData.count > 1, scale.isFinite, scale > 0 else { return startDomain }
+
+        let clampedScale = max(min(scale, 3.0), 0.3)
+        let baseInterval = startDomain.upperBound.timeIntervalSince(startDomain.lowerBound)
+        let newInterval = baseInterval / Double(clampedScale)
+
+        let midPoint = startDomain.lowerBound.addingTimeInterval(baseInterval / 2)
+        let halfInterval = newInterval / 2
+        let proposedLower = midPoint.addingTimeInterval(-halfInterval)
+        let proposedUpper = midPoint.addingTimeInterval(halfInterval)
+        let candidate = proposedLower...proposedUpper
+
+        return clampDomain(candidate, within: fullDomain, fallback: startDomain)
+    }
+
+    func pannedDomain(startDomain: ClosedRange<Date>, fullDomain: ClosedRange<Date>, translation: CGFloat, plotWidth: CGFloat) -> ClosedRange<Date> {
+        guard plotWidth > 0 else { return startDomain }
+
+        let secondsPerPoint = startDomain.upperBound.timeIntervalSince(startDomain.lowerBound) / Double(plotWidth)
+        let deltaSeconds = Double(-translation) * secondsPerPoint
+
+        let proposedLower = startDomain.lowerBound.addingTimeInterval(deltaSeconds)
+        let proposedUpper = startDomain.upperBound.addingTimeInterval(deltaSeconds)
+        let candidate = proposedLower...proposedUpper
+
+        return clampDomain(candidate, within: fullDomain, fallback: startDomain)
+    }
+
+    private func clampDomain(_ candidate: ClosedRange<Date>, within fullDomain: ClosedRange<Date>, fallback: ClosedRange<Date>) -> ClosedRange<Date> {
+        let clampedLower = max(candidate.lowerBound, fullDomain.lowerBound)
+        let clampedUpper = min(candidate.upperBound, fullDomain.upperBound)
+
+        guard clampedUpper > clampedLower else { return fallback }
+
+        let window = clampedLower...clampedUpper
+        let minimumWindow = fullDomain.upperBound.timeIntervalSince(fullDomain.lowerBound) * 0.1
+        if window.upperBound.timeIntervalSince(window.lowerBound) < minimumWindow {
+            return fallback
+        }
+
+        if !containsMinimumDataPoints(in: window) {
+            return fallback
+        }
+
+        return window
+    }
+
+    private func containsMinimumDataPoints(in domain: ClosedRange<Date>) -> Bool {
+        let minimumPoints = min(3, chartData.count)
+        guard minimumPoints > 0 else { return true }
+
+        let entriesInDomain = chartData.filter { domain.contains($0.date) }
+        return entriesInDomain.count >= minimumPoints
     }
 
     // MARK: - X-Axis Values Generation

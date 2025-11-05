@@ -516,18 +516,7 @@ class WeightControlCenterViewModel: ObservableObject {
         // Layer 5: Haptic feedback - Light tap for premium feel
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-        // Layer 6: Badge bounce animation (1.0 → 1.15 → 1.0)
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-            badgeScale = 1.15
-        }
-        Task<Void, Never> {
-            try? await Task.sleep(nanoseconds: 150_000_000)
-            await MainActor.run {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
-                    badgeScale = 1.0
-                }
-            }
-        }
+        triggerBadgeBounce()
     }
 
     // MARK: - Opt-Out System Helper Functions
@@ -618,6 +607,33 @@ class WeightControlCenterViewModel: ObservableObject {
 
         // Haptic feedback for confirmation
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        triggerBadgeBounce()
+    }
+
+    func restoreProgressStoryCard(_ cardType: ProgressStoryCardType) {
+        progressStoryCardManager.showCard(cardType)
+
+        if let contentID = cardType.optOutContentID {
+            optOutManager.optInContent(id: contentID)
+            optedOutContentItems.removeAll { $0.id == contentID }
+            saveOptedOutContent()
+        }
+
+        triggerBadgeBounce()
+    }
+
+    private func triggerBadgeBounce() {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            badgeScale = 1.15
+        }
+        Task<Void, Never> {
+            try? await Task.sleep(nanoseconds: 150_000_000)
+            await MainActor.run {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    badgeScale = 1.0
+                }
+            }
+        }
     }
 
 }

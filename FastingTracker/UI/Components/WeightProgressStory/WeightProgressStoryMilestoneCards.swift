@@ -10,7 +10,7 @@ struct CircularTrendRingCard: View {
     @State private var showWinHalo = false  // v1.2b: Win halo animation (D.1)
     @Environment(\.accessibilityReduceMotion) var reduceMotion  // Respect Reduce Motion
 
-    private var state: WeightTrendsView.TrendState {
+    private var state: WeightProgressStoryTrendState {
         guard let delta = delta else { return .flat }
         if delta < -0.2 { return .improving }
         if delta > 0.2 { return .regressing }
@@ -74,7 +74,7 @@ struct CircularTrendRingCard: View {
 
     /// Emotion indicator icon (v1.1 spec §7)
     /// Returns SF Symbol name for trend state
-    private func emotionIcon(for state: WeightTrendsView.TrendState) -> String {
+    private func emotionIcon(for state: WeightProgressStoryTrendState) -> String {
         switch state {
         case .improving:  return "checkmark.seal"           // Trend down
         case .regressing: return "arrow.up.right.circle"    // Trend up
@@ -84,7 +84,7 @@ struct CircularTrendRingCard: View {
 
     /// Emotion indicator label (v1.1 spec §7)
     /// Returns text label for trend state
-    private func emotionLabel(for state: WeightTrendsView.TrendState) -> String {
+    private func emotionLabel(for state: WeightProgressStoryTrendState) -> String {
         switch state {
         case .improving:  return "trend down"
         case .regressing: return "trend up"
@@ -210,7 +210,7 @@ struct TrendCardFull: View {
     let surfaceStyle: WeightProgressStorySurfaceStyle
     let onHide: () -> Void   // Hide card callback
 
-    private var state: WeightTrendsView.TrendState {
+    private var state: WeightProgressStoryTrendState {
         guard let delta = delta else { return .flat }
         if delta < -0.2 { return .improving }
         if delta > 0.2 { return .regressing }

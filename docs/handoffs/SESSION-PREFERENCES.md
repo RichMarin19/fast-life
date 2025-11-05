@@ -21,6 +21,15 @@
 - **Never change working code** - Unless extracting components or explicitly fixing bugs
 - **Proper way, not preference** - Always choose industry standard over personal preference
 - **"Let's do it properly, it's only 5 minutes and we will gain it back later!"** - Invest in quality now, save time later
+- **Recover context immediately post-compaction** - Read the latest session recap (`docs/handoffs/reports/SESSION-RECAP-*.md`) before planning or coding.
+
+### Session Resumption Playbook
+1. Open `docs/handoffs/HANDOFF.md` and review the newest W/H/E/A entries.
+2. Check `docs/handoffs/reports/WEIGHT_CHART_ZOOM_HISTORY_2025-11-05.md` for the latest zoom/selection behaviour notes.
+3. Follow the recap link (e.g., `docs/handoffs/reports/SESSION-RECAP-2025-11-04.md`) to regain full context.
+4. Only after steps 1–3: draft the plan, discuss with Rich, then execute.
+2. Follow the recap link (e.g., `docs/handoffs/reports/SESSION-RECAP-2025-11-04.md`) to regain full context.
+3. Only after steps 1–2: draft the plan, discuss with Rich, then execute.
 
 ---
 

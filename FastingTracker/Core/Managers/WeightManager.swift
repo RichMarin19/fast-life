@@ -227,6 +227,12 @@ class WeightManager: ObservableObject {
         return appSettings.weightUnit.fromPounds(entry.weight)
     }
 
+    /// Convert a raw weight value (stored in pounds) to the user's preferred display unit
+    /// Used by charts/stats displaying values or deltas in the user's unit
+    func displayWeightValue(_ pounds: Double) -> Double {
+        appSettings.weightUnit.fromPounds(pounds)
+    }
+
     /// Convert user input from preferred unit to internal pounds
     /// Ensures data consistency in storage format
     func convertToInternalUnit(_ value: Double) -> Double {

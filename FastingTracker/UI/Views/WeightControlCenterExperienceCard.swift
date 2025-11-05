@@ -295,7 +295,7 @@ struct WeightControlCenterExperienceCard: View {
                             Spacer()
 
                             Button("Restore") {
-                                viewModel.progressStoryCardManager.showCard(cardType)
+                                viewModel.restoreProgressStoryCard(cardType)
                             }
                             .font(DSTypography.statLabel)
                             .foregroundColor(Theme.ColorToken.accentPrimary)

@@ -577,4 +577,152 @@ final class WeightChartViewModelTests: XCTestCase {
 
         cancellable.cancel()
     }
+
+    // MARK: - Formatting Helper Tests
+
+    func testAxisLabel_AppendsLocalizedUnitForImperial() {
+        let viewModel = makeLocalizedViewModel(isMetric: false)
+        let poundsValue: Double = 150
+
+        let expected = viewModel.weightManager.formattedDisplayWeight(poundsValue, maximumFractionDigits: 0)
+        let label = viewModel.axisLabel(for: poundsValue)
+
+        XCTAssertEqual(label, "\(expected) \(viewModel.unitAbbreviation)")
+    }
+
+    func testAxisLabel_AppendsLocalizedUnitForMetric() {
+        let viewModel = makeLocalizedViewModel(isMetric: true)
+        let poundsValue: Double = 150
+
+        let expected = viewModel.weightManager.formattedDisplayWeight(poundsValue, maximumFractionDigits: 0)
+        let label = viewModel.axisLabel(for: poundsValue)
+
+        XCTAssertEqual(label, "\(expected) \(viewModel.unitAbbreviation)")
+    }
+
+    func testFormattedWeightForEntry_UsesWeightFormatter() {
+        let viewModel = makeLocalizedViewModel(isMetric: true)
+        let entry = WeightEntry(date: Date(), weight: 154.4, source: .manual)
+
+        let expected = viewModel.weightManager.formattedDisplayWeight(entry.weight, maximumFractionDigits: 1)
+        XCTAssertEqual(viewModel.formattedWeight(for: entry), expected)
+    }
+
+    func testChartAccessibilitySummary_IncludesRangeAndGoal() {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let entry1 = WeightEntry(date: today.addingTimeInterval(-86400), weight: 150.0, source: .manual)
+        let entry2 = WeightEntry(date: today, weight: 145.5, source: .manual)
+        mockWeightManager.setTestData([entry1, entry2])
+        sut.weightGoal = 140.0
+        sut.showGoalLine = true
+
+        let summary = sut.chartAccessibilitySummary(showGoalLine: true)
+
+        XCTAssertTrue(summary.contains("Range"), "Summary should include range information")
+        XCTAssertTrue(summary.lowercased().contains("goal line"), "Summary should mention goal line when enabled")
+    }
+
+    func testSelectedEntryAccessibilityLabel_IncludesDateAndTime() {
+        let viewModel = makeLocalizedViewModel(isMetric: false)
+        let now = Date()
+        let entry = WeightEntry(date: now, weight: 152.3, source: .manual)
+        let label = viewModel.selectedEntryAccessibilityLabel(for: entry, displayTime: now)
+
+        XCTAssertTrue(label.contains("Selected weight"), "Accessibility label should include contextual prefix")
+        XCTAssertTrue(label.contains("at"), "Accessibility label should mention the time when available")
+    }
+
+    func testZoomedDomainRespectsBaseRangeAndMinimumPoints() {
+        let fullDomain = prepareSequentialEntries(dayCount: 10)
+        let zoomedDomain = sut.zoomedDomain(startDomain: fullDomain, fullDomain: fullDomain, scale: 1.6)
+
+        XCTAssertLessThan(
+            zoomedDomain.upperBound.timeIntervalSince(zoomedDomain.lowerBound),
+            fullDomain.upperBound.timeIntervalSince(fullDomain.lowerBound),
+            "Zoomed domain should be narrower than the base domain"
+        )
+        XCTAssertGreaterThanOrEqual(
+            chartDataCount(in: zoomedDomain),
+            min(3, sut.chartData.count),
+            "Zoom should continue to include at least the minimum required data points"
+        )
+    }
+
+    func testPannedDomainShiftsWithinBoundsAfterZoom() {
+        let fullDomain = prepareSequentialEntries(dayCount: 12)
+
+        let zoomedDomain = sut.zoomedDomain(startDomain: fullDomain, fullDomain: fullDomain, scale: 1.8)
+        let pannedDomain = sut.pannedDomain(
+            startDomain: zoomedDomain,
+            fullDomain: fullDomain,
+            translation: -30,
+            plotWidth: 300
+        )
+
+        XCTAssertNotEqual(pannedDomain, zoomedDomain, "Pan should adjust the zoom window when within bounds")
+        XCTAssertGreaterThanOrEqual(pannedDomain.lowerBound, fullDomain.lowerBound, "Pan should not move before the global lower bound")
+        XCTAssertLessThanOrEqual(pannedDomain.upperBound, fullDomain.upperBound, "Pan should not move beyond the global upper bound")
+        XCTAssertGreaterThanOrEqual(
+            chartDataCount(in: pannedDomain),
+            min(3, sut.chartData.count),
+            "Panned domain should keep the minimum number of data points visible"
+        )
+    }
+
+    func testDefaultDomainMatchesFullRangeAfterReset() {
+        let fullDomain = prepareSequentialEntries(dayCount: 9)
+
+        let zoomedDomain = sut.zoomedDomain(startDomain: fullDomain, fullDomain: fullDomain, scale: 2.0)
+        XCTAssertNotEqual(zoomedDomain, fullDomain, "Zoom should produce a narrower domain when scaling up")
+
+        let resetDomain = sut.defaultDomain()
+        XCTAssertEqual(resetDomain, fullDomain, "Default domain should represent the full range after a reset")
+    }
+
+    private func makeLocalizedViewModel(isMetric: Bool) -> WeightChartViewModel {
+        let localeProvider = MutableLocaleProvider(isMetric: isMetric)
+        let appSettings = AppSettings(localeProvider: localeProvider)
+
+        let weightManager = WeightManager(
+            healthKit: MockHealthKitManager(),
+            dataStore: MockDataStore(),
+            appSettings: appSettings
+        )
+
+        return WeightChartViewModel(weightManager: weightManager)
+    }
+
+    @discardableResult
+    private func prepareSequentialEntries(dayCount: Int) -> ClosedRange<Date> {
+        let calendar = Calendar.current
+        let endOfToday = calendar.startOfDay(for: Date())
+        guard let startDate = calendar.date(byAdding: .day, value: -(dayCount - 1), to: endOfToday) else {
+            XCTFail("Unable to compute start date for sequential entries")
+            return endOfToday...endOfToday
+        }
+
+        var entries: [WeightEntry] = []
+        for offset in 0..<dayCount {
+            guard let date = calendar.date(byAdding: .day, value: offset, to: startDate) else { continue }
+            // Stagger timestamps slightly within each day to mimic real data
+            let timestamp = calendar.date(byAdding: .hour, value: offset % 3, to: date) ?? date
+            let entry = WeightEntry(date: timestamp, weight: 150.0 + Double(offset), source: .manual)
+            entries.append(entry)
+        }
+
+        mockWeightManager.setTestData(entries)
+        sut.selectedTimeRange = .all
+
+        guard let domain = sut.defaultDomain() else {
+            XCTFail("Expected non-nil chart domain after seeding data")
+            return startDate...endOfToday
+        }
+
+        return domain
+    }
+
+    private func chartDataCount(in domain: ClosedRange<Date>) -> Int {
+        sut.chartData.filter { domain.contains($0.date) }.count
+    }
 }

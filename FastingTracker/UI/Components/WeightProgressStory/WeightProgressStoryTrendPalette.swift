@@ -5,7 +5,7 @@ import SwiftUI
 struct WeightProgressStoryTrendPalette {
     let gradient: LinearGradient
 
-    init(state: WeightTrendsView.TrendState) {
+    init(state: WeightProgressStoryTrendState) {
         switch state {
         case .improving:
             gradient = LinearGradient(

@@ -26,151 +26,8 @@ import SwiftUI
  */
 
 struct WeightTrendsView: View {
-    @ObservedObject var weightManager: WeightManager
     @Environment(\.dismiss) private var dismiss
-
-    // Unified opt-out system: ContentOptOutManager for all cards + global
-    @ObservedObject private var optOutManager = ContentOptOutManager.shared
-
-    // Progress Story Card Manager for master toggle visibility control
-    @ObservedObject private var progressStoryCardManager = ProgressStoryCards.shared
-
-    // Content IDs for opt-out tracking
-    private let contentID_ProgressStory = "progress_story_v1"             // Global (toolbar button)
-    private let contentID_CoachBar = "progress_story_coach_bar_v1"        // Coach Bar (v1.2)
-    private let contentID_7Day = "progress_story_7day_v1"                 // 7-day card
-    private let contentID_30Day = "progress_story_30day_v1"               // 30-day card
-    private let contentID_Banner = "progress_story_banner_v1"             // Motivational banner
-    private let contentID_ReflectionNudge = "progress_story_reflection_v1" // Reflection Nudge (v1.2b)
-    private let contentID_Recap = "progress_story_recap_v1"               // Recap row
-    private let contentID_Tip = "progress_story_tip_v1"                   // Did You Know
-
-    // MARK: - Trend State Logic (Layer 1)
-
-    /// Trend state classification per Stacked_v1.1 spec
-    enum TrendState {
-        case improving  // Δ < -0.2 (loss)
-        case regressing // Δ > +0.2 (gain)
-        case flat       // |Δ| ≤ 0.2
-    }
-
-    /// Calculate signed delta for a period using WeightManager Single Source of Truth
-    /// Returns signed value (negative = loss, positive = gain)
-    private func calculateDelta(days: Int) -> Double? {
-        let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        // SINGLE SOURCE OF TRUTH: Use WeightManager.weightChange(since:)
-        // Returns: latestWeight - avgWeightOnOldestDay
-        // Negative = weight loss, Positive = weight gain
-        return weightManager.weightChange(since: cutoffDate)
-    }
-
-    /// Determine trend state from delta
-    private func trendState(for delta: Double) -> TrendState {
-        if delta < -0.2 { return .improving }
-        if delta > 0.2 { return .regressing }
-        return .flat
-    }
-
-    /// Calculate net delta across 30 days for recap row
-    private var netDelta30d: Double {
-        return calculateDelta(days: 30) ?? 0
-    }
-
-    /// Calculate best streak (placeholder - TODO)
-    private var bestStreak: Int {
-        return weightManager.weightEntries.count // Placeholder logic
-    }
-
-    /// Total entries count
-    private var totalEntries: Int {
-        return weightManager.weightEntries.count
-    }
-
-    /// Coach Bar text based on 7-day trend state (v1.1)
-    /// Per v1.1 spec §5: Behavioral micro-copy under subtitle
-    /// v1.2: Added exclamation points for motivational emphasis
-    private func coachBarText(for state: TrendState) -> String {
-        switch state {
-        case .improving:
-            return "Progress in motion — your consistency shows!"
-        case .regressing:
-            return "Weight gain is feedback, not failure — hydrate and sleep strong!"
-        case .flat:
-            return "Balance is mastery in motion — keep showing up!"
-        }
-    }
-
-    /// Banner text based on 7-day trend state
-    /// Per Stacked_v1.1 spec: Dynamic behavioral copy
-    /// v1.2: Added exclamation points for motivational emphasis
-    private func banner7Text(for state: TrendState) -> String {
-        switch state {
-        case .improving:
-            return "Small wins compound. Keep stacking the days!"
-        case .regressing:
-            return "Course‑correct today. One choice changes the trend!"
-        case .flat:
-            return "Consistency is power. Nudge your routine by 1%!"
-        }
-    }
-
-    /// Banner accent color based on trend state
-    private func bannerAccentColor(for state: TrendState) -> Color {
-        switch state {
-        case .improving:
-            return Theme.ColorToken.stateSuccess
-        case .regressing:
-            return Theme.ColorToken.stateError
-        case .flat:
-            return Theme.ColorToken.accentInfo
-        }
-    }
-
-    /// Random "Did You Know" tip for educational banner
-    /// Per Stacked_v1.1 spec: Max ~80 chars, no medical claims
-    /// FASTING-FRIENDLY: Avoids time-specific meal names (breakfast/lunch/dinner)
-    /// Fast LIFe users have flexible eating windows, so use universal language
-    private func randomDidYouKnowTip() -> String {
-        let tips = [
-            "Drinking water before meals can reduce calorie intake.",
-            "Sleep loss increases hunger hormones; protect your 7–8 hours.",
-            "Protein at your first meal improves satiety for the day.",  // Fasting-friendly!
-            "Consistent weigh-ins help track trends, not daily fluctuations.",
-            "Strength training preserves muscle during weight loss."
-        ]
-        return tips.randomElement() ?? tips[0]
-    }
-
-    /// Random reflection prompt for ReflectionNudge banner
-    /// Per v1.2 spec D.3: Rotates between 3 options to encourage micro-planning
-    /// 🔧 FIX #7: Extracted as separate function for pre-computation pattern
-    private func randomReflectionPrompt() -> String {
-        let prompts = [
-            "One small habit to try this week?",
-            "What helped most on your best day?",
-            "Pick tomorrow's anchor: sleep / steps / water."
-        ]
-        return prompts.randomElement() ?? prompts[0]
-    }
-
-    /// Calculate weight change over a specific number of days using WeightManager Single Source of Truth
-    /// Returns (amount: Double, isLoss: Bool) or nil if insufficient data
-    private func calculateTrend(days: Int?) -> (amount: Double, isLoss: Bool)? {
-        let cutoffDate: Date
-        if let days = days {
-            cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        } else {
-            // All-time trend: use date 10 years ago
-            cutoffDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
-        }
-
-        // SINGLE SOURCE OF TRUTH: Use WeightManager.weightChange(since:)
-        // Returns: latestWeight - avgWeightOnOldestDay
-        // Negative = weight loss (isLoss = true), Positive = weight gain (isLoss = false)
-        guard let change = weightManager.weightChange(since: cutoffDate) else { return nil }
-
-        return (amount: abs(change), isLoss: change < 0)
-    }
+    @StateObject private var viewModel: WeightTrendsViewModel
 
     @State private var isAnimating = false  // Animation state for staggered fade-in
     @Environment(\.accessibilityReduceMotion) var reduceMotion  // v1.1: Respect Reduce Motion
@@ -181,14 +38,16 @@ struct WeightTrendsView: View {
 
     // 🔧 FIX #12: Stable text state - locked at view appearance, never changes during drag
     // Apple Health Pattern: Use @State for content that shouldn't change during interactions
-    @State private var reflectionPromptText: String = ""  // Initialized in onAppear
+    init(weightManager: WeightManager) {
+        _viewModel = StateObject(wrappedValue: WeightTrendsViewModel(weightManager: weightManager))
+    }
 
     // MARK: - Adaptive Mood Overlay (v1.1)
 
     /// Returns adaptive mood gradient overlay based on trend state
     /// Per v1.1 spec §2: Subtle 12-18% opacity overlays on navy base
     /// Colors reflect emotional state without being alarmist
-    private func adaptiveMoodOverlay(for state: TrendState) -> LinearGradient {
+    private func adaptiveMoodOverlay(for state: WeightProgressStoryTrendState) -> LinearGradient {
         switch state {
         case .improving:  // Weight loss (teal → blue)
             // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
@@ -227,6 +86,9 @@ struct WeightTrendsView: View {
     }
 
     var body: some View {
+        let sevenDayDelta = viewModel.sevenDayDelta
+        let trendState7d = viewModel.trendState7Day
+
         NavigationView {
             // v1.1 Adaptive Background: Navy base + Mood overlay based on 7-day trend
             // Per FastLIFe_LIFeJourney_UIUX_v1.1_AdaptiveBehavioralDesign.md §3
@@ -246,9 +108,9 @@ struct WeightTrendsView: View {
                 // Layer 2: Adaptive mood gradient overlay (12-18% opacity)
                 // Driven by 7-day trend state: improving/regressing/stable
                 // Changes color to reflect emotional tone without being alarmist
-                adaptiveMoodOverlay(for: trendState(for: calculateDelta(days: 7) ?? 0))
+                adaptiveMoodOverlay(for: trendState7d)
                     .ignoresSafeArea()
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: calculateDelta(days: 7))
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: sevenDayDelta ?? 0)
                     .offset(y: reduceMotion ? 0 : (moodAnimate ? -6 : 6))  // Micro drift (breathing effect)
                     .animation(
                         reduceMotion ? nil : .easeInOut(duration: 5).repeatForever(autoreverses: true),
@@ -294,12 +156,11 @@ struct WeightTrendsView: View {
                         // Per v1.2 spec: Accent background, white text, eye.slash hide button
                         // Registers under "Your Progress Journey" in Control Center
                         // Dual visibility system: ProgressStoryCardManager (master) + ContentOptOutManager (individual)
-                        let coachState7d = trendState(for: calculateDelta(days: 7) ?? 0)
-                        if progressStoryCardManager.isCardVisible(.coachBar) && !optOutManager.isContentOptedOut(id: contentID_CoachBar) {
-                            CoachBar(text: coachBarText(for: coachState7d), onHide: {
+                        if viewModel.isCoachBarVisible {
+                            CoachBar(text: viewModel.coachBarText, onHide: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
                                     // Hide via ProgressStoryCardManager (shows in "Your Progress Journey" section)
-                                    progressStoryCardManager.hideCard(.coachBar)
+                                    viewModel.hideCoachBar()
                                 }
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             })
@@ -312,48 +173,21 @@ struct WeightTrendsView: View {
                         // STACKED LAYOUT v1.1: Narrative flow top-to-bottom
                         // Phase v1.4b Layer 3 & 4: Drag-and-drop reordering with ForEach
 
-                        // REORDERABLE CARDS (exclude Coach Bar)
-                        let visibleCards = progressStoryCardManager.getVisibleCardsInOrder()
-                        let reorderableCards = visibleCards.filter { $0 != .coachBar }
-
-                        // Precompute values for banner and tip (outside ForEach to prevent random changes during drag)
-                        let sevenDayDelta = calculateDelta(days: 7)
-                        let state7d = trendState(for: sevenDayDelta ?? 0)
-                        let bannerText = banner7Text(for: state7d)
-                        let bannerAccent = bannerAccentColor(for: state7d)
-                        let didYouKnowText = randomDidYouKnowTip()  // 🔧 FIX #1: Pre-compute tip text once
-
-                        let contentIDs = ProgressStoryContentIDs(
-                            sevenDay: contentID_7Day,
-                            thirtyDay: contentID_30Day,
-                            banner: contentID_Banner,
-                            reflection: contentID_ReflectionNudge,
-                            recap: contentID_Recap,
-                            didYouKnow: contentID_Tip
-                        )
-
-                        let cardContext = ProgressStoryCardContext(
-                            sevenDayDelta: sevenDayDelta,
-                            thirtyDayDelta: calculateDelta(days: 30),
-                            netDelta30d: netDelta30d,
-                            bestStreak: bestStreak,
-                            totalEntries: totalEntries,
-                            bannerText: bannerText,
-                            bannerAccent: bannerAccent,
-                            didYouKnowText: didYouKnowText,
-                            reflectionPrompt: reflectionPromptText
-                        )
-
                         ProgressStoryCardStack(
-                            cards: reorderableCards,
-                            optOutManager: optOutManager,
-                            cardManager: progressStoryCardManager,
-                            contentIDs: contentIDs,
-                            context: cardContext,
+                            optOutManager: viewModel.cardStackOptOutManager,
+                            cardManager: viewModel.cardStackManager,
+                            contentIDs: viewModel.contentIDs,
+                            context: viewModel.cardContext,
                             isAnimating: isAnimating,
                             draggedCard: $draggedCard,
                             reflectionTap: {
                                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                            },
+                            onHideCard: { cardType in
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    viewModel.hideCard(cardType)
+                                }
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             }
                         )
 
@@ -362,7 +196,7 @@ struct WeightTrendsView: View {
                         // Animated text: "You're showing up. That's what builds your LIFe!"
                         // Subtle, encouraging, human tone
                         // Standard: Dark background = light text, proper punctuation
-                        if totalEntries >= 1 {
+                        if viewModel.shouldShowFooter {
                             Text("You're showing up. That's what builds your LIFe!")
                                 .font(DSTypography.cardBody)
                                 .foregroundColor(.white.opacity(0.8))
@@ -383,7 +217,7 @@ struct WeightTrendsView: View {
             .onAppear {
                 // 🔧 FIX #12: Initialize reflection prompt once on appear (never changes during drag)
                 // Apple Health Pattern: Lock content at view appearance for stable UI during interactions
-                reflectionPromptText = randomReflectionPrompt()
+                viewModel.refresh()
 
                 // Trigger staggered fade-in animation on view appear
                 withAnimation {
@@ -404,12 +238,11 @@ struct WeightTrendsView: View {
                         // Layer 3: Haptic feedback (light tap) = premium responsiveness
                         UIImpactFeedbackGenerator(style: .light).impactOccurred()
 
-                        // Opt out entire Progress Story (global)
-                        optOutManager.optOutContent(id: contentID_ProgressStory, category: .progressSummaries, text: "Your Progress Story")
-
                         // Layer 2: Smooth fade-out animation (0.25s)
-                        withAnimation(.easeInOut(duration: 0.25)) {
-                            dismiss()
+                        viewModel.optOutProgressStory {
+                            withAnimation(.easeInOut(duration: 0.25)) {
+                                dismiss()
+                            }
                         }
                     } label: {
                         HStack(spacing: 6) {

@@ -32,6 +32,11 @@ struct WeightChartView: View {
     @Binding var selectedTimeRange: WeightTimeRange
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
+    @State private var visibleDomain: ClosedRange<Date>?
+    @State private var visibleYDomain: ClosedRange<Double>?
+    @State private var pinchStartDomain: ClosedRange<Date>?
+    @State private var pinchStartYDomain: ClosedRange<Double>?
+    @State private var panStartDomain: ClosedRange<Date>?
 
     // MARK: - Initialization
     // Industry Pattern: Dependency injection with convenience init for backward compatibility
@@ -299,9 +304,14 @@ struct WeightChartView: View {
                         AxisMarks(position: .leading)
                     }
                 }
-                .chartYScale(domain: viewModel.yAxisDomain)
-                .modifier(XAxisScaleModifier(domain: viewModel.xAxisDomain))
+                .chartXScale(domain: visibleDomain ?? viewModel.xAxisDomain ?? (viewModel.defaultDomain() ?? Date()...Date()))
+                .chartYScale(domain: visibleYDomain ?? viewModel.yAxisDomain)
                 .chartXSelection(value: $viewModel.selectedDate)
+                .chartOverlay { proxy in
+                    GeometryReader { geometry in
+                        overlayLayer(proxy: proxy, geometry: geometry)
+                    }
+                }
             } else {
                 Text("No data for selected time range")
                     .foregroundColor(.secondary)
@@ -384,13 +394,24 @@ struct WeightChartView: View {
         }
         // Sync state changes to ViewModel
         .onChange(of: selectedTimeRange) { _, newValue in
+            visibleDomain = nil
+            visibleYDomain = nil
+            pinchStartDomain = nil
+            pinchStartYDomain = nil
+            panStartDomain = nil
             viewModel.selectedTimeRange = newValue
+            viewModel.updateVisibleDomain(nil)
         }
         .onChange(of: showGoalLine) { _, newValue in
             viewModel.showGoalLine = newValue
+            visibleYDomain = nil
         }
         .onChange(of: weightGoal) { _, newValue in
             viewModel.weightGoal = newValue
+            visibleYDomain = nil
+        }
+        .onChange(of: visibleDomain) { _, newValue in
+            viewModel.updateVisibleDomain(newValue)
         }
         // REMOVED: Card styling (padding, background, cornerRadius, shadow)
         // DSCard universal container now provides all standardized styling
@@ -398,17 +419,142 @@ struct WeightChartView: View {
     }
 }
 
-// MARK: - XAxisScaleModifier
+// MARK: - Overlay Gestures
 
-struct XAxisScaleModifier: ViewModifier {
-    let domain: ClosedRange<Date>?
-
-    func body(content: Content) -> some View {
-        if let domain = domain {
-            content.chartXScale(domain: domain)
+private extension WeightChartView {
+    func overlayLayer(proxy: ChartProxy, geometry: GeometryProxy) -> some View {
+        let plotRect: CGRect
+        if #available(iOS 17.0, *) {
+            if let frame = proxy.plotFrame {
+                plotRect = geometry[frame]
+            } else {
+                plotRect = .zero
+            }
         } else {
-            content
+            plotRect = geometry[proxy.plotAreaFrame]
         }
+
+        let tapGesture = SpatialTapGesture()
+            .onEnded { value in
+                let location = value.location
+                let xInPlot = location.x - plotRect.origin.x
+                if let tappedDate: Date = proxy.value(atX: xInPlot) {
+                    viewModel.selectedDate = tappedDate
+                }
+            }
+
+        let resetGesture = TapGesture(count: 2)
+            .onEnded {
+                visibleDomain = nil
+                visibleYDomain = nil
+                pinchStartDomain = nil
+                pinchStartYDomain = nil
+                panStartDomain = nil
+            }
+
+        let magnificationGesture = MagnificationGesture()
+            .onChanged { scale in
+                guard scale.isFinite, scale > 0,
+                      let fullDomain = (viewModel.defaultDomain() ?? viewModel.xAxisDomain) else {
+                    return
+                }
+
+                if pinchStartDomain == nil {
+                    pinchStartDomain = visibleDomain ?? fullDomain
+                    pinchStartYDomain = visibleYDomain ?? viewModel.yAxisDomain
+                }
+
+                guard let startDomain = pinchStartDomain,
+                      let startYDomain = pinchStartYDomain else {
+                    return
+                }
+
+                let newDomain = viewModel.zoomedDomain(
+                    startDomain: startDomain,
+                    fullDomain: fullDomain,
+                    scale: scale
+                )
+                let newYDomain = zoomedYDomain(
+                    startDomain: startYDomain,
+                    fullDomain: viewModel.yAxisDomain,
+                    scale: scale
+                )
+
+                visibleDomain = newDomain
+                visibleYDomain = newYDomain
+            }
+            .onEnded { _ in
+                pinchStartDomain = nil
+                pinchStartYDomain = nil
+            }
+
+        let dragGesture = DragGesture(minimumDistance: 5)
+            .onChanged { value in
+                guard let fullDomain = viewModel.defaultDomain() ?? viewModel.xAxisDomain,
+                      let currentDomain = visibleDomain ?? viewModel.xAxisDomain else {
+                    return
+                }
+
+                // Only allow panning when zoomed beyond the full range.
+                if currentDomain == fullDomain { return }
+
+                if panStartDomain == nil {
+                    panStartDomain = currentDomain
+                }
+
+                guard let startDomain = panStartDomain else { return }
+                let translation = value.translation.width
+                let plotWidth = max(plotRect.width, 1)
+                let newDomain = viewModel.pannedDomain(
+                    startDomain: startDomain,
+                    fullDomain: fullDomain,
+                    translation: translation,
+                    plotWidth: plotWidth
+                )
+                visibleDomain = newDomain
+            }
+            .onEnded { _ in
+                panStartDomain = nil
+            }
+
+        return Rectangle()
+            .fill(Color.clear)
+            .contentShape(Rectangle())
+            .gesture(tapGesture)
+            .simultaneousGesture(resetGesture)
+            .simultaneousGesture(magnificationGesture)
+            .simultaneousGesture(dragGesture)
+    }
+
+    func zoomedYDomain(startDomain: ClosedRange<Double>, fullDomain: ClosedRange<Double>, scale: CGFloat) -> ClosedRange<Double> {
+        guard scale.isFinite, scale > 0 else { return startDomain }
+
+        let clampedScale = max(min(scale, 3.0), 0.3)
+        let baseRange = startDomain.upperBound - startDomain.lowerBound
+        let newRange = baseRange / Double(clampedScale)
+        let midPoint = (startDomain.lowerBound + startDomain.upperBound) / 2
+
+        var lower = midPoint - newRange / 2
+        var upper = midPoint + newRange / 2
+
+        // Clamp to full domain
+        if lower < fullDomain.lowerBound {
+            let offset = fullDomain.lowerBound - lower
+            lower += offset
+            upper += offset
+        }
+        if upper > fullDomain.upperBound {
+            let offset = upper - fullDomain.upperBound
+            lower -= offset
+            upper -= offset
+        }
+
+        // Maintain minimum window (10% of full range)
+        let minimumWindow = (fullDomain.upperBound - fullDomain.lowerBound) * 0.1
+        if (upper - lower) < minimumWindow {
+            return startDomain
+        }
+
+        return lower...upper
     }
 }
-

@@ -34,7 +34,9 @@
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
 		522FFE472EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */; };
+		A1B2C3D43E5F678900ABCDE9 /* WeightProgressStoryMetricsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */; };
 		A1B2C3D43E5F678900ABCDE7 /* WeightProgressStoryCardStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */; };
+		A1B2C3D43E5F678900ABCDEB /* WeightTrendsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */; };
 		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* Models/SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* Models/SleepEntry.swift */; };
 		5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */; };
@@ -224,6 +226,8 @@
 		521608DC2EAB5F0B0085B852 /* Core/Services/HealthDataAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/HealthDataAnalyzer.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
 		522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightProgressStoryTrendPalette.swift; path = UI/Components/WeightProgressStory/WeightProgressStoryTrendPalette.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryMetricsProvider.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendsViewModel.swift; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		5243F23F2E900F440051A731 /* Models/SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SleepEntry.swift; sourceTree = "<group>"; };
 		5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
@@ -426,6 +430,8 @@
 				A59207A636C9E47C5504F3F4 /* WeightProgressStoryCardDropDelegate.swift */,
 				A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */,
 				522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */,
+				A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */,
+				A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */,
 			);
 			name = WeightProgressStory;
 			path = UI/Components/WeightProgressStory;
@@ -814,6 +820,8 @@
 				C2752583773F6449B4ABCB25 /* WeightProgressStoryDidYouKnowBanner.swift in Sources */,
 				53841FAAAA2AB744A5BE8444 /* WeightProgressStoryCardDropDelegate.swift in Sources */,
 				A1B2C3D43E5F678900ABCDE7 /* WeightProgressStoryCardStack.swift in Sources */,
+				A1B2C3D43E5F678900ABCDE9 /* WeightProgressStoryMetricsProvider.swift in Sources */,
+				A1B2C3D43E5F678900ABCDEB /* WeightTrendsViewModel.swift in Sources */,
 				521608AF2EAB1B8B0085B852 /* UI/Components/WeightStatsComponents.swift in Sources */,
 				100F74007D21446E9C6A5900 /* UI/Components/WeightEmptyStateView.swift in Sources */,
 				A1B2C3D43E5F678900ABCDE1 /* UI/Components/WeightControlCenterHeaderView.swift in Sources */,
