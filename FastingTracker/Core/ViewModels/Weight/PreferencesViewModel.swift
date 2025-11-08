@@ -24,13 +24,13 @@ class PreferencesViewModel: ObservableObject {
 
     // MARK: - Dependencies
 
-    let optOutManager = ContentOptOutManager.shared
-    let cardManager = TrackerCards.shared
-    let progressStoryCardManager = ProgressStoryCards.shared
+    let optOutManager: ContentOptOutManaging
+    let cardManager: TrackerCardManaging
+    let progressStoryCardManager: ProgressStoryCardManaging
 
     // MARK: - Private Properties
 
-    private let userDefaults = UserDefaults.standard
+    private let userDefaults: UserDefaults
     private let optedOutContentKey = "optedOutContentItems"
 
     // Experience opt-out keys
@@ -42,7 +42,14 @@ class PreferencesViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init() {
+    init(optOutManager: ContentOptOutManaging,
+         cardManager: TrackerCardManaging,
+         progressStoryCardManager: ProgressStoryCardManaging,
+         userDefaults: UserDefaults = .standard) {
+        self.optOutManager = optOutManager
+        self.cardManager = cardManager
+        self.progressStoryCardManager = progressStoryCardManager
+        self.userDefaults = userDefaults
         loadOptedOutContent()
         loadExperienceOptOuts()
     }

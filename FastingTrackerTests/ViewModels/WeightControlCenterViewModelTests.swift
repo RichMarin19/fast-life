@@ -10,14 +10,20 @@ final class WeightControlCenterViewModelTests: XCTestCase {
     var sut: WeightControlCenterViewModel!
     var mockWeightManager: MockWeightManager!
     var mockScheduler: BehavioralNotificationScheduler!
+    var mockOptOutManager: MockContentOptOutManager!
+    var mockProgressStoryCardManager: MockProgressStoryCardManager!
 
     override func setUp() {
         super.setUp()
         mockWeightManager = MockWeightManager()
         mockScheduler = BehavioralNotificationScheduler.shared
+        mockOptOutManager = MockContentOptOutManager()
+        mockProgressStoryCardManager = MockProgressStoryCardManager()
         sut = WeightControlCenterViewModel(
             weightManager: mockWeightManager,
-            behavioralScheduler: mockScheduler
+            behavioralScheduler: mockScheduler,
+            optOutManager: mockOptOutManager,
+            progressStoryCardManager: mockProgressStoryCardManager
         )
     }
 
@@ -25,6 +31,8 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         sut = nil
         mockWeightManager = nil
         mockScheduler = nil
+        mockOptOutManager = nil
+        mockProgressStoryCardManager = nil
         super.tearDown()
     }
 

@@ -291,7 +291,13 @@ class UnifiedHealthDataService: HealthDataAggregator {
         let todayHydration = await getTodayHydration()
         let todayMood = await getTodayMood()
         let lastNightSleep = await getLastNightSleep()
-        logger.info("✅ Current state: weight=\(currentWeight ?? 0, privacy: .public) lbs, fasting=\(currentFastingStatus ?? "none"), hydration=\(todayHydration) oz")
+        let weightAvailable = currentWeight != nil
+        let fastingStatus = currentFastingStatus != nil ? "active" : "none"
+        let hydrationLogged = todayHydration > 0
+        let weightFlag = weightAvailable ? "yes" : "no"
+        let hydrationFlag = hydrationLogged ? "yes" : "no"
+        let snapshotSummary = "weightAvailable=\(weightFlag), fastingStatus=\(fastingStatus), hydrationLogged=\(hydrationFlag)"
+        logger.info("✅ Current state snapshot ready — \(snapshotSummary, privacy: .private)")
 
         // MARK: - 7-Day Trends
         logger.info("📈 Fetching 7-day trends...")

@@ -44,6 +44,8 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
 
     private var activeLocale: Locale
     private var localeChangeObserver: NSObjectProtocol?
+    private let measurementProvider: MeasurementSystemProviding
+    private var measurementSystemCancellable: AnyCancellable?
     private lazy var startWeightFormatter: NumberFormatter = {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -51,12 +53,14 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
         formatter.generatesDecimalNumbers = true
         return formatter
     }()
+    private var currentStartWeightPounds: Double?
     private var currentStartWeightValue: Double?
+    @Published private(set) var displayedUnitAbbreviation: String
 
     // MARK: - Public API
 
     var unitAbbreviation: String {
-        weightManager.currentUnitAbbreviation
+        displayedUnitAbbreviation
     }
 
     var canSaveStartWeight: Bool {
@@ -69,13 +73,19 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
 
     // MARK: - Lifecycle
 
-    init(weightManager: WeightManager, locale: Locale = .current) {
+    init(weightManager: WeightManager,
+         measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared,
+         locale: Locale = .current) {
         self.weightManager = weightManager
+        self.measurementProvider = measurementProvider
         self.activeLocale = locale
+        self.displayedUnitAbbreviation = weightManager.currentUnitAbbreviation
 
         configureStartWeightFormatter(with: locale)
         observeLocaleChanges()
+        observeMeasurementSystemChanges()
         initializeStartWeight()
+        synchronizeGoalWeightDisplay()
     }
 
     deinit {
@@ -83,6 +93,7 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
             NotificationCenter.default.removeObserver(observer)
             localeChangeObserver = nil
         }
+        measurementSystemCancellable?.cancel()
     }
 
     // MARK: - Locale Handling
@@ -100,6 +111,14 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
         }
     }
 
+    private func observeMeasurementSystemChanges() {
+        measurementSystemCancellable = measurementProvider.measurementSystemPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleMeasurementSystemDidChange()
+            }
+    }
+
     private func configureStartWeightFormatter(with locale: Locale) {
         startWeightFormatter.locale = locale
         let probeFormatter = NumberFormatter()
@@ -110,21 +129,51 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
     }
 
     private func handleLocaleDidChange() {
+        applyLocale(Locale.current)
+    }
+
+    private func handleMeasurementSystemDidChange() {
+        applyLocale(measurementProvider.locale)
+    }
+
+    private func applyLocale(_ locale: Locale) {
         let previousFormatter = startWeightFormatter
         let existingValue = previousFormatter.number(from: startWeightString)?.doubleValue ?? currentStartWeightValue
 
-        let newLocale = Locale.current
-        activeLocale = newLocale
-        configureStartWeightFormatter(with: newLocale)
+        activeLocale = locale
+        configureStartWeightFormatter(with: locale)
 
-        if let value = existingValue {
-            currentStartWeightValue = value
-            startWeightString = formattedStartWeightDisplay(from: value)
-        } else if let override = weightManager.startWeightOverride {
-            let displayValue = weightManager.convertWeightToDisplayUnit(override)
-            currentStartWeightValue = displayValue
-            startWeightString = formatDisplayWeight(fromPounds: override)
+        var pounds = currentStartWeightPounds
+
+        if pounds == nil, let override = weightManager.startWeightOverride {
+            pounds = override
         }
+
+        if pounds == nil, let value = existingValue {
+            let previousUnit = displayedUnitAbbreviation == WeightUnit.kilograms.abbreviation ? WeightUnit.kilograms : .pounds
+            let poundsValue: Double
+            switch previousUnit {
+            case .kilograms:
+                poundsValue = value / 0.453592
+            case .pounds:
+                poundsValue = value
+            }
+            pounds = poundsValue
+        }
+
+        if let pounds {
+            currentStartWeightPounds = pounds
+            startWeightString = formatDisplayWeight(fromPounds: pounds)
+        } else {
+            startWeightString = ""
+        }
+
+        displayedUnitAbbreviation = weightManager.currentUnitAbbreviation
+        synchronizeGoalWeightDisplay()
+    }
+
+    func refreshMeasurementDisplay() {
+        applyLocale(measurementProvider.locale)
     }
 
     // MARK: - Start Weight Management
@@ -147,6 +196,7 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
         guard !input.isEmpty else {
             startWeightString = ""
             currentStartWeightValue = nil
+            WeightTrackerMetrics.recordGoalEvent(.startWeightInputEmpty)
             return
         }
 
@@ -168,24 +218,28 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
         if sanitized.isEmpty {
             startWeightString = sanitized
             currentStartWeightValue = nil
+            WeightTrackerMetrics.recordGoalEvent(.startWeightInputInvalid)
             return
         }
 
         if sanitized.last == decimalSeparator {
             startWeightString = sanitized
             currentStartWeightValue = nil
+            WeightTrackerMetrics.recordGoalEvent(.startWeightTrailingSeparator)
             return
         }
 
         guard let number = formatter.number(from: sanitized)?.doubleValue else {
             startWeightString = sanitized
             currentStartWeightValue = nil
+            WeightTrackerMetrics.recordGoalEvent(.startWeightInputInvalid)
             return
         }
 
         let clamped = min(number, 999.9)
-        currentStartWeightValue = clamped
-        startWeightString = formattedStartWeightDisplay(from: clamped)
+        let pounds = weightManager.convertToInternalUnit(clamped)
+        currentStartWeightPounds = pounds
+        startWeightString = formatDisplayWeight(fromPounds: pounds)
     }
 
     func fetchStartWeight(for date: Date) {
@@ -222,6 +276,7 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
 
         guard let number = parsedValue, number > 0 else {
             startWeightErrorMessage = "Enter a valid start weight."
+            WeightTrackerMetrics.recordGoalEvent(.startWeightRejected, metadata: ["reason": "invalid_input"])
             return
         }
 
@@ -229,22 +284,26 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
         startWeightString = formattedStartWeightDisplay(from: number)
         weightManager.setStartWeightOverride(number, date: startWeightDate)
         startWeightStatusMessage = "Start weight saved."
+        WeightTrackerMetrics.recordGoalEvent(.startWeightSaved, metadata: ["source": "manual"])
     }
 
     func formatWeightGoalInput(_ input: String) {
         var formatted = input
+        var truncateReason: String?
 
         formatted = formatted.filter { $0.isNumber || $0 == "." }
 
         let components = formatted.components(separatedBy: ".")
         if components.count > 2 {
             formatted = components[0] + "." + components[1...].joined()
+            truncateReason = "multiple_decimals"
         }
 
         if let dotIndex = formatted.firstIndex(of: ".") {
             let afterDot = formatted.suffix(from: formatted.index(after: dotIndex))
             if afterDot.count > 1 {
                 formatted = String(formatted.prefix(upTo: formatted.index(dotIndex, offsetBy: 2)))
+                truncateReason = truncateReason ?? "fraction_length"
             }
         }
 
@@ -257,21 +316,27 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
                 let beforeDot = formatted.prefix(upTo: dotIndex)
                 if beforeDot.count > 3 {
                     formatted = String(beforeDot.prefix(3)) + String(formatted.suffix(from: dotIndex))
+                    truncateReason = truncateReason ?? "integer_length"
                 }
             } else {
                 if formatted.count > 3 {
                     formatted = String(formatted.prefix(3))
+                    truncateReason = truncateReason ?? "integer_length"
                 }
             }
         }
 
         weightGoalString = formatted
+        if let reason = truncateReason {
+            WeightTrackerMetrics.recordGoalEvent(.goalWeightInputTruncated, metadata: ["reason": reason])
+        }
     }
 
     func updateMilestoneCount(_ newValue: Int) {
         let sanitized = max(0, min(10, newValue))
         milestoneCount = sanitized
         weightManager.setMilestoneCount(sanitized)
+        WeightTrackerMetrics.recordGoalEvent(.milestoneUpdated, metadata: ["count": "\(sanitized)"])
     }
 
     // MARK: - Private Helpers
@@ -297,6 +362,15 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
         }
 
         milestoneCount = weightManager.milestoneCount
+    }
+
+    func synchronizeGoalWeightDisplay() {
+        let storedGoal = weightManager.goalWeight
+        if storedGoal > 0 {
+            weightGoalString = weightManager.formattedDisplayWeight(storedGoal)
+        } else {
+            weightGoalString = ""
+        }
     }
 
     private func formatDisplayWeight(fromPounds pounds: Double) -> String {
@@ -337,11 +411,21 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
         guard !combinedWeights.isEmpty else {
             startWeightStatusMessage = "No weight logged for this date. Enter a value manually."
             startWeightString = ""
+            WeightTrackerMetrics.recordGoalEvent(.startWeightRejected, metadata: ["reason": "no_data"])
             return
         }
 
         let average = combinedWeights.reduce(0, +) / Double(combinedWeights.count)
+        currentStartWeightPounds = average
         startWeightString = formatDisplayWeight(fromPounds: average)
         startWeightStatusMessage = "Auto-filled from \(combinedWeights.count) data source\(combinedWeights.count == 1 ? "" : "s")."
+        WeightTrackerMetrics.recordGoalEvent(
+            .startWeightAutofill,
+            metadata: [
+                "source_count": "\(combinedWeights.count)",
+                "has_hk": hkEntries.isEmpty ? "false" : "true",
+                "has_manual": localEntries.isEmpty ? "false" : "true"
+            ]
+        )
     }
 }

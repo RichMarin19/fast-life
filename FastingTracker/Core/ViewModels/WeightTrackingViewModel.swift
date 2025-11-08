@@ -19,6 +19,7 @@ class WeightTrackingViewModel: ObservableObject {
     // Singleton managers (pass-through)
     let healthKitManager = HealthKitManager.shared
     let nudgeManager = HealthKitNudgeManager.shared
+    private var optOutManager: ContentOptOutManaging!
 
     // CRITICAL FIX: cardManager must be @ObservedObject to propagate state changes
     // When CardManager updates @Published cardPreferences, ViewModel must re-publish
@@ -54,7 +55,7 @@ class WeightTrackingViewModel: ObservableObject {
 
     // UserDefaults keys for persistence
     private let showGoalLineKey = "showGoalLine"
-    private let weightGoalKey = "goalWeight"  // MUST match onboarding key (OnboardingView.swift line 686)
+    private let legacyWeightGoalKey = "goalWeight"  // Legacy UserDefaults key (OnboardingView.swift line 686)
 
     // MARK: - Initialization
 
@@ -67,9 +68,12 @@ class WeightTrackingViewModel: ObservableObject {
     /// Configure ViewModel with injected dependencies
     /// Must be called from view's .onAppear with @EnvironmentObject managers
     /// CONSULTANT FIX: Fixes duplicate WeightManager creation issue
-    func configure(weightManager: WeightManager, behavioralScheduler: BehavioralNotificationScheduler) {
+    func configure(weightManager: WeightManager,
+                   behavioralScheduler: BehavioralNotificationScheduler,
+                   optOutManager: ContentOptOutManaging? = nil) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
+        self.optOutManager = optOutManager ?? ContentOptOutManager.shared
 
         // Load persisted state after managers are set
         loadGoalSettings()
@@ -89,21 +93,26 @@ class WeightTrackingViewModel: ObservableObject {
 
     // MARK: - Goal Settings Persistence
 
-    /// Load goal settings from UserDefaults
+    /// Load goal settings from persisted manager + view preferences
     func loadGoalSettings() {
         // Load show goal line preference (default: false)
         showGoalLine = userDefaults.bool(forKey: showGoalLineKey)
 
-        // Load weight goal (default: 180.0 if not set)
-        if let savedGoal = userDefaults.object(forKey: weightGoalKey) as? Double {
-            weightGoal = savedGoal
+        // Load goal weight from WeightManager (single source of truth)
+        let storedGoal = weightManager.goalWeight
+        if storedGoal > 0 {
+            weightGoal = storedGoal
+        } else if let legacyGoal = userDefaults.object(forKey: legacyWeightGoalKey) as? Double, legacyGoal > 0 {
+            weightGoal = legacyGoal
+            weightManager.setGoalWeight(legacyGoal)
+            userDefaults.removeObject(forKey: legacyWeightGoalKey)
         }
     }
 
-    /// Save goal settings to UserDefaults
+    /// Persist goal settings
     func saveGoalSettings() {
         userDefaults.set(showGoalLine, forKey: showGoalLineKey)
-        userDefaults.set(weightGoal, forKey: weightGoalKey)
+        weightManager.setGoalWeight(weightGoal)
     }
 
     // MARK: - View Lifecycle Methods
@@ -167,7 +176,7 @@ class WeightTrackingViewModel: ObservableObject {
         guard !weightManager.weightEntries.isEmpty else { return }
 
         let contentID = "progress_story_trends_v1"
-        let isOptedOut = ContentOptOutManager.shared.isContentOptedOut(id: contentID)
+        let isOptedOut = optOutManager.isContentOptedOut(id: contentID)
 
         guard !isOptedOut else {
             #if DEBUG

@@ -89,7 +89,14 @@ final class WeightAnalyticsServiceTests: XCTestCase {
             WeightEntry(date: now.addingTimeInterval(-90_000), weight: 201.0)
         ]
 
-        let change = try XCTUnwrap(service.weightChange(for: entries, latestEntry: entries.first, since: now.addingTimeInterval(-86_400)))
+        let change = try XCTUnwrap(
+            service.weightChange(
+                for: entries,
+                latestEntry: entries.first,
+                since: now.addingTimeInterval(-86_400),
+                hasStartWeightOverride: false
+            )
+        )
 
         XCTAssertEqual(change, -5.5, accuracy: 0.0001)
     }

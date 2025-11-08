@@ -22,13 +22,19 @@ fi
 echo "Running 88 existing tests..."
 echo ""
 
-xcodebuild test \
-  -project FastingTracker.xcodeproj \
-  -scheme FastingTracker \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
-  -enableCodeCoverage YES \
-  -only-testing:FastingTrackerTests \
-  2>&1 | tee test_results.log
+if [[ -n "${FASTLIFE_DEVICE_UDID:-}" ]]; then
+  echo "📱 FASTLIFE_DEVICE_UDID detected — enforcing console privacy on physical device."
+  "$PROJECT_ROOT/scripts/run_device_privacy_tests.sh" "$FASTLIFE_DEVICE_UDID" 2>&1 | tee test_results.log
+else
+  echo "🖥️ No physical device UDID provided; running on simulator without console privacy harness."
+  xcodebuild test \
+    -project FastingTracker.xcodeproj \
+    -scheme FastingTracker \
+    -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+    -enableCodeCoverage YES \
+    -only-testing:FastingTrackerTests \
+    2>&1 | tee test_results.log
+fi
 
 echo ""
 echo "======================================"

@@ -631,6 +631,7 @@ final class WeightChartViewModelTests: XCTestCase {
 
         XCTAssertTrue(label.contains("Selected weight"), "Accessibility label should include contextual prefix")
         XCTAssertTrue(label.contains("at"), "Accessibility label should mention the time when available")
+        XCTAssertTrue(label.contains(viewModel.unitAbbreviation), "Accessibility label should announce the user’s weight unit")
     }
 
     func testZoomedDomainRespectsBaseRangeAndMinimumPoints() {

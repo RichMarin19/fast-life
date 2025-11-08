@@ -73,7 +73,7 @@ struct WeightChartView: View {
                     Text(label)
                         .font(.title3)
                         .fontWeight(.bold)
-                        .foregroundColor(Color("FLPrimary"))
+                        .foregroundColor(Theme.ColorToken.accentPrimary)
                 } else {
                     // If no time range label, show empty spacer to push Picker to right
                     Spacer()
@@ -99,14 +99,14 @@ struct WeightChartView: View {
                             x: .value("Date", entry.date),
                             y: .value("Weight", entry.weight)
                         )
-                        .foregroundStyle(Color("FLPrimary"))
+                        .foregroundStyle(Theme.ColorToken.accentPrimary)
                         .interpolationMethod(.catmullRom)
 
                         PointMark(
                             x: .value("Date", entry.date),
                             y: .value("Weight", entry.weight)
                         )
-                        .foregroundStyle(Color("FLPrimary"))
+                        .foregroundStyle(Theme.ColorToken.accentPrimary)
                     }
 
                     if showGoalLine {
@@ -127,13 +127,13 @@ struct WeightChartView: View {
                             .lineStyle(StrokeStyle(lineWidth: 2))
                             .annotation(position: .top, alignment: .center) {
                                 VStack(spacing: 4) {
-                                    Text("\(viewModel.weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
+                                    Text(weightLabel(for: selectedEntry))
                                         .font(.caption)
                                         .fontWeight(.semibold)
                                         .foregroundColor(.white)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(Color("FLPrimary"))
+                                        .background(Theme.ColorToken.accentPrimary)
                                         .cornerRadius(DSCornerRadius.button)
                                 }
                             }
@@ -229,11 +229,11 @@ struct WeightChartView: View {
                 }
                 .chartYAxis {
                     if selectedTimeRange == .day {
-                        // Day view: Show fewer marks with "lbs" suffix
+                        // Day view: Show fewer marks with localized unit labels
                         AxisMarks(position: .leading, values: viewModel.dayYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
-                                    Text("\(Int(weight)) lbs")
+                                    Text(viewModel.axisLabel(for: weight))
                                         .font(.caption2)
                                 }
                             }
@@ -241,11 +241,11 @@ struct WeightChartView: View {
                             AxisTick()
                         }
                     } else if selectedTimeRange == .week {
-                        // Week view: Show weight values at 1lb intervals with "lbs" suffix
+                        // Week view: Show weight values at intuitive intervals with localized unit labels
                         AxisMarks(position: .leading, values: viewModel.weekYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
-                                    Text("\(Int(weight)) lbs")
+                                    Text(viewModel.axisLabel(for: weight))
                                         .font(.caption2)
                                 }
                             }
@@ -253,11 +253,11 @@ struct WeightChartView: View {
                             AxisTick()
                         }
                     } else if selectedTimeRange == .month {
-                        // Month view: Show 10 evenly-spaced marks with "lbs" suffix
+                        // Month view: Show evenly-spaced marks with localized unit labels
                         AxisMarks(position: .leading, values: viewModel.monthYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
-                                    Text("\(Int(round(weight))) lbs")
+                                    Text(viewModel.axisLabel(for: weight))
                                         .font(.caption2)
                                 }
                             }
@@ -265,11 +265,11 @@ struct WeightChartView: View {
                             AxisTick()
                         }
                     } else if selectedTimeRange == .threeMonths {
-                        // 3 Months view: Show 10 evenly-spaced marks with "lbs" suffix
+                        // 3 Months view: Show evenly-spaced marks with localized unit labels
                         AxisMarks(position: .leading, values: viewModel.threeMonthsYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
-                                    Text("\(Int(round(weight))) lbs")
+                                    Text(viewModel.axisLabel(for: weight))
                                         .font(.caption2)
                                 }
                             }
@@ -277,11 +277,11 @@ struct WeightChartView: View {
                             AxisTick()
                         }
                     } else if selectedTimeRange == .year {
-                        // Year view: Show 10 evenly-spaced marks with "lbs" suffix
+                        // Year view: Show evenly-spaced marks with localized unit labels
                         AxisMarks(position: .leading, values: viewModel.yearYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
-                                    Text("\(Int(round(weight))) lbs")
+                                    Text(viewModel.axisLabel(for: weight))
                                         .font(.caption2)
                                 }
                             }
@@ -289,11 +289,11 @@ struct WeightChartView: View {
                             AxisTick()
                         }
                     } else if selectedTimeRange == .all {
-                        // All view: Show 10 evenly-spaced marks with "lbs" suffix
+                        // All view: Show evenly-spaced marks with localized unit labels
                         AxisMarks(position: .leading, values: viewModel.allYAxisValues) { value in
                             if let weight = value.as(Double.self) {
                                 AxisValueLabel {
-                                    Text("\(Int(round(weight))) lbs")
+                                    Text(viewModel.axisLabel(for: weight))
                                         .font(.caption2)
                                 }
                             }
@@ -329,10 +329,10 @@ struct WeightChartView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
 
-                            Text("\(viewModel.weightManager.displayWeight(for: selectedEntry), specifier: "%.1f") \("lbs")")
+                            Text(weightLabel(for: selectedEntry))
                                 .font(.title3)
                                 .fontWeight(.bold)
-                                .foregroundColor(Color("FLPrimary"))
+                                .foregroundColor(Theme.ColorToken.accentPrimary)
 
                             HStack(spacing: 8) {
                                 Text(selectedEntry.date, style: .date)
@@ -422,6 +422,10 @@ struct WeightChartView: View {
 // MARK: - Overlay Gestures
 
 private extension WeightChartView {
+    func weightLabel(for entry: WeightEntry, digits: Int = 1) -> String {
+        "\(viewModel.formattedWeight(for: entry, maximumFractionDigits: digits)) \(viewModel.unitAbbreviation)"
+    }
+
     func overlayLayer(proxy: ChartProxy, geometry: GeometryProxy) -> some View {
         let plotRect: CGRect
         if #available(iOS 17.0, *) {

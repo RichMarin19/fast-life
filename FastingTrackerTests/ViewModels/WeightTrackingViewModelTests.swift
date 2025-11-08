@@ -138,6 +138,7 @@ final class WeightTrackingViewModelTests: XCTestCase {
     func test_weightGoal_hasCorrectDefaultValue() {
         // Given: No saved goal (fresh install)
         UserDefaults.standard.removeObject(forKey: weightGoalKey)
+        mockWeightManager.setGoalWeight(180.0)
 
         // When: Configure new ViewModel
         sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)

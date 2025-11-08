@@ -85,6 +85,13 @@ struct CurrentWeightCard: View {
         return remaining > 0 ? remaining : 0
     }
 
+    private func bodyFatAccessibilityText(bmi: Double, bodyFat: Double?) -> String {
+        if let bodyFat {
+            return "BMI \(String(format: "%.1f", bmi)), body fat \(String(format: "%.1f", bodyFat)) percent"
+        }
+        return "BMI \(String(format: "%.1f", bmi))"
+    }
+
     /// Calculates progress percentage toward goal weight
     var body: some View {
         let progressPercentage = weightManager.progressPercentage(toward: weightGoal)
@@ -101,14 +108,19 @@ struct CurrentWeightCard: View {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
                         Text(weightManager.formattedDisplayWeight(latest.weight))
                             .font(DSTypography.displayXL)
+                            .dynamicTypeSize(.large ... .xxxLarge)
                             .foregroundColor(Color("FLPrimary"))
                         Text(unitAbbreviation)
                             .font(.title2)
+                            .dynamicTypeSize(.large ... .xxLarge)
                             .foregroundColor(Color("FLSuccess"))
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("Current weight \(weightManager.formattedDisplayWeight(latest.weight)) \(unitAbbreviation)")
 
                     Text(latest.date, style: .date)
                         .font(.subheadline)
+                        .dynamicTypeSize(.large ... .xxLarge)
                         .foregroundColor(.secondary)
                 }
                 .contentShape(Rectangle())  // Make entire area tappable
@@ -185,22 +197,28 @@ struct CurrentWeightCard: View {
                         VStack {
                             Text("BMI")
                                 .font(.caption)
+                                .dynamicTypeSize(.large ... .xxLarge)
                                 .foregroundColor(.secondary)
                             Text("\(bmi, specifier: "%.1f")")
                                 .font(.headline)
+                                .dynamicTypeSize(.large ... .xxLarge)
                         }
 
                         if let bodyFat = latest.bodyFat {
                             VStack {
                                 Text("Body Fat")
                                     .font(.caption)
+                                    .dynamicTypeSize(.large ... .xxLarge)
                                     .foregroundColor(.secondary)
                                 Text("\(bodyFat, specifier: "%.1f")%")
                                     .font(.headline)
+                                    .dynamicTypeSize(.large ... .xxLarge)
                             }
                         }
                     }
                     .padding(.top, 8)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(bodyFatAccessibilityText(bmi: bmi, bodyFat: latest.bodyFat))
                 }
             }
         }
@@ -438,9 +456,11 @@ struct GoalBadge: View {
                 .renderingMode(.template)
                 .foregroundColor(Theme.ColorToken.accentPrimary)
                 .font(DSTypography.displayS)
+                .dynamicTypeSize(.large ... .xxLarge)
 
             Text("GOAL: \(goalText)")
                 .font(DSTypography.statValueSmall)
+                .dynamicTypeSize(.large ... .xxLarge)
                 .foregroundColor(Theme.ColorToken.accentPrimary)
 
             Spacer(minLength: 0)
@@ -455,5 +475,7 @@ struct GoalBadge: View {
                         .fill(Theme.ColorToken.accentPrimary.opacity(0.15))
                 )
         )
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Goal weight \(goalText)")
     }
 }

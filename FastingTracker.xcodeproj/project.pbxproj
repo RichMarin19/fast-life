@@ -34,9 +34,6 @@
 		521EEDDE2EA9059B005C1074 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDD2EA9059B005C1074 /* FirebaseAnalytics */; };
 		521EEDE02EA9059B005C1074 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = 521EEDDF2EA9059B005C1074 /* FirebaseCrashlytics */; };
 		522FFE472EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */; };
-		A1B2C3D43E5F678900ABCDE9 /* WeightProgressStoryMetricsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */; };
-		A1B2C3D43E5F678900ABCDE7 /* WeightProgressStoryCardStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */; };
-		A1B2C3D43E5F678900ABCDEB /* WeightTrendsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */; };
 		5243F23E2E8F27C70051A731 /* Onboarding/OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */; };
 		5243F2422E900F440051A731 /* Models/SleepEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F23F2E900F440051A731 /* Models/SleepEntry.swift */; };
 		5243F2432E900F440051A731 /* Core/Managers/SleepManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */; };
@@ -60,7 +57,6 @@
 		526B7FAE2EB1EFFF00B91277 /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7FAD2EB1EFFF00B91277 /* AnimationConstants.swift */; };
 		526B7FB62EB30A6B00B91277 /* ThreadSafeUserDefaults.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7FB52EB30A6B00B91277 /* ThreadSafeUserDefaults.swift */; };
 		526B7FB72EB30A6B00B91277 /* ObserverSuppressionActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 526B7FB42EB30A6B00B91277 /* ObserverSuppressionActor.swift */; };
-		527695072EAFDE5B0040DF5D /* Config.xcconfig in Resources */ = {isa = PBXBuildFile; fileRef = 527695062EAFDE5B0040DF5D /* Config.xcconfig */; };
 		5288A52B2EA44CF100806BE7 /* Testing/Views/TrackerCardManagerTestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52A2EA44CF100806BE7 /* Testing/Views/TrackerCardManagerTestView.swift */; };
 		5288A52D2EA44D1100806BE7 /* Core/Models/TrackerCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52C2EA44D1100806BE7 /* Core/Models/TrackerCard.swift */; };
 		5288A52F2EA44D2600806BE7 /* Core/Managers/TrackerCardManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5288A52E2EA44D2600806BE7 /* Core/Managers/TrackerCardManager.swift */; };
@@ -143,7 +139,9 @@
 		A1000031000000000000001 /* Core/Configuration/AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000032000000000000001 /* Core/Configuration/AppSettings.swift */; };
 		A1B2C3D43E5F678900ABCDE1 /* UI/Components/WeightControlCenterHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE0 /* UI/Components/WeightControlCenterHeaderView.swift */; };
 		A1B2C3D43E5F678900ABCDE3 /* UI/Components/WeightControlCenterCardList.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE2 /* UI/Components/WeightControlCenterCardList.swift */; };
-		A405A5047C03FF4BB5B9379D /* WeightProgressStoryRecapRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF332DB102A754A5675C7AD6 /* WeightProgressStoryRecapRow.swift */; };
+		A1B2C3D43E5F678900ABCDE7 /* WeightProgressStoryCardStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */; };
+		A1B2C3D43E5F678900ABCDE9 /* WeightProgressStoryMetricsProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */; };
+		A1B2C3D43E5F678900ABCDEB /* WeightTrendsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */; };
 		A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */; };
 		A62491EA2BAB48DCB3C21552 /* Core/Managers/NotificationIdentifierBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 38391CDA20D047F59B0EA6C8 /* Core/Managers/NotificationIdentifierBuilder.swift */; };
 		AB4BF544F5114441A00F68B2 /* UI/Views/WeightControlCenterAboutCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 489B18B77C1748F295B2ABA7 /* UI/Views/WeightControlCenterAboutCard.swift */; };
@@ -162,6 +160,9 @@
 		E5A1C3B42EB50F0F004C1234 /* WeightSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */; };
 		E5A1C3B62EB50F0F004C1234 /* WeightAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */; };
 		E5A1C3B92EB50F0F004C1234 /* WeightGoalCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B82EB50F0F004C1234 /* WeightGoalCoordinator.swift */; };
+		E5A1C3D82EB51436004C1234 /* WeightTrackerMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3D72EB51436004C1234 /* WeightTrackerMetrics.swift */; };
+		E5B2D9202EB54E5F00E8AA01 /* ContentOptOutManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5B2D90F2EB54D9C00E8AA01 /* ContentOptOutManaging.swift */; };
+		E5B2D9212EB54E5F00E8AA01 /* ProgressStoryCardManaging.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5B2D9112EB54DA000E8AA01 /* ProgressStoryCardManaging.swift */; };
 		ES001001000000000000001 /* UI/Components/EditStartTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */; };
 		FC001001000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC001002000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift */; };
 		FC002001000000000000001 /* UI/Components/EditFastTimesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FC002002000000000000001 /* UI/Components/EditFastTimesView.swift */; };
@@ -181,6 +182,7 @@
 		HRM01001000000000000001 /* Core/Managers/HeartRateManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = HRM01002000000000000001 /* Core/Managers/HeartRateManager.swift */; };
 		HV001001000000000000001 /* UI/Views/HubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = HV001002000000000000001 /* UI/Views/HubView.swift */; };
 		ID001001000000000000001 /* Core/Models/IdentifiableDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */; };
+		LOC0003000000000000001 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = LOC0002000000000000001 /* Localizable.strings */; };
 		SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */; };
 		TH001001000000000000001 /* Core/DesignSystem/Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = TH001002000000000000001 /* Core/DesignSystem/Theme.swift */; };
 		TSB01001000000000000001 /* UI/Components/TopStatusBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */; };
@@ -226,8 +228,6 @@
 		521608DC2EAB5F0B0085B852 /* Core/Services/HealthDataAnalyzer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Services/HealthDataAnalyzer.swift; sourceTree = "<group>"; };
 		521D18102EA148F70072F38C /* Core/Managers/BehavioralNotificationScheduler_Simple.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/BehavioralNotificationScheduler_Simple.swift; sourceTree = "<group>"; };
 		522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightProgressStoryTrendPalette.swift; path = UI/Components/WeightProgressStory/WeightProgressStoryTrendPalette.swift; sourceTree = "<group>"; };
-		A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryMetricsProvider.swift; sourceTree = "<group>"; };
-		A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendsViewModel.swift; sourceTree = "<group>"; };
 		5243F23D2E8F27C70051A731 /* Onboarding/OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Onboarding/OnboardingView.swift; sourceTree = "<group>"; };
 		5243F23F2E900F440051A731 /* Models/SleepEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models/SleepEntry.swift; sourceTree = "<group>"; };
 		5243F2402E900F440051A731 /* Core/Managers/SleepManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/SleepManager.swift; sourceTree = "<group>"; };
@@ -317,7 +317,6 @@
 		52FA00012EAD00000085B999 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		6004B3FC451ACD79F446A9B9 /* WeightTrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendsView.swift; sourceTree = "<group>"; };
 		6825F9C0272B6A8910A38E75 /* WeightProgressStoryDidYouKnowBanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryDidYouKnowBanner.swift; sourceTree = "<group>"; };
-		A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryCardStack.swift; sourceTree = "<group>"; };
 		769DC2E8156D4FA2CEE51A91 /* UI/Components/AInsteinPresenceModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/AInsteinPresenceModifier.swift; sourceTree = "<group>"; };
 		779245F84A5942708DC20CE7 /* UI/Views/WeightControlCenterNotificationsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterNotificationsCard.swift; sourceTree = "<group>"; };
 		7C387067F01BECDB5518D6D6 /* Core/ViewModels/WeightControlCenterViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/WeightControlCenterViewModel.swift; sourceTree = "<group>"; };
@@ -335,12 +334,14 @@
 		A1000032000000000000001 /* Core/Configuration/AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Configuration/AppSettings.swift; sourceTree = "<group>"; };
 		A1B2C3D43E5F678900ABCDE0 /* UI/Components/WeightControlCenterHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightControlCenterHeaderView.swift; sourceTree = "<group>"; };
 		A1B2C3D43E5F678900ABCDE2 /* UI/Components/WeightControlCenterCardList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightControlCenterCardList.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryCardStack.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryMetricsProvider.swift; sourceTree = "<group>"; };
+		A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrendsViewModel.swift; sourceTree = "<group>"; };
 		A59207A636C9E47C5504F3F4 /* WeightProgressStoryCardDropDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryCardDropDelegate.swift; sourceTree = "<group>"; };
 		A7E7E988F75F786D0FBE98F6 /* WeightProgressStoryReflection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryReflection.swift; sourceTree = "<group>"; };
 		AF63A2CCBF78452C8E18AD5A /* UI/Views/WeightControlCenterExperienceCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterExperienceCard.swift; sourceTree = "<group>"; };
 		B1E0CC8C2B27B7B800C157B0 /* UI/Views/WeightControlCenterCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterCard.swift; sourceTree = "<group>"; };
 		B473EC4E98914F1FB966F577 /* UI/Views/WeightControlCenterGoalsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterGoalsCard.swift; sourceTree = "<group>"; };
-		BF332DB102A754A5675C7AD6 /* WeightProgressStoryRecapRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightProgressStoryRecapRow.swift; sourceTree = "<group>"; };
 		CV001002000000000000001 /* UI/Views/CoachView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/CoachView.swift; sourceTree = "<group>"; };
 		D13DF7A539904F5A8BF67CBD /* UI/Components/WeightTrackerCardDropDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightTrackerCardDropDelegate.swift; sourceTree = "<group>"; };
 		D6EA6D263D3743DABD37686A /* UI/Views/WeightControlCenterModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterModels.swift; sourceTree = "<group>"; };
@@ -350,6 +351,10 @@
 		E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSyncCoordinator.swift; sourceTree = "<group>"; };
 		E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightAnalyticsService.swift; sourceTree = "<group>"; };
 		E5A1C3B82EB50F0F004C1234 /* WeightGoalCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightGoalCoordinator.swift; path = Core/ViewModels/Weight/WeightGoalCoordinator.swift; sourceTree = "<group>"; };
+		E5A1C3D72EB51436004C1234 /* WeightTrackerMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackerMetrics.swift; sourceTree = "<group>"; };
+		E5B2D90F2EB54D9C00E8AA01 /* ContentOptOutManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ContentOptOutManaging.swift; path = FastingTracker/Core/Protocols/ContentOptOutManaging.swift; sourceTree = SOURCE_ROOT; };
+		E5B2D9112EB54DA000E8AA01 /* ProgressStoryCardManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ProgressStoryCardManaging.swift; path = FastingTracker/Core/Protocols/ProgressStoryCardManaging.swift; sourceTree = SOURCE_ROOT; };
+		E5B2D9212EB54FF600E8AA01 /* TrackerCardManaging.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = TrackerCardManaging.swift; path = FastingTracker/Core/Protocols/TrackerCardManaging.swift; sourceTree = SOURCE_ROOT; };
 		ES001002000000000000001 /* UI/Components/EditStartTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/EditStartTimeView.swift; sourceTree = "<group>"; };
 		F359651881524D4E6CC4DA24 /* SafeUserDefaults.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SafeUserDefaults.swift; path = Core/Utilities/SafeUserDefaults.swift; sourceTree = "<group>"; };
 		F57E1E5ACA7F4A4E9319E1BC /* UI/Views/WeightControlCenterInsightsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightControlCenterInsightsCard.swift; sourceTree = "<group>"; };
@@ -372,6 +377,7 @@
 		HRM01002000000000000001 /* Core/Managers/HeartRateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HeartRateManager.swift; sourceTree = "<group>"; };
 		HV001002000000000000001 /* UI/Views/HubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HubView.swift; sourceTree = "<group>"; };
 		ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Models/IdentifiableDate.swift; sourceTree = "<group>"; };
+		LOC0001000000000000001 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = Localization/en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		SF001002000000000000001 /* UI/Components/StopFastConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/StopFastConfirmationView.swift; sourceTree = "<group>"; };
 		TH001002000000000000001 /* Core/DesignSystem/Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/DesignSystem/Theme.swift; sourceTree = "<group>"; };
 		TSB01002000000000000001 /* UI/Components/TopStatusBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/TopStatusBar.swift; sourceTree = "<group>"; };
@@ -424,12 +430,10 @@
 				1241C8187269B4E874511D80 /* WeightProgressStoryCoachBar.swift */,
 				FD113914A9C2381B1440B53D /* WeightProgressStoryProgressBanner.swift */,
 				0C12FC51DD65D4A772CC6D04 /* WeightProgressStoryMilestoneCards.swift */,
-				BF332DB102A754A5675C7AD6 /* WeightProgressStoryRecapRow.swift */,
 				A7E7E988F75F786D0FBE98F6 /* WeightProgressStoryReflection.swift */,
 				6825F9C0272B6A8910A38E75 /* WeightProgressStoryDidYouKnowBanner.swift */,
 				A59207A636C9E47C5504F3F4 /* WeightProgressStoryCardDropDelegate.swift */,
 				A1B2C3D43E5F678900ABCDE6 /* WeightProgressStoryCardStack.swift */,
-				522FFE462EB9AED90032DC7B /* WeightProgressStoryTrendPalette.swift */,
 				A1B2C3D43E5F678900ABCDE8 /* WeightProgressStoryMetricsProvider.swift */,
 				A1B2C3D43E5F678900ABCDEA /* WeightTrendsViewModel.swift */,
 			);
@@ -448,6 +452,9 @@
 		52CE055B2EB13D1800E26A67 /* Recovered References */ = {
 			isa = PBXGroup;
 			children = (
+				E5B2D90F2EB54D9C00E8AA01 /* ContentOptOutManaging.swift */,
+				E5B2D9112EB54DA000E8AA01 /* ProgressStoryCardManaging.swift */,
+				E5B2D9212EB54FF600E8AA01 /* TrackerCardManaging.swift */,
 			);
 			name = "Recovered References";
 			sourceTree = "<group>";
@@ -616,6 +623,7 @@
 				A1000010000000000000001 /* Core/Managers/FastingManager.swift */,
 				A1000012000000000000001 /* Core/Managers/NotificationManager.swift */,
 				A1000014000000000000001 /* Assets.xcassets */,
+				LOC0002000000000000001 /* Localizable.strings */,
 				A1000016000000000000001 /* Info.plist */,
 				ID001002000000000000001 /* Core/Models/IdentifiableDate.swift */,
 				WHTR01002000000000001 /* Core/Models/WeightHistoryTimeRange.swift */,
@@ -655,6 +663,7 @@
 				E5A1C3B12EB50F0F004C1234 /* WeightPersistenceAdapter.swift */,
 				E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */,
 				E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */,
+				E5A1C3D72EB51436004C1234 /* WeightTrackerMetrics.swift */,
 			);
 			name = Weight;
 			path = Core/Managers/Weight;
@@ -748,7 +757,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				527695072EAFDE5B0040DF5D /* Config.xcconfig in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -759,6 +767,7 @@
 				A1000013000000000000001 /* Assets.xcassets in Resources */,
 				52B2CFCB2E95A9F50061FCFF /* GoogleService-Info.plist in Resources */,
 				52FA00022EAD00000085B999 /* PrivacyInfo.xcprivacy in Resources */,
+				LOC0003000000000000001 /* Localizable.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -815,7 +824,6 @@
 				CF316E767914B519D24CC6C0 /* WeightProgressStoryCoachBar.swift in Sources */,
 				9C063B0303FC1DC47E4C96B5 /* WeightProgressStoryProgressBanner.swift in Sources */,
 				58BA968F6C09FFB86AFB636F /* WeightProgressStoryMilestoneCards.swift in Sources */,
-				A405A5047C03FF4BB5B9379D /* WeightProgressStoryRecapRow.swift in Sources */,
 				D5B539B5790347E96BBEF96F /* WeightProgressStoryReflection.swift in Sources */,
 				C2752583773F6449B4ABCB25 /* WeightProgressStoryDidYouKnowBanner.swift in Sources */,
 				53841FAAAA2AB744A5BE8444 /* WeightProgressStoryCardDropDelegate.swift in Sources */,
@@ -946,6 +954,9 @@
 				SF001001000000000000001 /* UI/Components/StopFastConfirmationView.swift in Sources */,
 				52F578972EA8E2AD0042727E /* Core/Managers/WeightNotificationManager.swift in Sources */,
 				52F578982EA8E2AD0042727E /* Core/Managers/WeightNotificationPlanner.swift in Sources */,
+				E5A1C3D82EB51436004C1234 /* WeightTrackerMetrics.swift in Sources */,
+				E5B2D9202EB54E5F00E8AA01 /* ContentOptOutManaging.swift in Sources */,
+				E5B2D9212EB54E5F00E8AA01 /* ProgressStoryCardManaging.swift in Sources */,
 				FC001001000000000000001 /* UI/Components/FastingHealthKitNudgeView.swift in Sources */,
 				526B7FA52EB1EB8900B91277 /* GoalsViewModel.swift in Sources */,
 				526B7FA62EB1EB8900B91277 /* CardsViewModel.swift in Sources */,
@@ -981,6 +992,17 @@
 			targetProxy = 52F578A12EA8FD4C0042727E /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		LOC0002000000000000001 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				LOC0001000000000000001 /* en */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		52F578A42EA8FD4C0042727E /* Debug */ = {

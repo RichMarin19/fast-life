@@ -110,16 +110,16 @@ class HealthKitWeightService {
         )
 
         healthStore.save(weightSample) { [weak self] _, error in
-            if let error = error {
-                AppLogger.error("Failed to save weight to HealthKit", category: AppLogger.healthKit, error: error)
-                completion(false)
-            } else {
-                AppLogger.info("Successfully saved weight \(weight) lbs to HealthKit", category: AppLogger.healthKit)
-                self?.saveSyncTimestamp(for: SyncTimestampKeys.weight)
-                completion(true)
+                if let error = error {
+                    AppLogger.error("Failed to save weight to HealthKit", category: AppLogger.healthKit, error: error)
+                    completion(false)
+                } else {
+                    AppLogger.info("Successfully saved weight sample to HealthKit", category: AppLogger.healthKit)
+                    self?.saveSyncTimestamp(for: SyncTimestampKeys.weight)
+                    completion(true)
+                }
             }
         }
-    }
 
     // MARK: - Delete Weight Data
 
@@ -149,7 +149,7 @@ class HealthKitWeightService {
                     AppLogger.error("Failed to delete weight from HealthKit", category: AppLogger.healthKit, error: error)
                     DispatchQueue.main.async { completion(false) }
                 } else {
-                    AppLogger.info("Successfully deleted weight from HealthKit", category: AppLogger.healthKit)
+                    AppLogger.info("Successfully deleted weight sample from HealthKit", category: AppLogger.healthKit)
                     self?.saveSyncTimestamp(for: SyncTimestampKeys.weight)
                     DispatchQueue.main.async { completion(true) }
                 }

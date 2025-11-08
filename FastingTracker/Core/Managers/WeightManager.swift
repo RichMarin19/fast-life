@@ -119,9 +119,11 @@ class WeightManager: ObservableObject {
 
     func addWeightEntry(_ entry: WeightEntry) {
         // Industry Standard: All @Published property updates must be on main actor (class already @MainActor)
+        let start = Date()
         weightEntries.append(entry)
         weightEntries.sort { $0.date > $1.date }
         saveWeightEntries()
+        WeightTrackerMetrics.recordAddEntry(duration: Date().timeIntervalSince(start), source: entry.source)
 
         // Phase 2a: Cancel today's weight reminder after successful log
         Task {
@@ -149,8 +151,10 @@ class WeightManager: ObservableObject {
     // MARK: - Delete Weight Entry
 
     func deleteWeightEntry(_ entry: WeightEntry) {
+        let start = Date()
         weightEntries.removeAll { $0.id == entry.id }
         saveWeightEntries()
+        WeightTrackerMetrics.recordDeleteEntry(duration: Date().timeIntervalSince(start), source: entry.source)
 
         // BIDIRECTIONAL DELETION: Delete from HealthKit for ANY entry when sync is enabled
         // Following Apple HealthKit best practices: Use UUID-based deletion for precision
@@ -397,8 +401,10 @@ class WeightManager: ObservableObject {
             start = Date()
         }
 
+        let syncStart = Date()
         healthKit.fetchWeightData(startDate: start, endDate: Date(), resetAnchor: false) { [weak self] healthKitEntries in
             guard let self = self else {
+                WeightTrackerMetrics.recordSync(result: .init(type: "incremental", duration: Date().timeIntervalSince(syncStart), success: false))
                 completion?(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
                 return
             }
@@ -417,6 +423,7 @@ class WeightManager: ObservableObject {
 
                 // Report actual sync results
                 AppLogger.info("HealthKit sync completed: \(added) new weight entries added", category: AppLogger.weightTracking)
+                WeightTrackerMetrics.recordSync(result: .init(type: "incremental", duration: Date().timeIntervalSince(syncStart), success: true))
                 completion?(added, nil)
             }
         }
@@ -431,10 +438,13 @@ class WeightManager: ObservableObject {
             return
         }
 
-        AppLogger.info("Starting historical weight sync from \(startDate)", category: AppLogger.weightTracking)
+        let historicalDays = Calendar.current.dateComponents([.day], from: startDate, to: Date()).day ?? 0
+        AppLogger.info("Starting historical weight sync — startDaysAgo=\(historicalDays)", category: AppLogger.weightTracking)
 
+        let syncStart = Date()
         healthKit.fetchWeightDataHistorical(startDate: startDate) { [weak self] healthKitEntries in
             guard let self = self else {
+                WeightTrackerMetrics.recordSync(result: .init(type: "historical", duration: Date().timeIntervalSince(syncStart), success: false))
                 completion(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
                 return
             }
@@ -454,6 +464,7 @@ class WeightManager: ObservableObject {
                 // Report actual sync results
                 AppLogger.info("Historical HealthKit sync completed: \(added) new weight entries imported from \(healthKitEntries.count) total entries", category: AppLogger.weightTracking)
 
+                WeightTrackerMetrics.recordSync(result: .init(type: "historical", duration: Date().timeIntervalSince(syncStart), success: true))
                 completion(added, nil)
             }
         }
@@ -468,10 +479,13 @@ class WeightManager: ObservableObject {
             return
         }
 
-        AppLogger.info("Starting manual sync with anchor reset for deletion detection from \(startDate)", category: AppLogger.weightTracking)
+        let manualSyncDays = Calendar.current.dateComponents([.day], from: startDate, to: Date()).day ?? 0
+        AppLogger.info("Starting manual sync with anchor reset for deletion detection — startDaysAgo=\(manualSyncDays)", category: AppLogger.weightTracking)
 
+        let syncStart = Date()
         healthKit.fetchWeightData(startDate: startDate, endDate: Date(), resetAnchor: true) { [weak self] healthKitEntries in
             guard let self = self else {
+                WeightTrackerMetrics.recordSync(result: .init(type: "manual_reset", duration: Date().timeIntervalSince(syncStart), success: false))
                 completion(0, NSError(domain: "WeightManager", code: 2, userInfo: [NSLocalizedDescriptionKey: "WeightManager instance deallocated"]))
                 return
             }
@@ -491,6 +505,7 @@ class WeightManager: ObservableObject {
                 // Report comprehensive sync results
                 AppLogger.info("Manual HealthKit sync completed: \(result.added) entries added, \(result.deleted) entries removed, \(healthKitEntries.count) total HealthKit entries", category: AppLogger.weightTracking)
 
+                WeightTrackerMetrics.recordSync(result: .init(type: "manual_reset", duration: Date().timeIntervalSince(syncStart), success: true))
                 completion(result.added, nil)
             }
         }
@@ -617,7 +632,12 @@ class WeightManager: ObservableObject {
     }
 
     func weightChange(since date: Date) -> Double? {
-        analytics.weightChange(for: weightEntries, latestEntry: latestWeight, since: date)
+        analytics.weightChange(
+            for: weightEntries,
+            latestEntry: latestWeight,
+            since: date,
+            hasStartWeightOverride: startWeightOverride != nil
+        )
     }
 
     // MARK: - Milestone Computation (Task 1E Phase 3)
@@ -839,7 +859,7 @@ class WeightManager: ObservableObject {
     private func loadGoalWeight() {
         if let stored = persistence.loadGoalWeight() {
             goalWeight = stored
-            AppLogger.info("Loaded goal weight: \(stored) lbs", category: AppLogger.weightTracking)
+            AppLogger.info("Loaded goal weight — hasValue=\(stored > 0)", category: AppLogger.weightTracking)
         } else {
             goalWeight = 0
             AppLogger.info("No stored goal weight found, defaulting to 0", category: AppLogger.weightTracking)
@@ -851,9 +871,22 @@ class WeightManager: ObservableObject {
     // View layer updates binding, Manager handles UserDefaults
     // Reference: Apple's Data Management in SwiftUI guide
     func setGoalWeight(_ weight: Double) {
+        let previousGoal = goalWeight
         goalWeight = weight
         persistence.saveGoalWeight(weight)
-        AppLogger.info("Goal weight updated: \(weight) lbs", category: AppLogger.weightTracking)
+
+        let direction: String
+        if previousGoal == 0 {
+            direction = "initial-set"
+        } else if weight < previousGoal {
+            direction = "decrease"
+        } else if weight > previousGoal {
+            direction = "increase"
+        } else {
+            direction = "unchanged"
+        }
+
+        AppLogger.info("Goal weight updated — direction=\(direction)", category: AppLogger.weightTracking)
     }
 
     func setStartWeightOverride(_ displayWeight: Double?, date: Date?) {
@@ -862,12 +895,12 @@ class WeightManager: ObservableObject {
             startWeightOverride = internalValue
             startWeightDate = date
             persistence.saveStartWeightOverride(weight: internalValue, date: date)
-            AppLogger.info("Updated start weight override: \(internalValue) lbs", category: AppLogger.weightTracking)
+            AppLogger.info("Updated start weight override — set=true", category: AppLogger.weightTracking)
         } else {
             startWeightOverride = nil
             startWeightDate = nil
             persistence.saveStartWeightOverride(weight: nil, date: nil)
-            AppLogger.info("Cleared start weight override", category: AppLogger.weightTracking)
+            AppLogger.info("Updated start weight override — set=false", category: AppLogger.weightTracking)
         }
     }
 
@@ -903,7 +936,7 @@ class WeightManager: ObservableObject {
             weightEntries.removeAll { entry in
                 entry.source == .healthKit &&
                     abs(entry.date.timeIntervalSince(dateValue)) < WeightConstants.DuplicationThreshold.tightTimeInterval && // Within 1 minute
-                    abs(entry.weight - weightValue) < WeightConstants.DuplicationThreshold.weightDelta // Within 0.1 lbs
+                    abs(entry.weight - weightValue) < WeightConstants.DuplicationThreshold.weightDelta // Within 0.1 units
             }
             deletedCount += 1
         }

@@ -13,7 +13,7 @@ struct WeightMilestoneStats {
 protocol WeightAnalyticsServicing {
     func weightTrend(for entries: [WeightEntry]) -> Double?
     func averageWeight(for entries: [WeightEntry]) -> Double?
-    func weightChange(for entries: [WeightEntry], latestEntry: WeightEntry?, since date: Date) -> Double?
+    func weightChange(for entries: [WeightEntry], latestEntry: WeightEntry?, since date: Date, hasStartWeightOverride: Bool) -> Double?
     func totalWeightChange(startWeight: Double?, currentWeight: Double?, entryCount: Int, hasStartWeightOverride: Bool) -> Double?
     func progressToGoal(startWeight: Double?, currentWeight: Double?, goalWeight: Double) -> Double?
     func currentMilestoneIndex(progress: Double?, totalMilestones: Int) -> Int
@@ -51,7 +51,7 @@ final class WeightAnalyticsService: WeightAnalyticsServicing {
         return sum / Double(entries.count)
     }
 
-    func weightChange(for entries: [WeightEntry], latestEntry: WeightEntry?, since date: Date) -> Double? {
+    func weightChange(for entries: [WeightEntry], latestEntry: WeightEntry?, since date: Date, hasStartWeightOverride: Bool) -> Double? {
         guard let latestEntry else {
             AppLogger.info("🔍 [WeightAnalyticsService.weightChange] NO DATA - latestEntry is nil", category: AppLogger.weightTracking)
             return nil
@@ -61,14 +61,16 @@ final class WeightAnalyticsService: WeightAnalyticsServicing {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM d, yyyy"
 
-        AppLogger.info("🔍 [WeightAnalyticsService.weightChange] START - since: \(formatter.string(from: date)) | current weight: \(latestEntry.weight) lbs", category: AppLogger.weightTracking)
+        let windowDays = max(calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: latestEntry.date)).day ?? 0, 0) + 1
+        AppLogger.info("🔍 [WeightAnalyticsService] evaluating window — windowDays=\(windowDays), entriesEvaluated=\(entries.count), hasStartOverride=\(hasStartWeightOverride)", category: AppLogger.weightTracking)
 
-        let detailedFormatter = DateFormatter()
-        detailedFormatter.dateFormat = "MMM d, yyyy HH:mm:ss"
 #if DEBUG
-        AppLogger.info("🔍 [WeightAnalyticsService.weightChange] FULL DUMP - Total entries: \(entries.count)", category: AppLogger.weightTracking)
-        for (index, entry) in entries.enumerated() {
-            AppLogger.info("🔍 Entry #\(index): \(entry.weight) lbs on \(detailedFormatter.string(from: entry.date)) (source: \(entry.source.rawValue))", category: AppLogger.weightTracking)
+        let anonymizedSamples = entries.prefix(5).map { entry in
+            "\(entry.id.uuidString.prefix(8)):\(entry.source.rawValue)"
+        }
+        AppLogger.debug("🔍 [WeightAnalyticsService] debug sample ids=\(anonymizedSamples)", category: AppLogger.weightTracking)
+        if entries.count > anonymizedSamples.count {
+            AppLogger.debug("🔍 [WeightAnalyticsService] debug sample truncated=\(entries.count - anonymizedSamples.count)", category: AppLogger.weightTracking)
         }
 #endif
 
@@ -82,15 +84,13 @@ final class WeightAnalyticsService: WeightAnalyticsServicing {
         }
 
         guard let oldestEntry else {
-            AppLogger.info("🔍 [WeightAnalyticsService.weightChange] NO DATA - no entries found in date range", category: AppLogger.weightTracking)
+            AppLogger.info("🔍 [WeightAnalyticsService] window empty — entriesEvaluated=0", category: AppLogger.weightTracking)
             return nil
         }
 
-        AppLogger.info("🔍 [WeightAnalyticsService.weightChange] Oldest date in window: \(formatter.string(from: oldestEntry.date))", category: AppLogger.weightTracking)
-
         let startOfOldestDay = calendar.startOfDay(for: oldestEntry.date)
         guard let endOfOldestDay = calendar.date(byAdding: .day, value: 1, to: startOfOldestDay) else {
-            AppLogger.info("🔍 [WeightAnalyticsService.weightChange] ERROR - Could not calculate end of day", category: AppLogger.weightTracking)
+            AppLogger.info("🔍 [WeightAnalyticsService] window error — unable to derive end-of-day boundary", category: AppLogger.weightTracking)
             return nil
         }
 
@@ -98,8 +98,7 @@ final class WeightAnalyticsService: WeightAnalyticsServicing {
             $0.date >= startOfOldestDay && $0.date < endOfOldestDay
         }
 
-        AppLogger.info("🔍 [WeightAnalyticsService.weightChange] Date range: \(formatter.string(from: startOfOldestDay)) to \(formatter.string(from: endOfOldestDay))", category: AppLogger.weightTracking)
-        AppLogger.info("🔍 [WeightAnalyticsService.weightChange] Entries on oldest day: \(entriesOnOldestDay.count) - weights: \(entriesOnOldestDay.map { $0.weight })", category: AppLogger.weightTracking)
+        AppLogger.info("🔍 [WeightAnalyticsService] baseline summary — baselineEntries=\(entriesOnOldestDay.count)", category: AppLogger.weightTracking)
 
         guard !entriesOnOldestDay.isEmpty else { return nil }
         if entriesOnOldestDay.count == 1, let singleEntry = entriesOnOldestDay.first, singleEntry.id == latestEntry.id {
@@ -109,10 +108,28 @@ final class WeightAnalyticsService: WeightAnalyticsServicing {
         let sumWeight = entriesOnOldestDay.map { $0.weight }.reduce(0.0, +)
         let avgWeightOnOldestDay = sumWeight / Double(entriesOnOldestDay.count)
 
-        AppLogger.info("🔍 [WeightAnalyticsService.weightChange] Average weight on oldest day: \(avgWeightOnOldestDay) lbs", category: AppLogger.weightTracking)
-
         let change = latestEntry.weight - avgWeightOnOldestDay
-        AppLogger.info("🔍 [WeightAnalyticsService.weightChange] RESULT: \(change) lbs (\(latestEntry.weight) - \(avgWeightOnOldestDay))", category: AppLogger.weightTracking)
+
+        let direction: String
+        if change > 0.1 {
+            direction = "gain"
+        } else if change < -0.1 {
+            direction = "loss"
+        } else {
+            direction = "neutral"
+        }
+
+        let magnitude: String
+        switch abs(change) {
+        case 0..<0.5:
+            magnitude = "minimal"
+        case 0.5..<2:
+            magnitude = "moderate"
+        default:
+            magnitude = "significant"
+        }
+
+        AppLogger.info("🔍 [WeightAnalyticsService] result — direction=\(direction), magnitude=\(magnitude)", category: AppLogger.weightTracking)
         return change
     }
 

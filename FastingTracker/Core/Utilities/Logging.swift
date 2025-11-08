@@ -147,17 +147,17 @@ class Log {
         // Log with appropriate OSLog level
         switch level {
         case .debug:
-            logger.debug("\(fullMessage, privacy: .public)")
+            logger.debug("\(fullMessage, privacy: .private)")
         case .info:
-            logger.info("\(fullMessage, privacy: .public)")
+            logger.info("\(fullMessage, privacy: .private)")
         case .notice:
-            logger.notice("\(fullMessage, privacy: .public)")
+            logger.notice("\(fullMessage, privacy: .private)")
         case .warning:
-            logger.warning("\(fullMessage, privacy: .public)")
+            logger.warning("\(fullMessage, privacy: .private)")
         case .error:
-            logger.error("\(fullMessage, privacy: .public)")
+            logger.error("\(fullMessage, privacy: .private)")
         case .fault:
-            logger.fault("\(fullMessage, privacy: .public)")
+            logger.fault("\(fullMessage, privacy: .private)")
         }
     }
 

@@ -34,36 +34,41 @@ final class WeightSyncCoordinator: WeightSyncCoordinating {
     func mergeNewEntries(currentEntries: inout [WeightEntry],
                          healthKitEntries: [WeightEntry],
                          duplicateChecker: (WeightEntry, WeightEntry) -> Bool) -> Int {
-        AppLogger.info("🔍 [HealthKit Sync] Received \(healthKitEntries.count) entries from HealthKit", category: AppLogger.weightTracking)
-        for (index, entry) in healthKitEntries.enumerated() {
-            AppLogger.info("🔍 HK Entry #\(index): \(entry.weight) lbs on \(detailedFormatter.string(from: entry.date)) (source: \(entry.source.rawValue))", category: AppLogger.weightTracking)
+        let existingCount = currentEntries.count
+        let incomingCount = healthKitEntries.count
+        AppLogger.info("🔍 [HealthKit Sync] mergeNewEntries — incoming=\(incomingCount), existing=\(existingCount)", category: AppLogger.weightTracking)
+
+#if DEBUG
+        let sampleIdentifiers = healthKitEntries.prefix(5).map { entry in
+            "\(entry.id.uuidString.prefix(8)):\(entry.source.rawValue)"
         }
-        AppLogger.info("🔍 [HealthKit Sync] Fast LIFe currently has \(currentEntries.count) entries", category: AppLogger.weightTracking)
+        AppLogger.debug("🔍 [HealthKit Sync] mergeNewEntries sampleIds=\(sampleIdentifiers)", category: AppLogger.weightTracking)
+        if incomingCount > sampleIdentifiers.count {
+            AppLogger.debug("🔍 [HealthKit Sync] mergeNewEntries sample truncated=\(incomingCount - sampleIdentifiers.count)", category: AppLogger.weightTracking)
+        }
+#endif
 
         var newlyAddedCount = 0
+        var duplicateCount = 0
+        var additionsBySource: [String: Int] = [:]
 
         for hkEntry in healthKitEntries {
-            var matchDetails = ""
             let isDuplicate = currentEntries.contains { existing in
                 let isMatch = duplicateChecker(existing, hkEntry)
-                if isMatch {
-                    let timeDiff = abs(existing.date.timeIntervalSince(hkEntry.date))
-                    let weightDiff = abs(existing.weight - hkEntry.weight)
-                    matchDetails = "matches existing entry \(existing.weight) lbs on \(detailedFormatter.string(from: existing.date)) (timeDiff: \(String(format: "%.1f", timeDiff))s, weightDiff: \(String(format: "%.3f", weightDiff)) lbs)"
-                }
                 return isMatch
             }
 
             if isDuplicate {
-                AppLogger.info("🔍 [Duplicate Check] SKIPPING HK entry \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) - \(matchDetails)", category: AppLogger.weightTracking)
+                duplicateCount += 1
             } else {
-                AppLogger.info("🔍 [Duplicate Check] ADDING HK entry \(hkEntry.weight) lbs on \(detailedFormatter.string(from: hkEntry.date)) - not a duplicate", category: AppLogger.weightTracking)
                 currentEntries.append(hkEntry)
                 newlyAddedCount += 1
+                additionsBySource[hkEntry.source.rawValue, default: 0] += 1
             }
         }
 
         currentEntries.sort { $0.date > $1.date }
+        AppLogger.info("🔍 [HealthKit Sync] mergeNewEntries summary — added=\(newlyAddedCount), duplicates=\(duplicateCount), additionsBySource=\(additionsBySource)", category: AppLogger.weightTracking)
         return newlyAddedCount
     }
 
@@ -88,52 +93,47 @@ final class WeightSyncCoordinator: WeightSyncCoordinating {
                              healthKitEntries: [WeightEntry],
                              duplicateChecker: (WeightEntry, WeightEntry) -> Bool) -> (added: Int, deleted: Int) {
         let originalCount = currentEntries.count
-        AppLogger.info("DELETION CHECK: Starting with \(originalCount) Fast LIFe entries, \(healthKitEntries.count) HealthKit entries", category: AppLogger.weightTracking)
+        AppLogger.info("🔍 [HealthKit Sync] reconcileAfterReset — startingAppEntries=\(originalCount), incoming=\(healthKitEntries.count)", category: AppLogger.weightTracking)
+
+        var manualPreserved = 0
+        var deletedCount = 0
 
         currentEntries.removeAll { entry in
             guard entry.source != .manual else {
-                AppLogger.info("PRESERVING manual entry: \(entry.weight)lbs on \(dayFormatter.string(from: entry.date))", category: AppLogger.weightTracking)
+                manualPreserved += 1
                 return false
             }
 
             let stillExists = healthKitEntries.contains { duplicateChecker(entry, $0) }
-            let entryDateString = dayFormatter.string(from: entry.date)
 
             if !stillExists {
-                AppLogger.info("DELETING entry: \(entry.weight)lbs on \(entryDateString) (source: \(entry.source.rawValue)) - not found in current HealthKit data", category: AppLogger.weightTracking)
-            } else {
-                AppLogger.info("KEEPING entry: \(entry.weight)lbs on \(entryDateString) (source: \(entry.source.rawValue)) - still exists in HealthKit", category: AppLogger.weightTracking)
+                deletedCount += 1
             }
 
             return !stillExists
         }
 
-        let deletedCount = originalCount - currentEntries.count
-        AppLogger.info("DELETION COMPLETE: Removed \(deletedCount) entries, \(currentEntries.count) entries remaining", category: AppLogger.weightTracking)
+        AppLogger.info("🔍 [HealthKit Sync] reconcileAfterReset post-filter — deleted=\(deletedCount), manualPreserved=\(manualPreserved), remaining=\(currentEntries.count)", category: AppLogger.weightTracking)
 
         var addedCount = 0
-        AppLogger.info("Starting comparison: HealthKit has \(healthKitEntries.count) entries, Fast LIFe has \(currentEntries.count) entries", category: AppLogger.weightTracking)
+        var alreadyExistingDuringCompare = 0
+        AppLogger.info("🔍 [HealthKit Sync] reconcileAfterReset comparison — incoming=\(healthKitEntries.count), current=\(currentEntries.count)", category: AppLogger.weightTracking)
 
         for entry in healthKitEntries {
-            let dateString = dayFormatter.string(from: entry.date)
             let alreadyExists = currentEntries.contains { existing in
-                let matches = duplicateChecker(existing, entry)
-                if matches {
-                    AppLogger.info("MATCH FOUND: HealthKit(\(entry.weight)lbs \(dateString)) matches Fast LIFe(\(existing.weight)lbs \(dayFormatter.string(from: existing.date)))", category: AppLogger.weightTracking)
-                }
-                return matches
+                duplicateChecker(existing, entry)
             }
 
             if !alreadyExists {
-                AppLogger.info("MISSING ENTRY DETECTED: Adding HealthKit entry \(entry.weight)lbs on \(dateString) (source: \(entry.source.rawValue))", category: AppLogger.weightTracking)
                 currentEntries.append(entry)
                 addedCount += 1
             } else {
-                AppLogger.info("Entry already exists: \(entry.weight)lbs on \(dateString)", category: AppLogger.weightTracking)
+                alreadyExistingDuringCompare += 1
             }
         }
 
         currentEntries.sort { $0.date > $1.date }
+        AppLogger.info("🔍 [HealthKit Sync] reconcileAfterReset summary — added=\(addedCount), alreadyPresent=\(alreadyExistingDuringCompare), finalCount=\(currentEntries.count)", category: AppLogger.weightTracking)
         return (addedCount, deletedCount)
     }
 }

@@ -17,7 +17,10 @@ struct WeightProgressStoryMetricsProvider {
 
     func delta(days: Int) -> Double? {
         let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
-        return weightManager.weightChange(since: cutoffDate)
+        let metricName: StaticString = days == 7 ? "trend_delta_7" : "trend_delta_30"
+        return WeightTrackerMetrics.measure(name: metricName) {
+            weightManager.weightChange(since: cutoffDate)
+        }
     }
 
     var netDelta30Days: Double {
@@ -42,11 +45,11 @@ struct WeightProgressStoryMetricsProvider {
     func coachBarText(for state: WeightProgressStoryTrendState) -> String {
         switch state {
         case .improving:
-            return "Progress in motion — your consistency shows!"
+            return localized("progress_story_coach_bar_improving", comment: "Coach bar text when improving")
         case .regressing:
-            return "Weight gain is feedback, not failure — hydrate and sleep strong!"
+            return localized("progress_story_coach_bar_regressing", comment: "Coach bar text when regressing")
         case .flat:
-            return "Balance is mastery in motion — keep showing up!"
+            return localized("progress_story_coach_bar_flat", comment: "Coach bar text when flat")
         }
     }
 
@@ -54,17 +57,17 @@ struct WeightProgressStoryMetricsProvider {
         switch state {
         case .improving:
             return WeightProgressStoryBannerCopy(
-                text: "Small wins compound. Keep stacking the days!",
+                text: localized("progress_story_banner_improving", comment: "Banner copy when improving"),
                 accent: Theme.ColorToken.stateSuccess
             )
         case .regressing:
             return WeightProgressStoryBannerCopy(
-                text: "Course‑correct today. One choice changes the trend!",
+                text: localized("progress_story_banner_regressing", comment: "Banner copy when regressing"),
                 accent: Theme.ColorToken.stateError
             )
         case .flat:
             return WeightProgressStoryBannerCopy(
-                text: "Consistency is power. Nudge your routine by 1%!",
+                text: localized("progress_story_banner_flat", comment: "Banner copy when flat"),
                 accent: Theme.ColorToken.accentInfo
             )
         }
@@ -72,20 +75,20 @@ struct WeightProgressStoryMetricsProvider {
 
     func randomDidYouKnowTip() -> String {
         let tips = [
-            "Drinking water before meals can reduce calorie intake.",
-            "Sleep loss increases hunger hormones; protect your 7–8 hours.",
-            "Protein at your first meal improves satiety for the day.",
-            "Consistent weigh-ins help track trends, not daily fluctuations.",
-            "Strength training preserves muscle during weight loss."
+            localized("progress_story_tip_1", comment: "Did you know tip 1"),
+            localized("progress_story_tip_2", comment: "Did you know tip 2"),
+            localized("progress_story_tip_3", comment: "Did you know tip 3"),
+            localized("progress_story_tip_4", comment: "Did you know tip 4"),
+            localized("progress_story_tip_5", comment: "Did you know tip 5")
         ]
         return tips.randomElement() ?? tips[0]
     }
 
     func randomReflectionPrompt() -> String {
         let prompts = [
-            "One small habit to try this week?",
-            "What helped most on your best day?",
-            "Pick tomorrow's anchor: sleep / steps / water."
+            localized("progress_story_prompt_1", comment: "Reflection prompt 1"),
+            localized("progress_story_prompt_2", comment: "Reflection prompt 2"),
+            localized("progress_story_prompt_3", comment: "Reflection prompt 3")
         ]
         return prompts.randomElement() ?? prompts[0]
     }
@@ -100,5 +103,9 @@ struct WeightProgressStoryMetricsProvider {
 
         guard let change = weightManager.weightChange(since: cutoffDate) else { return nil }
         return (amount: abs(change), isLoss: change < 0)
+    }
+
+    private func localized(_ key: String, comment: StaticString) -> String {
+        NSLocalizedString(key, bundle: .main, comment: String(describing: comment))
     }
 }

@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import Combine
 
 /// Global application settings following Apple's single source of truth principle
 /// Reference: https://developer.apple.com/documentation/swiftui/appstorage
@@ -177,5 +178,83 @@ enum TrackerType: String, CaseIterable, Identifiable {
         case .sleep: return "moon.circle.fill"          // Crescent moon outline
         case .mood: return "face.smiling.fill"          // Simple smile design
         }
+    }
+}
+
+// MARK: - Measurement System Provider
+
+protocol MeasurementSystemProviding: AnyObject {
+    var currentUnit: WeightUnit { get }
+    var locale: Locale { get }
+    var currentMeasurementSystem: Locale.MeasurementSystem { get }
+    var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> { get }
+    func refresh()
+}
+
+/// Centralises measurement-system notifications so SwiftUI surfaces can respond
+/// immediately to user preference or system changes without re-instantiation.
+final class MeasurementSystemProvider: MeasurementSystemProviding {
+    static let shared = MeasurementSystemProvider()
+
+    private let localeProvider: LocaleProviding
+    private let notificationCenter: NotificationCenter
+    private let subject: CurrentValueSubject<Locale.MeasurementSystem, Never>
+    private var localeObserver: NSObjectProtocol?
+
+    init(localeProvider: LocaleProviding = SystemLocaleProvider(),
+         notificationCenter: NotificationCenter = .default) {
+        self.localeProvider = localeProvider
+        self.notificationCenter = notificationCenter
+        self.subject = CurrentValueSubject(localeProvider.measurementSystem)
+
+        localeObserver = notificationCenter.addObserver(
+            forName: NSLocale.currentLocaleDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.subject.send(localeProvider.measurementSystem)
+        }
+    }
+
+    deinit {
+        if let token = localeObserver {
+            notificationCenter.removeObserver(token)
+        }
+    }
+
+    var currentUnit: WeightUnit {
+        localeProvider.measurementSystem == .metric ? .kilograms : .pounds
+    }
+
+    var locale: Locale {
+        Locale(identifier: localeProvider.localeIdentifier)
+    }
+
+    var currentMeasurementSystem: Locale.MeasurementSystem {
+        locale.measurementSystem
+    }
+
+    var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> {
+        subject.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    func refresh() {
+        subject.send(localeProvider.measurementSystem)
+    }
+}
+
+final class MeasurementSystemObserver: ObservableObject {
+    static let shared = MeasurementSystemObserver(provider: MeasurementSystemProvider.shared)
+
+    @Published private(set) var system: Locale.MeasurementSystem
+    private var cancellable: AnyCancellable?
+
+    init(provider: MeasurementSystemProviding) {
+        self.system = provider.currentMeasurementSystem
+        self.cancellable = provider.measurementSystemPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newSystem in
+                self?.system = newSystem
+            }
     }
 }

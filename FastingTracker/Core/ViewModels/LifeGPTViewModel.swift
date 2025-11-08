@@ -95,7 +95,7 @@ class LifeGPTViewModel: ObservableObject {
     /// **Architecture:** Query → RichHealthContext → OpenAI + Guardrails → Validate → Return
     /// **Matches:** WHOOP Coach, Oura Advisor, Levels Insights
     private func executeQuery(_ query: String) async -> (String, EmotionState) {
-        logger.info("🚀 PHASE 8.2 LLM-FIRST - Query: \(query, privacy: .public)")
+        logger.info("🚀 PHASE 8.2 LLM-FIRST - Query: \(query, privacy: .private)")
 
         // Check network connectivity
         guard NetworkMonitor.shared.isConnected else {
@@ -120,7 +120,7 @@ class LifeGPTViewModel: ObservableObject {
             // DIAGNOSTIC: Log full formatted context for debugging
             logger.debug("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             logger.debug("📋 FORMATTED CONTEXT SENT TO LLM:")
-            logger.debug("\(formattedContext, privacy: .public)")
+            logger.debug("\(formattedContext, privacy: .private)")
             logger.debug("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
             // Generate system prompt with guardrails
@@ -129,7 +129,7 @@ class LifeGPTViewModel: ObservableObject {
 
             // Send to LLM
             logger.info("🤖 Calling OpenAI API...")
-            logger.debug("🔹 User Query: \(query, privacy: .public)")
+            logger.debug("🔹 User Query: \(query, privacy: .private)")
             let llmContext = convertRichContextToLLMContext(richContext)
             let response = try await OpenAIService.shared.generateResponse(
                 query: query,
@@ -142,7 +142,7 @@ class LifeGPTViewModel: ObservableObject {
             // DIAGNOSTIC: Log raw LLM response before validation
             logger.debug("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             logger.debug("🤖 RAW LLM RESPONSE (before validation):")
-            logger.debug("\(response, privacy: .public)")
+            logger.debug("\(response, privacy: .private)")
             logger.debug("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
             // Validate response (emoji filtering + signature enforcement)
@@ -153,28 +153,28 @@ class LifeGPTViewModel: ObservableObject {
             if validatedResponse != response {
                 logger.debug("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 logger.debug("✨ VALIDATED RESPONSE (after validation):")
-                logger.debug("\(validatedResponse, privacy: .public)")
+                logger.debug("\(validatedResponse, privacy: .private)")
                 logger.debug("🔧 Validator changed: \(response.count - validatedResponse.count) chars")
                 logger.debug("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
             }
 
             // Detect emotion from response
             let emotion = detectEmotionFromLLMResponse(validatedResponse)
-            logger.info("✅ Query complete - Emotion: \(emotion.rawValue, privacy: .public)")
+            logger.info("✅ Query complete - Emotion: \(emotion.rawValue, privacy: .private)")
 
             return (validatedResponse, emotion)
 
         } catch {
             // CRITICAL: Log full error details for diagnosis
-            logger.error("❌ LLM query failed: \(error.localizedDescription, privacy: .public)")
-            logger.error("❌ Error type: \(String(describing: type(of: error)), privacy: .public)")
-            logger.error("❌ Full error: \(String(describing: error), privacy: .public)")
+            logger.error("❌ LLM query failed: \(error.localizedDescription, privacy: .private)")
+            logger.error("❌ Error type: \(String(describing: type(of: error)), privacy: .private)")
+            logger.error("❌ Full error: \(String(describing: error), privacy: .private)")
 
             // Log stack trace if available
             if let nsError = error as NSError? {
-                logger.error("❌ NSError domain: \(nsError.domain, privacy: .public)")
-                logger.error("❌ NSError code: \(nsError.code, privacy: .public)")
-                logger.error("❌ NSError userInfo: \(nsError.userInfo, privacy: .public)")
+                logger.error("❌ NSError domain: \(nsError.domain, privacy: .private)")
+                logger.error("❌ NSError code: \(nsError.code, privacy: .private)")
+                logger.error("❌ NSError userInfo: \(nsError.userInfo, privacy: .private)")
             }
 
             // Fallback: Simple response with current weight

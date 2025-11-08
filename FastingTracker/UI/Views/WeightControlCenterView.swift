@@ -70,8 +70,10 @@ struct WeightControlCenterView: View {
                     UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
 
                     // Update weight goal if valid
-                    if let newGoal = Double(viewModel.goalCoordinator.weightGoalString), newGoal > 0 {
-                        weightGoal = newGoal
+                    if let displayGoal = Double(viewModel.goalCoordinator.weightGoalString), displayGoal > 0 {
+                        let internalGoal = viewModel.weightManager.convertToInternalUnit(displayGoal)
+                        weightGoal = internalGoal
+                        viewModel.goalCoordinator.synchronizeGoalWeightDisplay()
                     }
                     dismiss()
                 }
@@ -93,7 +95,7 @@ struct WeightControlCenterView: View {
             viewModel.loadCardOrder()
             viewModel.loadExpandedCards()
             viewModel.loadOptedOutContent()
-            viewModel.goalCoordinator.weightGoalString = String(format: "%.1f", weightGoal)
+            viewModel.goalCoordinator.synchronizeGoalWeightDisplay()
             // ISSUE #5: Store original goal weight for change detection
             originalGoalWeight = viewModel.goalCoordinator.weightGoalString
             viewModel.userSyncPreference = viewModel.weightManager.syncWithHealthKit
@@ -156,6 +158,7 @@ struct WeightControlCenterView: View {
             Button("Don't Save", role: .destructive) {
                 // Revert to original value
                 viewModel.goalCoordinator.weightGoalString = originalGoalWeight
+                WeightTrackerMetrics.recordGoalEvent(.goalWeightDiscarded, metadata: ["source": "control_center"])
                 dismiss()
             }
             Button("Cancel", role: .cancel) {
@@ -167,7 +170,8 @@ struct WeightControlCenterView: View {
                     let goalWeightPounds = viewModel.weightManager.convertToInternalUnit(newGoal)
                     viewModel.weightManager.setGoalWeight(goalWeightPounds)
                     weightGoal = newGoal
-                    AppLogger.info("Goal weight saved: \(goalWeightPounds) lbs (displayed as \(newGoal) \(viewModel.unitAbbreviation))", category: AppLogger.weightTracking)
+                    AppLogger.info("Goal weight saved via Control Center", category: AppLogger.weightTracking)
+                    WeightTrackerMetrics.recordGoalEvent(.goalWeightSaved, metadata: ["source": "control_center"])
                 }
                 dismiss()
             }

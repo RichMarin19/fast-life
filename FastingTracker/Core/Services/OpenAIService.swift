@@ -62,7 +62,7 @@ class OpenAIService {
         customSystemPrompt: String? = nil
     ) async throws -> String {
 
-        logger.info("Generating LLM response for query: \(query, privacy: .public)")
+        logger.info("Generating LLM response for query: \(query, privacy: .private)")
 
         // Phase 7: Use custom system prompt if provided (with guardrails), otherwise use Phase 6 default
         let systemPrompt = customSystemPrompt ?? buildSystemPrompt()
@@ -97,7 +97,7 @@ class OpenAIService {
 
         // CRITICAL DEBUG: Log the full user prompt being sent to OpenAI
         logger.info("🔍 DEBUG - User prompt being sent to OpenAI:")
-        logger.info("🔍   Content: \(userPrompt, privacy: .public)")
+        logger.info("🔍   Content: \(userPrompt, privacy: .private)")
         logger.info("🔍   Total messages in API call: \(messages.count)")
 
         // Make API request

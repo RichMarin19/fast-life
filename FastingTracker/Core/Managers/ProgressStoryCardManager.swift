@@ -169,10 +169,10 @@ class ProgressStoryCardManager: ObservableObject {
     private func migrateFromContentOptOutManager() {
         // Define mapping: Old ContentOptOutManager ID → New ProgressStoryCardType
         let legacyCardMapping: [String: ProgressStoryCardType] = [
-            "progress_story_7day_v1": .sevenDay,
-            "progress_story_30day_v1": .thirtyDay,
+            "progress_story_trend_snapshot_v1": .trendSnapshot,
+            "progress_story_7day_v1": .trendSnapshot,
+            "progress_story_30day_v1": .trendSnapshot,
             "progress_story_banner_v1": .banner,
-            "progress_story_recap_v1": .recap,
             "progress_story_tip_v1": .didYouKnow
         ]
 

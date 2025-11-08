@@ -204,7 +204,7 @@ class WeightChartViewModel: ObservableObject {
         dateFormatter.dateStyle = .medium
         let dateText = dateFormatter.string(from: entry.date)
 
-        var components = ["Selected weight \(formattedWeight(for: entry))"]
+        var components = ["Selected weight \(formattedWeight(for: entry)) \(unitAbbreviation)"]
         components.append("on \(dateText)")
 
         if let displayTime {

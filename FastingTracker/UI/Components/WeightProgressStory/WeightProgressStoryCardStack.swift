@@ -1,20 +1,29 @@
 import SwiftUI
 
 struct ProgressStoryContentIDs {
-    let sevenDay: String
-    let thirtyDay: String
+    let trendSnapshot: String
+    let trendSnapshotLegacyIDs: [String]
     let banner: String
     let reflection: String
     let recap: String
     let didYouKnow: String
 }
 
+struct TrendSnapshotMetricContext: Identifiable {
+    let id: String
+    let title: String
+    let valueText: String
+    let unitText: String
+    let tagText: String
+    let tagTextColor: Color
+    let tagBackgroundColor: Color
+    let iconName: String
+    let iconColor: Color
+    let accessibilityLabel: String
+}
+
 struct ProgressStoryCardContext {
-    let sevenDayDelta: Double?
-    let thirtyDayDelta: Double?
-    let netDelta30d: Double
-    let bestStreak: Int
-    let totalEntries: Int
+    let trendSnapshotMetrics: [TrendSnapshotMetricContext]
     let bannerText: String
     let bannerAccent: Color
     let didYouKnowText: String
@@ -22,87 +31,53 @@ struct ProgressStoryCardContext {
 }
 
 struct ProgressStoryCardStack: View {
-    let contentIDs: ProgressStoryContentIDs
+    let visibleCards: [ProgressStoryCardType]
     let context: ProgressStoryCardContext
     let isAnimating: Bool
-    @ObservedObject private var optOutManager: ContentOptOutManager
-    @ObservedObject private var cardManager: CardManager<ProgressStoryCardType>
     @Binding private var draggedCard: ProgressStoryCardType?
     let reflectionTap: () -> Void
     let onHideCard: (ProgressStoryCardType) -> Void
+    let onReorder: (ProgressStoryCardType, ProgressStoryCardType) -> Void
 
-    init(optOutManager: ContentOptOutManager,
-         cardManager: CardManager<ProgressStoryCardType>,
-         contentIDs: ProgressStoryContentIDs,
+    init(visibleCards: [ProgressStoryCardType],
          context: ProgressStoryCardContext,
          isAnimating: Bool,
          draggedCard: Binding<ProgressStoryCardType?>,
          reflectionTap: @escaping () -> Void,
-         onHideCard: @escaping (ProgressStoryCardType) -> Void) {
-        self.contentIDs = contentIDs
+         onHideCard: @escaping (ProgressStoryCardType) -> Void,
+         onReorder: @escaping (ProgressStoryCardType, ProgressStoryCardType) -> Void) {
+        self.visibleCards = visibleCards
         self.context = context
         self.isAnimating = isAnimating
-        _optOutManager = ObservedObject(wrappedValue: optOutManager)
-        _cardManager = ObservedObject(wrappedValue: cardManager)
         _draggedCard = draggedCard
         self.reflectionTap = reflectionTap
         self.onHideCard = onHideCard
+        self.onReorder = onReorder
     }
 
     var body: some View {
-        let orderedCards = visibleCards
-
-        ForEach(orderedCards, id: \.self) { cardType in
-            if shouldDisplay(cardType) {
-                ProgressStoryReorderableCard(
-                    cardType: cardType,
-                    visibleCards: orderedCards,
-                    draggedCard: $draggedCard,
-                    cardManager: cardManager,
-                    isAnimating: isAnimating
-                ) {
-                    cardContent(for: cardType)
-                }
+        ForEach(visibleCards, id: \.self) { cardType in
+            ProgressStoryReorderableCard(
+                cardType: cardType,
+                draggedCard: $draggedCard,
+                isAnimating: isAnimating,
+                onReorder: onReorder
+            ) {
+                cardContent(for: cardType)
             }
         }
     }
 
     // MARK: - Private
 
-    private func shouldDisplay(_ cardType: ProgressStoryCardType) -> Bool {
-        switch cardType {
-        case .sevenDay:
-            return !optOutManager.isContentOptedOut(id: contentIDs.sevenDay)
-        case .banner:
-            return !optOutManager.isContentOptedOut(id: contentIDs.banner)
-        case .thirtyDay:
-            return !optOutManager.isContentOptedOut(id: contentIDs.thirtyDay)
-        case .reflection:
-            return !optOutManager.isContentOptedOut(id: contentIDs.reflection)
-        case .recap:
-            return !optOutManager.isContentOptedOut(id: contentIDs.recap)
-        case .didYouKnow:
-            return context.totalEntries >= 5 && !optOutManager.isContentOptedOut(id: contentIDs.didYouKnow)
-        case .coachBar:
-            return false
-        }
-    }
-
-    private var visibleCards: [ProgressStoryCardType] {
-        cardManager
-            .getVisibleCardsInOrder()
-            .filter { $0 != .coachBar }
-    }
-
     @ViewBuilder
     private func cardContent(for cardType: ProgressStoryCardType) -> some View {
         switch cardType {
-        case .sevenDay:
-            CircularTrendRingCard(
-                periodLabel: "7 DAYS",
-                delta: context.sevenDayDelta,
+        case .trendSnapshot:
+            TrendSnapshotCard(
+                metrics: context.trendSnapshotMetrics,
                 surfaceStyle: cardType.surfaceStyle ?? .ice,
-                onHide: { onHideCard(.sevenDay) }
+                onHide: { onHideCard(.trendSnapshot) }
             )
 
         case .banner:
@@ -112,27 +87,11 @@ struct ProgressStoryCardStack: View {
                 onHide: { onHideCard(.banner) }
             )
 
-        case .thirtyDay:
-            CircularTrendRingCard(
-                periodLabel: "30 DAYS",
-                delta: context.thirtyDayDelta,
-                surfaceStyle: cardType.surfaceStyle ?? .ivory,
-                onHide: { onHideCard(.thirtyDay) }
-            )
-
         case .reflection:
             ReflectionNudge(
                 text: context.reflectionPrompt,
                 onHide: { onHideCard(.reflection) },
                 onTap: reflectionTap
-            )
-
-        case .recap:
-            RecapRow(
-                netDelta: context.netDelta30d,
-                bestStreak: context.bestStreak,
-                entries: context.totalEntries,
-                onHide: { onHideCard(.recap) }
             )
 
         case .didYouKnow:
@@ -151,25 +110,22 @@ struct ProgressStoryCardStack: View {
 
 private struct ProgressStoryReorderableCard<Content: View>: View {
     let cardType: ProgressStoryCardType
-    let visibleCards: [ProgressStoryCardType]
     @Binding var draggedCard: ProgressStoryCardType?
-    @ObservedObject var cardManager: CardManager<ProgressStoryCardType>
     let isAnimating: Bool
+    let onReorder: (ProgressStoryCardType, ProgressStoryCardType) -> Void
     let content: Content
 
     init(
         cardType: ProgressStoryCardType,
-        visibleCards: [ProgressStoryCardType],
         draggedCard: Binding<ProgressStoryCardType?>,
-        cardManager: CardManager<ProgressStoryCardType>,
         isAnimating: Bool,
+        onReorder: @escaping (ProgressStoryCardType, ProgressStoryCardType) -> Void,
         @ViewBuilder content: () -> Content
     ) {
         self.cardType = cardType
-        self.visibleCards = visibleCards
         _draggedCard = draggedCard
-        _cardManager = ObservedObject(wrappedValue: cardManager)
         self.isAnimating = isAnimating
+        self.onReorder = onReorder
         self.content = content()
     }
 
@@ -186,9 +142,8 @@ private struct ProgressStoryReorderableCard<Content: View>: View {
             }
             .onDrop(of: [.text], delegate: ProgressStoryCardDropDelegate(
                 cardType: cardType,
-                visibleCards: visibleCards,
                 draggedCard: $draggedCard,
-                cardManager: cardManager
+                onReorder: onReorder
             ))
             .opacity(isAnimating ? 1 : 0)
             .offset(y: isAnimating ? 0 : 20)
@@ -201,5 +156,82 @@ private struct ProgressStoryReorderableCard<Content: View>: View {
             .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.65))
             .padding(.vertical, 6)
             .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Trend Snapshot Card
+
+private struct TrendSnapshotCard: View {
+    let metrics: [TrendSnapshotMetricContext]
+    let surfaceStyle: WeightProgressStorySurfaceStyle
+    let onHide: () -> Void
+
+    var body: some View {
+        WeightProgressStorySurfaceCard(style: surfaceStyle, onHide: onHide) {
+            VStack(spacing: DSSpacing.cardSectionSpacing) {
+                HStack {
+                    Text("progress_story_trend_snapshot_title")
+                        .font(DSTypography.cardTitle)
+                        .dynamicTypeSize(.large ... .xxxLarge)
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+                    Spacer()
+                }
+
+                HStack(alignment: .top, spacing: DSSpacing.cardSectionSpacing) {
+                    ForEach(Array(metrics.enumerated()), id: \.element.id) { index, metric in
+                        if index > 0 {
+                            Divider()
+                                .frame(height: 70)
+                                .overlay(Theme.ColorToken.strokeLight.opacity(0.4))
+                        }
+                        TrendSnapshotMetricView(context: metric)
+                    }
+                }
+            }
+            .padding(.vertical, DSSpacing.cardSmallSpacing)
+        }
+    }
+}
+
+private struct TrendSnapshotMetricView: View {
+    let context: TrendSnapshotMetricContext
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
+            HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
+                Image(systemName: context.iconName)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(context.iconColor)
+                Text(context.title)
+                    .font(DSTypography.labelSecondary)
+                    .foregroundColor(Theme.ColorToken.textSecondary)
+            }
+
+            HStack(alignment: .firstTextBaseline, spacing: DSSpacing.cardExtraSmallSpacing) {
+                Text(context.valueText)
+                    .font(DSTypography.statValueLarge)
+                    .dynamicTypeSize(.large ... .xxxLarge)
+                    .foregroundColor(Theme.ColorToken.textPrimary)
+                if !context.unitText.isEmpty {
+                    Text(context.unitText)
+                        .font(DSTypography.cardSubtitle)
+                        .dynamicTypeSize(.large ... .xxLarge)
+                        .foregroundColor(Theme.ColorToken.textSecondary)
+                }
+            }
+
+            Text(context.tagText)
+                .font(DSTypography.pillLabel)
+                .foregroundColor(context.tagTextColor)
+                .padding(.horizontal, DSSpacing.cardExtraSmallSpacing)
+                .padding(.vertical, 4)
+                .background(
+                    Capsule()
+                        .fill(context.tagBackgroundColor)
+                )
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(context.accessibilityLabel))
     }
 }

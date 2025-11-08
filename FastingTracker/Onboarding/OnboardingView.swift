@@ -203,7 +203,7 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
-                    AppLogger.debug("Next button tapped on Current Weight page, weight: \(currentWeight) lbs, advancing to Goal Weight", category: AppLogger.ui)
+                    AppLogger.debug("Advancing from Current Weight step to Goal Weight", category: AppLogger.ui)
                     currentPage = 2
                 }) {
                     Text("Next")
@@ -272,7 +272,7 @@ struct OnboardingView: View {
                 }
 
                 Button(action: {
-                    AppLogger.debug("Next button tapped on Goal Weight page, goal: \(goalWeight) lbs, advancing to Fasting Goal", category: AppLogger.ui)
+                    AppLogger.debug("Advancing from Goal Weight step to Fasting Goal", category: AppLogger.ui)
                     currentPage = 3
                 }) {
                     Text("Next")
@@ -758,15 +758,15 @@ struct OnboardingView: View {
         if let weight = Double(currentWeight) {
             let entry = WeightEntry(date: Date(), weight: weight)
             weightManager.addWeightEntry(entry)
-            AppLogger.debug("Current weight saved: \(weight) lbs", category: AppLogger.general)
+            AppLogger.debug("Current weight saved during onboarding", category: AppLogger.general)
         } else {
             AppLogger.debug("No current weight entered, skipped", category: AppLogger.general)
         }
 
-        // Save goal weight to UserDefaults (WeightManager doesn't have goalWeight property)
+        // Save goal weight via WeightManager (single source of truth)
         if let goal = Double(goalWeight) {
-            UserDefaults.standard.set(goal, forKey: "goalWeight")
-            AppLogger.debug("Goal weight saved: \(goal) lbs", category: AppLogger.general)
+            weightManager.setGoalWeight(goal)
+            AppLogger.debug("Goal weight saved during onboarding", category: AppLogger.general)
         } else {
             AppLogger.debug("No goal weight entered, skipped", category: AppLogger.general)
         }

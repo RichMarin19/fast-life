@@ -1,14 +1,85 @@
 import SwiftUI
 
+enum WeightProgressStoryMilestoneLocalization {
+    static func localized(_ key: String, comment: StaticString = "") -> String {
+        NSLocalizedString(key, bundle: .main, comment: String(describing: comment))
+    }
+
+    static func unitAbbreviation(for locale: Locale = .current) -> String {
+        isMetric(locale: locale)
+            ? localized("progress_story_unit_kg", comment: "Kilogram unit abbreviation")
+            : localized("progress_story_unit_lbs", comment: "Pound unit abbreviation")
+    }
+
+    static func formattedWeight(_ pounds: Double, locale: Locale = .current) -> String {
+        let value = isMetric(locale: locale)
+            ? Measurement(value: pounds, unit: UnitMass.pounds).converted(to: .kilograms).value
+            : pounds
+
+        formatter.locale = locale
+        formatter.maximumFractionDigits = 1
+        formatter.minimumFractionDigits = value.truncatingRemainder(dividingBy: 1).isZero ? 0 : 1
+        return formatter.string(from: NSNumber(value: value)) ?? String(format: "%.1f", value)
+    }
+
+    static func accessibilityLabel(
+        tag: String,
+        formattedValue: String?,
+        unitAbbreviation: String,
+        periodLabel: String
+    ) -> String {
+        if let value = formattedValue {
+            let template = localized("progress_story_milestone_accessibility", comment: "Milestone accessibility label")
+            return String(format: template, tag, value, unitAbbreviation, periodLabel)
+        } else {
+            let template = localized("progress_story_milestone_accessibility_no_data", comment: "Milestone accessibility no data label")
+            return String(format: template, tag, periodLabel)
+        }
+    }
+
+    private static let formatter: NumberFormatter = {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return formatter
+    }()
+
+    private static func isMetric(locale: Locale) -> Bool {
+        if #available(iOS 16.0, *) {
+            return locale.measurementSystem == .metric
+        } else {
+            return locale.usesMetricSystem
+        }
+    }
+}
+
 struct CircularTrendRingCard: View {
     let periodLabel: String  // "7 DAYS" or "30 DAYS"
     let delta: Double?       // Signed value (negative = loss)
     let surfaceStyle: WeightProgressStorySurfaceStyle
+    let locale: Locale
     let onHide: () -> Void   // Hide card callback
+    private let unitAbbreviation: String
+    private let formatWeight: (Double) -> String
 
     @State private var animateRing = false  // Ring sweep animation
     @State private var showWinHalo = false  // v1.2b: Win halo animation (D.1)
     @Environment(\.accessibilityReduceMotion) var reduceMotion  // Respect Reduce Motion
+
+    init(periodLabel: String,
+         delta: Double?,
+         surfaceStyle: WeightProgressStorySurfaceStyle,
+         locale: Locale = .current,
+         onHide: @escaping () -> Void) {
+        self.periodLabel = periodLabel
+        self.delta = delta
+        self.surfaceStyle = surfaceStyle
+        self.locale = locale
+        self.onHide = onHide
+        self.unitAbbreviation = WeightProgressStoryMilestoneLocalization.unitAbbreviation(for: locale)
+        self.formatWeight = { value in
+            WeightProgressStoryMilestoneLocalization.formattedWeight(value, locale: locale)
+        }
+    }
 
     private var state: WeightProgressStoryTrendState {
         guard let delta = delta else { return .flat }
@@ -29,11 +100,21 @@ struct CircularTrendRingCard: View {
         palette.gradient
     }
 
+    private var formattedDelta: String? {
+        delta.map { formatWeight(abs($0)) }
+    }
+
     private var tag: String {
-        guard let delta = delta else { return "NO DATA" }
-        if delta < -0.2 { return "LOST" }
-        if delta > 0.2 { return "GAINED" }
-        return "FLAT"
+        guard let delta = delta else {
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_no_data", comment: "Milestone no data tag")
+        }
+        if delta < -0.2 {
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_tag_lost", comment: "Milestone lost tag")
+        }
+        if delta > 0.2 {
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_tag_gained", comment: "Milestone gained tag")
+        }
+        return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_tag_flat", comment: "Milestone flat tag")
     }
 
     /// Microcopy per spec §6
@@ -41,11 +122,11 @@ struct CircularTrendRingCard: View {
     private var microcopy: String {
         switch state {
         case .improving:
-            return "You're right on track — keep fueling smart!"
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_milestone_microcopy_improving")
         case .regressing:
-            return "Small upticks are data, not defeat — consistency wins!"
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_milestone_microcopy_regressing")
         case .flat:
-            return "Holding steady means you're balanced — that's progress!"
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_milestone_microcopy_flat")
         }
     }
 
@@ -86,9 +167,12 @@ struct CircularTrendRingCard: View {
     /// Returns text label for trend state
     private func emotionLabel(for state: WeightProgressStoryTrendState) -> String {
         switch state {
-        case .improving:  return "trend down"
-        case .regressing: return "trend up"
-        case .flat:       return "holding steady"
+        case .improving:
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_milestone_emotion_improving")
+        case .regressing:
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_milestone_emotion_regressing")
+        case .flat:
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_milestone_emotion_flat")
         }
     }
 
@@ -129,11 +213,11 @@ struct CircularTrendRingCard: View {
                     // Center content - Weight change value
                     VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
                         HStack(alignment: .firstTextBaseline, spacing: DSSpacing.cardExtraSmallSpacing) {
-                            Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
+                            Text(formattedDelta ?? "--")
                                 .font(DSTypography.statValueLarge)
                                 .foregroundColor(Theme.ColorToken.textPrimary)
 
-                            Text("lbs")
+                            Text(verbatim: unitAbbreviation)
                                 .font(DSTypography.cardSubtitle)
                                 .foregroundColor(Theme.ColorToken.textSecondary)
                         }
@@ -196,7 +280,16 @@ struct CircularTrendRingCard: View {
         }
         .transition(.opacity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(tag) \(delta != nil ? String(format: "%.1f", abs(delta!)) : "no data") pounds in \(periodLabel)")
+        .accessibilityLabel(accessibilityDescription)
+    }
+
+    private var accessibilityDescription: String {
+        WeightProgressStoryMilestoneLocalization.accessibilityLabel(
+            tag: tag,
+            formattedValue: formattedDelta,
+            unitAbbreviation: unitAbbreviation,
+            periodLabel: periodLabel
+        )
     }
 }
 
@@ -208,7 +301,26 @@ struct TrendCardFull: View {
     let periodLabel: String  // "7 DAYS" or "30 DAYS"
     let delta: Double?       // Signed value (negative = loss)
     let surfaceStyle: WeightProgressStorySurfaceStyle
+    let locale: Locale
     let onHide: () -> Void   // Hide card callback
+    private let unitAbbreviation: String
+    private let formatWeight: (Double) -> String
+
+    init(periodLabel: String,
+         delta: Double?,
+         surfaceStyle: WeightProgressStorySurfaceStyle,
+         locale: Locale = .current,
+         onHide: @escaping () -> Void) {
+        self.periodLabel = periodLabel
+        self.delta = delta
+        self.surfaceStyle = surfaceStyle
+        self.locale = locale
+        self.onHide = onHide
+        self.unitAbbreviation = WeightProgressStoryMilestoneLocalization.unitAbbreviation(for: locale)
+        self.formatWeight = { value in
+            WeightProgressStoryMilestoneLocalization.formattedWeight(value, locale: locale)
+        }
+    }
 
     private var state: WeightProgressStoryTrendState {
         guard let delta = delta else { return .flat }
@@ -226,10 +338,20 @@ struct TrendCardFull: View {
     }
 
     private var tag: String {
-        guard let delta = delta else { return "NO DATA" }
-        if delta < -0.2 { return "LOST" }
-        if delta > 0.2 { return "GAINED" }
-        return "FLAT"
+        guard let delta = delta else {
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_no_data", comment: "Milestone no data tag")
+        }
+        if delta < -0.2 {
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_tag_lost", comment: "Milestone lost tag")
+        }
+        if delta > 0.2 {
+            return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_tag_gained", comment: "Milestone gained tag")
+        }
+        return WeightProgressStoryMilestoneLocalization.localized("progress_story_metric_tag_flat", comment: "Milestone flat tag")
+    }
+
+    private var formattedDelta: String? {
+        delta.map { formatWeight(abs($0)) }
     }
 
     var body: some View {
@@ -243,11 +365,11 @@ struct TrendCardFull: View {
 
                 // Primary number + unit
                 HStack(alignment: .lastTextBaseline, spacing: DSSpacing.cardSmallSpacing) {
-                    Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
+                    Text(formattedDelta ?? "--")
                         .font(DSTypography.displayHero)
                         .foregroundColor(Theme.ColorToken.textPrimary)
 
-                    Text("lbs")
+                    Text(verbatim: unitAbbreviation)
                         .font(DSTypography.listTitle)
                         .foregroundColor(Theme.ColorToken.textSecondary)
 
@@ -279,7 +401,14 @@ struct TrendCardFull: View {
         }
         .transition(.opacity)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(tag) \(delta != nil ? String(format: "%.1f", abs(delta!)) : "no data") pounds in \(periodLabel)")
+        .accessibilityLabel(
+            WeightProgressStoryMilestoneLocalization.accessibilityLabel(
+                tag: tag,
+                formattedValue: formattedDelta,
+                unitAbbreviation: unitAbbreviation,
+                periodLabel: periodLabel
+            )
+        )
     }
 }
 
@@ -292,6 +421,19 @@ struct TrendCardFull: View {
 struct TrendCard: View {
     let title: String
     let trend: (amount: Double, isLoss: Bool)?
+    let locale: Locale
+    private let unitAbbreviation: String
+    private let formatWeight: (Double) -> String
+
+    init(title: String, trend: (amount: Double, isLoss: Bool)?, locale: Locale = .current) {
+        self.title = title
+        self.trend = trend
+        self.locale = locale
+        self.unitAbbreviation = WeightProgressStoryMilestoneLocalization.unitAbbreviation(for: locale)
+        self.formatWeight = { value in
+            WeightProgressStoryMilestoneLocalization.formattedWeight(value, locale: locale)
+        }
+    }
 
     var body: some View {
         VStack(spacing: DSSpacing.cardSmallSpacing) {
@@ -303,16 +445,16 @@ struct TrendCard: View {
 
                 // Middle: HUGE number + lbs (IMPACTFUL!)
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(String(format: "%.1f", trend.amount))
+                    Text(formatWeight(abs(trend.amount)))
                         .font(DSTypography.displayXXL)
                         .foregroundColor(.white)
-                    Text("lbs")
+                    Text(verbatim: unitAbbreviation)
                         .font(DSTypography.statValueSmall)
                         .foregroundColor(.white.opacity(0.9))
                 }
 
                 // Status pill (like weight lost pill!)
-                Text(trend.isLoss ? "LOST" : "GAINED")
+                Text(trend.isLoss ? LocalizedStringKey("progress_story_metric_tag_lost") : LocalizedStringKey("progress_story_metric_tag_gained"))
                     .font(DSTypography.pillLabel)
                     .foregroundColor(.white)
                     .padding(.horizontal, DSSpacing.cardElementSpacing)
@@ -337,7 +479,7 @@ struct TrendCard: View {
                     .font(DSTypography.displayXXL)
                     .foregroundColor(.white.opacity(0.6))
 
-                Text("NO DATA")
+                Text("progress_story_metric_no_data")
                     .font(DSTypography.pillLabel)
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.horizontal, DSSpacing.cardElementSpacing)

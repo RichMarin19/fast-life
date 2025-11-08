@@ -4,6 +4,7 @@ import SwiftUI
 
 struct WeightHistoryListView: View {
     @ObservedObject var weightManager: WeightManager
+    @ObservedObject private var measurementObserver = MeasurementSystemObserver.shared
 
     // Task 1F: Time range filtering for performance optimization
     // Industry Pattern: Apple Health - default to recent data with expandable ranges
@@ -85,6 +86,7 @@ struct WeightHistoryListView: View {
                     .background(Theme.ColorToken.dividerOnDark)
             }
         }
+        .id(measurementObserver.system)
         .animation(.easeInOut(duration: 0.3), value: selectedRangeRawValue)
         // Task 1F Enhancement 2: Auto-present custom date picker when Custom selected
         .onChange(of: selectedRangeRawValue) { oldValue, newValue in
@@ -245,7 +247,7 @@ struct WeightHistoryRow: View {
 
             Spacer()
 
-            Text("\(weightManager.displayWeight(for: entry), specifier: "%.1f") \("lbs")")
+            Text("\(weightManager.formattedDisplayWeight(entry.weight)) \(weightManager.currentUnitAbbreviation)")
                 .font(DSTypography.statValueMedium)
                 .fontWeight(.semibold)
                 .foregroundColor(Theme.ColorToken.accentPrimary)

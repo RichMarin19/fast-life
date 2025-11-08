@@ -89,7 +89,7 @@ struct WeightTrendsView: View {
         let sevenDayDelta = viewModel.sevenDayDelta
         let trendState7d = viewModel.trendState7Day
 
-        NavigationView {
+        NavigationStack {
             // v1.1 Adaptive Background: Navy base + Mood overlay based on 7-day trend
             // Per FastLIFe_LIFeJourney_UIUX_v1.1_AdaptiveBehavioralDesign.md §3
             ZStack {
@@ -125,7 +125,7 @@ struct WeightTrendsView: View {
                             // TITLE: Your LIFe Journey (luxury gradient)
                             // Font: SF Pro Rounded 34pt (matching app standard, not spec's 28pt)
                             // Gradient: Theme.ColorToken.accentInfo → accentPrimary (blue→emerald)
-                            Text("Your LIFe Journey")
+                            Text("progress_story_title")
                                 .font(DSTypography.displayLRounded)
                                 .foregroundStyle(
                                     LinearGradient(
@@ -142,7 +142,7 @@ struct WeightTrendsView: View {
                             // SUBTITLE: Motivational tagline
                             // Font: SF Pro Display 15pt, weight 400, italic (per spec §4)
                             // v1.2: Changed to white for better visibility on gradient background
-                            Text("Progress you can feel — one choice at a time.")
+                            Text("progress_story_subtitle")
                                 .font(DSTypography.cardBody)
                                 .italic()
                                 .foregroundColor(.white)
@@ -174,9 +174,7 @@ struct WeightTrendsView: View {
                         // Phase v1.4b Layer 3 & 4: Drag-and-drop reordering with ForEach
 
                         ProgressStoryCardStack(
-                            optOutManager: viewModel.cardStackOptOutManager,
-                            cardManager: viewModel.cardStackManager,
-                            contentIDs: viewModel.contentIDs,
+                            visibleCards: viewModel.visibleCards,
                             context: viewModel.cardContext,
                             isAnimating: isAnimating,
                             draggedCard: $draggedCard,
@@ -188,6 +186,9 @@ struct WeightTrendsView: View {
                                     viewModel.hideCard(cardType)
                                 }
                                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            },
+                            onReorder: { draggedCard, destinationCard in
+                                viewModel.reorderCard(draggedCard, before: destinationCard)
                             }
                         )
 
@@ -197,7 +198,7 @@ struct WeightTrendsView: View {
                         // Subtle, encouraging, human tone
                         // Standard: Dark background = light text, proper punctuation
                         if viewModel.shouldShowFooter {
-                            Text("You're showing up. That's what builds your LIFe!")
+                            Text("progress_story_footer")
                                 .font(DSTypography.cardBody)
                                 .foregroundColor(.white.opacity(0.8))
                                 .italic()
@@ -212,7 +213,7 @@ struct WeightTrendsView: View {
                     .padding(.vertical, DSSpacing.cardPadding)
                 }
             }
-            .navigationTitle("Weight Trends")
+            .navigationTitle(Text("progress_story_nav_title"))
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 // 🔧 FIX #12: Initialize reflection prompt once on appear (never changes during drag)
@@ -248,7 +249,7 @@ struct WeightTrendsView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "eye.slash")
                                 .font(DSTypography.cardSubtitle)
-                            Text("Don't show again")
+                            Text("progress_story_opt_out_cta")
                                 .font(DSTypography.cardSubtitle)
                         }
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)

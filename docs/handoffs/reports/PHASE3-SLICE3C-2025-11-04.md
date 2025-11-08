@@ -10,6 +10,7 @@
 - `WeightChartView.swift` adopts DS typography/colors, annotates the goal line with localized weight text, and routes axis labels through `WeightChartViewModel.axisLabel(for:)` so unit abbreviations follow `AppSettings.weightUnit`.
 - `WeightChartViewModel` exposes localized helper methods (`formattedWeight`, `formattedWeightValue`, `axisLabel`, `goalLineAccessibilityLabel`) consumed by the view and new tests.
 - Added `WeightChartViewModelTests` cases validating axis label/unit coupling across imperial/metric locales and ensuring entry formatting delegates to `WeightManager`.
+- Nov 5 update: chart annotations/Y-axis labels now reuse the helper for unit abbreviations and the view leans on `Theme.ColorToken.primary` instead of legacy asset catalog colors to stay aligned with the design system.
 
 ## Validation
 - ✅ Command‑B in Xcode (local) — succeeded after refactor.

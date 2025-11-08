@@ -1,6 +1,19 @@
 import Foundation
 import Combine
 
+// MARK: - Protocols
+
+@MainActor
+protocol TrackerCardManaging: AnyObject {
+    var cardPreferences: [CardPreference<TrackerCardType>] { get }
+    var objectWillChange: ObservableObjectPublisher { get }
+
+    func getVisibleCardsInOrder() -> [TrackerCardType]
+    func isCardVisible(_ card: TrackerCardType) -> Bool
+    func showCard(_ card: TrackerCardType)
+    func hideCard(_ card: TrackerCardType)
+}
+
 // MARK: - Generic Card Manager
 
 /// Unified card manager that handles ALL card types (TrackerCardType, ProgressStoryCardType, ControlCenterCardType, etc.)
@@ -221,24 +234,23 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
             return
         }
 
+        var normalizedPreferences: [CardPreference<CardType>] = []
+        var seenIDs = Set<String>()
+
+        for var preference in decoded {
+            preference.id = normalizePreferenceID(preference.id)
+            guard CardType(rawValue: preference.id) != nil else { continue }
+            guard !seenIDs.contains(preference.id) else { continue }
+
+            seenIDs.insert(preference.id)
+            normalizedPreferences.append(preference)
+        }
+
         // DATA MIGRATION (Enhancement 8 - Oct 31, 2025):
         // Filter out stale preferences for card types that no longer exist in enum
         // Example: .milestone card was removed in Enhancement 7, but old preferences persist
         // This caused index mismatches during drag-to-reorder operations
-        let validPreferences = decoded.filter { preference in
-            // Keep only preferences where the card type still exists in the enum
-            CardType(rawValue: preference.id) != nil
-        }
-
-        // Log migration if stale entries were found
-        #if DEBUG
-        let staleCount = decoded.count - validPreferences.count
-        if staleCount > 0 {
-            AppLogger.debug("🔄 Data Migration: Removed \(staleCount) stale card preference(s) for \(cardPreferencesKey)", category: AppLogger.persistence)
-        }
-        #endif
-
-        cardPreferences = validPreferences
+        cardPreferences = normalizedPreferences
 
         // Migration: Ensure all current card types have preferences
         // Handles case where new card types are added to enum
@@ -259,23 +271,8 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
     /// Called on first launch when no saved preferences exist
     private func initializeDefaults() {
         cardPreferences = CardType.allCases.enumerated().map { (index, cardType) in
-            // Special cases: ProgressStoryCardType.banner hidden by default (coach bar only)
-            //                TrackerCardType.history hidden by default (loaded on demand)
-            let isVisibleByDefault: Bool
-            if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
-                isVisibleByDefault = false
-            } else if let trackerCard = cardType as? TrackerCardType, trackerCard == .history {
-                isVisibleByDefault = false
-            } else {
-                isVisibleByDefault = true
-            }
-
-            return CardPreference(
-                cardType: cardType,
-                isVisible: isVisibleByDefault,
-                isExpanded: true,
-                sortOrder: index
-            )
+            let isVisibleByDefault = defaultVisibility(for: cardType)
+            return CardPreference(cardType: cardType, isVisible: isVisibleByDefault, sortOrder: index)
         }
 
         saveCardPreferences()
@@ -288,21 +285,9 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
 
         for cardType in CardType.allCases {
             if !cardPreferences.contains(where: { $0.id == cardType.rawValue }) {
-                // New card type - add with default preferences
-                // Special case: ProgressStoryCardType.banner hidden by default
-                let isVisibleByDefault: Bool
-                if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
-                    isVisibleByDefault = false
-                } else if let trackerCard = cardType as? TrackerCardType, trackerCard == .history {
-                    isVisibleByDefault = false
-                } else {
-                    isVisibleByDefault = true
-                }
-
                 let newPreference = CardPreference(
                     cardType: cardType,
-                    isVisible: isVisibleByDefault,
-                    isExpanded: true,
+                    isVisible: defaultVisibility(for: cardType),
                     sortOrder: cardPreferences.count
                 )
                 cardPreferences.append(newPreference)
@@ -313,6 +298,18 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
         if hasChanges {
             saveCardPreferences()
         }
+    }
+
+    private func normalizePreferenceID(_ id: String) -> String {
+        if CardType.self == ProgressStoryCardType.self {
+            switch id {
+            case "progress_story_7day_card", "progress_story_30day_card":
+                return "progress_story_trend_snapshot_card"
+            default:
+                return id
+            }
+        }
+        return id
     }
 }
 
@@ -335,7 +332,7 @@ class CardManager<CardType: CardTypeProtocol>: ObservableObject {
 /// Note: milestone_card removed in Enhancement 7 (redundant with Current Weight Card)
 struct CardPreference<CardType: CardTypeProtocol>: Codable, Identifiable {
     /// Unique identifier (cardType.rawValue)
-    let id: String
+    var id: String
 
     /// Is this card visible on screen?
     var isVisible: Bool
@@ -383,3 +380,18 @@ final class ProgressStoryCards {
     static let shared = CardManager<ProgressStoryCardType>(preferencesKey: "progressStoryCardPreferences_v1")
     private init() {}
 }
+
+private extension CardManager {
+    func defaultVisibility(for cardType: CardType) -> Bool {
+        if let trackerCard = cardType as? TrackerCardType, trackerCard == .history {
+            return false
+        }
+        if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
+            return false
+        }
+        return true
+    }
+}
+
+@MainActor
+extension CardManager: TrackerCardManaging where CardType == TrackerCardType {}

@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 // Test frequency options for Phase B engine validation
 enum TestFrequency: String, CaseIterable, Identifiable {
@@ -116,9 +117,12 @@ struct WeightSettingsView: View {
                                 .keyboardType(.decimalPad)
                                 .multilineTextAlignment(.trailing)
                                 .onAppear {
-                                    weightGoalString = String(format: "%.1f", weightGoal)
+                                    weightGoalString = weightManager.formattedDisplayWeight(weightGoal)
                                 }
-                            Text("lbs")
+                                .onReceive(NotificationCenter.default.publisher(for: NSLocale.currentLocaleDidChangeNotification)) { _ in
+                                    weightGoalString = weightManager.formattedDisplayWeight(weightGoal)
+                                }
+                            Text(weightManager.currentUnitAbbreviation)
                                 .foregroundColor(.secondary)
                         }
                     }

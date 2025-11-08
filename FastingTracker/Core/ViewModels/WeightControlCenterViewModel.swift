@@ -16,9 +16,9 @@ class WeightControlCenterViewModel: ObservableObject {
     let notificationCoordinator: WeightNotificationCoordinator
 
     // Singleton managers (pass-through)
-    let optOutManager = ContentOptOutManager.shared
-    let cardManager = TrackerCards.shared
-    let progressStoryCardManager = ProgressStoryCards.shared
+    let optOutManager: ContentOptOutManaging
+    let cardManager: CardManager<TrackerCardType>
+    let progressStoryCardManager: ProgressStoryCardManaging
     let healthKitManager = HealthKitManager.shared
     private var cancellables = Set<AnyCancellable>()
 
@@ -85,10 +85,18 @@ class WeightControlCenterViewModel: ObservableObject {
     init(weightManager: WeightManager,
          behavioralScheduler: BehavioralNotificationScheduler,
          locale: Locale = .current,
-         notificationCoordinator: WeightNotificationCoordinator? = nil) {
+         measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared,
+         notificationCoordinator: WeightNotificationCoordinator? = nil,
+         optOutManager: ContentOptOutManaging? = nil,
+         cardManager: CardManager<TrackerCardType>? = nil,
+         progressStoryCardManager: ProgressStoryCardManaging? = nil) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
-        self.goalCoordinator = WeightGoalCoordinator(weightManager: weightManager, locale: locale)
+        let resolvedOptOutManager = optOutManager ?? ContentOptOutManager.shared
+        self.optOutManager = resolvedOptOutManager
+        self.cardManager = cardManager ?? TrackerCards.shared
+        self.progressStoryCardManager = progressStoryCardManager ?? ProgressStoryCards.shared
+        self.goalCoordinator = WeightGoalCoordinator(weightManager: weightManager, measurementProvider: measurementProvider, locale: locale)
         self.notificationCoordinator = notificationCoordinator ?? WeightNotificationCoordinator(weightManager: weightManager)
 
         // Load persisted state

@@ -6,6 +6,7 @@ struct WeightControlCenterGoalsCard: View {
     @ObservedObject var goalCoordinator: WeightGoalCoordinator
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
+    @ObservedObject private var measurementObserver = MeasurementSystemObserver.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
@@ -46,6 +47,9 @@ struct WeightControlCenterGoalsCard: View {
         }
         .onAppear {
             goalCoordinator.prepareStartWeightDefaults()
+        }
+        .onChange(of: measurementObserver.system) { _, _ in
+            goalCoordinator.refreshMeasurementDisplay()
         }
     }
 
@@ -167,7 +171,7 @@ struct WeightControlCenterGoalsCard: View {
                     .accessibilityHidden(true)
             }
             .accessibilityElement(children: .combine)
-            .accessibilityLabel("Goal weight \(goalCoordinator.weightGoalString) pounds")
+            .accessibilityLabel("Goal weight \(goalCoordinator.weightGoalString) \(goalCoordinator.unitAbbreviation)")
             .accessibilityHint("Double tap to edit")
             .padding(.leading, 28)
             .padding(.trailing, DSSpacing.cardPadding)
@@ -177,19 +181,25 @@ struct WeightControlCenterGoalsCard: View {
                     .fill(Theme.ColorToken.accentPrimary.opacity(0.2))
             )
 
-            if let goal = Double(goalCoordinator.weightGoalString),
-               goal > 0,
+            if let displayGoal = Double(goalCoordinator.weightGoalString),
+               displayGoal > 0,
                let currentWeight = viewModel.weightManager.latestWeight?.weight {
-                let toGo = currentWeight - goal
-                if toGo > 0 {
+                let goalInPounds = viewModel.weightManager.convertToInternalUnit(displayGoal)
+                let toGoPounds = currentWeight - goalInPounds
+                if toGoPounds > 0 {
+                    let formattedToGo = viewModel.weightManager.formattedDisplayWeight(toGoPounds)
+                    let unitAbbreviation = viewModel.weightManager.currentUnitAbbreviation
+                    let unitDisplayName = viewModel.weightManager.currentUnitDisplayName
                     HStack(spacing: DSSpacing.cardSmallSpacing) {
                         Image(systemName: "target")
                             .font(DSTypography.iconButton)
                             .foregroundColor(Theme.ColorToken.accentGold)
-                        Text("\(String(format: "%.1f", toGo)) lbs to go")
+                        Text("\(formattedToGo) \(unitAbbreviation) to go")
                             .font(DSTypography.cardTitle)
                             .foregroundColor(Theme.ColorToken.accentGold)
                     }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel("\(formattedToGo) \(unitDisplayName) to go")
                     .padding(.horizontal, DSSpacing.cardPadding)
                     .padding(.vertical, DSSpacing.cardElementSpacing)
                     .background(

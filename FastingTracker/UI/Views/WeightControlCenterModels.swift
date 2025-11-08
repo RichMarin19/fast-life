@@ -83,25 +83,50 @@ extension TrackerCardType: CardTypeProtocol {
 /// Progress Story card types that can be hidden/shown
 /// Used in Control Center for managing Progress Story card visibility
 /// Industry Pattern: Same as TrackerCardType - enum registry for feature toggles
-enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
-    case coachBar = "progress_story_coach_bar_card"  // v1.2: Coach Bar
-    case sevenDay = "progress_story_7day_card"
-    case thirtyDay = "progress_story_30day_card"
-    case banner = "progress_story_banner_card"
-    case reflection = "progress_story_reflection_card"  // v1.2b/v1.2c: Reflection Nudge
-    case recap = "progress_story_recap_card"
-    case didYouKnow = "progress_story_tip_card"
+enum ProgressStoryCardType: Codable, CaseIterable, Identifiable {
+    case coachBar  // v1.2: Coach Bar
+    case trendSnapshot
+    case banner
+    case reflection  // v1.2b/v1.2c: Reflection Nudge
+    case didYouKnow
 
     var id: String { rawValue }
+
+    var rawValue: String {
+        switch self {
+        case .coachBar: return "progress_story_coach_bar_card"
+        case .trendSnapshot: return "progress_story_trend_snapshot_card"
+        case .banner: return "progress_story_banner_card"
+        case .reflection: return "progress_story_reflection_card"
+        case .didYouKnow: return "progress_story_tip_card"
+        }
+    }
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "progress_story_coach_bar_card":
+            self = .coachBar
+        case "progress_story_trend_snapshot_card",
+             "progress_story_7day_card",
+             "progress_story_30day_card":
+            self = .trendSnapshot
+        case "progress_story_banner_card":
+            self = .banner
+        case "progress_story_reflection_card":
+            self = .reflection
+        case "progress_story_tip_card":
+            self = .didYouKnow
+        default:
+            return nil
+        }
+    }
 
     var displayName: String {
         switch self {
         case .coachBar: return "Coach Bar"
-        case .sevenDay: return "7-Day Trend"
-        case .thirtyDay: return "30-Day Trend"
+        case .trendSnapshot: return "Trend Snapshot"
         case .banner: return "Progress Banner"
         case .reflection: return "Reflection Prompts"
-        case .recap: return "Progress Recap"
         case .didYouKnow: return "Did You Know"
         }
     }
@@ -109,11 +134,9 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
     var description: String {
         switch self {
         case .coachBar: return "Behavioral micro-copy under subtitle"
-        case .sevenDay: return "7-day weight trend card"
-        case .thirtyDay: return "30-day weight trend card"
+        case .trendSnapshot: return "7 & 30-day weight snapshot"
         case .banner: return "Motivational progress message"
         case .reflection: return "Micro-planning prompts for habit building"
-        case .recap: return "Net change, streak, and entries"
         case .didYouKnow: return "Educational weight loss tip"
         }
     }
@@ -121,11 +144,9 @@ enum ProgressStoryCardType: String, Codable, CaseIterable, Identifiable {
     var optOutContentID: String? {
         switch self {
         case .coachBar: return "progress_story_coach_bar_v1"
-        case .sevenDay: return "progress_story_7day_v1"
-        case .thirtyDay: return "progress_story_30day_v1"
+        case .trendSnapshot: return "progress_story_trend_snapshot_v1"
         case .banner: return "progress_story_banner_v1"
         case .reflection: return "progress_story_reflection_v1"
-        case .recap: return "progress_story_recap_v1"
         case .didYouKnow: return "progress_story_tip_v1"
         }
     }
@@ -135,11 +156,9 @@ extension ProgressStoryCardType {
     /// Default light-surface style for cards that use the shared surface component.
     var surfaceStyle: WeightProgressStorySurfaceStyle? {
         switch self {
-        case .sevenDay:
+        case .trendSnapshot:
             return .ice
-        case .thirtyDay:
-            return .ivory
-        case .banner, .reflection, .recap, .didYouKnow, .coachBar:
+        case .banner, .reflection, .didYouKnow, .coachBar:
             return nil
         }
     }

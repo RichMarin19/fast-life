@@ -207,7 +207,7 @@ struct FirstTimeWeightSetupView: View {
                 if let latestEntry = entries.sorted(by: { $0.date > $1.date }).first {
                     // Weight found for this date - auto-populate
                     self.startWeightString = String(format: "%.1f", latestEntry.weight)
-                    AppLogger.info("✅ Auto-populated weight: \(latestEntry.weight) lbs from HealthKit", category: AppLogger.weightTracking)
+                    AppLogger.info("✅ Auto-populated weight from HealthKit during setup", category: AppLogger.weightTracking)
                     AppLogger.info("   Entry date: \(latestEntry.date.formatted(date: .complete, time: .shortened))", category: AppLogger.weightTracking)
                 } else {
                     // No weight found for this date - clear field for manual entry
@@ -249,7 +249,7 @@ struct FirstTimeWeightSetupView: View {
         // Persist start weight override for downstream calculations
         weightManager.setStartWeightOverride(startWeight, date: startDate)
 
-        AppLogger.info("Saved start weight: \(startWeightPounds) lbs on \(startDate.formatted(date: .abbreviated, time: .omitted))", category: AppLogger.weightTracking)
+        AppLogger.info("Saved start weight selection during onboarding", category: AppLogger.weightTracking)
 
         // RECOVERY TASK #1: Restore goal weight persistence via WeightManager
         // Following industry standard MVVM pattern - Manager owns persistence, View calls manager

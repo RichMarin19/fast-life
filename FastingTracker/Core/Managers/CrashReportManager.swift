@@ -140,29 +140,38 @@ public class CrashReportManager {
     // MARK: - Private Implementation
 
     private func recordError(_ error: Error, category: CrashCategory, context: [String: Any]) {
-        // Log locally using AppLogger
-        let contextString = context.map { "\($0.key)=\($0.value)" }.joined(separator: ", ")
-        let logMessage = "Non-fatal error in \(category.rawValue): \(error.localizedDescription)"
-        let fullMessage = contextString.isEmpty ? logMessage : "\(logMessage) | \(contextString)"
+        let sanitizedContext = CrashTelemetrySanitizer.sanitizeContext(context)
+        let contextSummary = CrashTelemetrySanitizer.summarizeContext(sanitizedContext)
+        let sanitizedMessage = CrashTelemetrySanitizer.sanitizedDescription(for: error, category: category.rawValue)
+        let fullMessage = contextSummary.isEmpty ? sanitizedMessage : "\(sanitizedMessage) | \(contextSummary)"
 
         AppLogger.error(fullMessage, category: AppLogger.general, error: error)
 
         // PHASE 0: Persist crash logs securely to Application Support
-        persistCrashLogSecurely(error: error, category: category, context: context)
+        persistCrashLogSecurely(error: error, category: category, context: sanitizedContext)
 
         #if DEBUG
         // In debug mode, just log the error
         AppLogger.debug("🚨 CrashReport[\(category.rawValue)]: \(error.localizedDescription)", category: AppLogger.safety)
-        if !context.isEmpty {
-            AppLogger.debug("   Context: \(contextString)", category: AppLogger.safety)
+        if !sanitizedContext.isEmpty {
+            AppLogger.debug("   Context: \(contextSummary)", category: AppLogger.safety)
         }
         #else
         // In production, record to Firebase Crashlytics
-        Crashlytics.crashlytics().record(error: error)
-        for (key, value) in context {
-            Crashlytics.crashlytics().setCustomValue(value, forKey: key)
+        let crashlytics = Crashlytics.crashlytics()
+        let sanitizedError = CrashTelemetrySanitizer.sanitizedNSError(from: error)
+        crashlytics.setCustomValue(category.rawValue, forKey: "crash_category")
+        crashlytics.setCustomValue(sanitizedMessage, forKey: "sanitized_error")
+        if !contextSummary.isEmpty {
+            crashlytics.setCustomValue(contextSummary, forKey: "context_summary")
         }
-        Crashlytics.crashlytics().log("Category: \(category.rawValue)")
+        if let contextKeys = sanitizedContext["context_keys"] {
+            crashlytics.setCustomValue(contextKeys, forKey: "context_keys")
+        }
+        sanitizedContext
+            .filter { $0.key != "context_keys" }
+            .forEach { crashlytics.setCustomValue($0.value, forKey: $0.key) }
+        crashlytics.record(error: sanitizedError)
         #endif
     }
 
@@ -202,9 +211,23 @@ public class CrashReportManager {
         logCustomMessage(message, category: .general, level: level)
     }
 
+    /// Record a PHI-safe metric event so QA/observers can review telemetry in Crashlytics.
+    /// Metadata should already be sanitized upstream (aggregate counts, booleans, enums).
+    public func recordMetricEvent(_ name: String, metadata: [String: String] = [:]) {
+        let summary = sanitizedMetadataSummary(from: metadata)
+        let logMessage = summary.isEmpty ? "METRIC[\(name)]" : "METRIC[\(name)] \(summary)"
+
+        AppLogger.infoPublic(logMessage, category: AppLogger.weightTracking)
+
+        #if !DEBUG
+        Crashlytics.crashlytics().log(logMessage)
+        #endif
+    }
+
     /// Internal method with category parameter
     private func logCustomMessage(_ message: String, category: CrashCategory = .general, level: LogLevel = .info) {
-        let logMessage = "Custom[\(category.rawValue)]: \(message)"
+        let sanitizedMessage = CrashTelemetrySanitizer.sanitizeMessage(message)
+        let logMessage = "Custom[\(category.rawValue)]: \(sanitizedMessage)"
 
         switch level {
         case .debug:
@@ -244,11 +267,12 @@ public class CrashReportManager {
 
     /// Set custom key-value pairs for crash context
     public func setCustomValue(_ value: Any, forKey key: String) {
-        AppLogger.debug("Setting custom value: \(key)=\(value)", category: AppLogger.general)
+        let sanitizedValue = CrashTelemetrySanitizer.sanitizeCustomValue(value, forKey: key)
+        AppLogger.debug("Setting custom value: \(key)=\(sanitizedValue)", category: AppLogger.general)
 
         #if !DEBUG
         // In production, set custom keys in Firebase Crashlytics
-        Crashlytics.crashlytics().setCustomValue(value, forKey: key)
+        Crashlytics.crashlytics().setCustomValue(sanitizedValue, forKey: key)
         #endif
     }
 }
@@ -290,6 +314,15 @@ extension CrashReportManager {
             recordError(error, category: .general, context: context)
             #endif
         }
+    }
+
+    private func sanitizedMetadataSummary(from metadata: [String: String]) -> String {
+        guard !metadata.isEmpty else { return "" }
+        let rawContext = metadata.reduce(into: [String: Any]()) { partialResult, entry in
+            partialResult[entry.key] = entry.value
+        }
+        let sanitized = CrashTelemetrySanitizer.sanitizeContext(rawContext)
+        return CrashTelemetrySanitizer.summarizeContext(sanitized)
     }
 }
 
@@ -351,5 +384,143 @@ private struct AnyCodable: Codable {
         } else {
             throw DecodingError.dataCorruptedError(in: container, debugDescription: "Unsupported type")
         }
+    }
+}
+
+// MARK: - Telemetry Sanitization Utilities
+
+struct CrashTelemetrySanitizer {
+    private static let redactedMarker = "[REDACTED]"
+    private static let sensitiveTokens: [String] = [
+        "weight",
+        "goal",
+        "bmi",
+        "bodyfat",
+        "hydration",
+        "sleep",
+        "fast",
+        "lbs",
+        "kg"
+    ]
+
+    private static let sensitiveValueRegex: NSRegularExpression = {
+        // Matches values like "180.5 lbs", "75kg", etc.
+        let pattern = #"(-?\d+(\.\d+)?)\s?(lbs|pounds|kg|kilograms)"#
+        return try! NSRegularExpression(pattern: pattern, options: [.caseInsensitive])
+    }()
+
+    static func sanitizeContext(_ context: [String: Any]) -> [String: Any] {
+        guard !context.isEmpty else { return [:] }
+
+        var sanitized: [String: Any] = [:]
+        var containsSensitive = false
+
+        for (key, value) in context {
+            let sanitizedValue = sanitizeCustomValue(value, forKey: key)
+            if let stringValue = sanitizedValue as? String, stringValue == redactedMarker {
+                containsSensitive = true
+            }
+            sanitized[key] = sanitizedValue
+        }
+
+        if containsSensitive {
+            sanitized["containsSensitiveTelemetry"] = true
+        }
+
+        sanitized["context_keys"] = Array(context.keys).sorted().joined(separator: "|")
+        return sanitized
+    }
+
+    static func summarizeContext(_ context: [String: Any]) -> String {
+        context
+            .filter { $0.key != "context_keys" }
+            .map { "\($0.key)=\($0.value)" }
+            .sorted()
+            .joined(separator: ", ")
+    }
+
+    static func sanitizeCustomValue(_ value: Any, forKey key: String) -> Any {
+        let lowerKey = key.lowercased()
+        if containsSensitiveToken(in: lowerKey) {
+            return redactedMarker
+        }
+
+        switch value {
+        case let string as String:
+            if containsSensitiveToken(in: string.lowercased()) || matchesSensitivePattern(string) {
+                return redactedMarker
+            }
+            return string
+        case let number as NSNumber:
+            if containsSensitiveToken(in: lowerKey) {
+                return redactedMarker
+            }
+            return number
+        case let bool as Bool:
+            return bool
+        case let dict as [String: Any]:
+            let nested = sanitizeContext(dict)
+            if nested.isEmpty { return "[:]" }
+            return nested.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: ", ")
+        case let array as [Any]:
+            let sanitizedArray = array.map { sanitizeCustomValue($0, forKey: key) }
+            return sanitizedArray.map { "\($0)" }.joined(separator: ", ")
+        default:
+            return String(describing: value)
+        }
+    }
+
+    static func sanitizeMessage(_ message: String) -> String {
+        guard !message.isEmpty else { return message }
+        var sanitized = message
+        let range = NSRange(location: 0, length: sanitized.utf16.count)
+        sanitized = sensitiveValueRegex.stringByReplacingMatches(in: sanitized, options: [], range: range, withTemplate: redactedMarker)
+
+        if containsSensitiveToken(in: sanitized.lowercased()) {
+            sensitiveTokens.forEach { token in
+                sanitized = sanitized.replacingOccurrences(of: token, with: redactedMarker, options: [.caseInsensitive], range: nil)
+            }
+        }
+
+        return sanitized
+    }
+
+    static func sanitizedDescription(for error: Error, category: String? = nil) -> String {
+        let nsError = error as NSError
+        var components: [String] = []
+        if let category, !category.isEmpty {
+            components.append("[\(category)]")
+        }
+        components.append("\(nsError.domain)#\(nsError.code)")
+
+        if !nsError.userInfo.isEmpty {
+            let sanitizedUserInfo = sanitizeContext(nsError.userInfo)
+            let summary = summarizeContext(sanitizedUserInfo)
+            if !summary.isEmpty {
+                components.append("userInfo{\(summary)}")
+            }
+        }
+
+        return sanitizeMessage(components.joined(separator: " "))
+    }
+
+    static func sanitizedNSError(from error: Error) -> NSError {
+        let nsError = error as NSError
+        if nsError.userInfo.isEmpty {
+            return nsError
+        }
+        let sanitizedUserInfo = sanitizeContext(nsError.userInfo)
+        return NSError(domain: nsError.domain, code: nsError.code, userInfo: sanitizedUserInfo)
+    }
+
+    private static func containsSensitiveToken(in text: String) -> Bool {
+        sensitiveTokens.contains { token in
+            text.contains(token)
+        }
+    }
+
+    private static func matchesSensitivePattern(_ text: String) -> Bool {
+        let range = NSRange(location: 0, length: text.utf16.count)
+        return sensitiveValueRegex.firstMatch(in: text, options: [], range: range) != nil
     }
 }

@@ -35,7 +35,8 @@ class NetworkMonitor: ObservableObject {
             DispatchQueue.main.async {
                 let newStatus = (path.status == .satisfied)
                 self?.isConnected = newStatus
-                self?.logger.info("Network status changed: \(newStatus ? "connected" : "disconnected", privacy: .public)")
+                let statusDescription = newStatus ? "connected" : "disconnected"
+                self?.logger.info("Network status changed: \(statusDescription, privacy: .private)")
             }
         }
         monitor.start(queue: queue)

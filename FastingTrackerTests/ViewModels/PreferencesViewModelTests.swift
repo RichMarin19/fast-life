@@ -8,12 +8,16 @@
 //
 
 import XCTest
+import Combine
 @testable import FastLIFe
 
 @MainActor
 final class PreferencesViewModelTests: XCTestCase {
 
     var viewModel: PreferencesViewModel!
+    var mockOptOutManager: MockContentOptOutManager!
+    var mockTrackerCards: TrackerCardManaging!
+    var mockProgressCards: ProgressStoryCardManaging!
 
     override func setUp() {
         super.setUp()
@@ -23,14 +27,22 @@ final class PreferencesViewModelTests: XCTestCase {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
         }
 
-        // Clear shared manager state
-        ContentOptOutManager.shared.optedOutContentItems.removeAll()
+        mockOptOutManager = MockContentOptOutManager()
+        mockTrackerCards = InMemoryTrackerCardManager()
+        mockProgressCards = MockProgressStoryCardManager()
 
-        viewModel = PreferencesViewModel()
+        viewModel = PreferencesViewModel(
+            optOutManager: mockOptOutManager,
+            cardManager: mockTrackerCards,
+            progressStoryCardManager: mockProgressCards
+        )
     }
 
     override func tearDown() {
         viewModel = nil
+        mockOptOutManager = nil
+        mockTrackerCards = nil
+        mockProgressCards = nil
         super.tearDown()
     }
 
@@ -195,7 +207,11 @@ final class PreferencesViewModelTests: XCTestCase {
         viewModel.restoreAllToDefault()
 
         // Create new ViewModel to verify persistence
-        let newViewModel = PreferencesViewModel()
+        let newViewModel = PreferencesViewModel(
+            optOutManager: MockContentOptOutManager(),
+            cardManager: InMemoryTrackerCardManager(),
+            progressStoryCardManager: MockProgressStoryCardManager()
+        )
 
         // Then - restored state should be persisted
         XCTAssertFalse(newViewModel.optOutTrackerCards,
@@ -266,7 +282,11 @@ final class PreferencesViewModelTests: XCTestCase {
         viewModel.optOutContent(id: "insight1", category: .educationalInsights, text: "Test Insight")
 
         // When - create new ViewModel
-        let newViewModel = PreferencesViewModel()
+        let newViewModel = PreferencesViewModel(
+            optOutManager: MockContentOptOutManager(),
+            cardManager: InMemoryTrackerCardManager(),
+            progressStoryCardManager: MockProgressStoryCardManager()
+        )
 
         // Then - opted-out content should be restored
         XCTAssertEqual(newViewModel.optedOutContentItems.count, 1,
@@ -282,7 +302,11 @@ final class PreferencesViewModelTests: XCTestCase {
 
         // When - save and create new ViewModel
         viewModel.saveExperienceOptOuts()
-        let newViewModel = PreferencesViewModel()
+        let newViewModel = PreferencesViewModel(
+            optOutManager: MockContentOptOutManager(),
+            cardManager: InMemoryTrackerCardManager(),
+            progressStoryCardManager: MockProgressStoryCardManager()
+        )
 
         // Then - opt-outs should be restored
         XCTAssertTrue(newViewModel.optOutTrackerCards,
@@ -318,5 +342,39 @@ final class PreferencesViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.optedOutContentItems.isEmpty,
                      "Restoring from default state should maintain default")
         XCTAssertFalse(viewModel.optOutTrackerCards, "Opt-outs should remain false")
+    }
+}
+
+@MainActor
+private final class InMemoryTrackerCardManager: TrackerCardManaging {
+    var objectWillChange = ObservableObjectPublisher()
+    var cardPreferences: [CardPreference<TrackerCardType>] = TrackerCardType.allCases.enumerated().map {
+        CardPreference(cardType: $0.element, isVisible: true, sortOrder: $0.offset)
+    }
+
+    func getVisibleCardsInOrder() -> [TrackerCardType] {
+        cardPreferences
+            .filter { $0.isVisible }
+            .sorted { $0.sortOrder < $1.sortOrder }
+            .compactMap { TrackerCardType(rawValue: $0.id) }
+    }
+
+    func isCardVisible(_ card: TrackerCardType) -> Bool {
+        cardPreferences.first(where: { $0.id == card.rawValue })?.isVisible ?? true
+    }
+
+    func showCard(_ card: TrackerCardType) {
+        setVisibility(card, visible: true)
+    }
+
+    func hideCard(_ card: TrackerCardType) {
+        setVisibility(card, visible: false)
+    }
+
+    private func setVisibility(_ card: TrackerCardType, visible: Bool) {
+        if let index = cardPreferences.firstIndex(where: { $0.id == card.rawValue }) {
+            cardPreferences[index].isVisible = visible
+            objectWillChange.send()
+        }
     }
 }

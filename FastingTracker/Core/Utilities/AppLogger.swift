@@ -6,6 +6,11 @@ import os.log
 /// Updated to modern Logger API (iOS 14+) for enhanced performance and privacy
 struct AppLogger {
 
+    enum MessagePrivacy {
+        case `public`
+        case `private`
+    }
+
     // MARK: - Subsystem Configuration
 
     /// App bundle identifier for consistent log subsystem naming
@@ -63,7 +68,7 @@ struct AppLogger {
         line: Int = #line
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        safety.fault("⚠️ SAFETY: \(message, privacy: .public) [\(fileName, privacy: .public):\(line, privacy: .public) in \(function, privacy: .public)]")
+        safety.fault("⚠️ SAFETY: \(message, privacy: .private) [\(fileName, privacy: .public):\(line, privacy: .public) in \(function, privacy: .public)]")
     }
 
     /// Log successful safety handling
@@ -74,7 +79,7 @@ struct AppLogger {
         line: Int = #line
     ) {
         let fileName = URL(fileURLWithPath: file).lastPathComponent
-        safety.info("✅ SAFETY: \(message, privacy: .public) [\(fileName, privacy: .public):\(line, privacy: .public) in \(function, privacy: .public)]")
+        safety.info("✅ SAFETY: \(message, privacy: .private) [\(fileName, privacy: .public):\(line, privacy: .public) in \(function, privacy: .public)]")
     }
 
     // MARK: - Performance Logging
@@ -95,18 +100,30 @@ struct AppLogger {
     /// Log general app events
     static func info(
         _ message: String,
-        category: Logger = general
+        category: Logger = general,
+        privacy: MessagePrivacy = .private
     ) {
-        category.info("ℹ️ \(message, privacy: .public)")
+        switch privacy {
+        case .public:
+            category.info("ℹ️ \(message, privacy: .public)")
+        case .private:
+            category.info("ℹ️ \(message, privacy: .private)")
+        }
     }
 
     /// Log debug information (only in debug builds)
     static func debug(
         _ message: String,
-        category: Logger = general
+        category: Logger = general,
+        privacy: MessagePrivacy = .private
     ) {
         #if DEBUG
-        category.debug("🔍 DEBUG: \(message, privacy: .public)")
+        switch privacy {
+        case .public:
+            category.debug("🔍 DEBUG: \(message, privacy: .public)")
+        case .private:
+            category.debug("🔍 DEBUG: \(message, privacy: .private)")
+        }
         #endif
     }
 
@@ -114,19 +131,31 @@ struct AppLogger {
     static func error(
         _ message: String,
         category: Logger = general,
-        error: Error? = nil
+        error: Error? = nil,
+        privacy: MessagePrivacy = .private
     ) {
         let errorInfo = error?.localizedDescription ?? ""
         let logMessage = errorInfo.isEmpty ? "❌ ERROR: \(message)" : "❌ ERROR: \(message) - \(errorInfo)"
-        category.error("\(logMessage, privacy: .public)")
+        switch privacy {
+        case .public:
+            category.error("\(logMessage, privacy: .public)")
+        case .private:
+            category.error("\(logMessage, privacy: .private)")
+        }
     }
 
     /// Log warning conditions
     static func warning(
         _ message: String,
-        category: Logger = general
+        category: Logger = general,
+        privacy: MessagePrivacy = .private
     ) {
-        category.fault("⚠️ WARNING: \(message, privacy: .public)")
+        switch privacy {
+        case .public:
+            category.fault("⚠️ WARNING: \(message, privacy: .public)")
+        case .private:
+            category.fault("⚠️ WARNING: \(message, privacy: .private)")
+        }
     }
 
     // MARK: - Legacy Print Replacement (Transition Helper)
@@ -142,8 +171,39 @@ struct AppLogger {
         #if DEBUG
         let fileName = URL(fileURLWithPath: file).lastPathComponent
         let logMessage = "🖨️ PRINT: \(message) [\(fileName):\(line) in \(function)]"
-        general.debug("\(logMessage, privacy: .public)")
+        general.debug("\(logMessage, privacy: .private)")
         #endif
+    }
+
+    // MARK: - Public Payload Helpers
+
+    static func infoPublic(
+        _ message: String,
+        category: Logger = general
+    ) {
+        info(message, category: category, privacy: .public)
+    }
+
+    static func debugPublic(
+        _ message: String,
+        category: Logger = general
+    ) {
+        debug(message, category: category, privacy: .public)
+    }
+
+    static func warningPublic(
+        _ message: String,
+        category: Logger = general
+    ) {
+        warning(message, category: category, privacy: .public)
+    }
+
+    static func errorPublic(
+        _ message: String,
+        category: Logger = general,
+        error: Error? = nil
+    ) {
+        AppLogger.error(message, category: category, error: error, privacy: .public)
     }
 }
 

@@ -10,18 +10,33 @@ import XCTest
 import Combine
 @testable import FastLIFe
 
+struct TestLocaleProvider: LocaleProviding {
+    var measurementSystem: Locale.MeasurementSystem
+    var localeIdentifier: String
+}
+
 @MainActor
 final class WeightManagerTests: XCTestCase {
 
     var weightManager: WeightManager!
+    var appSettings: AppSettings!
 
     override func setUp() {
         super.setUp()
+        Self.removeSecurePersistenceArtifact()
         // Clear UserDefaults for clean test state
         if let bundleID = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
         }
-        weightManager = WeightManager()
+        appSettings = AppSettings(localeProvider: TestLocaleProvider(measurementSystem: .us, localeIdentifier: "en_US"))
+        weightManager = WeightManager(
+            healthKit: MockHealthKitManager(),
+            dataStore: MockDataStore(),
+            appSettings: appSettings,
+            persistence: InMemoryWeightPersistence(),
+            syncCoordinator: MockWeightSyncCoordinator(),
+            analytics: WeightAnalyticsService()
+        )
         // Clear any existing entries for clean tests
         weightManager.weightEntries.removeAll()
         // Disable HealthKit sync for faster, isolated unit tests
@@ -30,7 +45,31 @@ final class WeightManagerTests: XCTestCase {
 
     override func tearDown() {
         weightManager = nil
+        appSettings = nil
+        Self.removeSecurePersistenceArtifact()
         super.tearDown()
+    }
+
+    private static func removeSecurePersistenceArtifact() {
+        let fileManager = FileManager.default
+        guard let baseURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return
+        }
+        let secureDirectory = baseURL.appendingPathComponent("SecureStorage", isDirectory: true)
+        let secureFile = secureDirectory.appendingPathComponent("weight_persistence_v1.json.enc")
+        try? fileManager.removeItem(at: secureFile)
+    }
+
+    @MainActor
+    private func makeWeightManager(persistence: InMemoryWeightPersistence) -> WeightManager {
+        WeightManager(
+            healthKit: MockHealthKitManager(),
+            dataStore: MockDataStore(),
+            appSettings: appSettings,
+            persistence: persistence,
+            syncCoordinator: MockWeightSyncCoordinator(),
+            analytics: WeightAnalyticsService()
+        )
     }
 
     // MARK: - Add Weight Entry Tests
@@ -386,8 +425,10 @@ final class WeightManagerTests: XCTestCase {
     // MARK: - Phase 2 Task 2.1 - Goal Weight Persistence
 
     func testSetGoalWeight_persistsAcrossInstances() {
-        weightManager.setGoalWeight(165.5)
-        let rehydratedManager = WeightManager()
+        let persistence = InMemoryWeightPersistence()
+        let manager = makeWeightManager(persistence: persistence)
+        manager.setGoalWeight(165.5)
+        let rehydratedManager = makeWeightManager(persistence: persistence)
         XCTAssertEqual(rehydratedManager.goalWeight, 165.5, accuracy: 0.0001)
     }
 
@@ -577,6 +618,9 @@ final class WeightManagerTests: XCTestCase {
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
         weightManager.weightEntries.sort { $0.date > $1.date }
+        weightManager.setGoalWeight(160.0)
+        weightManager.setGoalWeight(160.0)
+        weightManager.setGoalWeight(160.0)
 
         // When
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
@@ -594,6 +638,8 @@ final class WeightManagerTests: XCTestCase {
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 200.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(1), weight: 200.0, source: .manual))
         weightManager.weightEntries.sort { $0.date > $1.date }
+        weightManager.setGoalWeight(160.0)
+        weightManager.setGoalWeight(160.0)
 
         // When
         let progress = weightManager.progressToGoal(goalWeight: 160.0)
@@ -662,6 +708,7 @@ final class WeightManagerTests: XCTestCase {
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 160.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
         weightManager.weightEntries.sort { $0.date > $1.date }
+        weightManager.setGoalWeight(160.0)
 
         // When
         let milestoneIndex = weightManager.currentMilestoneIndex(goalWeight: 160.0)
@@ -702,6 +749,7 @@ final class WeightManagerTests: XCTestCase {
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 178.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
         weightManager.weightEntries.sort { $0.date > $1.date }
+        weightManager.setGoalWeight(160.0)
 
         // When
         let milestoneProgress = weightManager.milestoneProgress(goalWeight: 160.0)
@@ -718,6 +766,7 @@ final class WeightManagerTests: XCTestCase {
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
         weightManager.weightEntries.sort { $0.date > $1.date }
+        weightManager.setGoalWeight(160.0)
 
         // When
         let milestoneProgress = weightManager.milestoneProgress(goalWeight: 160.0)
@@ -731,6 +780,7 @@ final class WeightManagerTests: XCTestCase {
         weightManager.weightEntries.append(WeightEntry(date: Date(), weight: 180.0, source: .manual))
         weightManager.weightEntries.append(WeightEntry(date: Date().minusDays(30), weight: 200.0, source: .manual))
         weightManager.weightEntries.sort { $0.date > $1.date }
+        weightManager.setGoalWeight(160.0)
 
         // When
         let stats = weightManager.milestoneStats(goalWeight: 160.0)
@@ -998,16 +1048,14 @@ final class WeightManagerTests: XCTestCase {
 
     func test_milestoneCount_persists_acrossRestarts() {
         // Given - set milestone count to 7
-        weightManager.setMilestoneCount(7)
-        XCTAssertEqual(weightManager.milestoneCount, 7, "Initial set to 7")
+        let persistence = InMemoryWeightPersistence()
+        let manager = makeWeightManager(persistence: persistence)
+        manager.setMilestoneCount(7)
+        XCTAssertEqual(manager.milestoneCount, 7, "Initial set to 7")
 
-        // When - simulate app restart by creating new WeightManager
-        let newManager = WeightManager()
-
-        // Then - should load persisted value (7)
+        let newManager = makeWeightManager(persistence: persistence)
         XCTAssertEqual(newManager.milestoneCount, 7, "Milestone count should persist across restarts")
 
-        // Cleanup - reset to default for other tests
         newManager.setMilestoneCount(10)
     }
 
@@ -1179,61 +1227,50 @@ final class WeightManagerTests: XCTestCase {
     // Testing Recovery Task #1 - Goal Weight Persistence with ThreadSafeUserDefaults
     // Following Apple Testing Best Practices - persistence and thread safety
 
-    func test_goalWeight_save_persistsToUserDefaults() {
-        // Given - set goal weight
+    func test_goalWeight_save_persistsToSecureStorage() throws {
+        // Given
+        let persistence = InMemoryWeightPersistence()
+        let manager = makeWeightManager(persistence: persistence)
         let goalValue = 150.0
 
         // When
-        weightManager.setGoalWeight(goalValue)
+        manager.setGoalWeight(goalValue)
 
-        // Then - verify it's saved in @Published property
-        XCTAssertEqual(weightManager.goalWeight, goalValue, accuracy: 0.01, "Goal weight should be saved")
-
-        // And - verify it persists to UserDefaults
-        let savedValue = UserDefaults.standard.double(forKey: "goalWeight")
-        XCTAssertEqual(savedValue, goalValue, accuracy: 0.01, "Goal weight should persist to UserDefaults")
+        // Then
+        XCTAssertEqual(manager.goalWeight, goalValue, accuracy: 0.01)
+        let persistedGoal = try XCTUnwrap(persistence.loadGoalWeight())
+        XCTAssertEqual(persistedGoal, goalValue, accuracy: 0.01)
     }
 
-    func test_goalWeight_load_restoresFromUserDefaults() {
-        // Given - manually set goal in UserDefaults
+    func test_goalWeight_load_restoresFromSecureStorage() throws {
+        // Given
         let expectedGoal = 165.0
-        UserDefaults.standard.set(expectedGoal, forKey: "goalWeight")
+        let persistence = InMemoryWeightPersistence(goalWeight: expectedGoal)
 
-        // When - create new WeightManager (simulates app restart)
-        let newManager = WeightManager()
+        // When
+        let manager = makeWeightManager(persistence: persistence)
 
-        // Then - should load persisted goal
-        XCTAssertEqual(newManager.goalWeight, expectedGoal, accuracy: 0.01, "Should restore goal from UserDefaults")
-
-        // Cleanup
-        UserDefaults.standard.removeObject(forKey: "goalWeight")
+        // Then
+        XCTAssertEqual(manager.goalWeight, expectedGoal, accuracy: 0.01)
     }
 
     func test_goalWeight_default_isZero() {
-        // Given - fresh UserDefaults (no goal set)
-        UserDefaults.standard.removeObject(forKey: "goalWeight")
-
-        // When - create fresh WeightManager
-        let freshManager = WeightManager()
-
-        // Then - should default to 0
-        XCTAssertEqual(freshManager.goalWeight, 0.0, accuracy: 0.01, "Default goal weight should be 0")
+        let manager = makeWeightManager(persistence: InMemoryWeightPersistence())
+        XCTAssertEqual(manager.goalWeight, 0.0, accuracy: 0.01)
     }
 
-    func test_goalWeight_update_overwritesPrevious() {
-        // Given - initial goal set
-        weightManager.setGoalWeight(150.0)
-        XCTAssertEqual(weightManager.goalWeight, 150.0, accuracy: 0.01, "Initial goal set to 150")
+    func test_goalWeight_update_overwritesPrevious() throws {
+        let persistence = InMemoryWeightPersistence()
+        let manager = makeWeightManager(persistence: persistence)
 
-        // When - update to new goal
-        weightManager.setGoalWeight(160.0)
+        manager.setGoalWeight(150.0)
+        XCTAssertEqual(manager.goalWeight, 150.0, accuracy: 0.01)
 
-        // Then - should overwrite with new value
-        XCTAssertEqual(weightManager.goalWeight, 160.0, accuracy: 0.01, "Goal should update to 160")
+        manager.setGoalWeight(160.0)
 
-        // And - verify persistence
-        let savedValue = UserDefaults.standard.double(forKey: "goalWeight")
-        XCTAssertEqual(savedValue, 160.0, accuracy: 0.01, "Updated goal should persist")
+        XCTAssertEqual(manager.goalWeight, 160.0, accuracy: 0.01)
+        let persistedGoal = try XCTUnwrap(persistence.loadGoalWeight())
+        XCTAssertEqual(persistedGoal, 160.0, accuracy: 0.01)
     }
 
     func test_goalWeight_negative_savesNegative() {
@@ -1677,20 +1714,111 @@ private final class InMemoryWeightPersistence: WeightPersistenceManaging {
     }
 }
 
-final class MutableLocaleProvider: LocaleProviding {
-    var isMetric: Bool {
-        didSet { }
+final class WeightPersistenceAdapterTests: XCTestCase {
+
+    private func makeThreadSafeDefaults(_ suiteName: String) -> ThreadSafeUserDefaults {
+        guard let suite = UserDefaults(suiteName: suiteName) else {
+            fatalError("Unable to create UserDefaults suite for tests")
+        }
+        suite.removePersistentDomain(forName: suiteName)
+        return ThreadSafeUserDefaults(userDefaults: suite)
     }
 
-    init(isMetric: Bool) {
-        self.isMetric = isMetric
+    override func tearDown() {
+        UserDefaults(suiteName: "WeightPersistenceAdapterTests_Migration")?.removePersistentDomain(forName: "WeightPersistenceAdapterTests_Migration")
+        UserDefaults(suiteName: "WeightPersistenceAdapterTests_RoundTrip")?.removePersistentDomain(forName: "WeightPersistenceAdapterTests_RoundTrip")
+        super.tearDown()
+    }
+
+    func testMigrationFromLegacyUserDefaults() throws {
+        let defaults = makeThreadSafeDefaults("WeightPersistenceAdapterTests_Migration")
+        let legacyEncoder = JSONEncoder()
+        let entry = WeightEntry(date: Date(timeIntervalSince1970: 1_700_000_000), weight: 185.3, source: .manual)
+        let legacyData = try legacyEncoder.encode([entry])
+        defaults.set(legacyData, forKey: "weightEntries")
+        defaults.set(true, forKey: "syncWithHealthKit")
+        defaults.set(205.0, forKey: "weightStartOverride")
+        let startDate = Date(timeIntervalSince1970: 1_699_999_000)
+        defaults.set(startDate, forKey: "weightStartDate")
+        defaults.set(7, forKey: "weightMilestoneCount")
+        defaults.set(165.5, forKey: "goalWeight")
+
+        let storage = InMemorySecureWeightStorage()
+        let adapter = WeightPersistenceAdapter(defaults: defaults, storage: storage)
+
+        XCTAssertEqual(adapter.loadWeightEntries().count, 1)
+        let goal = try XCTUnwrap(adapter.loadGoalWeight())
+        XCTAssertEqual(goal, 165.5, accuracy: 0.0001)
+        XCTAssertEqual(adapter.loadSyncPreference(), true)
+
+        let override = adapter.loadStartWeightOverride()
+        let overrideWeight = try XCTUnwrap(override.weight)
+        XCTAssertEqual(overrideWeight, 205.0, accuracy: 0.0001)
+        XCTAssertEqual(override.date, startDate)
+        XCTAssertEqual(adapter.loadMilestoneCount(), 7)
+
+        XCTAssertNil(defaults.data(forKey: "weightEntries"))
+        XCTAssertNil(defaults.object(forKey: "goalWeight"))
+        XCTAssertNil(defaults.object(forKey: "weightStartOverride"))
+    }
+
+    func testRoundTripPersistsToSecureStorage() throws {
+        let defaults = makeThreadSafeDefaults("WeightPersistenceAdapterTests_RoundTrip")
+        let storage = InMemorySecureWeightStorage()
+
+        let adapter = WeightPersistenceAdapter(defaults: defaults, storage: storage)
+        let entry = WeightEntry(date: Date(timeIntervalSince1970: 1_700_000_100), weight: 178.2)
+        adapter.saveWeightEntries([entry])
+        adapter.saveGoalWeight(160.0)
+        adapter.saveSyncPreference(true)
+
+        let rehydrated = WeightPersistenceAdapter(defaults: defaults, storage: storage)
+        let persistedEntryWeight = try XCTUnwrap(rehydrated.loadWeightEntries().first?.weight)
+        XCTAssertEqual(persistedEntryWeight, 178.2, accuracy: 0.0001)
+        let rehydratedGoal = try XCTUnwrap(rehydrated.loadGoalWeight())
+        XCTAssertEqual(rehydratedGoal, 160.0, accuracy: 0.0001)
+        XCTAssertEqual(rehydrated.loadSyncPreference(), true)
+    }
+}
+
+final class MutableLocaleProvider: LocaleProviding {
+    private var customLocaleIdentifier: String?
+
+    var isMetric: Bool {
+        didSet {
+            if customLocaleIdentifier == nil {
+                localeIdentifier = isMetric ? "en_GB" : "en_US"
+            }
+        }
     }
 
     var measurementSystem: Locale.MeasurementSystem {
         isMetric ? .metric : .us
     }
 
-    var localeIdentifier: String {
-        isMetric ? "en_GB" : "en_US"
+    var localeIdentifier: String
+
+    init(isMetric: Bool) {
+        self.isMetric = isMetric
+        self.localeIdentifier = isMetric ? "en_GB" : "en_US"
+    }
+
+    convenience init(measurementSystem: Locale.MeasurementSystem, localeIdentifier: String? = nil) {
+        self.init(isMetric: measurementSystem == .metric)
+        if let localeIdentifier {
+            self.localeIdentifier = localeIdentifier
+            self.customLocaleIdentifier = localeIdentifier
+        }
+    }
+
+    func update(measurementSystem: Locale.MeasurementSystem, localeIdentifier: String? = nil) {
+        self.isMetric = measurementSystem == .metric
+        if let localeIdentifier {
+            self.localeIdentifier = localeIdentifier
+            self.customLocaleIdentifier = localeIdentifier
+        } else {
+            self.customLocaleIdentifier = nil
+            self.localeIdentifier = isMetric ? "en_GB" : "en_US"
+        }
     }
 }

@@ -19,18 +19,45 @@ class WeightControlCenterCoordinator: ObservableObject {
     let behavioralScheduler: BehavioralNotificationScheduler
 
     // MARK: - Child ViewModels
+    let trackerCardManager: TrackerCardManaging
+    let progressStoryCardManager: ProgressStoryCardManaging
+    let optOutManager: ContentOptOutManaging
+
     let cardsViewModel = CardsViewModel()
     let badgesViewModel = BadgesViewModel()
-    let preferencesViewModel = PreferencesViewModel()
+    let preferencesViewModel: PreferencesViewModel
     let goalsViewModel = GoalsViewModel()
     let notificationsViewModel = NotificationsViewModel()
     let syncViewModel: SyncViewModel
 
     // MARK: - Initialization
-    init(weightManager: WeightManager, behavioralScheduler: BehavioralNotificationScheduler) {
+    init(weightManager: WeightManager,
+         behavioralScheduler: BehavioralNotificationScheduler,
+         trackerCardManager: TrackerCardManaging,
+         progressStoryCardManager: ProgressStoryCardManaging,
+         optOutManager: ContentOptOutManaging) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
+        self.trackerCardManager = trackerCardManager
+        self.progressStoryCardManager = progressStoryCardManager
+        self.optOutManager = optOutManager
+        self.preferencesViewModel = PreferencesViewModel(
+            optOutManager: self.optOutManager,
+            cardManager: self.trackerCardManager,
+            progressStoryCardManager: self.progressStoryCardManager
+        )
         self.syncViewModel = SyncViewModel(weightManager: weightManager)
+    }
+
+    convenience init(weightManager: WeightManager,
+                     behavioralScheduler: BehavioralNotificationScheduler) {
+        self.init(
+            weightManager: weightManager,
+            behavioralScheduler: behavioralScheduler,
+            trackerCardManager: TrackerCards.shared,
+            progressStoryCardManager: ProgressStoryCards.shared,
+            optOutManager: ContentOptOutManager.shared
+        )
     }
 
     // MARK: - Computed Properties
