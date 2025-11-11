@@ -5,6 +5,21 @@ struct ReflectionNudge: View {
     let onHide: () -> Void  // Hide callback
     let onTap: () -> Void   // Tap callback (stub for now)
 
+    private var accessibilityLabelText: String {
+        NSLocalizedString(
+            "progress_story_reflection_accessibility_label",
+            comment: "Accessibility label for reflection prompt banner"
+        )
+    }
+
+    private var accessibilityHintText: String {
+        let template = NSLocalizedString(
+            "progress_story_reflection_accessibility_hint",
+            comment: "Accessibility hint describing how to respond to reflection prompt"
+        )
+        return String(format: template, text)
+    }
+
     var body: some View {
         DSBanner(ice: onHide) {
             HStack(spacing: DSSpacing.cardElementSpacing) {
@@ -23,8 +38,8 @@ struct ReflectionNudge: View {
         .onTapGesture {
             onTap()
         }
-        .accessibilityLabel("Respond to reflection prompt")
-        .accessibilityHint("Double tap to respond to: \(text)")
+        .accessibilityLabel(accessibilityLabelText)
+        .accessibilityHint(accessibilityHintText)
     }
 }
 

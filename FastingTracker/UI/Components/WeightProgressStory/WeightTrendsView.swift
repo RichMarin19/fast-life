@@ -31,15 +31,25 @@ struct WeightTrendsView: View {
 
     @State private var isAnimating = false  // Animation state for staggered fade-in
     @Environment(\.accessibilityReduceMotion) var reduceMotion  // v1.1: Respect Reduce Motion
-    @State private var moodAnimate = false  // v1.1: Mood background micro-drift animation
+    private let backgroundDriftAmplitude: CGFloat = 34
+    private let backgroundDriftPeriod: Double = 8.0
+    private let backgroundDriftInterval: TimeInterval = 1.0 / 30.0
 
     // Phase v1.4b: Drag-to-Reorder State (following existing pattern - no Edit button)
     @State private var draggedCard: ProgressStoryCardType?  // Currently dragged card
 
     // 🔧 FIX #12: Stable text state - locked at view appearance, never changes during drag
     // Apple Health Pattern: Use @State for content that shouldn't change during interactions
-    init(weightManager: WeightManager) {
-        _viewModel = StateObject(wrappedValue: WeightTrendsViewModel(weightManager: weightManager))
+    init(weightManager: WeightManager,
+         optOutManager: ContentOptOutManaging? = nil,
+         cardManager: ProgressStoryCardManaging? = nil) {
+        _viewModel = StateObject(
+            wrappedValue: WeightTrendsViewModel.live(
+                weightManager: weightManager,
+                optOutManager: optOutManager,
+                cardManager: cardManager
+            )
+        )
     }
 
     // MARK: - Adaptive Mood Overlay (v1.1)
@@ -47,75 +57,53 @@ struct WeightTrendsView: View {
     /// Returns adaptive mood gradient overlay based on trend state
     /// Per v1.1 spec §2: Subtle 12-18% opacity overlays on navy base
     /// Colors reflect emotional state without being alarmist
-    private func adaptiveMoodOverlay(for state: WeightProgressStoryTrendState) -> LinearGradient {
-        switch state {
-        case .improving:  // Weight loss (teal → blue)
-            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
-            // Improving: top 0.22, bottom 0.16 (was 0.18/0.12)
-            return LinearGradient(
-                colors: [
-                    Theme.ColorToken.moodImprovingStart.opacity(0.22),  // Teal
-                    Theme.ColorToken.moodImprovingEnd.opacity(0.16)     // Blue
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        case .regressing:  // Weight gain (coral → peach)
-            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
-            // Regressing: top 0.22, bottom 0.16 (was 0.18/0.12)
-            return LinearGradient(
-                colors: [
-                    Theme.ColorToken.moodRegressingStart.opacity(0.22),  // Coral
-                    Theme.ColorToken.moodRegressingEnd.opacity(0.16)     // Peach
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        case .flat:  // Stable (gold → light gold)
-            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
-            // Stable: top 0.18, bottom 0.12 (was 0.16/0.10)
-            return LinearGradient(
-                colors: [
-                    Theme.ColorToken.moodStableStart.opacity(0.18),  // Gold
-                    Theme.ColorToken.moodStableEnd.opacity(0.12)     // Light gold
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
+    private func tealMotionOverlay() -> LinearGradient {
+        LinearGradient(
+            colors: [
+                Theme.ColorToken.accentPrimary.opacity(0.22),   // Emerald
+                Theme.ColorToken.accentInfo.opacity(0.14)       // Teal
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    private func backgroundOffset(for date: Date) -> CGFloat {
+        guard reduceMotion == false else { return 0 }
+        let time = date.timeIntervalSinceReferenceDate / backgroundDriftPeriod
+        let normalized = sin(time)
+        return CGFloat(normalized) * backgroundDriftAmplitude
     }
 
     var body: some View {
-        let sevenDayDelta = viewModel.sevenDayDelta
-        let trendState7d = viewModel.trendState7Day
-
         NavigationStack {
-            // v1.1 Adaptive Background: Navy base + Mood overlay based on 7-day trend
+            // v1.1 Adaptive Background: Navy base + teal motion overlay
             // Per FastLIFe_LIFeJourney_UIUX_v1.1_AdaptiveBehavioralDesign.md §3
             ZStack {
-                // Layer 1: Deep 3-stop navy gradient (base canvas)
-                LinearGradient(
-                    colors: [
-                        Theme.ColorToken.bgDeepStart,  // Top: #0C1A2B (calm base)
-                        Theme.ColorToken.bgDeepMid,    // Mid: #0F2438 (breathing effect)
-                        Theme.ColorToken.bgDeepEnd     // Bot: #123449 (depth)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                TimelineView(.periodic(from: .now, by: backgroundDriftInterval)) { timeline in
+                    let driftOffset = backgroundOffset(for: timeline.date)
 
-                // Layer 2: Adaptive mood gradient overlay (12-18% opacity)
-                // Driven by 7-day trend state: improving/regressing/stable
-                // Changes color to reflect emotional tone without being alarmist
-                adaptiveMoodOverlay(for: trendState7d)
+                    ZStack {
+                        // Layer 1: Deep 3-stop navy gradient (base canvas)
+                        LinearGradient(
+                            colors: [
+                                Theme.ColorToken.bgDeepStart,
+                                Theme.ColorToken.bgDeepMid,
+                                Theme.ColorToken.bgDeepEnd
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .padding(.vertical, -backgroundDriftAmplitude)
+                        .offset(y: driftOffset)
+
+                        // Layer 2: Emerald/teal translucent overlay with subtle motion
+                        tealMotionOverlay()
+                            .padding(.vertical, -backgroundDriftAmplitude)
+                            .offset(y: driftOffset)
+                    }
                     .ignoresSafeArea()
-                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: sevenDayDelta ?? 0)
-                    .offset(y: reduceMotion ? 0 : (moodAnimate ? -6 : 6))  // Micro drift (breathing effect)
-                    .animation(
-                        reduceMotion ? nil : .easeInOut(duration: 5).repeatForever(autoreverses: true),
-                        value: moodAnimate
-                    )
+                }
 
                 ScrollView {
                     VStack(spacing: DSSpacing.cardSectionSpacing) {
@@ -213,7 +201,7 @@ struct WeightTrendsView: View {
                     .padding(.vertical, DSSpacing.cardPadding)
                 }
             }
-            .navigationTitle(Text("progress_story_nav_title"))
+            .navigationTitle("")
             .navigationBarTitleDisplayMode(.inline)
             .onAppear {
                 // 🔧 FIX #12: Initialize reflection prompt once on appear (never changes during drag)
@@ -225,10 +213,6 @@ struct WeightTrendsView: View {
                     isAnimating = true
                 }
 
-                // v1.1: Trigger mood background micro-drift animation (respects Reduce Motion)
-                if !reduceMotion {
-                    moodAnimate = true
-                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {

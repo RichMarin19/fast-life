@@ -43,13 +43,14 @@ struct WeightProgressStoryMetricsProvider {
     }
 
     func coachBarText(for state: WeightProgressStoryTrendState) -> String {
+        let signature = localized("progress_story_coach_bar_signature", comment: "Coach bar signature")
         switch state {
         case .improving:
-            return localized("progress_story_coach_bar_improving", comment: "Coach bar text when improving")
+            return localized("progress_story_coach_bar_improving", comment: "Coach bar text when improving") + signature
         case .regressing:
-            return localized("progress_story_coach_bar_regressing", comment: "Coach bar text when regressing")
+            return localized("progress_story_coach_bar_regressing", comment: "Coach bar text when regressing") + signature
         case .flat:
-            return localized("progress_story_coach_bar_flat", comment: "Coach bar text when flat")
+            return localized("progress_story_coach_bar_flat", comment: "Coach bar text when flat") + signature
         }
     }
 

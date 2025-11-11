@@ -17,6 +17,7 @@ class WeightControlCenterCoordinator: ObservableObject {
     // MARK: - Dependencies
     let weightManager: WeightManager
     let behavioralScheduler: BehavioralNotificationScheduler
+    let healthKitManager: HealthKitManagerProtocol
 
     // MARK: - Child ViewModels
     let trackerCardManager: TrackerCardManaging
@@ -27,37 +28,26 @@ class WeightControlCenterCoordinator: ObservableObject {
     let badgesViewModel = BadgesViewModel()
     let preferencesViewModel: PreferencesViewModel
     let goalsViewModel = GoalsViewModel()
-    let notificationsViewModel = NotificationsViewModel()
+    let notificationsViewModel: NotificationsViewModel
     let syncViewModel: SyncViewModel
 
     // MARK: - Initialization
     init(weightManager: WeightManager,
          behavioralScheduler: BehavioralNotificationScheduler,
+         healthKitManager: HealthKitManagerProtocol,
          trackerCardManager: TrackerCardManaging,
          progressStoryCardManager: ProgressStoryCardManaging,
-         optOutManager: ContentOptOutManaging) {
+         optOutManager: ContentOptOutManaging,
+         preferencesViewModel: PreferencesViewModel) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
+        self.healthKitManager = healthKitManager
         self.trackerCardManager = trackerCardManager
         self.progressStoryCardManager = progressStoryCardManager
         self.optOutManager = optOutManager
-        self.preferencesViewModel = PreferencesViewModel(
-            optOutManager: self.optOutManager,
-            cardManager: self.trackerCardManager,
-            progressStoryCardManager: self.progressStoryCardManager
-        )
-        self.syncViewModel = SyncViewModel(weightManager: weightManager)
-    }
-
-    convenience init(weightManager: WeightManager,
-                     behavioralScheduler: BehavioralNotificationScheduler) {
-        self.init(
-            weightManager: weightManager,
-            behavioralScheduler: behavioralScheduler,
-            trackerCardManager: TrackerCards.shared,
-            progressStoryCardManager: ProgressStoryCards.shared,
-            optOutManager: ContentOptOutManager.shared
-        )
+        self.preferencesViewModel = preferencesViewModel
+        self.notificationsViewModel = NotificationsViewModel()
+        self.syncViewModel = SyncViewModel(weightManager: weightManager, healthKitManager: healthKitManager)
     }
 
     // MARK: - Computed Properties
@@ -113,5 +103,38 @@ class WeightControlCenterCoordinator: ObservableObject {
         syncViewModel.showingSyncAlert = false
         syncViewModel.showingSyncPreferenceDialog = false
         syncViewModel.syncMessage = ""
+    }
+}
+
+// MARK: - Factories
+
+extension WeightControlCenterCoordinator {
+    @MainActor
+    static func live(
+        weightManager: WeightManager,
+        behavioralScheduler: BehavioralNotificationScheduler,
+        healthKitManager: HealthKitManagerProtocol? = nil,
+        trackerCardManager: CardManager<TrackerCardType>? = nil,
+        progressStoryCardManager: ProgressStoryCardManaging? = nil,
+        optOutManager: ContentOptOutManaging? = nil
+    ) -> WeightControlCenterCoordinator {
+        let healthKitManager = healthKitManager ?? HealthKitManager.shared
+        let trackerCards = trackerCardManager ?? TrackerCards.shared
+        let progressCards = progressStoryCardManager ?? ProgressStoryCards.shared
+        let optOut = optOutManager ?? ContentOptOutManager.shared
+        let preferences = PreferencesViewModel(
+            optOutManager: optOut,
+            cardManager: trackerCards,
+            progressStoryCardManager: progressCards
+        )
+        return WeightControlCenterCoordinator(
+            weightManager: weightManager,
+            behavioralScheduler: behavioralScheduler,
+            healthKitManager: healthKitManager,
+            trackerCardManager: trackerCards,
+            progressStoryCardManager: progressCards,
+            optOutManager: optOut,
+            preferencesViewModel: preferences
+        )
     }
 }

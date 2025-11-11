@@ -50,6 +50,10 @@ struct WeightProgressStorySurfaceCard<Content: View>: View {
             .padding(DSSpacing.cardPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .overlay(alignment: .topTrailing) {
+                let hideCardLabel = NSLocalizedString(
+                    "progress_story_hide_card_accessibility",
+                    comment: "Accessibility label for button that hides a Progress Story card"
+                )
                 Button(action: onHide) {
                     Image(systemName: "eye.slash")
                         .font(DSTypography.iconButton)
@@ -57,7 +61,7 @@ struct WeightProgressStorySurfaceCard<Content: View>: View {
                         .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Hide card")
+                .accessibilityLabel(hideCardLabel)
             }
             .background(
                 RoundedRectangle(cornerRadius: DSCornerRadius.card, style: .continuous)

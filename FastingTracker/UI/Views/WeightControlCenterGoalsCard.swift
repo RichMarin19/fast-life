@@ -6,7 +6,7 @@ struct WeightControlCenterGoalsCard: View {
     @ObservedObject var goalCoordinator: WeightGoalCoordinator
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
-    @ObservedObject private var measurementObserver = MeasurementSystemObserver.shared
+    @ObservedObject var measurementObserver: MeasurementSystemObserver
 
     var body: some View {
         VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {

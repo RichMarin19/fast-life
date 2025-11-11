@@ -1,0 +1,48 @@
+# Weight Tracker Enterprise Audit — 2025-11-08
+
+## Scope & Inputs
+- Re-read `docs/handoffs/SESSION-PREFERENCES.md` to align with communication, review cadence, and privacy guardrails.
+- Parsed the latest `docs/handoffs/HANDOFF.md` plus prior audit artifacts to understand Phase 2 (privacy/observability) and Slice 3B Progress Story objectives.
+- Inspected the requested surfaces: `WeightManager`, weight telemetry stack (`WeightTrackerMetrics`, `CrashTelemetrySanitizer`, `AppLogger`), `WeightProgressStory/*` components, DI bindings inside `WeightTrendsViewModel`, `WeightControlCenterCoordinator`, `PreferencesViewModel`, and privacy regressions guarded by `AppLoggerPrivacyTests`.
+- Goal: grade the current weight tracker implementation against “enterprise-grade, TestFlight-ready” expectations with an emphasis on Phase 2 privacy/observability and Slice 3B Progress Story readiness.
+
+## Scorecard (0 = missing, 10 = enterprise-ready)
+| Area | Score | Notes |
+| --- | --- | --- |
+| **PHI Hygiene & Storage** | **7/10** | Encrypted persistence + Crashlytics sanitization exist, but Progress Story surfaces still lean on random strings and reactive gaps that can leak stale units. |
+| **Observability & Metrics** | **5/10** | `WeightTrackerMetrics` funnels to Crashlytics with signposts, yet no dashboard, alerting, or automated verification that metadata stays redacted. |
+| **Architecture / DI / Testability** | **4/10** | Core managers are injectable, but control-center/Progress Story view models still grab `.shared` singletons and `UserDefaults.standard`, limiting isolation. |
+| **SwiftUI / HIG & Accessibility** | **6/10** | Trend cards localize units/accessibility strings, but drag-to-reorder lacks VoiceOver actions and measurement flips do not re-render Progress Story data. |
+
+## Strengths
+1. **Encrypted persistence + schema upgrades** — `WeightPersistenceAdapter` pushes all PHI (entries, start weight, goals) through an AES-GCM store with schema upgrades and legacy migration fallbacks (`FastingTracker/Core/Managers/Weight/WeightPersistenceAdapter.swift:22`). This satisfies HIPAA/GDPR storage guidance and already reports encryption failures to `CrashReportManager`.
+2. **Crash telemetry is aggressively sanitized** — `CrashReportManager.recordError` funnels every payload through `CrashTelemetrySanitizer` before persisting or shipping to Crashlytics, ensuring only hashed IDs/context keys survive (`FastingTracker/Core/Managers/CrashReportManager.swift:142`). The sanitizer aggressively redacts weight/goal tokens in both context dictionaries and `NSError.userInfo` (`CrashReportManager.swift:392`).
+3. **Logger privacy enforcement is automated** — `AppLogger` defaults to `.private` payloads and exposes explicit “public” helpers, while `AppLoggerPrivacyTests` sweeps the tree to forbid accidental `.public` annotations or direct Crashlytics imports (`FastingTrackerTests/Infrastructure/AppLoggerPrivacyTests.swift:1`).
+4. **Progress Story metrics respect localization** — `WeightProgressStoryMilestoneLocalization` converts pounds ↔ kilograms per locale, shares both formatted values and accessibility templates, and is unit tested for imperial/metric correctness (`FastingTracker/UI/Components/WeightProgressStory/WeightProgressStoryMilestoneCards.swift:3` + `FastingTrackerTests/Components/WeightProgressStoryMilestoneLocalizationTests.swift:1`).
+5. **Weight goal coordinator monitors locale + measurement system changes** — `WeightGoalCoordinator` listens to both `NSLocale.currentLocaleDidChangeNotification` and `MeasurementSystemProvider` publishers so start/goal fields stay in sync with device settings (`FastingTracker/Core/ViewModels/Weight/WeightGoalCoordinator.swift:76`).
+
+## Gaps & Risks (ordered by severity)
+1. **Measurement-system flips are not reactive inside Progress Story.** `WeightTrendsViewModel` reads `weightManager.currentUnitAbbreviation` when computing `TrendSnapshotMetricContext`, but it never observes `MeasurementSystemProvider`, meaning imperial ↔ metric toggles leave the card UI stuck until a manual refresh is triggered (`FastingTracker/UI/Components/WeightProgressStory/WeightTrendsViewModel.swift:188`). This regresses the “single source of truth” goal and caused the user-reported kg/ lbs mismatch in the Control Center narrative.
+2. **Singleton convenience inits keep bleeding into production.** Control-center and Progress Story layers still default to `.shared` managers (`WeightTrendsViewModel.swift:64`, `WeightControlCenterCoordinator.swift:52`, `PreferencesViewModel.swift:45`) which makes it impossible to stand up Preview/test configurations without global state. Swift’s main-actor errors already surfaced when these singletons were referenced outside `@MainActor`.
+3. **Observability lacks downstream verification.** Although `WeightTrackerMetrics` logs to Crashlytics and `os_signpost`, there is no automated assertion that these PHI-safe metrics actually reach Firebase (no dashboard, no alert spec, no tests around `recordMetricEvent`) (`FastingTracker/Core/Managers/Weight/WeightTrackerMetrics.swift:11` + `CrashReportManager.swift:214`). We are still blind to regressions such as unit mismatch rates.
+4. **Progress Story UI misses accessibility + determinism requirements.** The drag-to-reorder stack exposes a custom `NSItemProvider` but never defines `accessibilityAction(.move, ..)` or `focus` affordances, leaving keyboard/VoiceOver users unable to reorder (`FastingTracker/UI/Components/WeightProgressStory/WeightProgressStoryCardStack.swift:133`). Copy in `WeightProgressStoryMetricsProvider.randomDidYouKnowTip`/`randomReflectionPrompt` changes on every render, which makes QA screenshots and VoiceOver hints unstable (`WeightProgressStoryMetricsProvider.swift:76`).
+5. **User preference state still stored in unencrypted defaults.** While PHI is encrypted, category opt-outs and card toggles are written straight to `UserDefaults.standard` (`PreferencesViewModel.swift:45`). These choices influence feature exposure (e.g., educational insights) and should be namespaced via a `ThreadSafeUserDefaults` wrapper plus auditing so enterprise builds can migrate them alongside other state.
+6. **Coverage gaps around metrics + DI flows.** We have golden tests around privacy (`CrashTelemetrySanitizerTests`, `AppLoggerPrivacyTests`) and Preferences, but there are no unit/UI tests validating Progress Story card ordering, unit rendering, or metric emission pathways. The only Progress Story tests live in localization helpers, leaving drag/drop, opt-out, and telemetry logic unverified.
+
+## Next Critical Improvements (before new feature work)
+1. **Propagate measurement-system changes through Progress Story.** Inject `MeasurementSystemObserver` (or a lighter protocol) into `WeightTrendsViewModel`, publish a `measurementSystem` property, and recompute `cardContext` whenever it flips. Pair with regression tests that swap locale providers mid-run and assert both 7/30-day cards update.
+2. **Finish DI cleanup + testing seams.** Replace the `.shared` convenience initializers in `WeightTrendsViewModel`, `WeightControlCenterCoordinator`, and `PreferencesViewModel` with factories that live in the coordinator layer. Provide explicit protocols/mocks so Command‑U can exercise Progress Story flows without touching global singletons or `UserDefaults.standard`.
+3. **Institutionalize observability validation.** Promote `CrashReportManager.recordMetricEvent` to an injectable telemetry sink, add a Firebase (or Datadog) dashboard per the backlog, and extend the privacy test suite with a lightweight assertion that metric metadata never contains weight/unit substrings. This closes the loop between log production and operator visibility.
+4. **Harden Progress Story UX for accessibility + determinism.** Add `accessibilityAction(.move, ...)` hooks and `DropDelegate` focus states to `ProgressStoryCardStack`, log reorder opt-outs through metrics, and replace `randomElement` copy picks with deterministic cycling so QA artifacts stay reproducible.
+5. **Migrate opt-out persistence onto the secure adapter.** Extend `WeightPersistenceSnapshot` (or a sibling encrypted store) to capture `ContentOptOut` state so enterprise customers aren’t left with inconsistent experiences after device restore. This also enables future GDPR exports from a single encrypted blob.
+
+## Test & Evidence Coverage
+- ✅ `CrashTelemetrySanitizerTests` cover nested dictionaries, regex scrubbing, and NSError rewriting, but no integration tests ensure Crashlytics receives sanitized payloads end-to-end.
+- ✅ `PreferencesViewModelTests` give solid coverage over opt-out persistence/restore logic; reuse them once the storage backend moves off `UserDefaults`.
+- ⚠️ `WeightTrendsViewModel` and `ProgressStoryCardStack` currently lack any unit/snapshot tests, so drag/drop regressions or measurement-system bugs won’t be caught until manual QA.
+- ⚠️ `WeightTrackerMetrics` has no dedicated tests; adding a fake telemetry sink would let us assert metadata redaction and event naming before metrics hit Crashlytics.
+
+## Recommended Validation Artifacts
+1. Create `docs/handoffs/reports/WEIGHT_TRACKER_ENTERPRISE_AUDIT_2025-11-08.md` (this file) and link it from the main handoff so future sessions can resume quickly post-compaction.
+2. Add a short runbook section in `docs/runbooks/OBSERVABILITY_RUNBOOK.md` explaining how to filter `log:METRIC` events inside Crashlytics and export them for compliance review once dashboards land.
+3. Once the DI + measurement fixes ship, capture Command‑U + device QA evidence (imperial + metric) and attach screenshots/videos per the QA playbook referenced in HANDOFF §3.

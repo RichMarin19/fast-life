@@ -28,9 +28,6 @@ struct UniversalCardContainer<Content: View>: View {
     /// Optional custom title (if nil, uses cardType.displayName)
     let title: String?
 
-    /// Card manager for state
-    @ObservedObject private var cardManager = TrackerCards.shared
-
     // MARK: - Initialization
 
     init(

@@ -10,6 +10,10 @@ import FirebaseCrashlytics
 public class CrashReportManager {
     public static let shared = CrashReportManager()
 
+#if DEBUG
+    static var metricRecorderOverride: ((String, [String: String]) -> Void)?
+#endif
+
     private let logger = AppLogger.general
     private var isInitialized = false
     private let fileManager = FileManager.default
@@ -214,6 +218,12 @@ public class CrashReportManager {
     /// Record a PHI-safe metric event so QA/observers can review telemetry in Crashlytics.
     /// Metadata should already be sanitized upstream (aggregate counts, booleans, enums).
     public func recordMetricEvent(_ name: String, metadata: [String: String] = [:]) {
+#if DEBUG
+        if let override = CrashReportManager.metricRecorderOverride {
+            override(name, metadata)
+            return
+        }
+#endif
         let summary = sanitizedMetadataSummary(from: metadata)
         let logMessage = summary.isEmpty ? "METRIC[\(name)]" : "METRIC[\(name)] \(summary)"
 

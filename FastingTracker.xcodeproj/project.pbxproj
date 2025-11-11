@@ -66,6 +66,7 @@
 		5289E0762E8D5F6500254E70 /* Models/WeightEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0712E8D5F6500254E70 /* Models/WeightEntry.swift */; };
 		5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */; };
 		5289E0782E8D5F6500254E70 /* UI/Views/WeightTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0742E8D5F6500254E70 /* UI/Views/WeightTrackingView.swift */; };
+		E5C2A1B22EB6F7C5004C1234 /* WeightDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C2A1B12EB6F7C5004C1234 /* WeightDependencies.swift */; };
 		5289E0792E8D5F6500254E70 /* UI/Views/AddWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06E2E8D5F6500254E70 /* UI/Views/AddWeightView.swift */; };
 		5289E07A2E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0732E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift */; };
 		5289E07B2E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0702E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift */; };
@@ -262,6 +263,7 @@
 		5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/WeightManager.swift; sourceTree = "<group>"; };
 		5289E0732E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* UI/Views/WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightTrackingView.swift; sourceTree = "<group>"; };
+		E5C2A1B12EB6F7C5004C1234 /* WeightDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightDependencies.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
 		5289E07E2E8D700000254E70 /* Core/Managers/HydrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HydrationManager.swift; sourceTree = "<group>"; };
 		5289E0802E8D700100254E70 /* UI/Views/HydrationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HydrationTrackingView.swift; sourceTree = "<group>"; };
@@ -462,9 +464,18 @@
 		5F387F5CC30D9936FACFF8DC /* Core */ = {
 			isa = PBXGroup;
 			children = (
+				E5C2A1AF2EB6F7C5004C1234 /* DI */,
 				33C03EF668CDF7C3E0E02142 /* Utilities */,
 			);
 			name = Core;
+			sourceTree = "<group>";
+		};
+		E5C2A1AF2EB6F7C5004C1234 /* DI */ = {
+			isa = PBXGroup;
+			children = (
+				E5C2A1B12EB6F7C5004C1234 /* WeightDependencies.swift */,
+			);
+			path = Core/DI;
 			sourceTree = "<group>";
 		};
 		A1000018000000000000001 = {
@@ -864,6 +875,7 @@
 				52B2CFB92E91B7160061FCFF /* UI/Views/NotificationSettingsView.swift in Sources */,
 				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
 				E5A1C3B22EB50F0F004C1234 /* WeightPersistenceAdapter.swift in Sources */,
+				E5C2A1B22EB6F7C5004C1234 /* WeightDependencies.swift in Sources */,
 				E5A1C3B92EB50F0F004C1234 /* WeightGoalCoordinator.swift in Sources */,
 				E3B065802EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift in Sources */,
 				E5A1C3B62EB50F0F004C1234 /* WeightAnalyticsService.swift in Sources */,

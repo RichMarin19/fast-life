@@ -1,8 +1,8 @@
 # Rich's Session Preferences & Work Style
 
-**Purpose:** Single source of truth for Rich's work style, preferences, and project approach
-**Usage:** Claude Code reads this file FIRST after every session compression
-**Last Updated:** 2025-10-24
+**Purpose:** Single source of truth for Rich's work style, preferences, and project approach  
+**Usage:** Claude Code reads this file FIRST after every session compression  
+**Last Updated:** 2025-11-09
 
 ---
 
@@ -24,13 +24,11 @@
 - **Recover context immediately post-compaction** - Read the latest session recap (`docs/handoffs/reports/SESSION-RECAP-*.md`) before planning or coding.
 
 ### Session Resumption Playbook
-1. Open `docs/handoffs/HANDOFF.md` and review the newest W/H/E/A entries.
-2. Check `docs/handoffs/reports/WEIGHT_CHART_ZOOM_HISTORY_2025-11-05.md` for the latest zoom/selection behaviour and `docs/handoffs/reports/SLICE3B-STATUS-2025-11-05.md` for Progress Story status.
-3. Follow the recap link (e.g., `docs/handoffs/reports/SESSION-RECAP-2025-11-04.md`) to regain full context.
-4. Only after steps 1–3: draft the plan, discuss with Rich, then execute.
-5. For Phase 2 execution, reference the privacy/observability Jira breakdown in `docs/handoffs/reports/WEIGHT_TRACKER_ENTERPRISE_AUDIT_2025-11-05.md` (Section “Phase 2 – Privacy & Observability Hardening”).
-2. Follow the recap link (e.g., `docs/handoffs/reports/SESSION-RECAP-2025-11-04.md`) to regain full context.
-3. Only after steps 1–2: draft the plan, discuss with Rich, then execute.
+1. Read this file after every compression to refresh preferences.
+2. Review the latest W/H/E/A entries in `docs/handoffs/HANDOFF.md`, plus any archive links it references.
+3. Open the newest session recap in `docs/handoffs/reports/SESSION-RECAP-*.md` (and any active audit/backlog doc called out in the handoff) to recover historical decisions.
+4. Draft a concise plan aligned with the current slice, confirm it with Rich, then begin execution.
+5. Keep `HANDOFF.md` under ~500 lines by archiving closed work into dated files under `docs/handoffs/archive/` and linking back from the main file.
 
 ---
 
@@ -44,10 +42,26 @@
 
 ### Testing Workflow:
 1. Make code changes
-2. Build the project (xcodebuild or Xcode)
-3. Test on physical device (when possible)
+2. Build the project in Xcode
+3. Test on the physical device (Command‑U)
 4. Verify functionality works as expected
 5. ONLY THEN create git commit
+
+> **Sandbox Constraint:** Do **not** run `xcodebuild test` in this environment (CoreSimulator is unavailable). Rich will run Command‑U on-device and provide logs/screenshots for validation. Document any test gaps in HANDOFF.md.
+
+### Commit/Pull/Sync Expectations
+- Treat each feature/fix slice (regardless of phase) as a single commit unit:
+  1. Implement the slice and document it in HANDOFF (W/H/E/A).
+  2. Run Command‑U + manual device QA; capture logs/screenshots for evidence.
+  3. Only after everything is green locally and on-device: `git commit`, `git push`, and sync the repo across locations.
+- If a slice spans multiple sessions, hold commits until the slice is fully verified to avoid half-baked work on main. Remind Rich right before that point.
+- If we need protection before compaction/restart, create a temporary **checkpoint commit** on the working branch (e.g., `git commit -am "checkpoint YYYY-MM-DD"; git push`). Later, squash or amend it once the slice is finished.
+
+### Session Hygiene
+- Keep `HANDOFF.md` focused on the active slice; archive completed sections immediately (create `docs/handoffs/archive/HANDOFF-YYYY-MM-DD.md` as needed) and link to them from the main file.
+- After compaction, always read Session Preferences + HANDOFF + the latest session recap before touching code so we spend <40 % of context regaining state.
+- Every session should either (a) move an active slice forward or (b) document/plan the next slice—never leave the handoff in a partially updated state.
+- Use the canonical prompts in `docs/handoffs/SESSION-PROMPTS.md` (new session, post-compaction, checkpoint, wrap) to stay consistent.
 
 **NO EXCEPTIONS: Never commit before testing**
 
@@ -115,6 +129,7 @@
 - Document all critical bug fixes
 - Document all new architectural patterns
 - Document all lessons learned
+- Keep current workflows in `HANDOFF.md` and migrate historical detail into archive or report files so current sessions stay lightweight.
 
 ### Markdown Standards:
 - Use GitHub-flavored Markdown
@@ -218,7 +233,7 @@
 - **Surface blockers immediately** in the handoff entry (what we tried, why it stalled, what’s still needed) to avoid rework later.
 - **Drop periodic “State of Play” summaries** in `HANDOFF.md` so both of us can regain context quickly after pruning.
 - **Keep long-lived reference material** (env setup, credentials, reusable scripts) in dedicated docs and just link to them from `HANDOFF.md` to minimize churn.
-- Changes to deferred work (Performance Recovery, Phase C)
+- Ask before touching deferred work the team hasn’t explicitly prioritized.
 - Git operations (commits, pushes, branch changes)
 
 **💡 Proactive Recommendations (ALWAYS Offer):**

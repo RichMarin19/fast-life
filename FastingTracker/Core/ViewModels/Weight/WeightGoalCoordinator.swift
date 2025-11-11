@@ -38,7 +38,7 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
     // MARK: - Dependencies
 
     private let weightManager: WeightManager
-    private let healthKitManager = HealthKitManager.shared
+    private let healthKitManager: HealthKitManagerProtocol
 
     // MARK: - Locale + Formatting
 
@@ -75,8 +75,10 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
 
     init(weightManager: WeightManager,
          measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared,
-         locale: Locale = .current) {
+         locale: Locale = .current,
+         healthKitManager: HealthKitManagerProtocol) {
         self.weightManager = weightManager
+        self.healthKitManager = healthKitManager
         self.measurementProvider = measurementProvider
         self.activeLocale = locale
         self.displayedUnitAbbreviation = weightManager.currentUnitAbbreviation

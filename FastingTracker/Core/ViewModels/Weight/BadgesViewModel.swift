@@ -64,10 +64,8 @@ class BadgesViewModel: ObservableObject {
         highlightedResetTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 1_000_000_000)
             guard let self else { return }
-            await MainActor.run {
-                withAnimation {
-                    self.highlightedItemID = nil
-                }
+            withAnimation {
+                self.highlightedItemID = nil
             }
         }
     }
@@ -77,10 +75,8 @@ class BadgesViewModel: ObservableObject {
         badgeResetTask = Task { [weak self] in
             try? await Task.sleep(nanoseconds: 150_000_000)
             guard let self else { return }
-            await MainActor.run {
-                withAnimation(.spring(response: AnimationConstants.Spring.quickResponse, dampingFraction: AnimationConstants.Spring.lightDamping)) {
-                    self.badgeScale = 1.0
-                }
+            withAnimation(.spring(response: AnimationConstants.Spring.quickResponse, dampingFraction: AnimationConstants.Spring.lightDamping)) {
+                self.badgeScale = 1.0
             }
         }
     }

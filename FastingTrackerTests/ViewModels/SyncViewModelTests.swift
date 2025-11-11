@@ -16,6 +16,7 @@ final class SyncViewModelTests: XCTestCase {
     var viewModel: SyncViewModel!
     var weightManager: WeightManager!
     var userDefaults: UserDefaults!
+    var mockHealthKitManager: MockHealthKitManager!
 
     override func setUp() {
         super.setUp()
@@ -36,14 +37,17 @@ final class SyncViewModelTests: XCTestCase {
         // Create test WeightManager
         weightManager = WeightManager()
 
+        mockHealthKitManager = MockHealthKitManager()
+
         // Create ViewModel with test WeightManager
-        viewModel = SyncViewModel(weightManager: weightManager)
+        viewModel = SyncViewModel(weightManager: weightManager, healthKitManager: mockHealthKitManager)
     }
 
     override func tearDown() {
         viewModel = nil
         weightManager = nil
         userDefaults = nil
+        mockHealthKitManager = nil
         super.tearDown()
     }
 
@@ -115,7 +119,7 @@ final class SyncViewModelTests: XCTestCase {
                      "Initial import completion should persist to UserDefaults")
 
         // Create new ViewModel to verify
-        let newViewModel = SyncViewModel(weightManager: weightManager)
+        let newViewModel = SyncViewModel(weightManager: weightManager, healthKitManager: MockHealthKitManager())
         XCTAssertTrue(newViewModel.hasCompletedInitialImport(),
                      "Initial import completion should be restored in new ViewModel")
     }

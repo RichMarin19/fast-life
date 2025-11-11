@@ -2,47 +2,52 @@ import SwiftUI
 import Charts
 
 struct WeightTrackingView: View {
-    // MARK: - Dependencies (SwiftUI EnvironmentObject Pattern)
-    // Reference: ARCHITECTURE-AUDIT.md - Critical Task 1
-    @EnvironmentObject var weightManager: WeightManager
-    @EnvironmentObject var behavioralScheduler: BehavioralNotificationScheduler
+    @Environment(\.weightDependencies) private var dependencies
 
-    // MVVM: ViewModel owns all state and business logic
-    // CONSULTANT FIX: Access managers from @EnvironmentObject instead of creating duplicates
-    // SwiftUI limitation: @StateObject init happens BEFORE @EnvironmentObject injection
-    // Solution: ViewModel accesses managers passed from view's @EnvironmentObject
-    @StateObject private var viewModel = WeightTrackingViewModel()
-
-    // CRITICAL FIX (Task 1F Enhancement 6): Direct observation of cardManager
-    // Problem: @ObservedObject in ViewModel doesn't propagate changes to View
-    // Solution: View DIRECTLY observes cardManager for real-time UI updates
-    // When cardManager updates @Published properties → View re-renders immediately
-    // Industry Pattern: SwiftUI observation must be direct, not through intermediate objects
-    @ObservedObject private var cardManager = TrackerCards.shared
-
-    private var vm: WeightTrackingViewModel {
-        return viewModel
+    var body: some View {
+        WeightTrackingExperienceView(dependencies: dependencies)
     }
+}
 
-    // MARK: - Binding Helpers
-    // SwiftUI requires Bindings to be created from @State/@Published properties
-    // Since vm is a computed property, we create these helper bindings
+@MainActor
+private struct WeightTrackingExperienceView: View {
+    private let dependencies: WeightDependencies
+    private let weightManager: WeightManager
+    private let behavioralScheduler: BehavioralNotificationScheduler
+    private let optOutManager: ContentOptOutManaging
+    private let healthKitManager: HealthKitManagerProtocol
+    private let nudgeManager: HealthKitNudgeManaging
+    private let progressStoryCardManager: ProgressStoryCardManaging
 
-    private func binding<Value>(_ keyPath: ReferenceWritableKeyPath<WeightTrackingViewModel, Value>) -> Binding<Value> {
-        Binding(
-            get: { vm[keyPath: keyPath] },
-            set: { vm[keyPath: keyPath] = $0 }
+    @StateObject private var viewModel: WeightTrackingViewModel
+    @ObservedObject private var cardManager: CardManager<TrackerCardType>
+
+    private var vm: WeightTrackingViewModel { viewModel }
+
+    init(dependencies: WeightDependencies) {
+        self.dependencies = dependencies
+        self.weightManager = dependencies.weightManager
+        self.behavioralScheduler = dependencies.behavioralScheduler
+        self.optOutManager = dependencies.optOutManager
+        self.healthKitManager = dependencies.healthKitManager
+        self.nudgeManager = dependencies.nudgeManager
+        self.progressStoryCardManager = dependencies.progressStoryCardManager
+        _viewModel = StateObject(
+            wrappedValue: WeightTrackingViewModel(
+                dependencies: .init(
+                    weightManager: dependencies.weightManager,
+                    behavioralScheduler: dependencies.behavioralScheduler,
+                    optOutManager: dependencies.optOutManager,
+                    healthKitManager: dependencies.healthKitManager,
+                    nudgeManager: dependencies.nudgeManager
+                )
+            )
         )
+        _cardManager = ObservedObject(wrappedValue: dependencies.trackerCardManager)
     }
-
-    // REMOVED: milestoneRingCard property (Enhancement 7)
-    // Milestone functionality already exists in Current Weight Card - no need for separate card
-    // Cleaner UI: 3 cards (Current Weight, Chart, Stats) instead of 4
-    // Industry Pattern: Minimize redundancy (Apple Health, Google Fit)
 
     var body: some View {
         #if DEBUG
-        // 🔍 FORENSIC: Log body render
         AppLogger.info("⏱️ WeightTrackingView.body rendering", category: AppLogger.ui)
         #endif
 
@@ -58,24 +63,20 @@ struct WeightTrackingView: View {
                     )
                 )
                 : nil,
-            gradientStyle: .luxury,  // 🔥 LUXURY UI ACTIVATED
+            gradientStyle: .luxury,
             settingsAction: { vm.showingSettings = true }
         ) {
             if weightManager.weightEntries.isEmpty {
                 EmptyWeightStateView(
                     showingAddWeight: binding(\.showingAddWeight),
-                    healthKitManager: vm.healthKitManager,
+                    healthKitManager: healthKitManager,
                     weightManager: weightManager
                 )
             } else {
-                // LAYER 5: Drag-to-reorder cards
-                // Cards displayed in user-customized order from TrackerCardManager
-                // Industry Pattern: Apple Health - Long-press and drag to reorder
                 ForEach(cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
                     cardView(for: cardType)
                         .transition(.opacity.combined(with: .scale))
                         .onDrag {
-                            // Layer 5: Enable drag for reordering
                             vm.draggedCard = cardType
                             return NSItemProvider(object: cardType.rawValue as NSString)
                         }
@@ -85,16 +86,6 @@ struct WeightTrackingView: View {
                             cardManager: cardManager
                         ))
                 }
-
-                // Weight History List Card - MOVED TO CONTROL CENTER
-                // History is now accessed via Control Center (gear icon → History section)
-                // Reason: Better information architecture - History is data management, not dashboard
-                // Industry Pattern: Apple Health - Detailed logs live in settings/management areas
-                // Removed from main screen to reduce clutter (4 cards instead of 5)
-                // TrackerCardType.history still exists for backwards compatibility
-
-                // REMOVED: History card no longer shown on main Weight Tracker screen
-                // Users access history via: Gear Icon → Control Center → History section
             }
         }
         .sheet(isPresented: binding(\.showingAddWeight)) {
@@ -102,11 +93,9 @@ struct WeightTrackingView: View {
         }
         .sheet(isPresented: binding(\.showingSettings)) {
             WeightControlCenterView(
-                weightManager: weightManager,
                 showGoalLine: binding(\.showGoalLine),
                 weightGoal: binding(\.weightGoal)
             )
-            .environmentObject(behavioralScheduler)
         }
         .sheet(isPresented: binding(\.showingGoalEditor)) {
             FirstTimeWeightSetupView(
@@ -116,19 +105,22 @@ struct WeightTrackingView: View {
             )
         }
         .sheet(isPresented: binding(\.showingTrends)) {
-            WeightTrendsView(weightManager: weightManager)
-                .onAppear {
-                    #if DEBUG
-                    AppLogger.info("🎯 Progress Story sheet appeared", category: AppLogger.ui)
-                    #endif
-                }
+            WeightTrendsView(
+                weightManager: weightManager,
+                optOutManager: optOutManager,
+                cardManager: progressStoryCardManager
+            )
+            .onAppear {
+                #if DEBUG
+                AppLogger.info("🎯 Progress Story sheet appeared", category: AppLogger.ui)
+                #endif
+            }
         }
         .onChange(of: vm.showingTrends) { oldValue, newValue in
             #if DEBUG
             AppLogger.info("🎯 showingTrends changed from \(oldValue) to \(newValue)", category: AppLogger.ui)
             #endif
         }
-        // Removed: HealthDataSelectionView sheet - using direct authorization per Apple HIG
         .sheet(isPresented: binding(\.showingFirstTimeSetup)) {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
@@ -137,16 +129,9 @@ struct WeightTrackingView: View {
             )
         }
         .onAppear {
-            // CONSULTANT FIX: Inject @EnvironmentObject managers into ViewModel
-            // Must happen AFTER SwiftUI @EnvironmentObject injection completes
-            // This fixes duplicate WeightManager creation issue
-            vm.configure(weightManager: weightManager, behavioralScheduler: behavioralScheduler)
-
-            // MVVM: Delegate onAppear logic to ViewModel
             vm.onViewAppear()
         }
         .task {
-            // MVVM: Delegate Progress Story auto-show to ViewModel
             await vm.handleProgressStoryAutoShow()
         }
         .onChange(of: vm.showGoalLine) { _, _ in
@@ -157,10 +142,13 @@ struct WeightTrackingView: View {
         }
     }
 
-    // MARK: - Card View Builder (Layer 5)
+    private func binding<Value>(_ keyPath: ReferenceWritableKeyPath<WeightTrackingViewModel, Value>) -> Binding<Value> {
+        Binding(
+            get: { vm[keyPath: keyPath] },
+            set: { vm[keyPath: keyPath] = $0 }
+        )
+    }
 
-    /// Returns the appropriate card view for each card type
-    /// Industry Pattern: Builder pattern for dynamic card rendering
     @ViewBuilder
     private func cardView(for cardType: TrackerCardType) -> some View {
         switch cardType {
@@ -178,11 +166,6 @@ struct WeightTrackingView: View {
                     showingTrends: binding(\.showingTrends)
                 )
             }
-
-        // REMOVED: milestone case (Enhancement 7)
-        // Milestone functionality exists in Current Weight Card - no need for separate card
-        // Cleaner dashboard: 3 cards instead of 4
-
         case .chart:
             DSCard(
                 cardType: .chart,
@@ -196,7 +179,6 @@ struct WeightTrackingView: View {
                     weightGoal: binding(\.weightGoal)
                 )
             }
-
         case .stats:
             DSCard(
                 cardType: .stats,
@@ -205,21 +187,13 @@ struct WeightTrackingView: View {
             ) {
                 WeightStatsView(weightManager: weightManager)
             }
-
         case .history:
-            // History card is in Control Center, not on main screen
             EmptyView()
         }
     }
-
-    // MARK: - Goal Settings Persistence
-    // MOVED TO VIEWMODEL: loadGoalSettings() and saveGoalSettings()
-    // Reference: ARCHITECTURE-AUDIT.md - Critical Task 1
-    // Business logic now in WeightTrackingViewModel following MVVM pattern
 }
-
-// MARK: - Preview
 
 #Preview {
     WeightTrackingView()
+        .environment(\.weightDependencies, .preview())
 }

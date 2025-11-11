@@ -7,25 +7,20 @@ import Combine
 /// Reference: ARCHITECTURE-AUDIT.md - Critical Task 1
 /// Gold Standard: WeightControlCenterViewModel (903 LOC)
 @MainActor
-class WeightTrackingViewModel: ObservableObject {
-    // MARK: - Dependencies (Injected via configure())
-    // CONSULTANT FIX: Managers injected AFTER init to work with SwiftUI @EnvironmentObject
-    // SwiftUI limitation: @StateObject init happens BEFORE @EnvironmentObject injection
-    // Solution: Empty init(), then configure() called from view's .onAppear with environment managers
+final class WeightTrackingViewModel: ObservableObject {
+    struct Dependencies {
+        let weightManager: WeightManager
+        let behavioralScheduler: BehavioralNotificationScheduler
+        let optOutManager: ContentOptOutManaging
+        let healthKitManager: HealthKitManagerProtocol
+        let nudgeManager: HealthKitNudgeManaging
+    }
 
-    var weightManager: WeightManager!
-    var behavioralScheduler: BehavioralNotificationScheduler!
-
-    // Singleton managers (pass-through)
-    let healthKitManager = HealthKitManager.shared
-    let nudgeManager = HealthKitNudgeManager.shared
-    private var optOutManager: ContentOptOutManaging!
-
-    // CRITICAL FIX: cardManager must be @ObservedObject to propagate state changes
-    // When CardManager updates @Published cardPreferences, ViewModel must re-publish
-    // This triggers SwiftUI view updates for real-time card hide/expand
-    // Industry Pattern: Observation chain (View → ViewModel → CardManager)
-    @ObservedObject var cardManager = TrackerCards.shared
+    let weightManager: WeightManager
+    let behavioralScheduler: BehavioralNotificationScheduler
+    private let healthKitManager: HealthKitManagerProtocol
+    private let nudgeManager: HealthKitNudgeManaging
+    private let optOutManager: ContentOptOutManaging
 
     // MARK: - Published State (was @State in View)
 
@@ -59,23 +54,13 @@ class WeightTrackingViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    /// Empty init - managers injected later via configure()
-    /// CONSULTANT FIX: SwiftUI @StateObject init happens BEFORE @EnvironmentObject injection
-    init() {
-        // Managers will be set via configure() after @EnvironmentObject becomes available
-    }
+    init(dependencies: Dependencies) {
+        self.weightManager = dependencies.weightManager
+        self.behavioralScheduler = dependencies.behavioralScheduler
+        self.optOutManager = dependencies.optOutManager
+        self.healthKitManager = dependencies.healthKitManager
+        self.nudgeManager = dependencies.nudgeManager
 
-    /// Configure ViewModel with injected dependencies
-    /// Must be called from view's .onAppear with @EnvironmentObject managers
-    /// CONSULTANT FIX: Fixes duplicate WeightManager creation issue
-    func configure(weightManager: WeightManager,
-                   behavioralScheduler: BehavioralNotificationScheduler,
-                   optOutManager: ContentOptOutManaging? = nil) {
-        self.weightManager = weightManager
-        self.behavioralScheduler = behavioralScheduler
-        self.optOutManager = optOutManager ?? ContentOptOutManager.shared
-
-        // Load persisted state after managers are set
         loadGoalSettings()
     }
 
@@ -203,7 +188,7 @@ class WeightTrackingViewModel: ObservableObject {
         #if DEBUG
         AppLogger.info("HealthKit nudge - requesting weight authorization", category: AppLogger.healthKit)
         #endif
-        HealthKitManager.shared.requestWeightAuthorization { success, _ in
+        healthKitManager.requestWeightAuthorization { success, _ in
             DispatchQueue.main.async {
                 if success {
                     #if DEBUG

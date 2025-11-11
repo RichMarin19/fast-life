@@ -15,6 +15,7 @@ final class NotificationsViewModelTests: XCTestCase {
 
     var viewModel: NotificationsViewModel!
     var userDefaults: UserDefaults!
+    var mockNotificationManager: MockWeightNotificationManager!
 
     override func setUp() {
         super.setUp()
@@ -32,13 +33,19 @@ final class NotificationsViewModelTests: XCTestCase {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
         }
 
-        viewModel = NotificationsViewModel()
+        mockNotificationManager = MockWeightNotificationManager()
+        viewModel = NotificationsViewModel(notificationManager: mockNotificationManager)
     }
 
     override func tearDown() {
         viewModel = nil
         userDefaults = nil
+        mockNotificationManager = nil
         super.tearDown()
+    }
+
+    private func makeViewModel() -> NotificationsViewModel {
+        NotificationsViewModel(notificationManager: mockNotificationManager)
     }
 
     // MARK: - Initialization Tests
@@ -147,7 +154,7 @@ final class NotificationsViewModelTests: XCTestCase {
                       "Timing mode should persist to UserDefaults")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertEqual(newViewModel.timingMode, .beforeFastingGoal,
                       "Timing mode should be restored in new ViewModel")
     }
@@ -165,7 +172,7 @@ final class NotificationsViewModelTests: XCTestCase {
                       "Minutes offset should persist to UserDefaults")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertEqual(newViewModel.minutesOffset, 60,
                       "Minutes offset should be restored in new ViewModel")
     }
@@ -186,7 +193,7 @@ final class NotificationsViewModelTests: XCTestCase {
                        "Preferred time should be saved to UserDefaults")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         let restoredComponents = calendar.dateComponents([.hour, .minute], from: newViewModel.preferredReminderTime)
         XCTAssertEqual(restoredComponents.hour, 8,
                       "Preferred time hour should be restored")
@@ -217,7 +224,7 @@ final class NotificationsViewModelTests: XCTestCase {
                      "Quiet hours enabled should persist")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertTrue(newViewModel.quietHoursEnabled,
                      "Quiet hours enabled should be restored")
 
@@ -242,7 +249,7 @@ final class NotificationsViewModelTests: XCTestCase {
         XCTAssertTrue(saved?.contains(7) ?? false, "Should save Saturday")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertEqual(newViewModel.skipWeekdays, [1, 7],
                       "Skip weekdays should be restored")
     }
@@ -266,7 +273,7 @@ final class NotificationsViewModelTests: XCTestCase {
                       "Did You Know frequency should persist")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertTrue(newViewModel.didYouKnowEnabled)
         XCTAssertEqual(newViewModel.didYouKnowFrequency, .weekly)
     }
@@ -288,7 +295,7 @@ final class NotificationsViewModelTests: XCTestCase {
                       "Motivational frequency should persist")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertTrue(newViewModel.motivationalEnabled)
         XCTAssertEqual(newViewModel.motivationalFrequency, .everyOtherDay)
     }
@@ -310,7 +317,7 @@ final class NotificationsViewModelTests: XCTestCase {
                       "Action Steps frequency should persist")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertTrue(newViewModel.actionStepsEnabled)
         XCTAssertEqual(newViewModel.actionStepsFrequency, .twiceWeek)
     }
@@ -358,7 +365,7 @@ final class NotificationsViewModelTests: XCTestCase {
         XCTAssertTrue(saved?.isEmpty ?? false, "Saved array should be empty")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertTrue(newViewModel.skipWeekdays.isEmpty,
                      "Empty skip weekdays should be restored")
     }
@@ -375,7 +382,7 @@ final class NotificationsViewModelTests: XCTestCase {
         XCTAssertEqual(saved?.count, 7, "Should save all 7 days")
 
         // Create new ViewModel to verify
-        let newViewModel = NotificationsViewModel()
+        let newViewModel = makeViewModel()
         XCTAssertEqual(newViewModel.skipWeekdays.count, 7,
                       "All skip weekdays should be restored")
     }

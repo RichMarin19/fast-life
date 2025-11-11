@@ -44,13 +44,16 @@ class SyncViewModel: ObservableObject {
     // MARK: - Dependencies
 
     private let weightManager: WeightManager
+    private let healthKitManager: HealthKitManagerProtocol
     private let userDefaults = UserDefaults.standard
     private let hasCompletedInitialImportKey = "weightHasCompletedInitialImport"
 
     // MARK: - Initialization
 
-    init(weightManager: WeightManager) {
+    init(weightManager: WeightManager,
+         healthKitManager: HealthKitManagerProtocol) {
         self.weightManager = weightManager
+        self.healthKitManager = healthKitManager
         updatePermissionStatus()
         loadLastSyncStatus()
         updateToggleState()
@@ -62,10 +65,10 @@ class SyncViewModel: ObservableObject {
     func syncWithHealthKit() {
         isSyncing = true
 
-        let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
+        let isAuthorized = healthKitManager.isWeightAuthorized()
 
         if !isAuthorized {
-            HealthKitManager.shared.requestWeightAuthorization { success, error in
+            healthKitManager.requestWeightAuthorization { success, error in
                 Task { @MainActor in
                     if success {
                         self.isSyncing = false
@@ -106,7 +109,7 @@ class SyncViewModel: ObservableObject {
                     if syncedCount > 0 {
                         self.syncMessage = "Successfully synced \(syncedCount) new weight entries from Apple Health."
                     } else {
-                        let hasPermission = HealthKitManager.shared.isWeightAuthorized()
+                        let hasPermission = self.healthKitManager.isWeightAuthorized()
                         if hasPermission {
                             self.syncMessage = "Weight data is up to date. No new entries found in Apple Health."
                         } else {
@@ -181,8 +184,8 @@ class SyncViewModel: ObservableObject {
 
     /// Update HealthKit permission status and messages
     func updatePermissionStatus() {
-        hasHealthKitPermission = HealthKitManager.shared.isWeightAuthorized()
-        let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
+        hasHealthKitPermission = healthKitManager.isWeightAuthorized()
+        let authStatus = healthKitManager.getWeightAuthorizationStatus()
 
         canEnableSync = (authStatus != .sharingDenied)
 
@@ -208,14 +211,14 @@ class SyncViewModel: ObservableObject {
 
     /// Load and format last sync status
     func loadLastSyncStatus() {
-        if let lastSyncDate = HealthKitManager.shared.lastWeightSyncDate {
+        if let lastSyncDate = healthKitManager.lastWeightSyncDate {
             let formatter = DateFormatter()
             formatter.dateStyle = .none
             formatter.timeStyle = .short
 
             let timeString = formatter.string(from: lastSyncDate)
 
-            if HealthKitManager.shared.lastWeightSyncError != nil {
+            if healthKitManager.lastWeightSyncError != nil {
                 lastSyncStatus = "Last sync failed at \(timeString)"
             } else {
                 if Calendar.current.isDateInToday(lastSyncDate) {

@@ -23,11 +23,31 @@ CrashReportManager.shared.recordWeightError(error, context: [
 - Context values may be strings, numbers, dictionaries, or arrays—sanitizer converts them to safe strings.
 - Avoid including raw PHI (weights, timestamps). Use aggregate counts or boolean flags instead.
 
-### 1.3 Inspecting Crashlytics
+### 1.3 Inspecting Crashlytics Issues
 1. Open Firebase Console → Crashlytics.
 2. Filter by `app` bundle `com.fastlife.app`.
 3. In each issue, expand **Keys** to see sanitized entries (`context_keys`, `containsSensitiveTelemetry`).
 4. Cross-check with the `[REDACTED]` markers to confirm no PHI leaked.
+
+### 1.4 Crashlytics Metric Dashboard (METRIC Logs)
+Crashlytics does not expose custom dashboards for non-fatal logs, so we emulate one using the **Logs** tab and saved filters. This lets QA/leadership review the PHI-safe `METRIC[...]` events emitted by `WeightTrackerMetrics`.
+
+#### A. Create the Saved Filter (one time)
+1. Firebase Console → Crashlytics → **Logs** tab.
+2. Use the search box and enter: `log:"METRIC"`.
+3. Add filters:
+   - **App version** → select the current build under test.
+   - **Custom key** → `context_keys` contains `weight_goal_event|weight_trend_snapshot_state` (add more keys as needed).
+4. Click **Save Filter** → name it `Weight Metrics – METRIC Logs`.
+
+#### B. Reviewing Metrics Each QA Cycle
+1. Open the saved filter (`Weight Metrics – METRIC Logs`).
+2. Use the time selector to match the QA window (e.g., “Last 24 hours”).
+3. Export the results (Download CSV) and attach to QA notes if stakeholders need archival evidence.
+4. For quick health checks, scan the `log` column: each entry follows `METRIC[event] key=value …` and should never display raw weights, PHI, or unit strings beyond sanitized abbreviations (`lbs`,`kg`).
+5. If a log looks suspect, click through to the associated issue/session for deeper context, then reference `CrashTelemetrySanitizer` to verify the sanitization path.
+
+> **Tip:** add additional saved filters for specific metadata (e.g., `log:"METRIC weight_goal_event"` with `custom key: event=goal_weight_saved`) to track adoption of each Control Center action.
 
 ## 2. Console Privacy Harness
 - Primary script: `scripts/run-tests-auto.sh` (auto device detection) or `scripts/run_device_privacy_tests.sh <UDID>`.
@@ -65,6 +85,12 @@ CrashReportManager.shared.recordWeightError(error, context: [
 | `goal_weight_*` | `source`, `reason` | Tracks Control Center goal weight saves/discards and formatter truncation. |
 | `goal_milestone_updated` | `count` | Fired when milestone count changes via Control Center. |
 | `weight_trend_snapshot_state` | `has7day`, `has30day`, `trend_state` | Logs whether Trend Snapshot has data for each period + state tag. |
+
+### 5.1 Metric QA Procedure
+1. Run **Weight Tracker Smoke** on device (Command‑U + manual flows: add weight, delete weight, edit goal, toggle milestones, run Trend Snapshot).
+2. In Firebase Crashlytics, open the saved `Weight Metrics – METRIC Logs` filter (Section 1.4) and confirm the events appear with the expected metadata.
+3. Cross-check Console.app signposts (`subsystem: com.fastlife.FastLIFe`, `category: weight-metrics`) to ensure the event counts match between local signposts and Crashlytics logs.
+4. Attach the CSV export and screenshots to the QA report, noting any missing events or anomalies.
 
 - To inspect:
   1. **Console.app** → select the device → filter by `subsystem:"com.fastlife.FastLIFe" category:"weight-metrics"`. Copy/paste the PHI-safe events directly into QA notes.

@@ -383,12 +383,10 @@ final class ProgressStoryCards {
 
 private extension CardManager {
     func defaultVisibility(for cardType: CardType) -> Bool {
-        if let trackerCard = cardType as? TrackerCardType, trackerCard == .history {
-            return false
+        if let trackerCard = cardType as? TrackerCardType {
+            return trackerCard != .history
         }
-        if let progressCard = cardType as? ProgressStoryCardType, progressCard == .banner {
-            return false
-        }
+        // Progress Story cards should default to visible unless explicitly hidden by the user.
         return true
     }
 }

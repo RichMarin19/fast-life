@@ -7,30 +7,43 @@ import SwiftUI
 /// Behavioral psychology: User personalization (IKEA effect)
 /// Pattern: MVVM (ViewModel handles state and business logic)
 struct WeightControlCenterView: View {
-    @Environment(\.dismiss) var dismiss
+    @Environment(\.weightDependencies) private var dependencies
+    @Binding private var showGoalLine: Bool
+    @Binding private var weightGoal: Double
+
+    init(showGoalLine: Binding<Bool>,
+         weightGoal: Binding<Double>) {
+        _showGoalLine = showGoalLine
+        _weightGoal = weightGoal
+    }
+
+    var body: some View {
+        WeightControlCenterExperienceView(
+            showGoalLine: $showGoalLine,
+            weightGoal: $weightGoal,
+            dependencies: dependencies
+        )
+    }
+}
+
+@MainActor
+private struct WeightControlCenterExperienceView: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: WeightControlCenterViewModel
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
     @State private var showDeleteAllConfirmation = false
-
-    // ISSUE #5: Track goal weight changes for save confirmation
-    @State private var originalGoalWeight: String = ""
+    @State private var originalGoalWeightPounds: Double?
     @State private var showUnsavedChangesAlert = false
 
-    // MARK: - Initialization
-
-    init(weightManager: WeightManager,
-         showGoalLine: Binding<Bool>,
-         weightGoal: Binding<Double>) {
-        // TEMPORARY: Using temporary BehavioralNotificationScheduler instance
-        // The real instance is passed via .environmentObject in WeightTrackingView.swift:139
-        // This temporary instance is only used for ViewModel initialization and won't be used
-        _viewModel = StateObject(wrappedValue: WeightControlCenterViewModel(
-            weightManager: weightManager,
-            behavioralScheduler: BehavioralNotificationScheduler()
-        ))
+    init(showGoalLine: Binding<Bool>,
+         weightGoal: Binding<Double>,
+         dependencies: WeightDependencies) {
         _showGoalLine = showGoalLine
         _weightGoal = weightGoal
+        _viewModel = StateObject(
+            wrappedValue: dependencies.makeControlCenterViewModel()
+        )
     }
 
     var body: some View {
@@ -39,10 +52,6 @@ struct WeightControlCenterView: View {
 
             VStack(spacing: 0) {
                 WeightControlCenterHeaderView(onDone: handleDoneButtonTap)
-
-                // ScrollView with reorderable cards (Hub pattern - perfect alignment)
-                // WeightControlCenterCardList owns the ScrollViewReader + drag/drop wiring
-                // ISSUE #4 FIX: Add tap gesture to dismiss keyboard (Apple Health pattern)
                 ScrollView {
                     WeightControlCenterCardList(
                         viewModel: viewModel,
@@ -51,37 +60,20 @@ struct WeightControlCenterView: View {
                         showDeleteAllConfirmation: $showDeleteAllConfirmation
                     )
                 }
-                // ISSUE #4 FIX: Dismiss keyboard when tapping content
-                // Following Apple Health pattern - keyboard dismisses on content tap
-                // Reference: Apple HIG - Keyboard Dismissal Best Practices
                 .simultaneousGesture(
-                    TapGesture()
-                        .onEnded { _ in
-                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                        }
+                    TapGesture().onEnded { _ in
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                    }
                 )
             }
         }
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Done") {
-                    // Dismiss keyboard
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-
-                    // Update weight goal if valid
-                    if let displayGoal = Double(viewModel.goalCoordinator.weightGoalString), displayGoal > 0 {
-                        let internalGoal = viewModel.weightManager.convertToInternalUnit(displayGoal)
-                        weightGoal = internalGoal
-                        viewModel.goalCoordinator.synchronizeGoalWeightDisplay()
-                    }
-                    dismiss()
-                }
-                .foregroundColor(Theme.ColorToken.textPrimary)
-                .fontWeight(.semibold)
+                Button("Done", action: dismissDirect)
+                    .foregroundColor(Theme.ColorToken.textPrimary)
+                    .fontWeight(.semibold)
             }
-
-            // Keyboard toolbar for decimal pad
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
                 Button("Done") {
@@ -91,26 +83,46 @@ struct WeightControlCenterView: View {
                 .fontWeight(.semibold)
             }
         }
-        .onAppear {
-            viewModel.loadCardOrder()
-            viewModel.loadExpandedCards()
-            viewModel.loadOptedOutContent()
-            viewModel.goalCoordinator.synchronizeGoalWeightDisplay()
-            // ISSUE #5: Store original goal weight for change detection
-            originalGoalWeight = viewModel.goalCoordinator.weightGoalString
-            viewModel.userSyncPreference = viewModel.weightManager.syncWithHealthKit
-            viewModel.updatePermissionStatus()
-            viewModel.loadLastSyncStatus()
-            viewModel.updateToggleState()
-        }
-        .alert("Sync Status", isPresented: $viewModel.showingSyncAlert) {
-            if viewModel.syncMessage.contains("Permission denied") || viewModel.syncMessage.contains("enable weight access") {
-                let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
+        .onAppear(perform: prepareView)
+        .alert("Sync Status", isPresented: $viewModel.showingSyncAlert, actions: syncAlertActions, message: { Text(viewModel.syncMessage) })
+        .alert("Import Weight Data", isPresented: $viewModel.showingSyncPreferenceDialog, actions: importDialogActions, message: {
+            Text("Choose how to sync your weight data with Apple Health. You can import all your historical weight entries or start fresh with only future entries.")
+        })
+        .alert("Restore All Content", isPresented: $viewModel.showingRestoreAllAlert, actions: restoreAllActions, message: {
+            Text("This will restore all hidden tracker cards and opted-out content to default. Are you sure?")
+        })
+        .confirmationDialog("Delete All Weight Data?", isPresented: $showDeleteAllConfirmation, actions: deleteAllActions, message: {
+            Text("This will delete all \(viewModel.weightManager.weightEntries.count) weight entries from Fast LIFe. You can resync from HealthKit afterward. This action cannot be undone.")
+        })
+        .alert("Save Goal Weight Changes?", isPresented: $showUnsavedChangesAlert, actions: saveChangesActions, message: {
+            Text("You've changed your goal weight. Would you like to save this change?")
+        })
+    }
 
+    private func dismissDirect() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        dismiss()
+    }
+
+    private func prepareView() {
+        viewModel.loadCardOrder()
+        viewModel.loadExpandedCards()
+        viewModel.loadOptedOutContent()
+        viewModel.goalCoordinator.synchronizeGoalWeightDisplay()
+        originalGoalWeightPounds = viewModel.weightManager.goalWeight > 0 ? viewModel.weightManager.goalWeight : nil
+        viewModel.userSyncPreference = viewModel.weightManager.syncWithHealthKit
+        viewModel.updatePermissionStatus()
+        viewModel.loadLastSyncStatus()
+        viewModel.updateToggleState()
+    }
+
+    @ViewBuilder
+    private func syncAlertActions() -> some View {
+        Group {
+            if viewModel.syncMessage.contains("Permission denied") || viewModel.syncMessage.contains("enable weight access") {
+                let authStatus = viewModel.healthKitManager.getWeightAuthorizationStatus()
                 if authStatus == .notDetermined {
-                    Button("Try Again") {
-                        viewModel.syncWithHealthKit()
-                    }
+                    Button("Try Again") { viewModel.syncWithHealthKit() }
                 } else {
                     Button("OK") { }
                 }
@@ -118,82 +130,71 @@ struct WeightControlCenterView: View {
             } else {
                 Button("OK", role: .cancel) { }
             }
-        } message: {
-            Text(viewModel.syncMessage)
         }
-        .alert("Import Weight Data", isPresented: $viewModel.showingSyncPreferenceDialog) {
-            Button("Import All Historical Data") {
-                viewModel.performHistoricalSync()
-            }
-            Button("Future Data Only") {
-                viewModel.performFutureOnlySync()
-            }
+    }
+
+    @ViewBuilder
+    private func importDialogActions() -> some View {
+        Group {
+            Button("Import All Historical Data") { viewModel.performHistoricalSync() }
+            Button("Future Data Only") { viewModel.performFutureOnlySync() }
             Button("Cancel", role: .cancel) {
                 viewModel.userSyncPreference = false
                 viewModel.localSyncEnabled = false
                 viewModel.updateToggleState()
             }
-        } message: {
-            Text("Choose how to sync your weight data with Apple Health. You can import all your historical weight entries or start fresh with only future entries.")
         }
-        .alert("Restore All Content", isPresented: $viewModel.showingRestoreAllAlert) {
-            Button("Yes, Restore All", role: .destructive) {
-                viewModel.restoreAllToDefault()
-            }
+    }
+
+    @ViewBuilder
+    private func restoreAllActions() -> some View {
+        Group {
+            Button("Yes, Restore All", role: .destructive) { viewModel.restoreAllToDefault() }
             Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("This will restore all hidden tracker cards and opted-out content to default. Are you sure?")
         }
-        .confirmationDialog("Delete All Weight Data?", isPresented: $showDeleteAllConfirmation) {
-            Button("Delete All Data", role: .destructive) {
-                viewModel.weightManager.deleteAllWeightData()
-            }
+    }
+
+    @ViewBuilder
+    private func deleteAllActions() -> some View {
+        Group {
+            Button("Delete All Data", role: .destructive) { viewModel.weightManager.deleteAllWeightData() }
             Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("This will delete all \(viewModel.weightManager.weightEntries.count) weight entries from Fast LIFe. You can resync from HealthKit afterward. This action cannot be undone.")
         }
-        .alert("Save Goal Weight Changes?", isPresented: $showUnsavedChangesAlert) {
-            // ISSUE #5: Save confirmation dialog following Apple Settings app pattern
-            // Reference: Apple HIG - Alerts (three-button confirmation for data loss prevention)
+    }
+
+    @ViewBuilder
+    private func saveChangesActions() -> some View {
+        Group {
             Button("Don't Save", role: .destructive) {
-                // Revert to original value
-                viewModel.goalCoordinator.weightGoalString = originalGoalWeight
+                viewModel.goalCoordinator.weightGoalString = storedGoalDisplayString()
                 WeightTrackerMetrics.recordGoalEvent(.goalWeightDiscarded, metadata: ["source": "control_center"])
                 dismiss()
             }
-            Button("Cancel", role: .cancel) {
-                // Stay in Control Center with edited value
-            }
+            Button("Cancel", role: .cancel) { }
             Button("Save") {
-                // Persist via WeightManager and dismiss
                 if let newGoal = Double(viewModel.goalCoordinator.weightGoalString), newGoal > 0 {
                     let goalWeightPounds = viewModel.weightManager.convertToInternalUnit(newGoal)
                     viewModel.weightManager.setGoalWeight(goalWeightPounds)
+                    originalGoalWeightPounds = goalWeightPounds
                     weightGoal = newGoal
                     AppLogger.info("Goal weight saved via Control Center", category: AppLogger.weightTracking)
                     WeightTrackerMetrics.recordGoalEvent(.goalWeightSaved, metadata: ["source": "control_center"])
                 }
                 dismiss()
             }
-        } message: {
-            Text("You've changed your goal weight. Would you like to save this change?")
         }
     }
 
-    // MARK: - Actions
+    private func storedGoalDisplayString() -> String {
+        guard let stored = originalGoalWeightPounds, stored > 0 else { return "" }
+        return viewModel.weightManager.formattedDisplayWeight(stored)
+    }
 
-    /// Handle Done button tap - check for unsaved goal weight changes
-    /// Following Apple Settings app pattern for unsaved changes confirmation
     private func handleDoneButtonTap() {
-        // Dismiss keyboard first
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-
-        // Check if goal weight has changed
-        if viewModel.goalCoordinator.weightGoalString != originalGoalWeight {
-            // Show save confirmation alert
+        if viewModel.goalCoordinator.weightGoalString != storedGoalDisplayString() {
             showUnsavedChangesAlert = true
         } else {
-            // No changes, dismiss directly
             dismiss()
         }
     }
@@ -204,10 +205,9 @@ struct WeightControlCenterView: View {
 #Preview {
     NavigationView {
         WeightControlCenterView(
-            weightManager: WeightManager(),
             showGoalLine: .constant(true),
             weightGoal: .constant(150.0)
         )
-        .environmentObject(BehavioralNotificationScheduler())
+        .environment(\.weightDependencies, .preview())
     }
 }

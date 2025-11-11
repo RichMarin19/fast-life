@@ -11,9 +11,16 @@ struct DidYouKnowBanner: View {
                     .foregroundColor(Theme.ColorToken.accentInfo)
                     .font(DSTypography.listTitle)
 
-                Text(text)
-                    .font(DSTypography.statValueSmall)
-                    .foregroundColor(Theme.ColorToken.textPrimary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("progress_story_did_you_know_title")
+                        .font(DSTypography.listTitle)
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+
+                    Text(text)
+                        .font(DSTypography.cardBody)
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
 
                 Spacer()
             }

@@ -65,20 +65,19 @@ struct DSCoachBar: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             // Coach Bar content
-            HStack(spacing: 8) {
+            HStack(alignment: .top, spacing: 8) {
                 // Icon: SF Symbol, 18-20pt, WHITE
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
 
                 Text(text)
-                    .font(.system(size: 21, weight: .semibold, design: .rounded))
-                    .foregroundColor(.white)  // WHITE for high contrast
-                    .lineLimit(2)
+                    .font(DSTypography.cardBody)
+                    .foregroundColor(.white)
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, DSSpacing.cardPadding)  // 16pt - iOS standard
-            .padding(.vertical, 14)
+            .padding(.vertical, 16)
             .frame(maxWidth: .infinity)
 
             // Eye.slash button overlaid in top-right corner (if onHide provided)
@@ -87,7 +86,7 @@ struct DSCoachBar: View {
                     Image(systemName: "eye.slash")
                         .font(.system(size: 14, weight: .semibold))
                         .foregroundColor(.white.opacity(0.9))
-                        .frame(width: 44, height: 44)  // Apple HIG tap target
+                        .frame(width: 44, height: 44)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Hide coach bar")

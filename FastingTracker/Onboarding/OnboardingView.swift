@@ -1,5 +1,48 @@
 import SwiftUI
 
+protocol HealthKitServicing {
+    func requestAuthorization(completion: @escaping (Bool, Error?) -> Void)
+    func isWeightAuthorized() -> Bool
+    func isWaterAuthorized() -> Bool
+    func isSleepAuthorized() -> Bool
+}
+
+struct HealthKitServices: HealthKitServicing {
+    private let manager: HealthKitManagerProtocol
+
+    init(manager: HealthKitManagerProtocol = HealthKitManager.shared) {
+        self.manager = manager
+    }
+
+    func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
+        manager.requestAuthorization(completion: completion)
+    }
+
+    func isWeightAuthorized() -> Bool {
+        manager.isWeightAuthorized()
+    }
+
+    func isWaterAuthorized() -> Bool {
+        manager.isWaterAuthorized()
+    }
+
+    func isSleepAuthorized() -> Bool {
+        manager.isSleepAuthorized()
+    }
+}
+
+protocol NotificationServicing {
+    @MainActor
+    func requestAuthorization(completion: @escaping (Bool) -> Void)
+}
+
+struct NotificationServices: NotificationServicing {
+    @MainActor
+    func requestAuthorization(completion: @escaping (Bool) -> Void) {
+        NotificationManager.shared.requestAuthorization(completion: completion)
+    }
+}
+
 struct OnboardingView: View {
     // Don't create managers or access HealthKit immediately - they're only needed at the end
     // Accessing HealthKitManager.shared causes expensive HealthKit framework initialization on main thread
@@ -19,9 +62,17 @@ struct OnboardingView: View {
     @FocusState private var isKeyboardPrewarmFocused: Bool  // Hidden field for keyboard initialization
 
     @Binding var isOnboardingComplete: Bool
+    let healthKitServices: HealthKitServicing
+    let notificationServices: NotificationServicing
 
-    init(isOnboardingComplete: Binding<Bool>) {
+    init(
+        isOnboardingComplete: Binding<Bool>,
+        healthKitServices: HealthKitServicing = HealthKitServices(),
+        notificationServices: NotificationServicing = NotificationServices()
+    ) {
         self._isOnboardingComplete = isOnboardingComplete
+        self.healthKitServices = healthKitServices
+        self.notificationServices = notificationServices
 
         // Style page indicator dots to be visible against white background
         // Current page = blue (matches app theme), inactive pages = light gray
@@ -539,14 +590,14 @@ struct OnboardingView: View {
                     // Per Apple documentation: UI operations must happen on main thread
                     // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
                     DispatchQueue.main.async {
-                        HealthKitManager.shared.requestAuthorization { success, error in
+                        healthKitServices.requestAuthorization { success, error in
                             if success {
                                 AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
 
                                 // Verify which permissions were actually granted
-                                let weightGranted = HealthKitManager.shared.isWeightAuthorized()
-                                let waterGranted = HealthKitManager.shared.isWaterAuthorized()
-                                let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+                                let weightGranted = healthKitServices.isWeightAuthorized()
+                                let waterGranted = healthKitServices.isWaterAuthorized()
+                                let sleepGranted = healthKitServices.isSleepAuthorized()
 
                                 AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
 
@@ -588,14 +639,14 @@ struct OnboardingView: View {
                     // Per Apple documentation: UI operations must happen on main thread
                     // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
                     DispatchQueue.main.async {
-                        HealthKitManager.shared.requestAuthorization { success, error in
+                        healthKitServices.requestAuthorization { success, error in
                             if success {
                                 AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
 
                                 // Verify which permissions were actually granted
-                                let weightGranted = HealthKitManager.shared.isWeightAuthorized()
-                                let waterGranted = HealthKitManager.shared.isWaterAuthorized()
-                                let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+                                let weightGranted = healthKitServices.isWeightAuthorized()
+                                let waterGranted = healthKitServices.isWaterAuthorized()
+                                let sleepGranted = healthKitServices.isSleepAuthorized()
 
                                 AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
 
@@ -686,7 +737,7 @@ struct OnboardingView: View {
             VStack(spacing: 15) {
                 Button(action: {
                     AppLogger.debug("Enable Notifications button tapped, requesting notification authorization", category: AppLogger.ui)
-                    NotificationManager.shared.requestAuthorization { granted in
+                    notificationServices.requestAuthorization { granted in
                         AppLogger.debug("Notification authorization result: \(granted ? "granted" : "denied"), completing onboarding", category: AppLogger.ui)
                         completeOnboarding()
                     }
@@ -792,9 +843,9 @@ struct OnboardingView: View {
 
         if healthKitSyncChoice.enabled {
             // Check which specific permissions were granted
-            let weightGranted = HealthKitManager.shared.isWeightAuthorized()
-            let waterGranted = HealthKitManager.shared.isWaterAuthorized()
-            let sleepGranted = HealthKitManager.shared.isSleepAuthorized()
+            let weightGranted = healthKitServices.isWeightAuthorized()
+            let waterGranted = healthKitServices.isWaterAuthorized()
+            let sleepGranted = healthKitServices.isSleepAuthorized()
 
             AppLogger.debug("HealthKit sync enabled, checking granular permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
 

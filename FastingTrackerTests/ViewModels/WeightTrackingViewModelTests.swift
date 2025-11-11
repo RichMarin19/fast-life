@@ -11,6 +11,13 @@ final class WeightTrackingViewModelTests: XCTestCase {
     var sut: WeightTrackingViewModel!
     var mockWeightManager: WeightManager!
     var mockScheduler: BehavioralNotificationScheduler!
+    var mockOptOutManager: MockContentOptOutManager!
+    var mockHealthKitManager: MockHealthKitManager!
+    var mockNudgeManager: MockHealthKitNudgeManager!
+    var mockLocaleProvider: MutableLocaleProvider!
+    var mockAppSettings: AppSettings!
+    fileprivate var mockPersistence: TestWeightPersistence!
+    var dependencies: WeightTrackingViewModel.Dependencies!
 
     // UserDefaults keys for cleanup
     private let showGoalLineKey = "showGoalLine"
@@ -24,11 +31,11 @@ final class WeightTrackingViewModelTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: weightGoalKey)
 
         // Create mock dependencies
-        mockWeightManager = WeightManager()
-        mockScheduler = BehavioralNotificationScheduler.shared
+        mockLocaleProvider = MutableLocaleProvider(measurementSystem: .us, localeIdentifier: "en_US")
+        mockAppSettings = AppSettings(localeProvider: mockLocaleProvider)
+        rebuildDependencies()
 
-        // Create ViewModel with empty init (Phase 1 fix pattern)
-        sut = WeightTrackingViewModel()
+        sut = WeightTrackingViewModel(dependencies: dependencies)
     }
 
     override func tearDown() {
@@ -39,47 +46,75 @@ final class WeightTrackingViewModelTests: XCTestCase {
         sut = nil
         mockWeightManager = nil
         mockScheduler = nil
+        mockOptOutManager = nil
+        mockHealthKitManager = nil
+        mockNudgeManager = nil
+        mockLocaleProvider = nil
+        mockAppSettings = nil
+        mockPersistence = nil
+        dependencies = nil
         super.tearDown()
+    }
+
+    private func makeViewModel() -> WeightTrackingViewModel {
+        WeightTrackingViewModel(dependencies: dependencies)
+    }
+
+    private func rebuildDependencies(goalWeight: Double? = nil) {
+        mockHealthKitManager = MockHealthKitManager()
+        mockScheduler = BehavioralNotificationScheduler.shared
+        mockOptOutManager = MockContentOptOutManager()
+        mockNudgeManager = MockHealthKitNudgeManager()
+        mockPersistence = TestWeightPersistence(goalWeight: goalWeight)
+        mockWeightManager = WeightManager(
+            healthKit: mockHealthKitManager,
+            dataStore: MockDataStore(),
+            appSettings: mockAppSettings,
+            persistence: mockPersistence,
+            syncCoordinator: WeightSyncCoordinator(),
+            analytics: WeightAnalyticsService()
+        )
+        dependencies = WeightTrackingViewModel.Dependencies(
+            weightManager: mockWeightManager,
+            behavioralScheduler: mockScheduler,
+            optOutManager: mockOptOutManager,
+            healthKitManager: mockHealthKitManager,
+            nudgeManager: mockNudgeManager
+        )
     }
 
     // MARK: - Dependency Injection Tests (Phase 1 Fix Validation)
 
-    func test_configure_injectsManagersCorrectly() {
-        // Given: Fresh ViewModel (created in setUp with empty init)
-        // When: Configure with mock managers
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
-
-        // Then: Managers should be injected
+    func test_init_injectsManagersCorrectly() {
         XCTAssertTrue(sut.weightManager === mockWeightManager,
                      "WeightManager should be the injected instance")
         XCTAssertTrue(sut.behavioralScheduler === mockScheduler,
                      "BehavioralScheduler should be the injected instance")
     }
 
-    func test_configure_loadsGoalSettings() {
+    func test_init_loadsGoalSettings() {
         // Given: Goal settings saved in UserDefaults
         UserDefaults.standard.set(true, forKey: showGoalLineKey)
         UserDefaults.standard.set(165.0, forKey: weightGoalKey)
+        rebuildDependencies(goalWeight: nil)
 
-        // When: Configure ViewModel
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        // When: Create ViewModel
+        let newViewModel = makeViewModel()
 
         // Then: Goal settings should be loaded
-        XCTAssertTrue(sut.showGoalLine, "showGoalLine should be loaded from UserDefaults")
-        XCTAssertEqual(sut.weightGoal, 165.0, "weightGoal should be loaded from UserDefaults")
+        XCTAssertTrue(newViewModel.showGoalLine, "showGoalLine should be loaded from UserDefaults")
+        XCTAssertEqual(newViewModel.weightGoal, 165.0, "weightGoal should be loaded from UserDefaults")
     }
 
     // MARK: - Goal Toggle Persistence Tests (CONSULTANT REVIEW - Issue #2)
 
     func test_showGoalLine_persistsAcrossInstances() {
         // Given: Enable goal line and save
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         sut.showGoalLine = true
         sut.saveGoalSettings()
 
         // When: Create new ViewModel (simulates app restart)
-        let newViewModel = WeightTrackingViewModel()
-        newViewModel.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        let newViewModel = makeViewModel()
 
         // Then: Goal line should still be enabled
         XCTAssertTrue(newViewModel.showGoalLine,
@@ -88,13 +123,11 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_showGoalLine_persistsWhenDisabled() {
         // Given: Disable goal line and save
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         sut.showGoalLine = false
         sut.saveGoalSettings()
 
         // When: Create new ViewModel (simulates app restart)
-        let newViewModel = WeightTrackingViewModel()
-        newViewModel.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        let newViewModel = makeViewModel()
 
         // Then: Goal line should still be disabled
         XCTAssertFalse(newViewModel.showGoalLine,
@@ -105,13 +138,11 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_weightGoal_persistsAcrossInstances() {
         // Given: Set goal to 165.0 and save
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         sut.weightGoal = 165.0
         sut.saveGoalSettings()
 
         // When: Create new ViewModel (simulates app restart)
-        let newViewModel = WeightTrackingViewModel()
-        newViewModel.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        let newViewModel = makeViewModel()
 
         // Then: Goal should be synced
         XCTAssertEqual(newViewModel.weightGoal, 165.0, accuracy: 0.01,
@@ -120,7 +151,6 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_weightGoal_updatesCorrectly() {
         // Given: Initial goal
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         sut.weightGoal = 180.0
         sut.saveGoalSettings()
 
@@ -129,8 +159,7 @@ final class WeightTrackingViewModelTests: XCTestCase {
         sut.saveGoalSettings()
 
         // Then: New goal should persist
-        let newViewModel = WeightTrackingViewModel()
-        newViewModel.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        let newViewModel = makeViewModel()
         XCTAssertEqual(newViewModel.weightGoal, 170.0, accuracy: 0.01,
                       "Updated weightGoal should persist")
     }
@@ -140,8 +169,8 @@ final class WeightTrackingViewModelTests: XCTestCase {
         UserDefaults.standard.removeObject(forKey: weightGoalKey)
         mockWeightManager.setGoalWeight(180.0)
 
-        // When: Configure new ViewModel
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        // When: Create new ViewModel
+        sut = makeViewModel()
 
         // Then: Should have default value of 180.0
         XCTAssertEqual(sut.weightGoal, 180.0, accuracy: 0.01,
@@ -152,14 +181,12 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_goalSettings_persistTogether() {
         // Given: Enable goal line and set custom goal
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         sut.showGoalLine = true
         sut.weightGoal = 155.5
         sut.saveGoalSettings()
 
         // When: Create new ViewModel
-        let newViewModel = WeightTrackingViewModel()
-        newViewModel.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        let newViewModel = makeViewModel()
 
         // Then: Both settings should persist
         XCTAssertTrue(newViewModel.showGoalLine,
@@ -170,19 +197,16 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_goalSettings_independentPersistence() {
         // Given: Enable goal line only
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         sut.showGoalLine = true
         sut.saveGoalSettings()
 
         // When: Create new ViewModel and change only weightGoal
-        let newViewModel = WeightTrackingViewModel()
-        newViewModel.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        let newViewModel = makeViewModel()
         newViewModel.weightGoal = 150.0
         newViewModel.saveGoalSettings()
 
         // Then: Both settings should persist independently
-        let thirdViewModel = WeightTrackingViewModel()
-        thirdViewModel.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
+        let thirdViewModel = makeViewModel()
         XCTAssertTrue(thirdViewModel.showGoalLine,
                      "showGoalLine should persist independently")
         XCTAssertEqual(thirdViewModel.weightGoal, 150.0, accuracy: 0.01,
@@ -194,7 +218,6 @@ final class WeightTrackingViewModelTests: XCTestCase {
     func test_onViewAppear_showsFirstTimeSetupWhenEmpty() {
         // Given: Empty weight entries
         mockWeightManager.weightEntries.removeAll()
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
 
         // When: View appears
         sut.onViewAppear()
@@ -207,7 +230,6 @@ final class WeightTrackingViewModelTests: XCTestCase {
     func test_onViewAppear_doesNotShowSetupWithEntries() {
         // Given: Weight entries exist
         mockWeightManager.addWeightEntryInPreferredUnit(weight: 175.0, date: Date())
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
 
         // When: View appears
         sut.onViewAppear()
@@ -221,7 +243,6 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_publishedProperties_triggerUpdates() {
         // Given: Configured ViewModel
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         let expectation = expectation(description: "Published property changed")
         var receivedValue = false
 
@@ -245,9 +266,6 @@ final class WeightTrackingViewModelTests: XCTestCase {
     // MARK: - HealthKit Integration Tests
 
     func test_handleHealthKitConnect_updatesScheduler() {
-        // Given: Configured ViewModel
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
-
         // When: User taps HealthKit connect (method exists but requires HealthKit)
         // Note: Can't fully test without mocking HealthKitManager
 
@@ -258,7 +276,6 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_handleHealthKitDismiss_hidesNudge() {
         // Given: HealthKit nudge showing
-        sut.configure(weightManager: mockWeightManager, behavioralScheduler: mockScheduler)
         sut.showHealthKitNudge = true
 
         // When: User dismisses nudge
@@ -268,4 +285,37 @@ final class WeightTrackingViewModelTests: XCTestCase {
         XCTAssertFalse(sut.showHealthKitNudge,
                       "HealthKit nudge should be hidden after dismissal")
     }
+}
+
+// MARK: - Test Doubles
+
+fileprivate final class TestWeightPersistence: WeightPersistenceManaging {
+    private var entries: [WeightEntry]
+    private var syncPreference: Bool?
+    private var startOverride: (Double?, Date?)
+    private var milestoneCount: Int?
+    private var goalWeight: Double?
+
+    init(entries: [WeightEntry] = [],
+         syncPreference: Bool? = nil,
+         startOverride: (Double?, Date?) = (nil, nil),
+         milestoneCount: Int? = nil,
+         goalWeight: Double? = nil) {
+        self.entries = entries
+        self.syncPreference = syncPreference
+        self.startOverride = startOverride
+        self.milestoneCount = milestoneCount
+        self.goalWeight = goalWeight
+    }
+
+    func loadWeightEntries() -> [WeightEntry] { entries }
+    func saveWeightEntries(_ entries: [WeightEntry]) { self.entries = entries }
+    func loadSyncPreference() -> Bool? { syncPreference }
+    func saveSyncPreference(_ value: Bool) { syncPreference = value }
+    func loadStartWeightOverride() -> (weight: Double?, date: Date?) { startOverride }
+    func saveStartWeightOverride(weight: Double?, date: Date?) { startOverride = (weight, date) }
+    func loadMilestoneCount() -> Int? { milestoneCount }
+    func saveMilestoneCount(_ count: Int) { milestoneCount = count }
+    func loadGoalWeight() -> Double? { goalWeight }
+    func saveGoalWeight(_ weight: Double) { goalWeight = weight }
 }

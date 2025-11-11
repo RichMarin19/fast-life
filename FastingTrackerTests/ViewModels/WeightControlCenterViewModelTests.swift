@@ -12,6 +12,17 @@ final class WeightControlCenterViewModelTests: XCTestCase {
     var mockScheduler: BehavioralNotificationScheduler!
     var mockOptOutManager: MockContentOptOutManager!
     var mockProgressStoryCardManager: MockProgressStoryCardManager!
+    var mockHealthKitManager: MockHealthKitManager!
+    var mockNudgeManager: MockHealthKitNudgeManager!
+    var trackerCardManager: CardManager<TrackerCardType>!
+    var measurementProvider: WeightControlCenterMeasurementProviderStub!
+    var measurementObserver: MeasurementSystemObserver!
+    var mockNotificationManager: MockWeightNotificationManager!
+    var dependencies: WeightDependencies!
+    var notificationDefaults: UserDefaults!
+    var notificationDefaultsSuiteName: String?
+    var viewModelDefaults: UserDefaults!
+    var viewModelDefaultsSuiteName: String?
 
     override func setUp() {
         super.setUp()
@@ -19,11 +30,45 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         mockScheduler = BehavioralNotificationScheduler.shared
         mockOptOutManager = MockContentOptOutManager()
         mockProgressStoryCardManager = MockProgressStoryCardManager()
-        sut = WeightControlCenterViewModel(
+        mockHealthKitManager = MockHealthKitManager()
+        mockNudgeManager = MockHealthKitNudgeManager()
+        trackerCardManager = CardManager<TrackerCardType>(preferencesKey: "test.trackerCards.\(UUID().uuidString)")
+        measurementProvider = WeightControlCenterMeasurementProviderStub(localeIdentifier: "en_US")
+        measurementObserver = MeasurementSystemObserver(provider: measurementProvider)
+        mockNotificationManager = MockWeightNotificationManager()
+
+        let notificationSuite = "WeightControlCenterViewModelTests.\(UUID().uuidString)"
+        notificationDefaultsSuiteName = notificationSuite
+        notificationDefaults = UserDefaults(suiteName: notificationSuite)!
+        notificationDefaults.removePersistentDomain(forName: notificationSuite)
+
+        let viewModelSuite = "WeightControlCenterViewModelTests.\(UUID().uuidString)"
+        viewModelDefaultsSuiteName = viewModelSuite
+        viewModelDefaults = UserDefaults(suiteName: viewModelSuite)!
+        viewModelDefaults.removePersistentDomain(forName: viewModelSuite)
+
+        dependencies = WeightDependencies.test(
             weightManager: mockWeightManager,
             behavioralScheduler: mockScheduler,
+            trackerCardManager: trackerCardManager,
+            progressStoryCardManager: mockProgressStoryCardManager,
             optOutManager: mockOptOutManager,
-            progressStoryCardManager: mockProgressStoryCardManager
+            healthKitManager: mockHealthKitManager,
+            nudgeManager: mockNudgeManager,
+            measurementProvider: measurementProvider,
+            measurementObserver: measurementObserver,
+            notificationCoordinatorFactory: { [mockNotificationManager, notificationDefaults] manager, _ in
+                WeightNotificationCoordinator(
+                    weightManager: manager,
+                    userDefaults: notificationDefaults,
+                    notificationManager: mockNotificationManager
+                )
+            }
+        )
+
+        sut = dependencies.makeControlCenterViewModel(
+            userDefaults: viewModelDefaults,
+            locale: Locale(identifier: "en_US")
         )
     }
 
@@ -33,7 +78,73 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         mockScheduler = nil
         mockOptOutManager = nil
         mockProgressStoryCardManager = nil
+        mockHealthKitManager = nil
+        mockNudgeManager = nil
+        trackerCardManager = nil
+        measurementProvider = nil
+        measurementObserver = nil
+        mockNotificationManager = nil
+        dependencies = nil
+        if let suite = notificationDefaultsSuiteName {
+            notificationDefaults?.removePersistentDomain(forName: suite)
+        }
+        if let viewSuite = viewModelDefaultsSuiteName {
+            viewModelDefaults?.removePersistentDomain(forName: viewSuite)
+        }
+        notificationDefaults = nil
+        viewModelDefaults = nil
         super.tearDown()
+    }
+
+    private var userDefaultsUnderTest: UserDefaults {
+        guard let defaults = viewModelDefaults else {
+            XCTFail("viewModelDefaults not configured")
+            return .standard
+        }
+        return defaults
+    }
+
+    private func makeViewModel(localeIdentifier: String) -> WeightControlCenterViewModel {
+        let measurementProvider = WeightControlCenterMeasurementProviderStub(localeIdentifier: localeIdentifier)
+        let measurementObserver = MeasurementSystemObserver(provider: measurementProvider)
+        let trackerCards = CardManager<TrackerCardType>(preferencesKey: "test.trackerCards.\(UUID().uuidString)")
+        let progressCards = MockProgressStoryCardManager()
+        let suiteName = "WeightControlCenterViewModelTests.\(UUID().uuidString)"
+        let notificationDefaults = UserDefaults(suiteName: suiteName)!
+        notificationDefaults.removePersistentDomain(forName: suiteName)
+        addTeardownBlock {
+            notificationDefaults.removePersistentDomain(forName: suiteName)
+        }
+        let viewSuite = "WeightControlCenterViewModelTests.view.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: viewSuite)!
+        defaults.removePersistentDomain(forName: viewSuite)
+        addTeardownBlock {
+            defaults.removePersistentDomain(forName: viewSuite)
+        }
+
+        let deps = WeightDependencies.test(
+            weightManager: mockWeightManager,
+            behavioralScheduler: mockScheduler,
+            trackerCardManager: trackerCards,
+            progressStoryCardManager: progressCards,
+            optOutManager: mockOptOutManager,
+            healthKitManager: mockHealthKitManager,
+            nudgeManager: mockNudgeManager,
+            measurementProvider: measurementProvider,
+            measurementObserver: measurementObserver,
+            notificationCoordinatorFactory: { [mockNotificationManager] manager, _ in
+                WeightNotificationCoordinator(
+                    weightManager: manager,
+                    userDefaults: notificationDefaults,
+                    notificationManager: mockNotificationManager
+                )
+            }
+        )
+
+        return deps.makeControlCenterViewModel(
+            userDefaults: defaults,
+            locale: Locale(identifier: localeIdentifier)
+        )
     }
 
     // MARK: - Initialization Tests
@@ -128,7 +239,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         sut.saveCardOrder()
 
         // Then: Should persist to UserDefaults
-        let userDefaults = UserDefaults.standard
+        let userDefaults = userDefaultsUnderTest
         if let data = userDefaults.data(forKey: "weightControlCenterCardOrder"),
            let decoded = try? JSONDecoder().decode([ControlCenterCardType].self, from: data) {
             XCTAssertEqual(decoded, customOrder)
@@ -137,11 +248,88 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         }
     }
 
+    // MARK: - Progress Story Experience Toggle
+
+    func testSetProgressStoryExperienceVisibleFalseHidesAllCardsAndCreatesOptOuts() {
+        // Given: All cards visible and no opt-outs
+        XCTAssertTrue(ProgressStoryCardType.allCases.allSatisfy { mockProgressStoryCardManager.isCardVisible($0) })
+        XCTAssertTrue(mockOptOutManager.optedOutContentItems.isEmpty)
+
+        // When: Hide the entire Progress Story experience
+        sut.setProgressStoryExperienceVisible(false)
+
+        // Then: Every card is hidden and all associated opt-out IDs are stored
+        XCTAssertTrue(ProgressStoryCardType.allCases.allSatisfy { !mockProgressStoryCardManager.isCardVisible($0) })
+
+        let expectedOptOutIDs = ProgressStoryCardType.allCases
+            .compactMap { $0.optOutContentID }
+            .sorted()
+        let actualOptOutIDs = mockOptOutManager.optedOutContentItems
+            .map { $0.id }
+            .sorted()
+        XCTAssertEqual(actualOptOutIDs, expectedOptOutIDs)
+        XCTAssertTrue(sut.optOutProgressSummaries)
+    }
+
+    func testSetProgressStoryExperienceVisibleTrueRestoresCardsAndClearsOptOuts() {
+        // Given: Experience currently hidden
+        sut.setProgressStoryExperienceVisible(false)
+        XCTAssertFalse(ProgressStoryCardType.allCases.allSatisfy { mockProgressStoryCardManager.isCardVisible($0) })
+        XCTAssertFalse(mockOptOutManager.optedOutContentItems.isEmpty)
+
+        // When: Show the experience again
+        sut.setProgressStoryExperienceVisible(true)
+
+        // Then: All cards reappear and opt-outs are cleared
+        XCTAssertTrue(ProgressStoryCardType.allCases.allSatisfy { mockProgressStoryCardManager.isCardVisible($0) })
+        XCTAssertTrue(mockOptOutManager.optedOutContentItems.isEmpty)
+        XCTAssertFalse(sut.optOutProgressSummaries)
+    }
+
+    func testRestoreTrackerCardShowsCard() {
+        sut.cardManager.hideCard(.chart)
+        XCTAssertFalse(sut.cardManager.isCardVisible(.chart))
+
+        sut.restoreTrackerCard(.chart)
+
+        XCTAssertTrue(sut.cardManager.isCardVisible(.chart))
+    }
+
+    // MARK: - Progress Story Visibility Helpers
+
+    func testAreAllProgressStoryCardsVisibleReturnsFalseWhenCardHidden() {
+        // Given: A single card hidden via the manager
+        mockProgressStoryCardManager.hideCard(.banner)
+
+        // Then: Visibility helper reflects the hidden state
+        XCTAssertFalse(sut.areAllProgressStoryCardsVisible)
+    }
+
+    func testAreAllProgressStoryCardsVisibleReturnsFalseWhenOptOutRecorded() {
+        // Given: All cards visible but an opt-out record exists
+        let optOutID = ProgressStoryCardType.banner.optOutContentID ?? "progress_story_banner_v1"
+        mockOptOutManager.optedOutContentItems = [
+            ContentItem(id: optOutID, category: .progressSummaries, displayText: "Banner")
+        ]
+
+        // Then: Helper reports false because opt-out state is not clean
+        XCTAssertFalse(sut.areAllProgressStoryCardsVisible)
+    }
+
+    func testAreAllProgressStoryCardsVisibleReturnsTrueWhenCardsVisibleAndNoOptOuts() {
+        // Given: Default state keeps every card visible with no opt-outs
+        XCTAssertTrue(ProgressStoryCardType.allCases.allSatisfy { mockProgressStoryCardManager.isCardVisible($0) })
+        XCTAssertTrue(mockOptOutManager.optedOutContentItems.isEmpty)
+
+        // Then: Helper evaluates to true
+        XCTAssertTrue(sut.areAllProgressStoryCardsVisible)
+    }
+
     func testLoadCardOrder_RestoresPersistedOrder() {
         // Given: Saved custom card order
         let customOrder: [ControlCenterCardType] = [.insights, .goals, .sync, .notifications, .history, .experience]
         if let encoded = try? JSONEncoder().encode(customOrder) {
-            UserDefaults.standard.set(encoded, forKey: "weightControlCenterCardOrder")
+            userDefaultsUnderTest.set(encoded, forKey: "weightControlCenterCardOrder")
         }
 
         // When: Load card order
@@ -209,11 +397,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
     }
 
     func testFormatStartWeightInput_RespectsCommaDecimalLocale() {
-        let frViewModel = WeightControlCenterViewModel(
-            weightManager: MockWeightManager(),
-            behavioralScheduler: mockScheduler,
-            locale: Locale(identifier: "fr_FR")
-        )
+        let frViewModel = makeViewModel(localeIdentifier: "fr_FR")
 
         frViewModel.formatStartWeightInput("82,5")
 
@@ -222,11 +406,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
     }
 
     func testSaveStartWeight_persistsCommaDecimalLocale() {
-        let frViewModel = WeightControlCenterViewModel(
-            weightManager: MockWeightManager(),
-            behavioralScheduler: mockScheduler,
-            locale: Locale(identifier: "fr_FR")
-        )
+        let frViewModel = makeViewModel(localeIdentifier: "fr_FR")
 
         frViewModel.startWeightString = "82,5"
         frViewModel.saveStartWeight()
@@ -237,11 +417,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
     }
 
     func testFormatStartWeightInput_RemovesGroupingSeparators() {
-        let deViewModel = WeightControlCenterViewModel(
-            weightManager: MockWeightManager(),
-            behavioralScheduler: mockScheduler,
-            locale: Locale(identifier: "de_DE")
-        )
+        let deViewModel = makeViewModel(localeIdentifier: "de_DE")
 
         deViewModel.formatStartWeightInput("1.234,5")
 
@@ -490,7 +666,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         sut.saveExperienceOptOuts()
 
         // Then: Should persist to UserDefaults
-        let userDefaults = UserDefaults.standard
+        let userDefaults = userDefaultsUnderTest
         XCTAssertTrue(userDefaults.bool(forKey: "experienceOptOut_trackerCards"))
         XCTAssertFalse(userDefaults.bool(forKey: "experienceOptOut_educationalInsights"))
         XCTAssertTrue(userDefaults.bool(forKey: "experienceOptOut_behavioralNudges"))
@@ -536,7 +712,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
 
     func testHasCompletedInitialImport_ReturnsFalseByDefault() {
         // Given: Fresh installation (no UserDefaults key set)
-        UserDefaults.standard.removeObject(forKey: "weightHasCompletedInitialImport")
+        userDefaultsUnderTest.removeObject(forKey: "weightHasCompletedInitialImport")
 
         // When: Check if initial import completed
         let hasCompleted = sut.hasCompletedInitialImport()
@@ -547,13 +723,13 @@ final class WeightControlCenterViewModelTests: XCTestCase {
 
     func testMarkInitialImportCompleted_SetsUserDefaultsFlag() {
         // Given: Initial import not completed
-        UserDefaults.standard.removeObject(forKey: "weightHasCompletedInitialImport")
+        userDefaultsUnderTest.removeObject(forKey: "weightHasCompletedInitialImport")
 
         // When: Mark as completed
         sut.markInitialImportCompleted()
 
         // Then: UserDefaults should be set
-        XCTAssertTrue(UserDefaults.standard.bool(forKey: "weightHasCompletedInitialImport"))
+        XCTAssertTrue(userDefaultsUnderTest.bool(forKey: "weightHasCompletedInitialImport"))
     }
 
     // MARK: - Permission Status Tests
@@ -568,4 +744,82 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         // (Can't verify specific value without mocking HealthKitManager)
         XCTAssertTrue(sut.canEnableSync || !sut.canEnableSync) // Accept any boolean
     }
+
+    func testSetProgressStoryExperienceVisibleFalseHidesAllCardsAndOptOuts() {
+        sut.setProgressStoryExperienceVisible(false)
+
+        XCTAssertTrue(sut.optOutProgressSummaries)
+        XCTAssertTrue(ProgressStoryCardType.allCases.allSatisfy { !mockProgressStoryCardManager.isCardVisible($0) })
+        ProgressStoryCardType.allCases.forEach { card in
+            if let contentID = card.optOutContentID {
+                XCTAssertTrue(mockOptOutManager.isContentOptedOut(id: contentID))
+            }
+        }
+    }
+
+    func testSetProgressStoryExperienceVisibleTrueRestoresAllCards() {
+        sut.setProgressStoryExperienceVisible(false)
+        sut.setProgressStoryExperienceVisible(true)
+
+        XCTAssertFalse(sut.optOutProgressSummaries)
+        XCTAssertTrue(ProgressStoryCardType.allCases.allSatisfy { mockProgressStoryCardManager.isCardVisible($0) })
+        ProgressStoryCardType.allCases.forEach { card in
+            if let contentID = card.optOutContentID {
+                XCTAssertFalse(mockOptOutManager.isContentOptedOut(id: contentID))
+            }
+        }
+    }
+}
+
+// MARK: - Test Doubles
+
+final class WeightControlCenterMeasurementProviderStub: MeasurementSystemProviding {
+    private let subject: CurrentValueSubject<Locale.MeasurementSystem, Never>
+    private let localeIdentifier: String
+
+    init(localeIdentifier: String) {
+        self.localeIdentifier = localeIdentifier
+        let locale = Locale(identifier: localeIdentifier)
+        if #available(iOS 16.0, *) {
+            subject = CurrentValueSubject(locale.measurementSystem)
+        } else {
+            subject = CurrentValueSubject(locale.usesMetricSystem ? .metric : .us)
+        }
+    }
+
+    var currentUnit: WeightUnit {
+        currentMeasurementSystem == .metric ? .kilograms : .pounds
+    }
+
+    var locale: Locale {
+        Locale(identifier: localeIdentifier)
+    }
+
+    var currentMeasurementSystem: Locale.MeasurementSystem {
+        subject.value
+    }
+
+    var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func refresh() {
+        subject.send(currentMeasurementSystem)
+    }
+}
+
+final class MockWeightNotificationManager: WeightNotificationManaging {
+    func requestAuthorization(completion: @escaping (Bool) -> Void) {
+        completion(true)
+    }
+
+    func cancelAllWeightReminders() async {}
+
+    func scheduleNextReminder(
+        preferredTime: DateComponents,
+        quietHours: WeightQuietHours?,
+        skipWeekdays: Set<Int>
+    ) async throws {}
+
+    func debugPrintPendingWeightReminders() async {}
 }

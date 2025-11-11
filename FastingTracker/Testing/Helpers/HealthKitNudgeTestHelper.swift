@@ -3,6 +3,7 @@ import Foundation
 /// Helper for testing the HealthKit nudge system
 /// Use this in debug mode to simulate different user states
 class HealthKitNudgeTestHelper {
+    static var healthKitServices: HealthKitServicing = HealthKitServices()
 
     /// Simulate a user who skipped HealthKit during onboarding
     /// Call this to test the nudge system
@@ -46,9 +47,9 @@ class HealthKitNudgeTestHelper {
     static func debugNudgeState() {
         let onboardingComplete = UserDefaults.standard.bool(forKey: "onboardingCompleted")
         let healthKitSkipped = UserDefaults.standard.bool(forKey: "healthKitSkippedOnboarding")
-        let weightAuthorized = HealthKitManager.shared.isWeightAuthorized()
-        let waterAuthorized = HealthKitManager.shared.isWaterAuthorized()
-        let sleepAuthorized = HealthKitManager.shared.isSleepAuthorized()
+        let weightAuthorized = healthKitServices.isWeightAuthorized()
+        let waterAuthorized = healthKitServices.isWaterAuthorized()
+        let sleepAuthorized = healthKitServices.isSleepAuthorized()
 
         // Timer-specific state
         let timerVisitCount = UserDefaults.standard.integer(forKey: "healthkit_nudge_timer_visit_count")

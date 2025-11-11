@@ -59,6 +59,7 @@ class NotificationsViewModel: ObservableObject {
     // MARK: - Private Properties
 
     private let userDefaults = UserDefaults.standard
+    private let notificationManager: WeightNotificationManaging
 
     // Phase 2a: Weight notification keys (reuse WeightNotificationManager keys for consistency)
     private let weightRemindersEnabledKey = "weightRemindersEnabled"
@@ -80,8 +81,14 @@ class NotificationsViewModel: ObservableObject {
 
     // MARK: - Initialization
 
-    init() {
+    init(notificationManager: WeightNotificationManaging? = nil) {
+        self.notificationManager = notificationManager ?? NotificationsViewModel.makeDefaultNotificationManager()
         loadWeightNotificationSettings()
+    }
+
+    @MainActor
+    private static func makeDefaultNotificationManager() -> WeightNotificationManaging {
+        WeightNotificationManager.shared
     }
 
     // MARK: - Notification Management
@@ -92,7 +99,7 @@ class NotificationsViewModel: ObservableObject {
 
         if enabled {
             // Request authorization and schedule
-            WeightNotificationManager.shared.requestAuthorization { granted in
+            notificationManager.requestAuthorization { granted in
                 Task { @MainActor in
                     if granted {
                         self.scheduleNextReminder()
@@ -108,7 +115,7 @@ class NotificationsViewModel: ObservableObject {
         } else {
             // Disable - cancel all weight reminders
             Task {
-                await WeightNotificationManager.shared.cancelAllWeightReminders()
+                await notificationManager.cancelAllWeightReminders()
                 AppLogger.notifications.info("Weight reminders disabled")
             }
         }
@@ -228,7 +235,7 @@ class NotificationsViewModel: ObservableObject {
             }
 
             do {
-                try await WeightNotificationManager.shared.scheduleNextReminder(
+                try await notificationManager.scheduleNextReminder(
                     preferredTime: preferredComponents,
                     quietHours: quietHours,
                     skipWeekdays: skipWeekdays
@@ -245,7 +252,7 @@ class NotificationsViewModel: ObservableObject {
 
     /// Debug helper: Print pending notifications to help troubleshoot
     func debugPendingNotifications() async {
-        await WeightNotificationManager.shared.debugPrintPendingWeightReminders()
+        await notificationManager.debugPrintPendingWeightReminders()
     }
 
     // MARK: - Persistence

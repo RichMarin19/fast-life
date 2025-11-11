@@ -101,7 +101,7 @@ final class WeightNotificationCoordinator: WeightNotificationCoordinating {
          notificationManager: WeightNotificationManaging? = nil) {
         _ = weightManager  // Reserved for future integrations (HealthKit sync hooks)
         self.userDefaults = userDefaults
-        self.notificationManager = notificationManager ?? WeightNotificationManager.shared
+        self.notificationManager = notificationManager ?? Self.makeDefaultNotificationManager()
         loadSettings()
     }
 
@@ -270,5 +270,27 @@ final class WeightNotificationCoordinator: WeightNotificationCoordinating {
 
     func debugPendingNotifications() async {
         await self.notificationManager.debugPrintPendingWeightReminders()
+    }
+}
+
+// MARK: - Factories
+
+extension WeightNotificationCoordinator {
+    @MainActor
+    static func live(
+        weightManager: WeightManager,
+        userDefaults: UserDefaults = .standard,
+        notificationManager: WeightNotificationManaging? = nil
+    ) -> WeightNotificationCoordinator {
+        WeightNotificationCoordinator(
+            weightManager: weightManager,
+            userDefaults: userDefaults,
+            notificationManager: notificationManager
+        )
+    }
+
+    @MainActor
+    private static func makeDefaultNotificationManager() -> WeightNotificationManaging {
+        WeightNotificationManager.shared
     }
 }

@@ -23,7 +23,8 @@ final class WeightGoalCoordinatorTests: XCTestCase {
         let coordinator = WeightGoalCoordinator(
             weightManager: weightManager,
             measurementProvider: measurementProvider,
-            locale: Locale(identifier: "en_US")
+            locale: Locale(identifier: "en_US"),
+            healthKitManager: MockHealthKitManager()
         )
 
         XCTAssertEqual(coordinator.weightGoalString, "170")
@@ -56,7 +57,8 @@ final class WeightGoalCoordinatorTests: XCTestCase {
         let coordinator = WeightGoalCoordinator(
             weightManager: weightManager,
             measurementProvider: measurementProvider,
-            locale: Locale(identifier: "en_US")
+            locale: Locale(identifier: "en_US"),
+            healthKitManager: MockHealthKitManager()
         )
 
         coordinator.formatStartWeightInput("180")

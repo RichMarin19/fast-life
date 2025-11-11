@@ -62,3 +62,4 @@ iOSInjectionProject/
 GoogleService-Info.plist
 google-services.json
 Config.xcconfig
+test_results.log

@@ -40,7 +40,8 @@ struct WeightControlCenterCardList: View {
                     viewModel: viewModel,
                     goalCoordinator: viewModel.goalCoordinator,
                     showGoalLine: $showGoalLine,
-                    weightGoal: $weightGoal
+                    weightGoal: $weightGoal,
+                    measurementObserver: viewModel.measurementObserver
                 )
             case .notifications:
                 WeightControlCenterNotificationsCard(coordinator: viewModel.notificationCoordinator)
@@ -80,14 +81,10 @@ struct WeightControlCenterCardList: View {
 #Preview("Weight Control Center Card List") {
     ScrollView {
         WeightControlCenterCardList(
-            viewModel: WeightControlCenterViewModel(
-                weightManager: WeightManager(),
-                behavioralScheduler: BehavioralNotificationScheduler()
-            ),
+            viewModel: WeightControlCenterViewModel.preview(),
             showGoalLine: .constant(true),
             weightGoal: .constant(150.0),
             showDeleteAllConfirmation: .constant(false)
         )
     }
-    .environmentObject(BehavioralNotificationScheduler())
 }

@@ -4,7 +4,17 @@ import SwiftUI
 /// This view allows manual testing of card manager functionality
 /// TODO: Remove before production release
 struct TrackerCardManagerTestView: View {
-    @ObservedObject private var cardManager = TrackerCards.shared
+    @ObservedObject private var cardManager: CardManager<TrackerCardType>
+
+    init(cardManager: CardManager<TrackerCardType>? = nil) {
+        if let cardManager {
+            _cardManager = ObservedObject(wrappedValue: cardManager)
+        } else {
+            _cardManager = ObservedObject(
+                wrappedValue: MainActor.assumeIsolated { TrackerCards.shared }
+            )
+        }
+    }
 
     var body: some View {
         NavigationView {

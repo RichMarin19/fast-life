@@ -1,5 +1,13 @@
 import SwiftUI
 
+protocol HealthKitNudgeManaging: AnyObject {
+    func shouldShowNudge(for dataType: HealthDataType) -> Bool
+    func dismissNudge(for dataType: HealthDataType)
+    func permanentlyDismissTimerNudge()
+    func handleAuthorizationGranted(for dataType: HealthDataType)
+}
+
+extension HealthKitNudgeManager: HealthKitNudgeManaging {}
 
 /// Contextual nudge for users who skipped HealthKit during onboarding
 /// Following Lose It app pattern and Apple HIG for onboarding

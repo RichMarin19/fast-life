@@ -88,16 +88,20 @@ struct WeightControlCenterExperienceCard: View {
         VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
             Toggle(isOn: Binding(
                 get: {
-                    TrackerCardType.allCases.allSatisfy { viewModel.cardManager.isCardVisible($0) }
+                    TrackerCardType.allCases
+                        .filter { $0 != .history }
+                        .allSatisfy { viewModel.cardManager.isCardVisible($0) }
                 },
                 set: { newValue in
-                    for cardType in TrackerCardType.allCases {
+                    TrackerCardType.allCases
+                        .filter { $0 != .history }
+                        .forEach { cardType in
                         if newValue {
                             viewModel.cardManager.showCard(cardType)
                         } else {
                             viewModel.cardManager.hideCard(cardType)
                         }
-                    }
+                        }
                     viewModel.optOutTrackerCards = !newValue
                     viewModel.saveExperienceOptOuts()
                 }
@@ -113,9 +117,11 @@ struct WeightControlCenterExperienceCard: View {
             }
             .tint(Theme.ColorToken.accentPrimary)
 
-            let hiddenCards = TrackerCardType.allCases.filter { cardType in
-                !viewModel.cardManager.isCardVisible(cardType)
-            }
+            let hiddenCards = TrackerCardType.allCases
+                .filter { $0 != .history }
+                .filter { cardType in
+                    !viewModel.cardManager.isCardVisible(cardType)
+                }
 
             if !hiddenCards.isEmpty {
                 VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
@@ -143,7 +149,7 @@ struct WeightControlCenterExperienceCard: View {
                             Spacer()
 
                             Button("Restore") {
-                                viewModel.cardManager.showCard(cardType)
+                                viewModel.restoreTrackerCard(cardType)
                             }
                             .font(DSTypography.statLabel)
                             .foregroundColor(Theme.ColorToken.accentPrimary)
@@ -239,20 +245,8 @@ struct WeightControlCenterExperienceCard: View {
     private func progressStoryCardsToggle() -> some View {
         VStack(alignment: .leading, spacing: DSSpacing.cardSmallSpacing) {
             Toggle(isOn: Binding(
-                get: {
-                    ProgressStoryCardType.allCases.allSatisfy { viewModel.progressStoryCardManager.isCardVisible($0) }
-                },
-                set: { newValue in
-                    for cardType in ProgressStoryCardType.allCases {
-                        if newValue {
-                            viewModel.progressStoryCardManager.showCard(cardType)
-                        } else {
-                            viewModel.progressStoryCardManager.hideCard(cardType)
-                        }
-                    }
-                    viewModel.optOutProgressSummaries = !newValue
-                    viewModel.saveExperienceOptOuts()
-                }
+                get: { viewModel.areAllProgressStoryCardsVisible },
+                set: { newValue in viewModel.setProgressStoryExperienceVisible(newValue) }
             )) {
                 VStack(alignment: .leading, spacing: DSSpacing.cardExtraSmallSpacing) {
                     Text("Your Progress Journey")

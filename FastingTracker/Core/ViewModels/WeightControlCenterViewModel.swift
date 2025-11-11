@@ -14,12 +14,13 @@ class WeightControlCenterViewModel: ObservableObject {
     let behavioralScheduler: BehavioralNotificationScheduler
     let goalCoordinator: WeightGoalCoordinator
     let notificationCoordinator: WeightNotificationCoordinator
+    let measurementObserver: MeasurementSystemObserver
 
     // Singleton managers (pass-through)
     let optOutManager: ContentOptOutManaging
     let cardManager: CardManager<TrackerCardType>
     let progressStoryCardManager: ProgressStoryCardManaging
-    let healthKitManager = HealthKitManager.shared
+    let healthKitManager: HealthKitManagerProtocol
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Published State (was @State in View)
@@ -65,7 +66,7 @@ class WeightControlCenterViewModel: ObservableObject {
 
     // MARK: - Private Properties (was @AppStorage in View)
 
-    private let userDefaults = UserDefaults.standard
+    private let userDefaults: UserDefaults
     private let hasCompletedInitialImportKey = "weightHasCompletedInitialImport"
 
     // AppStorage keys
@@ -85,20 +86,30 @@ class WeightControlCenterViewModel: ObservableObject {
     init(weightManager: WeightManager,
          behavioralScheduler: BehavioralNotificationScheduler,
          locale: Locale = .current,
-         measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared,
-         notificationCoordinator: WeightNotificationCoordinator? = nil,
-         optOutManager: ContentOptOutManaging? = nil,
-         cardManager: CardManager<TrackerCardType>? = nil,
-         progressStoryCardManager: ProgressStoryCardManaging? = nil) {
+         measurementProvider: MeasurementSystemProviding,
+         measurementObserver: MeasurementSystemObserver,
+         notificationCoordinator: WeightNotificationCoordinator,
+         optOutManager: ContentOptOutManaging,
+         cardManager: CardManager<TrackerCardType>,
+         progressStoryCardManager: ProgressStoryCardManaging,
+         healthKitManager: HealthKitManagerProtocol,
+         userDefaults: UserDefaults) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
-        let resolvedOptOutManager = optOutManager ?? ContentOptOutManager.shared
-        self.optOutManager = resolvedOptOutManager
-        self.cardManager = cardManager ?? TrackerCards.shared
-        self.progressStoryCardManager = progressStoryCardManager ?? ProgressStoryCards.shared
-        self.goalCoordinator = WeightGoalCoordinator(weightManager: weightManager, measurementProvider: measurementProvider, locale: locale)
-        self.notificationCoordinator = notificationCoordinator ?? WeightNotificationCoordinator(weightManager: weightManager)
-
+        self.optOutManager = optOutManager
+        self.cardManager = cardManager
+        self.progressStoryCardManager = progressStoryCardManager
+        self.healthKitManager = healthKitManager
+        self.userDefaults = userDefaults
+        self.measurementObserver = measurementObserver
+        self.goalCoordinator = WeightGoalCoordinator(
+            weightManager: weightManager,
+            measurementProvider: measurementProvider,
+            locale: locale,
+            healthKitManager: healthKitManager
+        )
+        self.notificationCoordinator = notificationCoordinator
+        
         // Load persisted state
         loadCardOrder()
         loadExpandedCards()
@@ -112,6 +123,18 @@ class WeightControlCenterViewModel: ObservableObject {
             .store(in: &cancellables)
 
         self.notificationCoordinator.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        self.cardManager.objectWillChange
+            .sink { [weak self] _ in
+                self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        self.progressStoryCardManager.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
             }
@@ -158,6 +181,15 @@ class WeightControlCenterViewModel: ObservableObject {
         }
 
         return orderedItems
+    }
+
+    var areAllProgressStoryCardsVisible: Bool {
+        let cardsVisible = ProgressStoryCardType.allCases.allSatisfy { progressStoryCardManager.isCardVisible($0) }
+        let anyOptedOut = ProgressStoryCardType.allCases.contains { cardType in
+            guard let contentID = cardType.optOutContentID else { return false }
+            return optOutManager.isContentOptedOut(id: contentID)
+        }
+        return cardsVisible && !anyOptedOut
     }
 
     // MARK: - Card Management Methods
@@ -316,10 +348,10 @@ class WeightControlCenterViewModel: ObservableObject {
     func syncWithHealthKit() {
         isSyncing = true
 
-        let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
+        let isAuthorized = healthKitManager.isWeightAuthorized()
 
         if !isAuthorized {
-            HealthKitManager.shared.requestWeightAuthorization { success, error in
+            healthKitManager.requestWeightAuthorization { success, error in
                 Task<Void, Never> { @MainActor in
                     if success {
                         self.isSyncing = false
@@ -346,8 +378,8 @@ class WeightControlCenterViewModel: ObservableObject {
     }
 
     func updatePermissionStatus() {
-        hasHealthKitPermission = HealthKitManager.shared.isWeightAuthorized()
-        let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
+        hasHealthKitPermission = healthKitManager.isWeightAuthorized()
+        let authStatus = healthKitManager.getWeightAuthorizationStatus()
 
         canEnableSync = (authStatus != .sharingDenied)
 
@@ -371,14 +403,14 @@ class WeightControlCenterViewModel: ObservableObject {
     }
 
     func loadLastSyncStatus() {
-        if let lastSyncDate = HealthKitManager.shared.lastWeightSyncDate {
+        if let lastSyncDate = healthKitManager.lastWeightSyncDate {
             let formatter = DateFormatter()
             formatter.dateStyle = .none
             formatter.timeStyle = .short
 
             let timeString = formatter.string(from: lastSyncDate)
 
-            if HealthKitManager.shared.lastWeightSyncError != nil {
+            if healthKitManager.lastWeightSyncError != nil {
                 lastSyncStatus = "Last sync failed at \(timeString)"
             } else {
                 if Calendar.current.isDateInToday(lastSyncDate) {
@@ -396,8 +428,9 @@ class WeightControlCenterViewModel: ObservableObject {
     func performSync() {
         let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
 
-        weightManager.syncFromHealthKitWithReset(startDate: startDate) { syncedCount, error in
+        weightManager.syncFromHealthKitWithReset(startDate: startDate) { [weak self] syncedCount, error in
             Task<Void, Never> { @MainActor in
+                guard let self else { return }
                 self.isSyncing = false
 
                 if let error = error {
@@ -407,7 +440,7 @@ class WeightControlCenterViewModel: ObservableObject {
                     if syncedCount > 0 {
                         self.syncMessage = "Successfully synced \(syncedCount) new weight entries from Apple Health."
                     } else {
-                        let hasPermission = HealthKitManager.shared.isWeightAuthorized()
+                        let hasPermission = self.healthKitManager.isWeightAuthorized()
                         if hasPermission {
                             self.syncMessage = "Weight data is up to date. No new entries found in Apple Health."
                         } else {
@@ -630,6 +663,31 @@ class WeightControlCenterViewModel: ObservableObject {
         triggerBadgeBounce()
     }
 
+    func setProgressStoryExperienceVisible(_ isVisible: Bool) {
+        ProgressStoryCardType.allCases.forEach { cardType in
+            if isVisible {
+                progressStoryCardManager.showCard(cardType)
+                if let contentID = cardType.optOutContentID {
+                    optOutManager.optInContent(id: contentID)
+                }
+            } else {
+                progressStoryCardManager.hideCard(cardType)
+                if let contentID = cardType.optOutContentID {
+                    optOutManager.optOutContent(id: contentID, category: .progressSummaries, text: cardType.displayName)
+                }
+            }
+        }
+
+        optOutProgressSummaries = !isVisible
+        saveExperienceOptOuts()
+        optedOutContentItems = optOutManager.optedOutContentItems
+    }
+
+    func restoreTrackerCard(_ cardType: TrackerCardType) {
+        cardManager.showCard(cardType)
+        saveExperienceOptOuts()
+    }
+
     private func triggerBadgeBounce() {
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             badgeScale = 1.15
@@ -644,4 +702,122 @@ class WeightControlCenterViewModel: ObservableObject {
         }
     }
 
+}
+
+// MARK: - Factories
+
+extension WeightControlCenterViewModel {
+
+    struct Dependencies {
+        let measurementProvider: MeasurementSystemProviding
+        let measurementObserver: MeasurementSystemObserver
+        let healthKitManager: HealthKitManagerProtocol
+        let notificationCoordinator: WeightNotificationCoordinator
+        let optOutManager: ContentOptOutManaging
+        let trackerCardManager: CardManager<TrackerCardType>
+        let progressStoryCardManager: ProgressStoryCardManaging
+        let userDefaults: UserDefaults
+    }
+
+    @MainActor
+    static func live(
+        weightManager: WeightManager,
+        behavioralScheduler: BehavioralNotificationScheduler,
+        locale: Locale = .current,
+        dependencies: Dependencies
+    ) -> WeightControlCenterViewModel {
+        WeightControlCenterViewModel(
+            weightManager: weightManager,
+            behavioralScheduler: behavioralScheduler,
+            locale: locale,
+            measurementProvider: dependencies.measurementProvider,
+            measurementObserver: dependencies.measurementObserver,
+            notificationCoordinator: dependencies.notificationCoordinator,
+            optOutManager: dependencies.optOutManager,
+            cardManager: dependencies.trackerCardManager,
+            progressStoryCardManager: dependencies.progressStoryCardManager,
+            healthKitManager: dependencies.healthKitManager,
+            userDefaults: dependencies.userDefaults
+        )
+    }
+
+    @MainActor
+    static func live(
+        weightManager: WeightManager,
+        behavioralScheduler: BehavioralNotificationScheduler,
+        locale: Locale = .current
+    ) -> WeightControlCenterViewModel {
+        live(
+            weightManager: weightManager,
+            behavioralScheduler: behavioralScheduler,
+            locale: locale,
+            dependencies: Dependencies.live(weightManager: weightManager)
+        )
+    }
+
+    @MainActor
+    static func preview() -> WeightControlCenterViewModel {
+        let weightManager = WeightManager()
+        return live(
+            weightManager: weightManager,
+            behavioralScheduler: BehavioralNotificationScheduler(),
+            dependencies: Dependencies.preview(weightManager: weightManager)
+        )
+    }
+}
+
+extension WeightControlCenterViewModel.Dependencies {
+    @MainActor
+    static func live(
+        weightManager: WeightManager,
+        measurementProvider: MeasurementSystemProviding? = nil,
+        healthKitManager: HealthKitManagerProtocol? = nil,
+        notificationManager: WeightNotificationManaging? = nil,
+        optOutManager: ContentOptOutManaging? = nil,
+        trackerCardManager: CardManager<TrackerCardType>? = nil,
+        progressStoryCardManager: ProgressStoryCardManaging? = nil,
+        measurementObserver: MeasurementSystemObserver? = nil,
+        userDefaults: UserDefaults = .standard
+    ) -> WeightControlCenterViewModel.Dependencies {
+        let measurementProvider = measurementProvider ?? MeasurementSystemProvider.shared
+        let healthKitManager = healthKitManager ?? HealthKitManager.shared
+        let optOutManager = optOutManager ?? ContentOptOutManager.shared
+        let trackerCardManager = trackerCardManager ?? TrackerCards.shared
+        let progressStoryCardManager = progressStoryCardManager ?? ProgressStoryCards.shared
+        let notificationCoordinator = WeightNotificationCoordinator.live(
+            weightManager: weightManager,
+            userDefaults: userDefaults,
+            notificationManager: notificationManager ?? WeightNotificationManager.shared
+        )
+
+        return WeightControlCenterViewModel.Dependencies(
+            measurementProvider: measurementProvider,
+            measurementObserver: measurementObserver ?? MeasurementSystemObserver.shared,
+            healthKitManager: healthKitManager,
+            notificationCoordinator: notificationCoordinator,
+            optOutManager: optOutManager,
+            trackerCardManager: trackerCardManager,
+            progressStoryCardManager: progressStoryCardManager,
+            userDefaults: userDefaults
+        )
+    }
+
+    @MainActor
+    static func preview(weightManager: WeightManager) -> WeightControlCenterViewModel.Dependencies {
+        let trackerCards = CardManager<TrackerCardType>(preferencesKey: "preview.trackerCards")
+        let progressCards = CardManager<ProgressStoryCardType>(preferencesKey: "preview.progressCards")
+        let suiteName = "WeightControlCenterViewModel.preview"
+        let userDefaults = UserDefaults(suiteName: suiteName) ?? .standard
+        userDefaults.removePersistentDomain(forName: suiteName)
+        return .live(
+            weightManager: weightManager,
+            measurementProvider: MeasurementSystemProvider.shared,
+            healthKitManager: HealthKitManager.shared,
+            notificationManager: WeightNotificationManager.shared,
+            optOutManager: ContentOptOutManager.shared,
+            trackerCardManager: trackerCards,
+            progressStoryCardManager: progressCards,
+            userDefaults: userDefaults
+        )
+    }
 }

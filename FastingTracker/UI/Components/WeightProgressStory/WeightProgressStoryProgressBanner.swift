@@ -5,6 +5,14 @@ struct ProgressBanner: View {
     let accent: Color
     let onHide: () -> Void  // Hide callback
 
+    private var accessibilityLabelText: String {
+        let template = NSLocalizedString(
+            "progress_story_banner_accessibility",
+            comment: "Accessibility label announcing progress banner text"
+        )
+        return String(format: template, text)
+    }
+
     var body: some View {
         DSBanner(ice: onHide) {
             HStack(spacing: DSSpacing.cardElementSpacing) {
@@ -19,7 +27,7 @@ struct ProgressBanner: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .accessibilityLabel("Progress tip: \(text)")
+        .accessibilityLabel(accessibilityLabelText)
     }
 }
 

@@ -4,7 +4,7 @@ import SwiftUI
 /// Provides manual entry and HealthKit sync actions using design-system tokens.
 struct EmptyWeightStateView: View {
     @Binding var showingAddWeight: Bool
-    let healthKitManager: HealthKitManager
+    let healthKitManager: HealthKitManagerProtocol
     let weightManager: WeightManager
 
     var body: some View {

@@ -105,6 +105,13 @@ struct MainTabView: View {
         )
     }
 
+    private var weightDependencies: WeightDependencies {
+        WeightDependencies.live(
+            weightManager: weightManager,
+            behavioralScheduler: behavioralScheduler
+        )
+    }
+
     var body: some View {
         TabView(selection: tabBinding) {
             // Stats tab - Analytics and cross-tracker insights
@@ -172,6 +179,7 @@ struct MainTabView: View {
             // History loads in background and displays inline in Hub tab (central dashboard pattern)
             fastingManager.loadHistoryAsync()
         }
+        .environment(\.weightDependencies, weightDependencies)
     }
 }
 

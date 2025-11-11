@@ -39,6 +39,10 @@ final class AppLoggerPrivacyTests: XCTestCase {
             pattern: #"AppLogger\.(?:info|debug|warning|error).*?\b(lbs|pounds|kg|kilograms)\b"#,
             options: [.caseInsensitive]
         )
+        let metricUnitRegex = try NSRegularExpression(
+            pattern: #"METRIC .*?\b(lbs|pounds|kg|kilograms)\b"#,
+            options: [.caseInsensitive]
+        )
         let crashlyticsCallRegex = try NSRegularExpression(
             pattern: #"Crashlytics\.crashlytics\("#,
             options: []
@@ -64,7 +68,9 @@ final class AppLoggerPrivacyTests: XCTestCase {
                 crashlyticsCallRegex: crashlyticsCallRegex
             )
 
-            if relativePath.hasSuffix("AppLogger.swift") { continue }
+            if relativePath.hasSuffix("AppLogger.swift") {
+                continue
+            }
 
             let lines = contents.components(separatedBy: .newlines)
             for (index, line) in lines.enumerated() where line.contains("AppLogger") {
@@ -72,6 +78,16 @@ final class AppLoggerPrivacyTests: XCTestCase {
                 if appLoggerUnitRegex.firstMatch(in: line, options: [], range: range) != nil ||
                     weightInterpolationRegex.firstMatch(in: line, options: [], range: range) != nil {
                     payloadViolations.append("\(relativePath):\(index + 1)")
+                }
+            }
+
+            if relativePath.hasSuffix("WeightTrackerMetrics.swift") {
+                let lines = contents.components(separatedBy: .newlines)
+                for (index, line) in lines.enumerated() where line.contains("METRIC") {
+                    let range = NSRange(line.startIndex..<line.endIndex, in: line)
+                    if metricUnitRegex.firstMatch(in: line, options: [], range: range) != nil {
+                        payloadViolations.append("\(relativePath):\(index + 1)")
+                    }
                 }
             }
         }

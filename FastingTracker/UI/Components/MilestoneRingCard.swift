@@ -42,7 +42,7 @@ struct MilestoneRingCard: View {
                 HStack(spacing: 8) {
                     // Left: Start
                     VStack(spacing: 2) {
-                        Text("Start")
+                        Text("progress_story_milestone_stat_start")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Theme.ColorToken.textSecondary)
                         Text(leftStat)
@@ -54,7 +54,7 @@ struct MilestoneRingCard: View {
 
                     // Center: Progress
                     VStack(spacing: 2) {
-                        Text("Progress")
+                        Text("progress_story_milestone_stat_progress")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Theme.ColorToken.textSecondary)
                         Text(midStat)
@@ -66,7 +66,7 @@ struct MilestoneRingCard: View {
 
                     // Right: To Goal
                     VStack(spacing: 2) {
-                        Text("To Goal")
+                        Text("progress_story_milestone_stat_to_goal")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundColor(Theme.ColorToken.textSecondary)
                         Text(rightStat)
@@ -114,7 +114,7 @@ struct MilestoneRingCard: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(Theme.ColorToken.accentPrimary)
                             .font(.system(size: 12))
-                        Text("\(completedMilestones) done")
+                        Text(String(format: NSLocalizedString("progress_story_milestone_done_format", comment: "Milestones completed"), completedMilestones))
                             .font(.system(size: 12, weight: .medium))
                             .foregroundColor(Theme.ColorToken.textSecondary)
 

@@ -47,6 +47,8 @@ final class WeightTrendsViewModel: ObservableObject {
         self.didYouKnowText = self.metricsProvider.randomDidYouKnowTip()
         self.reflectionPromptText = self.metricsProvider.randomReflectionPrompt()
         recordTrendSnapshotTelemetry(delta7: self.sevenDayDelta, delta30: self.thirtyDayDelta, state: state)
+        restoreBannerIfHiddenByDefault()
+        restoreDidYouKnowIfHiddenByDefault()
 
         self.cardManager.objectWillChange
             .sink { [weak self] _ in
@@ -61,13 +63,6 @@ final class WeightTrendsViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    convenience init(weightManager: WeightManager) {
-        self.init(
-            weightManager: weightManager,
-            optOutManager: ContentOptOutManager.shared,
-            cardManager: ProgressStoryCards.shared
-        )
-    }
 
     func refresh() {
         let delta7 = metricsProvider.delta(days: 7)
@@ -114,7 +109,7 @@ final class WeightTrendsViewModel: ObservableObject {
         case .reflection:
             return !optOutManager.isContentOptedOut(id: contentIDs.reflection)
         case .didYouKnow:
-            return metricsProvider.totalEntries >= 5 && !optOutManager.isContentOptedOut(id: contentIDs.didYouKnow)
+            return !optOutManager.isContentOptedOut(id: contentIDs.didYouKnow)
         case .coachBar:
             return false
         }
@@ -279,6 +274,26 @@ final class WeightTrendsViewModel: ObservableObject {
         )
     }
 
+    private func restoreBannerIfHiddenByDefault() {
+        // Older builds defaulted the banner to hidden even when the user never opted out.
+        // If that legacy state is still present but there is no opt-out record, restore visibility.
+        let bannerID = contentIDs.banner
+        guard !optOutManager.isContentOptedOut(id: bannerID),
+              !cardManager.isCardVisible(.banner) else {
+            return
+        }
+        cardManager.showCard(.banner)
+    }
+
+    private func restoreDidYouKnowIfHiddenByDefault() {
+        let tipID = contentIDs.didYouKnow
+        guard !optOutManager.isContentOptedOut(id: tipID),
+              !cardManager.isCardVisible(.didYouKnow) else {
+            return
+        }
+        cardManager.showCard(.didYouKnow)
+    }
+
     private func telemetryLabel(for state: WeightProgressStoryTrendState) -> String {
         switch state {
         case .improving:
@@ -288,5 +303,22 @@ final class WeightTrendsViewModel: ObservableObject {
         case .flat:
             return "flat"
         }
+    }
+}
+
+// MARK: - Factories
+
+extension WeightTrendsViewModel {
+    @MainActor
+    static func live(
+        weightManager: WeightManager,
+        optOutManager: ContentOptOutManaging? = nil,
+        cardManager: ProgressStoryCardManaging? = nil
+    ) -> WeightTrendsViewModel {
+        WeightTrendsViewModel(
+            weightManager: weightManager,
+            optOutManager: optOutManager ?? ContentOptOutManager.shared,
+            cardManager: cardManager ?? ProgressStoryCards.shared
+        )
     }
 }
