@@ -889,9 +889,14 @@ class WeightManager: ObservableObject {
         AppLogger.info("Goal weight updated — direction=\(direction)", category: AppLogger.weightTracking)
     }
 
-    func setStartWeightOverride(_ displayWeight: Double?, date: Date?) {
+    func setStartWeightOverride(_ displayWeight: Double?, date: Date?, unit: WeightUnit? = nil) {
         if let weight = displayWeight, weight > 0 {
-            let internalValue = convertToInternalUnit(weight)
+            let internalValue: Double
+            if let unit {
+                internalValue = unit.toPounds(weight)
+            } else {
+                internalValue = convertToInternalUnit(weight)
+            }
             startWeightOverride = internalValue
             startWeightDate = date
             persistence.saveStartWeightOverride(weight: internalValue, date: date)

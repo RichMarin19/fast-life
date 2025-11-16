@@ -56,12 +56,23 @@ struct ProgressStoryCardStack: View {
     }
 
     var body: some View {
-        ForEach(visibleCards, id: \.self) { cardType in
+        ForEach(Array(visibleCards.enumerated()), id: \.element) { index, cardType in
+            let moveEarlier: (() -> Void)? = index > 0 ? {
+                let destination = visibleCards[index - 1]
+                onReorder(cardType, destination)
+            } : nil
+            let moveLater: (() -> Void)? = index < visibleCards.count - 1 ? {
+                let destination = visibleCards[index + 1]
+                onReorder(cardType, destination)
+            } : nil
+
             ProgressStoryReorderableCard(
                 cardType: cardType,
                 draggedCard: $draggedCard,
                 isAnimating: isAnimating,
-                onReorder: onReorder
+                onReorder: onReorder,
+                moveEarlier: moveEarlier,
+                moveLater: moveLater
             ) {
                 cardContent(for: cardType)
             }
@@ -113,6 +124,8 @@ private struct ProgressStoryReorderableCard<Content: View>: View {
     @Binding var draggedCard: ProgressStoryCardType?
     let isAnimating: Bool
     let onReorder: (ProgressStoryCardType, ProgressStoryCardType) -> Void
+    let moveEarlier: (() -> Void)?
+    let moveLater: (() -> Void)?
     let content: Content
 
     init(
@@ -120,12 +133,16 @@ private struct ProgressStoryReorderableCard<Content: View>: View {
         draggedCard: Binding<ProgressStoryCardType?>,
         isAnimating: Bool,
         onReorder: @escaping (ProgressStoryCardType, ProgressStoryCardType) -> Void,
+        moveEarlier: (() -> Void)?,
+        moveLater: (() -> Void)?,
         @ViewBuilder content: () -> Content
     ) {
         self.cardType = cardType
         _draggedCard = draggedCard
         self.isAnimating = isAnimating
         self.onReorder = onReorder
+        self.moveEarlier = moveEarlier
+        self.moveLater = moveLater
         self.content = content()
     }
 
@@ -148,6 +165,15 @@ private struct ProgressStoryReorderableCard<Content: View>: View {
             .opacity(isAnimating ? 1 : 0)
             .offset(y: isAnimating ? 0 : 20)
             .animation(.easeInOut(duration: 0.4), value: isAnimating)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel(Text(cardType.displayName))
+            .accessibilityHint(Text("progress_story_reorder_accessibility_hint"))
+            .accessibilityAction(named: Text("progress_story_reorder_action_down")) {
+                moveLater?()
+            }
+            .accessibilityAction(named: Text("progress_story_reorder_action_up")) {
+                moveEarlier?()
+            }
     }
 
     private var dragHandle: some View {

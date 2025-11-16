@@ -4,7 +4,12 @@ import SwiftUI
 
 struct WeightHistoryListView: View {
     @ObservedObject var weightManager: WeightManager
-    @ObservedObject private var measurementObserver = MeasurementSystemObserver.shared
+    @ObservedObject private var measurementObserver: MeasurementSystemObserver
+
+    init(weightManager: WeightManager, measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared) {
+        self.weightManager = weightManager
+        _measurementObserver = ObservedObject(initialValue: measurementObserver)
+    }
 
     // Task 1F: Time range filtering for performance optimization
     // Industry Pattern: Apple Health - default to recent data with expandable ranges

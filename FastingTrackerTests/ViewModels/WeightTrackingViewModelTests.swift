@@ -18,6 +18,8 @@ final class WeightTrackingViewModelTests: XCTestCase {
     var mockAppSettings: AppSettings!
     fileprivate var mockPersistence: TestWeightPersistence!
     var dependencies: WeightTrackingViewModel.Dependencies!
+    private var userDefaults: UserDefaults!
+    private let userDefaultsSuiteName = "com.fastlife.WeightTrackingViewModelTests"
 
     // UserDefaults keys for cleanup
     private let showGoalLineKey = "showGoalLine"
@@ -26,9 +28,13 @@ final class WeightTrackingViewModelTests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        // Clear UserDefaults before each test
-        UserDefaults.standard.removeObject(forKey: showGoalLineKey)
-        UserDefaults.standard.removeObject(forKey: weightGoalKey)
+        guard let suiteDefaults = UserDefaults(suiteName: userDefaultsSuiteName) else {
+            XCTFail("Failed to create UserDefaults suite for tests")
+            return
+        }
+        userDefaults = suiteDefaults
+        userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
+        userDefaults.synchronize()
 
         // Create mock dependencies
         mockLocaleProvider = MutableLocaleProvider(measurementSystem: .us, localeIdentifier: "en_US")
@@ -39,9 +45,8 @@ final class WeightTrackingViewModelTests: XCTestCase {
     }
 
     override func tearDown() {
-        // Clean up UserDefaults
-        UserDefaults.standard.removeObject(forKey: showGoalLineKey)
-        UserDefaults.standard.removeObject(forKey: weightGoalKey)
+        userDefaults.removePersistentDomain(forName: userDefaultsSuiteName)
+        userDefaults.synchronize()
 
         sut = nil
         mockWeightManager = nil
@@ -79,7 +84,8 @@ final class WeightTrackingViewModelTests: XCTestCase {
             behavioralScheduler: mockScheduler,
             optOutManager: mockOptOutManager,
             healthKitManager: mockHealthKitManager,
-            nudgeManager: mockNudgeManager
+            nudgeManager: mockNudgeManager,
+            userDefaults: userDefaults
         )
     }
 
@@ -94,8 +100,8 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_init_loadsGoalSettings() {
         // Given: Goal settings saved in UserDefaults
-        UserDefaults.standard.set(true, forKey: showGoalLineKey)
-        UserDefaults.standard.set(165.0, forKey: weightGoalKey)
+        userDefaults.set(true, forKey: showGoalLineKey)
+        userDefaults.set(165.0, forKey: weightGoalKey)
         rebuildDependencies(goalWeight: nil)
 
         // When: Create ViewModel
@@ -166,7 +172,7 @@ final class WeightTrackingViewModelTests: XCTestCase {
 
     func test_weightGoal_hasCorrectDefaultValue() {
         // Given: No saved goal (fresh install)
-        UserDefaults.standard.removeObject(forKey: weightGoalKey)
+        userDefaults.removeObject(forKey: weightGoalKey)
         mockWeightManager.setGoalWeight(180.0)
 
         // When: Create new ViewModel

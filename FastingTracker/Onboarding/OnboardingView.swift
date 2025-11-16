@@ -64,15 +64,28 @@ struct OnboardingView: View {
     @Binding var isOnboardingComplete: Bool
     let healthKitServices: HealthKitServicing
     let notificationServices: NotificationServicing
+    private let measurementProvider: MeasurementSystemProviding
+    @StateObject private var measurementObserver: MeasurementSystemObserver
+
+    private var weightUnit: WeightUnit {
+        measurementObserver.system == .metric ? .kilograms : .pounds
+    }
+
+    private var weightUnitAbbreviation: String {
+        weightUnit.abbreviation
+    }
 
     init(
         isOnboardingComplete: Binding<Bool>,
         healthKitServices: HealthKitServicing = HealthKitServices(),
-        notificationServices: NotificationServicing = NotificationServices()
+        notificationServices: NotificationServicing = NotificationServices(),
+        measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared
     ) {
         self._isOnboardingComplete = isOnboardingComplete
         self.healthKitServices = healthKitServices
         self.notificationServices = notificationServices
+        self.measurementProvider = measurementProvider
+        _measurementObserver = StateObject(wrappedValue: MeasurementSystemObserver(provider: measurementProvider))
 
         // Style page indicator dots to be visible against white background
         // Current page = blue (matches app theme), inactive pages = light gray
@@ -227,7 +240,7 @@ struct OnboardingView: View {
                     .frame(maxWidth: .infinity)
                     .focused($isWeightFocused)
 
-                Text("lbs")
+                Text(weightUnitAbbreviation)
                     .font(.title)
                     .foregroundColor(.secondary)
             }
@@ -297,7 +310,7 @@ struct OnboardingView: View {
                     .frame(maxWidth: .infinity)
                     .focused($isGoalWeightFocused)
 
-                Text("lbs")
+                Text(weightUnitAbbreviation)
                     .font(.title)
                     .foregroundColor(.secondary)
             }
@@ -807,7 +820,8 @@ struct OnboardingView: View {
 
         // Save current weight
         if let weight = Double(currentWeight) {
-            let entry = WeightEntry(date: Date(), weight: weight)
+            let canonicalWeight = measurementProvider.currentUnit.toPounds(weight)
+            let entry = WeightEntry(date: Date(), weight: canonicalWeight)
             weightManager.addWeightEntry(entry)
             AppLogger.debug("Current weight saved during onboarding", category: AppLogger.general)
         } else {
@@ -816,7 +830,8 @@ struct OnboardingView: View {
 
         // Save goal weight via WeightManager (single source of truth)
         if let goal = Double(goalWeight) {
-            weightManager.setGoalWeight(goal)
+            let canonicalGoal = measurementProvider.currentUnit.toPounds(goal)
+            weightManager.setGoalWeight(canonicalGoal)
             AppLogger.debug("Goal weight saved during onboarding", category: AppLogger.general)
         } else {
             AppLogger.debug("No goal weight entered, skipped", category: AppLogger.general)

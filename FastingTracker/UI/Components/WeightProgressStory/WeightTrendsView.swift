@@ -26,8 +26,20 @@ import SwiftUI
  */
 
 struct WeightTrendsView: View {
+    @Environment(\.weightDependencies) private var dependencies
+
+    var body: some View {
+        WeightTrendsExperienceView(dependencies: dependencies)
+    }
+}
+
+@MainActor
+private struct WeightTrendsExperienceView: View {
     @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel: WeightTrendsViewModel
+    private let weightManager: WeightManager
+    private let optOutManager: ContentOptOutManaging
+    private let cardManager: ProgressStoryCardManaging
 
     @State private var isAnimating = false  // Animation state for staggered fade-in
     @Environment(\.accessibilityReduceMotion) var reduceMotion  // v1.1: Respect Reduce Motion
@@ -40,15 +52,12 @@ struct WeightTrendsView: View {
 
     // 🔧 FIX #12: Stable text state - locked at view appearance, never changes during drag
     // Apple Health Pattern: Use @State for content that shouldn't change during interactions
-    init(weightManager: WeightManager,
-         optOutManager: ContentOptOutManaging? = nil,
-         cardManager: ProgressStoryCardManaging? = nil) {
+    init(dependencies: WeightDependencies) {
+        self.weightManager = dependencies.weightManager
+        self.optOutManager = dependencies.optOutManager
+        self.cardManager = dependencies.progressStoryCardManager
         _viewModel = StateObject(
-            wrappedValue: WeightTrendsViewModel.live(
-                weightManager: weightManager,
-                optOutManager: optOutManager,
-                cardManager: cardManager
-            )
+            wrappedValue: dependencies.makeWeightTrendsViewModel()
         )
     }
 

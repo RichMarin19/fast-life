@@ -7,7 +7,11 @@ final class WeightGoalCoordinatorTests: XCTestCase {
 
     func testGoalDisplayReformatsWhenMeasurementSystemChanges() {
         let localeProvider = MutableLocaleProvider(measurementSystem: .us, localeIdentifier: "en_US")
-        let appSettings = AppSettings(localeProvider: localeProvider)
+        let measurementProvider = StubMeasurementSystemProvider(system: .us, localeIdentifier: "en_US")
+        let appSettings = AppSettings(
+            localeProvider: localeProvider,
+            measurementSystemProvider: measurementProvider
+        )
         let persistence = TestWeightPersistence()
         let weightManager = WeightManager(
             healthKit: MockHealthKitManager(),
@@ -19,7 +23,6 @@ final class WeightGoalCoordinatorTests: XCTestCase {
         )
         weightManager.setGoalWeight(170)
 
-        let measurementProvider = StubMeasurementSystemProvider(system: .us, localeIdentifier: "en_US")
         let coordinator = WeightGoalCoordinator(
             weightManager: weightManager,
             measurementProvider: measurementProvider,
@@ -27,7 +30,8 @@ final class WeightGoalCoordinatorTests: XCTestCase {
             healthKitManager: MockHealthKitManager()
         )
 
-        XCTAssertEqual(coordinator.weightGoalString, "170")
+        let initialDisplay = weightManager.formattedDisplayWeight(weightManager.goalWeight)
+        XCTAssertEqual(coordinator.weightGoalString, initialDisplay)
 
         localeProvider.update(measurementSystem: .metric, localeIdentifier: "en_GB")
         measurementProvider.update(system: .metric, localeIdentifier: "en_GB")
@@ -38,12 +42,18 @@ final class WeightGoalCoordinatorTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 0.5)
 
-        XCTAssertEqual(coordinator.weightGoalString, weightManager.formattedDisplayWeight(weightManager.goalWeight))
+        let updatedDisplay = weightManager.formattedDisplayWeight(weightManager.goalWeight)
+        XCTAssertEqual(coordinator.weightGoalString, updatedDisplay)
+        XCTAssertNotEqual(initialDisplay, updatedDisplay)
     }
 
     func testStartWeightStringUpdatesWhenMeasurementChanges() {
         let localeProvider = MutableLocaleProvider(measurementSystem: .us, localeIdentifier: "en_US")
-        let appSettings = AppSettings(localeProvider: localeProvider)
+        let measurementProvider = StubMeasurementSystemProvider(system: .us, localeIdentifier: "en_US")
+        let appSettings = AppSettings(
+            localeProvider: localeProvider,
+            measurementSystemProvider: measurementProvider
+        )
         let weightManager = WeightManager(
             healthKit: MockHealthKitManager(),
             dataStore: MockDataStore(),
@@ -53,7 +63,6 @@ final class WeightGoalCoordinatorTests: XCTestCase {
             analytics: WeightAnalyticsService()
         )
 
-        let measurementProvider = StubMeasurementSystemProvider(system: .us, localeIdentifier: "en_US")
         let coordinator = WeightGoalCoordinator(
             weightManager: weightManager,
             measurementProvider: measurementProvider,
@@ -62,7 +71,8 @@ final class WeightGoalCoordinatorTests: XCTestCase {
         )
 
         coordinator.formatStartWeightInput("180")
-        XCTAssertEqual(coordinator.startWeightString, "180")
+        let initialStartDisplay = weightManager.formattedDisplayWeight(180)
+        XCTAssertEqual(coordinator.startWeightString, initialStartDisplay)
 
         measurementProvider.update(system: .metric, localeIdentifier: "en_GB")
 
@@ -72,7 +82,9 @@ final class WeightGoalCoordinatorTests: XCTestCase {
         }
         wait(for: [expectation], timeout: 0.5)
 
-        XCTAssertEqual(coordinator.startWeightString, weightManager.formattedDisplayWeight(180))
+        let updatedStartDisplay = weightManager.formattedDisplayWeight(180)
+        XCTAssertEqual(coordinator.startWeightString, updatedStartDisplay)
+        XCTAssertNotEqual(initialStartDisplay, updatedStartDisplay)
         XCTAssertEqual(coordinator.unitAbbreviation, weightManager.currentUnitAbbreviation)
     }
 }

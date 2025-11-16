@@ -8,6 +8,8 @@ final class MockProgressStoryCardManager: ProgressStoryCardManaging {
     var cardPreferences: [CardPreference<ProgressStoryCardType>] = ProgressStoryCardType.allCases.enumerated().map { index, cardType in
         CardPreference(cardType: cardType, isVisible: true, isExpanded: true, sortOrder: index)
     }
+    var showCardCallHistory: [ProgressStoryCardType] = []
+    var hideCardCallHistory: [ProgressStoryCardType] = []
 
     func getVisibleCardsInOrder() -> [ProgressStoryCardType] {
         cardPreferences
@@ -21,12 +23,14 @@ final class MockProgressStoryCardManager: ProgressStoryCardManaging {
     }
 
     func showCard(_ card: ProgressStoryCardType) {
+        showCardCallHistory.append(card)
         update(card: card) { preference in
             preference.isVisible = true
         }
     }
 
     func hideCard(_ card: ProgressStoryCardType) {
+        hideCardCallHistory.append(card)
         update(card: card) { preference in
             preference.isVisible = false
         }

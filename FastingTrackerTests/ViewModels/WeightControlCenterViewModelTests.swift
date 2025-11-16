@@ -806,6 +806,10 @@ final class WeightControlCenterMeasurementProviderStub: MeasurementSystemProvidi
     func refresh() {
         subject.send(currentMeasurementSystem)
     }
+
+    func setMeasurementSystem(_ newSystem: Locale.MeasurementSystem) {
+        subject.send(newSystem)
+    }
 }
 
 final class MockWeightNotificationManager: WeightNotificationManaging {

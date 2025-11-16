@@ -1,0 +1,71 @@
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/LifeGPTViewModel.swift:101:        guard NetworkMonitor.shared.isConnected else {
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/LifeGPTViewModel.swift:134:            let response = try await OpenAIService.shared.generateResponse(
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/LifeGPTViewModel.swift:196:        if let cached: RichHealthContext = await QueryCache.shared.get(forKey: cacheKey) {
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/LifeGPTViewModel.swift:208:        await QueryCache.shared.set(context, forKey: cacheKey, ttl: PerformanceTokens.insightContextCacheTTL)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/NotificationsViewModel.swift:91:        WeightNotificationManager.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/WeightControlCenterCoordinator.swift:121:        let healthKitManager = healthKitManager ?? HealthKitManager.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/WeightControlCenterCoordinator.swift:122:        let trackerCards = trackerCardManager ?? TrackerCards.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/WeightControlCenterCoordinator.swift:123:        let progressCards = progressStoryCardManager ?? ProgressStoryCards.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/WeightControlCenterCoordinator.swift:124:        let optOut = optOutManager ?? ContentOptOutManager.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/WeightGoalCoordinator.swift:77:         measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared,
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/WeightNotificationCoordinator.swift:294:        WeightNotificationManager.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/CurrentWeightCard.swift:12:    @ObservedObject var measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/EditStartTimeView.swift:300:                            NotificationManager.shared.rescheduleNotifications(
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/SleepComponents.swift:165:                                HealthKitManager.shared.requestSleepAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/SleepComponents.swift:288:                        let hasPermission = HealthKitManager.shared.isSleepAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/WeightHistoryComponents.swift:9:    init(weightManager: WeightManager, measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared) {
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/WeightSetupComponents.swift:190:        healthKitAuthorized = HealthKitManager.shared.isWeightAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/WeightSetupComponents.swift:222:        HealthKitManager.shared.fetchWeightData(startDate: startOfDay, endDate: endOfDay, resetAnchor: true) { entries in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/WeightSetupComponents.swift:29:        measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared,
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/WeightSetupComponents.swift:30:        measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/WeightSetupComponents.swift:313:        MeasurementSystemProvider.shared.refresh()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/WeightStatsComponents.swift:7:    @ObservedObject var measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/LifeGPT/CoachInviteCard.swift:156:        return BehavioralCopy.shared.getPrompt(emotion: emotion, dayPart: dayPart)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/LifeGPT/LifeGPTComponents.swift:262:        return BehavioralCopy.shared.getInputPlaceholder(emotion: emotion, dayPart: dayPart)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/ContentView.swift:5:    @StateObject private var nudgeManager = HealthKitNudgeManager.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/ContentView.swift:572:        HealthKitManager.shared.requestFastingAuthorization { success, error in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/ContentView.swift:588:                            HealthKitManager.shared.saveFastingSession(session) { success, error in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/ContentView.swift:597:                        HealthKitManager.shared.updateFastingSyncStatus(success: true)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/ContentView.swift:611:        HealthKitManager.shared.requestFastingAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/ContentView.swift:622:                    HealthKitManager.shared.updateFastingSyncStatus(success: true)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/ContentView.swift:639:        HealthKitManager.shared.requestFastingAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingSettingsView.swift:115:                let authStatus = HealthKitManager.shared.getFastingAuthorizationStatus()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingSettingsView.swift:139:        localSyncEnabled = HealthKitManager.shared.isFastingAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingSettingsView.swift:148:            HealthKitManager.shared.requestFastingAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingSettingsView.swift:175:        HealthKitManager.shared.requestFastingAuthorization { success, error in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingSettingsView.swift:178:                let hasPermission = HealthKitManager.shared.isFastingAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingSettingsView.swift:198:                        HealthKitManager.shared.updateFastingSyncStatus(success: true)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HealthKitNudgeView.swift:231:            return HealthKitManager.shared.isWeightAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HealthKitNudgeView.swift:233:            return HealthKitManager.shared.isWaterAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HealthKitNudgeView.swift:235:            return HealthKitManager.shared.isSleepAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HubView.swift:357:                .environmentObject(BehavioralNotificationScheduler.shared)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:10:    @StateObject private var appSettings = AppSettings.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:279:                HealthKitManager.shared.requestHydrationAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:28:                        healthKitManager: HealthKitManager.shared,
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:294:                HealthKitManager.shared.requestHydrationAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:418:    @StateObject private var appSettings = AppSettings.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:43:                                HealthKitManager.shared.requestHydrationAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:5:    @StateObject private var nudgeManager = HealthKitNudgeManager.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HydrationTrackingView.swift:654:                    HealthKitManager.shared.requestHydrationAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/OpenAISettingsView.swift:148:                let response = try await OpenAIService.shared.testConnection()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/SleepTrackingView.swift:32:    @StateObject private var nudgeManager = HealthKitNudgeManager.shared
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/SleepTrackingView.swift:350:                    HealthKitManager.shared.requestSleepAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/SleepTrackingView.swift:48:                        HealthKitManager.shared.requestSleepAuthorization { success, _ in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/SleepTrackingView.swift:82:                    healthKitManager: HealthKitManager.shared,
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightControlCenterModels.swift:73:    // All visibility state goes through TrackerCardManager.shared.isCardVisible()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightControlCenterView.swift:103:        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightControlCenterView.swift:194:        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightControlCenterView.swift:65:                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightControlCenterView.swift:80:                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:239:                let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:349:        let isAuthorized = HealthKitManager.shared.isWeightAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:355:            HealthKitManager.shared.requestWeightAuthorization { success, error in
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:395:        hasHealthKitPermission = HealthKitManager.shared.isWeightAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:396:        let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:429:        if let lastSyncDate = HealthKitManager.shared.lastWeightSyncDate {
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:437:            if HealthKitManager.shared.lastWeightSyncError != nil {
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:475:                        let hasPermission = HealthKitManager.shared.isWeightAuthorized()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:480:                            let authStatus = HealthKitManager.shared.getWeightAuthorizationStatus()
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:615:                UIApplication.shared.open(url)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:621:                UIApplication.shared.open(url)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightTrackingView.swift:145:            MeasurementSystemProvider.shared.refresh()

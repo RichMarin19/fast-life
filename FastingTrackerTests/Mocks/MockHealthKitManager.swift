@@ -13,7 +13,7 @@ import HealthKit
 /// Mock HealthKit manager for testing without actual HealthKit access
 /// **Industry Pattern:** Protocol-based mocking for external dependencies
 /// **Reference:** Apple WWDC 2017 "Testing in Xcode"
-class MockHealthKitManager: HealthKitManagerProtocol {
+final class MockHealthKitManager: HealthKitManagerProtocol, @unchecked Sendable {
 
     // MARK: - Test Control Properties
 
@@ -35,8 +35,9 @@ class MockHealthKitManager: HealthKitManagerProtocol {
     var deleteWeightCalled = false
     var requestAuthorizationCalled = false
 
-    var savedWeights: [(weight: Double, bmi: Double?, bodyFat: Double?, date: Date)] = []
-    var mockWeightEntries: [WeightEntry] = []
+    private var savedWeightsStorage: [(weight: Double, bmi: Double?, bodyFat: Double?, date: Date)] = []
+    private var mockWeightEntriesStorage: [WeightEntry] = []
+    private let storageQueue = DispatchQueue(label: "MockHealthKitManager.storage", attributes: .concurrent)
 
     // Configurable callback for saveWeight (for observer suppression testing)
     var onSaveWeight: ((Double, Double?, Double?, Date, @escaping (Bool, Error?) -> Void) -> Void)?
@@ -128,28 +129,28 @@ class MockHealthKitManager: HealthKitManagerProtocol {
     func fetchWeightData(startDate: Date, endDate: Date, resetAnchor: Bool, completion: @escaping ([WeightEntry]) -> Void) {
         fetchWeightDataCalled = true
         // Return mock data on background thread to simulate async behavior
-        DispatchQueue.global(qos: .background).async {
-            completion(self.mockWeightEntries)
+        storageQueue.async {
+            completion(self.mockWeightEntriesStorage)
         }
     }
 
     func fetchWeightDataHistorical(startDate: Date, completion: @escaping ([WeightEntry]) -> Void) {
         fetchWeightDataCalled = true
-        DispatchQueue.global(qos: .background).async {
-            completion(self.mockWeightEntries)
+        storageQueue.async {
+            completion(self.mockWeightEntriesStorage)
         }
     }
 
     func fetchWeightDataHistorical(startDate: Date, endDate: Date, completion: @escaping ([WeightEntry]) -> Void) {
         fetchWeightDataCalled = true
-        DispatchQueue.global(qos: .background).async {
-            completion(self.mockWeightEntries)
+        storageQueue.async {
+            completion(self.mockWeightEntriesStorage)
         }
     }
 
     func saveWeightToHealthKit(_ weight: Double, date: Date, completion: @escaping (Bool) -> Void) {
         saveWeightCalled = true
-        savedWeights.append((weight, nil, nil, date))
+        appendSavedWeight((weight, nil, nil, date))
         DispatchQueue.global(qos: .background).async {
             completion(true)
         }
@@ -157,7 +158,7 @@ class MockHealthKitManager: HealthKitManagerProtocol {
 
     func saveWeight(weight: Double, bmi: Double?, bodyFat: Double?, date: Date, completion: @escaping (Bool, Error?) -> Void) {
         saveWeightCalled = true
-        savedWeights.append((weight, bmi, bodyFat, date))
+        appendSavedWeight((weight, bmi, bodyFat, date))
 
         // Call custom callback if configured (for observer suppression testing)
         if let callback = onSaveWeight {
@@ -299,12 +300,30 @@ class MockHealthKitManager: HealthKitManagerProtocol {
         fetchWeightDataCalled = false
         deleteWeightCalled = false
         requestAuthorizationCalled = false
-        savedWeights.removeAll()
-        mockWeightEntries.removeAll()
+        storageQueue.async(flags: .barrier) {
+            self.savedWeightsStorage.removeAll()
+            self.mockWeightEntriesStorage.removeAll()
+        }
         onSaveWeight = nil
     }
 
     func setMockWeightEntries(_ entries: [WeightEntry]) {
-        mockWeightEntries = entries
+        storageQueue.async(flags: .barrier) {
+            self.mockWeightEntriesStorage = entries
+        }
+    }
+
+    func savedWeights() -> [(weight: Double, bmi: Double?, bodyFat: Double?, date: Date)] {
+        var snapshot: [(Double, Double?, Double?, Date)] = []
+        storageQueue.sync {
+            snapshot = self.savedWeightsStorage
+        }
+        return snapshot
+    }
+
+    private func appendSavedWeight(_ entry: (weight: Double, bmi: Double?, bodyFat: Double?, date: Date)) {
+        storageQueue.async(flags: .barrier) {
+            self.savedWeightsStorage.append(entry)
+        }
     }
 }

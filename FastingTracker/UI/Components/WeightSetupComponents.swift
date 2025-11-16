@@ -6,6 +6,8 @@ struct FirstTimeWeightSetupView: View {
     @ObservedObject var weightManager: WeightManager
     @Binding var weightGoal: Double
     @Binding var showGoalLine: Bool
+    @ObservedObject var measurementObserver: MeasurementSystemObserver
+    private let measurementProvider: MeasurementSystemProviding
     @Environment(\.dismiss) var dismiss
 
     // Start Weight fields (renamed from "Current Weight")
@@ -19,6 +21,20 @@ struct FirstTimeWeightSetupView: View {
     @State private var showError: Bool = false
     @State private var isQueryingHealthKit: Bool = false
     @State private var healthKitAuthorized: Bool = false
+
+    init(
+        weightManager: WeightManager,
+        weightGoal: Binding<Double>,
+        showGoalLine: Binding<Bool>,
+        measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared,
+        measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared
+    ) {
+        self._weightManager = ObservedObject(wrappedValue: weightManager)
+        self._weightGoal = weightGoal
+        self._showGoalLine = showGoalLine
+        self._measurementObserver = ObservedObject(wrappedValue: measurementObserver)
+        self.measurementProvider = measurementProvider
+    }
 
     var body: some View {
         NavigationView {
@@ -161,6 +177,9 @@ struct FirstTimeWeightSetupView: View {
                 // Query for today's date on initial load
                 queryHealthKitForDate(startDate)
             }
+            .onChange(of: measurementObserver.system) { oldSystem, newSystem in
+                handleMeasurementSystemChange(from: oldSystem, to: newSystem)
+            }
         }
     }
 
@@ -233,21 +252,30 @@ struct FirstTimeWeightSetupView: View {
             return
         }
 
-        let startWeightPounds = weightManager.convertToInternalUnit(startWeight)
-
-        // Save start weight entry with the selected date
-        let entry = WeightEntry(
-            id: UUID(),
-            date: startDate,
-            weight: startWeightPounds,
-            bmi: nil,
-            bodyFat: nil,
-            source: .manual
+        #if DEBUG
+        AppLogger.debug(
+            """
+            🧪 Onboarding instrumentation – start weight input
+              rawField: \(startWeightString)
+              parsedValue: \(startWeight)
+              observerSystem: \(describeMeasurementSystem(measurementObserver.system))
+              providerSystem: \(describeMeasurementSystem(measurementProvider.currentMeasurementSystem))
+              providerUnit: \(measurementProvider.currentUnit.abbreviation)
+            """,
+            category: AppLogger.weightTracking
         )
-        weightManager.addWeightEntry(entry)
+        #endif
 
-        // Persist start weight override for downstream calculations
-        weightManager.setStartWeightOverride(startWeight, date: startDate)
+        weightManager.addWeightEntryInPreferredUnit(weight: startWeight, date: startDate)
+        weightManager.setStartWeightOverride(startWeight, date: startDate, unit: measurementProvider.currentUnit)
+
+        #if DEBUG
+        let canonicalStartWeight = measurementProvider.currentUnit.toPounds(startWeight)
+        AppLogger.debug(
+            "🧪 Onboarding instrumentation – canonical start weight (lbs): \(canonicalStartWeight)",
+            category: AppLogger.weightTracking
+        )
+        #endif
 
         AppLogger.info("Saved start weight selection during onboarding", category: AppLogger.weightTracking)
 
@@ -255,7 +283,22 @@ struct FirstTimeWeightSetupView: View {
         // Following industry standard MVVM pattern - Manager owns persistence, View calls manager
         // WeightManager.setGoalWeight() persists to ThreadSafeUserDefaults + updates @Published property
         // Reference: Apple's Data Management in SwiftUI guide
-        let goalWeightPounds = weightManager.convertToInternalUnit(goalWeight)
+        let goalWeightPounds = measurementProvider.currentUnit.toPounds(goalWeight)
+
+        #if DEBUG
+        AppLogger.debug(
+            """
+            🧪 Onboarding instrumentation – goal weight input
+              rawField: \(goalWeightString)
+              parsedValue: \(goalWeight)
+              observerSystem: \(describeMeasurementSystem(measurementObserver.system))
+              providerSystem: \(describeMeasurementSystem(measurementProvider.currentMeasurementSystem))
+              providerUnit: \(measurementProvider.currentUnit.abbreviation)
+              canonicalGoalWeightLbs: \(goalWeightPounds)
+            """,
+            category: AppLogger.weightTracking
+        )
+        #endif
         weightManager.setGoalWeight(goalWeightPounds)
 
         // Update parent binding (for backward compatibility with existing views)
@@ -266,5 +309,47 @@ struct FirstTimeWeightSetupView: View {
 
         // Dismiss the sheet
         dismiss()
+
+        MeasurementSystemProvider.shared.refresh()
+    }
+
+    private func handleMeasurementSystemChange(from oldSystem: Locale.MeasurementSystem, to newSystem: Locale.MeasurementSystem) {
+        if let pounds = poundsFromInput(startWeightString, system: oldSystem) {
+            startWeightString = weightManager.formattedDisplayWeight(pounds)
+        }
+        if let pounds = poundsFromInput(goalWeightString, system: oldSystem) {
+            goalWeightString = weightManager.formattedDisplayWeight(pounds)
+        }
+    }
+
+    private func poundsFromInput(_ input: String, system: Locale.MeasurementSystem) -> Double? {
+        let normalized = input.replacingOccurrences(of: ",", with: ".")
+        guard let value = Double(normalized) else { return nil }
+        return pounds(fromDisplayValue: value, system: system)
+    }
+
+    private func pounds(fromDisplayValue value: Double) -> Double {
+        measurementObserver.system == .metric ? WeightUnit.kilograms.toPounds(value) : value
+    }
+
+    private func pounds(fromDisplayValue value: Double, system: Locale.MeasurementSystem) -> Double {
+        switch system {
+        case .metric:
+            return WeightUnit.kilograms.toPounds(value)
+        default:
+            return WeightUnit.pounds.toPounds(value)
+        }
+    }
+
+}
+
+extension FirstTimeWeightSetupView {
+    private func describeMeasurementSystem(_ system: Locale.MeasurementSystem) -> String {
+        switch system {
+        case .metric: return "metric"
+        case .us: return "us"
+        case .uk: return "uk"
+        default: return "unknown"
+        }
     }
 }

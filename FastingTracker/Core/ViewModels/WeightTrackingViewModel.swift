@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import Foundation
 
 /// ViewModel for Weight Tracking View
 /// Industry Pattern: MVVM (Apple WWDC 2023 recommendation)
@@ -14,6 +15,7 @@ final class WeightTrackingViewModel: ObservableObject {
         let optOutManager: ContentOptOutManaging
         let healthKitManager: HealthKitManagerProtocol
         let nudgeManager: HealthKitNudgeManaging
+        let userDefaults: UserDefaults
     }
 
     let weightManager: WeightManager
@@ -21,6 +23,7 @@ final class WeightTrackingViewModel: ObservableObject {
     private let healthKitManager: HealthKitManagerProtocol
     private let nudgeManager: HealthKitNudgeManaging
     private let optOutManager: ContentOptOutManaging
+    private let userDefaults: UserDefaults
 
     // MARK: - Published State (was @State in View)
 
@@ -46,8 +49,6 @@ final class WeightTrackingViewModel: ObservableObject {
 
     // MARK: - Private Properties (UserDefaults persistence)
 
-    private let userDefaults = UserDefaults.standard
-
     // UserDefaults keys for persistence
     private let showGoalLineKey = "showGoalLine"
     private let legacyWeightGoalKey = "goalWeight"  // Legacy UserDefaults key (OnboardingView.swift line 686)
@@ -60,6 +61,7 @@ final class WeightTrackingViewModel: ObservableObject {
         self.optOutManager = dependencies.optOutManager
         self.healthKitManager = dependencies.healthKitManager
         self.nudgeManager = dependencies.nudgeManager
+        self.userDefaults = dependencies.userDefaults
 
         loadGoalSettings()
     }

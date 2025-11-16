@@ -10,7 +10,10 @@ struct WeightControlCenterHistoryCard: View {
                 .font(DSTypography.listTitle)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
 
-            WeightHistoryListView(weightManager: viewModel.weightManager)
+            WeightHistoryListView(
+                weightManager: viewModel.weightManager,
+                measurementObserver: viewModel.measurementObserver
+            )
         }
     }
 }

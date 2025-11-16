@@ -19,6 +19,7 @@ final class AppSettings: ObservableObject {
     static let shared = AppSettings()
 
     private let localeProvider: LocaleProviding
+    private let measurementSystemProvider: MeasurementSystemProviding
 
     // MARK: - Unit Preferences
     // Following Apple @AppStorage pattern for persistent user preferences
@@ -32,7 +33,7 @@ final class AppSettings: ObservableObject {
     // Reference: https://developer.apple.com/documentation/foundation/locale/2293761-measurementsystem
     // User Decision (Q1): No manual override - app follows iPhone Settings > General > Language & Region
     var weightUnit: WeightUnit {
-        return localeProvider.measurementSystem == .metric ? .kilograms : .pounds
+        return measurementSystemProvider.currentMeasurementSystem == .metric ? .kilograms : .pounds
     }
 
     var localeIdentifier: String {
@@ -50,8 +51,12 @@ final class AppSettings: ObservableObject {
         }
     }
 
-    init(localeProvider: LocaleProviding = SystemLocaleProvider()) {
+    init(
+        localeProvider: LocaleProviding = SystemLocaleProvider(),
+        measurementSystemProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared
+    ) {
         self.localeProvider = localeProvider
+        self.measurementSystemProvider = measurementSystemProvider
         // Initialize default tracker from stored raw value
         // Following Apple pattern for enum persistence via raw values
         if !defaultTrackerRawValue.isEmpty {
@@ -200,19 +205,30 @@ final class MeasurementSystemProvider: MeasurementSystemProviding {
     private let notificationCenter: NotificationCenter
     private let subject: CurrentValueSubject<Locale.MeasurementSystem, Never>
     private var localeObserver: NSObjectProtocol?
+    private var defaultsObserver: NSObjectProtocol?
 
     init(localeProvider: LocaleProviding = SystemLocaleProvider(),
          notificationCenter: NotificationCenter = .default) {
         self.localeProvider = localeProvider
         self.notificationCenter = notificationCenter
-        self.subject = CurrentValueSubject(localeProvider.measurementSystem)
+        self.subject = CurrentValueSubject(Self.resolveMeasurementSystem())
 
         localeObserver = notificationCenter.addObserver(
             forName: NSLocale.currentLocaleDidChangeNotification,
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.subject.send(localeProvider.measurementSystem)
+            guard let self else { return }
+            self.subject.send(Self.resolveMeasurementSystem())
+        }
+
+        defaultsObserver = notificationCenter.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.subject.send(Self.resolveMeasurementSystem())
         }
     }
 
@@ -220,10 +236,17 @@ final class MeasurementSystemProvider: MeasurementSystemProviding {
         if let token = localeObserver {
             notificationCenter.removeObserver(token)
         }
+        if let token = defaultsObserver {
+            notificationCenter.removeObserver(token)
+        }
+    }
+
+    private var currentSystem: Locale.MeasurementSystem {
+        subject.value
     }
 
     var currentUnit: WeightUnit {
-        localeProvider.measurementSystem == .metric ? .kilograms : .pounds
+        currentSystem == .metric ? .kilograms : .pounds
     }
 
     var locale: Locale {
@@ -231,7 +254,7 @@ final class MeasurementSystemProvider: MeasurementSystemProviding {
     }
 
     var currentMeasurementSystem: Locale.MeasurementSystem {
-        locale.measurementSystem
+        currentSystem
     }
 
     var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> {
@@ -239,7 +262,19 @@ final class MeasurementSystemProvider: MeasurementSystemProviding {
     }
 
     func refresh() {
-        subject.send(localeProvider.measurementSystem)
+        subject.send(Self.resolveMeasurementSystem())
+    }
+
+    private static func resolveMeasurementSystem() -> Locale.MeasurementSystem {
+        if let override = UserDefaults.standard.string(forKey: "AppleMeasurementUnits")?.lowercased() {
+            if override.contains("centimeter") || override.contains("centimetre") {
+                return .metric
+            }
+            if override.contains("inch") {
+                return .us
+            }
+        }
+        return Locale.autoupdatingCurrent.measurementSystem
     }
 }
 

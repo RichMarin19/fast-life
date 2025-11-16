@@ -7,6 +7,7 @@
 //
 
 import XCTest
+import Combine
 @testable import FastLIFe
 
 @MainActor
@@ -138,5 +139,42 @@ private final class LocaleTestProvider: LocaleProviding {
 
 private func makeSettings(metric: Bool) -> AppSettings {
     LocaleTestProvider.set(metric: metric)
-    return AppSettings(localeProvider: LocaleTestProvider.current)
+    let measurementProvider = StubMeasurementSystemProvider(
+        system: metric ? .metric : .us,
+        localeIdentifier: metric ? "en_GB" : "en_US"
+    )
+    return AppSettings(
+        localeProvider: LocaleTestProvider.current,
+        measurementSystemProvider: measurementProvider
+    )
+}
+
+private final class StubMeasurementSystemProvider: MeasurementSystemProviding {
+    private let subject: CurrentValueSubject<Locale.MeasurementSystem, Never>
+    private var currentLocale: Locale
+
+    init(system: Locale.MeasurementSystem, localeIdentifier: String) {
+        self.subject = CurrentValueSubject(system)
+        self.currentLocale = Locale(identifier: localeIdentifier)
+    }
+
+    var currentUnit: WeightUnit {
+        subject.value == .metric ? .kilograms : .pounds
+    }
+
+    var locale: Locale {
+        currentLocale
+    }
+
+    var currentMeasurementSystem: Locale.MeasurementSystem {
+        subject.value
+    }
+
+    var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func refresh() {
+        subject.send(subject.value)
+    }
 }

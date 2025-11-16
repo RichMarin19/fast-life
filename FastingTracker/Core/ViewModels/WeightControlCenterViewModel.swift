@@ -742,82 +742,11 @@ extension WeightControlCenterViewModel {
     }
 
     @MainActor
-    static func live(
-        weightManager: WeightManager,
-        behavioralScheduler: BehavioralNotificationScheduler,
-        locale: Locale = .current
-    ) -> WeightControlCenterViewModel {
-        live(
-            weightManager: weightManager,
-            behavioralScheduler: behavioralScheduler,
-            locale: locale,
-            dependencies: Dependencies.live(weightManager: weightManager)
-        )
-    }
-
-    @MainActor
     static func preview() -> WeightControlCenterViewModel {
-        let weightManager = WeightManager()
-        return live(
-            weightManager: weightManager,
-            behavioralScheduler: BehavioralNotificationScheduler(),
-            dependencies: Dependencies.preview(weightManager: weightManager)
-        )
-    }
-}
-
-extension WeightControlCenterViewModel.Dependencies {
-    @MainActor
-    static func live(
-        weightManager: WeightManager,
-        measurementProvider: MeasurementSystemProviding? = nil,
-        healthKitManager: HealthKitManagerProtocol? = nil,
-        notificationManager: WeightNotificationManaging? = nil,
-        optOutManager: ContentOptOutManaging? = nil,
-        trackerCardManager: CardManager<TrackerCardType>? = nil,
-        progressStoryCardManager: ProgressStoryCardManaging? = nil,
-        measurementObserver: MeasurementSystemObserver? = nil,
-        userDefaults: UserDefaults = .standard
-    ) -> WeightControlCenterViewModel.Dependencies {
-        let measurementProvider = measurementProvider ?? MeasurementSystemProvider.shared
-        let healthKitManager = healthKitManager ?? HealthKitManager.shared
-        let optOutManager = optOutManager ?? ContentOptOutManager.shared
-        let trackerCardManager = trackerCardManager ?? TrackerCards.shared
-        let progressStoryCardManager = progressStoryCardManager ?? ProgressStoryCards.shared
-        let notificationCoordinator = WeightNotificationCoordinator.live(
-            weightManager: weightManager,
-            userDefaults: userDefaults,
-            notificationManager: notificationManager ?? WeightNotificationManager.shared
-        )
-
-        return WeightControlCenterViewModel.Dependencies(
-            measurementProvider: measurementProvider,
-            measurementObserver: measurementObserver ?? MeasurementSystemObserver.shared,
-            healthKitManager: healthKitManager,
-            notificationCoordinator: notificationCoordinator,
-            optOutManager: optOutManager,
-            trackerCardManager: trackerCardManager,
-            progressStoryCardManager: progressStoryCardManager,
-            userDefaults: userDefaults
-        )
-    }
-
-    @MainActor
-    static func preview(weightManager: WeightManager) -> WeightControlCenterViewModel.Dependencies {
-        let trackerCards = CardManager<TrackerCardType>(preferencesKey: "preview.trackerCards")
-        let progressCards = CardManager<ProgressStoryCardType>(preferencesKey: "preview.progressCards")
+        let deps = WeightDependencies.preview()
         let suiteName = "WeightControlCenterViewModel.preview"
         let userDefaults = UserDefaults(suiteName: suiteName) ?? .standard
         userDefaults.removePersistentDomain(forName: suiteName)
-        return .live(
-            weightManager: weightManager,
-            measurementProvider: MeasurementSystemProvider.shared,
-            healthKitManager: HealthKitManager.shared,
-            notificationManager: WeightNotificationManager.shared,
-            optOutManager: ContentOptOutManager.shared,
-            trackerCardManager: trackerCards,
-            progressStoryCardManager: progressCards,
-            userDefaults: userDefaults
-        )
+        return deps.makeControlCenterViewModel(userDefaults: userDefaults)
     }
 }

@@ -284,7 +284,7 @@ final class WeightGoalCoordinator: WeightGoalCoordinating {
 
         currentStartWeightValue = number
         startWeightString = formattedStartWeightDisplay(from: number)
-        weightManager.setStartWeightOverride(number, date: startWeightDate)
+        weightManager.setStartWeightOverride(number, date: startWeightDate, unit: measurementProvider.currentUnit)
         startWeightStatusMessage = "Start weight saved."
         WeightTrackerMetrics.recordGoalEvent(.startWeightSaved, metadata: ["source": "manual"])
     }

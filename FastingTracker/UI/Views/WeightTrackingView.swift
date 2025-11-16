@@ -18,9 +18,11 @@ private struct WeightTrackingExperienceView: View {
     private let healthKitManager: HealthKitManagerProtocol
     private let nudgeManager: HealthKitNudgeManaging
     private let progressStoryCardManager: ProgressStoryCardManaging
+    private let measurementProvider: MeasurementSystemProviding
 
     @StateObject private var viewModel: WeightTrackingViewModel
     @ObservedObject private var cardManager: CardManager<TrackerCardType>
+    @ObservedObject private var measurementObserver: MeasurementSystemObserver
 
     private var vm: WeightTrackingViewModel { viewModel }
 
@@ -32,16 +34,10 @@ private struct WeightTrackingExperienceView: View {
         self.healthKitManager = dependencies.healthKitManager
         self.nudgeManager = dependencies.nudgeManager
         self.progressStoryCardManager = dependencies.progressStoryCardManager
+        self.measurementProvider = dependencies.measurementProvider
+        _measurementObserver = ObservedObject(wrappedValue: dependencies.measurementObserver)
         _viewModel = StateObject(
-            wrappedValue: WeightTrackingViewModel(
-                dependencies: .init(
-                    weightManager: dependencies.weightManager,
-                    behavioralScheduler: dependencies.behavioralScheduler,
-                    optOutManager: dependencies.optOutManager,
-                    healthKitManager: dependencies.healthKitManager,
-                    nudgeManager: dependencies.nudgeManager
-                )
-            )
+            wrappedValue: dependencies.makeWeightTrackingViewModel()
         )
         _cardManager = ObservedObject(wrappedValue: dependencies.trackerCardManager)
     }
@@ -101,15 +97,12 @@ private struct WeightTrackingExperienceView: View {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
                 weightGoal: binding(\.weightGoal),
-                showGoalLine: binding(\.showGoalLine)
+                showGoalLine: binding(\.showGoalLine),
+                measurementObserver: measurementObserver
             )
         }
         .sheet(isPresented: binding(\.showingTrends)) {
-            WeightTrendsView(
-                weightManager: weightManager,
-                optOutManager: optOutManager,
-                cardManager: progressStoryCardManager
-            )
+            WeightTrendsView()
             .onAppear {
                 #if DEBUG
                 AppLogger.info("🎯 Progress Story sheet appeared", category: AppLogger.ui)
@@ -125,10 +118,31 @@ private struct WeightTrackingExperienceView: View {
             FirstTimeWeightSetupView(
                 weightManager: weightManager,
                 weightGoal: binding(\.weightGoal),
-                showGoalLine: binding(\.showGoalLine)
+                showGoalLine: binding(\.showGoalLine),
+                measurementObserver: measurementObserver
             )
         }
         .onAppear {
+            #if DEBUG
+            let providerSystem = measurementProvider.currentMeasurementSystem
+            let observerSystem = measurementObserver.system
+            let weightUnit = weightManager.currentUnitAbbreviation
+            let latestPounds = weightManager.latestWeight?.weight
+            let formattedLatest = latestPounds.map { weightManager.formattedDisplayWeight($0) } ?? "nil"
+            AppLogger.debug(
+                """
+                🧪 WeightTrackingView.onAppear – measurement snapshot
+                  providerSystem: \(describeMeasurementSystem(providerSystem))
+                  providerUnit: \(measurementProvider.currentUnit.abbreviation)
+                  observerSystem: \(describeMeasurementSystem(observerSystem))
+                  weightManagerUnit: \(weightUnit)
+                  latestEntryPounds: \(latestPounds.map { String(format: "%.3f", $0) } ?? "nil")
+                  latestEntryDisplay: \(formattedLatest)
+                """,
+                category: AppLogger.weightTracking
+            )
+            #endif
+            MeasurementSystemProvider.shared.refresh()
             vm.onViewAppear()
         }
         .task {
@@ -152,23 +166,24 @@ private struct WeightTrackingExperienceView: View {
     @ViewBuilder
     private func cardView(for cardType: TrackerCardType) -> some View {
         switch cardType {
-        case .currentWeight:
-            DSCard(
-                cardType: .currentWeight,
-                cardManager: cardManager,
-                canExpand: true
-            ) {
-                CurrentWeightCard(
-                    weightManager: weightManager,
-                    weightGoal: vm.weightGoal,
-                    showingGoalEditor: binding(\.showingGoalEditor),
-                    showingAddWeight: binding(\.showingAddWeight),
-                    showingTrends: binding(\.showingTrends)
-                )
-            }
-        case .chart:
-            DSCard(
-                cardType: .chart,
+            case .currentWeight:
+                DSCard(
+                    cardType: .currentWeight,
+                    cardManager: cardManager,
+                    canExpand: true
+                ) {
+                    CurrentWeightCard(
+                        weightManager: weightManager,
+                        weightGoal: vm.weightGoal,
+                        showingGoalEditor: binding(\.showingGoalEditor),
+                        showingAddWeight: binding(\.showingAddWeight),
+                        showingTrends: binding(\.showingTrends),
+                        measurementObserver: measurementObserver
+                    )
+                }
+            case .chart:
+                DSCard(
+                    cardType: .chart,
                 cardManager: cardManager,
                 canExpand: true
             ) {
@@ -179,17 +194,29 @@ private struct WeightTrackingExperienceView: View {
                     weightGoal: binding(\.weightGoal)
                 )
             }
-        case .stats:
-            DSCard(
-                cardType: .stats,
-                cardManager: cardManager,
-                canExpand: true
-            ) {
-                WeightStatsView(weightManager: weightManager)
+            case .stats:
+                DSCard(
+                    cardType: .stats,
+                    cardManager: cardManager,
+                    canExpand: true
+                ) {
+                    WeightStatsView(
+                        weightManager: weightManager,
+                        measurementObserver: measurementObserver
+                    )
+                }
+            case .history:
+                EmptyView()
             }
-        case .history:
-            EmptyView()
         }
+}
+
+private func describeMeasurementSystem(_ system: Locale.MeasurementSystem) -> String {
+    switch system {
+    case .metric: return "metric"
+    case .us: return "us"
+    case .uk: return "uk"
+    default: return "unknown"
     }
 }
 

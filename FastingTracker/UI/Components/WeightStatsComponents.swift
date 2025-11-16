@@ -4,8 +4,10 @@ import SwiftUI
 
 struct WeightStatsView: View {
     @ObservedObject var weightManager: WeightManager
+    @ObservedObject var measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared
 
     var body: some View {
+        let _ = measurementObserver.system
         let unitAbbreviation = weightManager.currentUnitAbbreviation
         let averageText: (value: String, accessibility: String) = weightManager.averageWeight.map { averageWeight in
             let formattedAverage = weightManager.formattedDisplayWeight(averageWeight)

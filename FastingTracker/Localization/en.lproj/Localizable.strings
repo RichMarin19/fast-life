@@ -38,6 +38,9 @@
 "progress_story_reflection_accessibility_label" = "Respond to reflection prompt";
 "progress_story_reflection_accessibility_hint" = "Double tap to respond to: %@";
 "progress_story_hide_card_accessibility" = "Hide card";
+"progress_story_reorder_accessibility_hint" = "Swipe up or down to reorder cards.";
+"progress_story_reorder_action_up" = "Move card up";
+"progress_story_reorder_action_down" = "Move card down";
 "progress_story_banner_improving" = "Small wins compound. Keep stacking the days!";
 "progress_story_banner_regressing" = "Course-correct today. One choice changes the trend!";
 "progress_story_banner_flat" = "Consistency is power. Nudge your routine by 1%!";

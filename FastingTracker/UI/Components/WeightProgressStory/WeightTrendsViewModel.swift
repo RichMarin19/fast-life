@@ -3,10 +3,19 @@ import Combine
 
 @MainActor
 final class WeightTrendsViewModel: ObservableObject {
+    struct Dependencies {
+        let weightManager: WeightManager
+        let optOutManager: ContentOptOutManaging
+        let cardManager: ProgressStoryCardManaging
+        let metricsProvider: WeightProgressStoryMetricsProviding
+        let measurementObserver: MeasurementSystemObserver
+    }
+
     // Dependencies
     private let weightManager: WeightManager
     private let optOutManager: ContentOptOutManaging
     private let cardManager: ProgressStoryCardManaging
+    private let measurementObserver: MeasurementSystemObserver
     let contentIDs = ProgressStoryContentIDs(
         trendSnapshot: "progress_story_trend_snapshot_v1",
         trendSnapshotLegacyIDs: ["progress_story_7day_v1", "progress_story_30day_v1"],
@@ -19,7 +28,7 @@ final class WeightTrendsViewModel: ObservableObject {
     private let contentIDCoachBar = "progress_story_coach_bar_v1"
 
     // Metrics
-    private let metricsProvider: WeightProgressStoryMetricsProvider
+    private let metricsProvider: WeightProgressStoryMetricsProviding
 
     @Published private(set) var sevenDayDelta: Double?
     @Published private(set) var thirtyDayDelta: Double?
@@ -29,14 +38,12 @@ final class WeightTrendsViewModel: ObservableObject {
     @Published private(set) var reflectionPromptText: String
     private var cancellables = Set<AnyCancellable>()
 
-    init(weightManager: WeightManager,
-         optOutManager: ContentOptOutManaging,
-         cardManager: ProgressStoryCardManaging,
-         metricsProvider: WeightProgressStoryMetricsProvider? = nil) {
-        self.weightManager = weightManager
-        self.optOutManager = optOutManager
-        self.cardManager = cardManager
-        self.metricsProvider = metricsProvider ?? WeightProgressStoryMetricsProvider(weightManager: weightManager)
+    init(dependencies: Dependencies) {
+        self.weightManager = dependencies.weightManager
+        self.optOutManager = dependencies.optOutManager
+        self.cardManager = dependencies.cardManager
+        self.metricsProvider = dependencies.metricsProvider
+        self.measurementObserver = dependencies.measurementObserver
 
         let delta7 = self.metricsProvider.delta(days: 7)
         self.sevenDayDelta = delta7
@@ -59,6 +66,13 @@ final class WeightTrendsViewModel: ObservableObject {
         self.optOutManager.objectWillChange
             .sink { [weak self] _ in
                 self?.objectWillChange.send()
+            }
+            .store(in: &cancellables)
+
+        dependencies.measurementObserver.$system
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleMeasurementSystemDidChange()
             }
             .store(in: &cancellables)
     }
@@ -306,19 +320,10 @@ final class WeightTrendsViewModel: ObservableObject {
     }
 }
 
-// MARK: - Factories
+// MARK: - Measurement Handling
 
-extension WeightTrendsViewModel {
-    @MainActor
-    static func live(
-        weightManager: WeightManager,
-        optOutManager: ContentOptOutManaging? = nil,
-        cardManager: ProgressStoryCardManaging? = nil
-    ) -> WeightTrendsViewModel {
-        WeightTrendsViewModel(
-            weightManager: weightManager,
-            optOutManager: optOutManager ?? ContentOptOutManager.shared,
-            cardManager: cardManager ?? ProgressStoryCards.shared
-        )
+private extension WeightTrendsViewModel {
+    func handleMeasurementSystemDidChange() {
+        refresh()
     }
 }

@@ -198,6 +198,33 @@ extension WeightDependencies {
     }
 
     @MainActor
+    func makeWeightTrackingViewModel(userDefaults: UserDefaults = .standard) -> WeightTrackingViewModel {
+        let deps = WeightTrackingViewModel.Dependencies(
+            weightManager: weightManager,
+            behavioralScheduler: behavioralScheduler,
+            optOutManager: optOutManager,
+            healthKitManager: healthKitManager,
+            nudgeManager: nudgeManager,
+            userDefaults: userDefaults
+        )
+        return WeightTrackingViewModel(dependencies: deps)
+    }
+
+    @MainActor
+    func makeWeightTrendsViewModel(
+        metricsProvider: WeightProgressStoryMetricsProviding? = nil
+    ) -> WeightTrendsViewModel {
+        let deps = WeightTrendsViewModel.Dependencies(
+            weightManager: weightManager,
+            optOutManager: optOutManager,
+            cardManager: progressStoryCardManager,
+            metricsProvider: metricsProvider ?? WeightProgressStoryMetricsProvider(weightManager: weightManager),
+            measurementObserver: measurementObserver
+        )
+        return WeightTrendsViewModel(dependencies: deps)
+    }
+
+    @MainActor
     func makeControlCenterCoordinator(userDefaults: UserDefaults = .standard) -> WeightControlCenterCoordinator {
         controlCenterCoordinatorFactory(self)
     }

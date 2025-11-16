@@ -1,0 +1,14 @@
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/LifeGPTViewModel.swift:49:        let hasCompletedFirstLoad = UserDefaults.standard.bool(forKey: "hasCompletedFirstInsightLoad")
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/LifeGPTViewModel.swift:58:        UserDefaults.standard.set(true, forKey: "hasCompletedFirstInsightLoad")
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/CardsViewModel.swift:23:    private let userDefaults = UserDefaults.standard
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/NotificationsViewModel.swift:61:    private let userDefaults = UserDefaults.standard
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/Core/ViewModels/Weight/SyncViewModel.swift:48:    private let userDefaults = UserDefaults.standard
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/AInsteinPresenceView.swift:556:            UserDefaults.standard.set(true, forKey: "hasSeenAInsteinWelcome")
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Components/SleepComponents.swift:151:    private let userDefaults = UserDefaults.standard
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingStageDetailView.swift:142:                            UserDefaults.standard.set(newValue, forKey: stageKey)
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/FastingStageDetailView.swift:15:        _doNotShowAgain = State(initialValue: UserDefaults.standard.bool(forKey: stageKey))
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HealthKitNudgeView.swift:113:        guard UserDefaults.standard.bool(forKey: "onboardingCompleted") else {
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HealthKitNudgeView.swift:119:        guard UserDefaults.standard.bool(forKey: "healthKitSkippedOnboarding") else {
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/HealthKitNudgeView.swift:98:    private let userDefaults = UserDefaults.standard
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/OpenAISettingsView.swift:182:        UserDefaults.standard.set("sk-test-key-12345", forKey: "openai_api_key")
+/Users/richmarin/Desktop/FastingTracker/FastingTracker/UI/Views/WeightSettingsView.swift:51:    private let userDefaults = UserDefaults.standard

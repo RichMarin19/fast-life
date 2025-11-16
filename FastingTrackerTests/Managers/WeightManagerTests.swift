@@ -20,15 +20,21 @@ final class WeightManagerTests: XCTestCase {
 
     var weightManager: WeightManager!
     var appSettings: AppSettings!
+    var localeProvider: MutableLocaleProvider!
+    var measurementProvider: LinkedMeasurementSystemProvider!
 
     override func setUp() {
         super.setUp()
         Self.removeSecurePersistenceArtifact()
-        // Clear UserDefaults for clean test state
         if let bundleID = Bundle.main.bundleIdentifier {
             UserDefaults.standard.removePersistentDomain(forName: bundleID)
         }
-        appSettings = AppSettings(localeProvider: TestLocaleProvider(measurementSystem: .us, localeIdentifier: "en_US"))
+        localeProvider = MutableLocaleProvider(isMetric: false)
+        measurementProvider = LinkedMeasurementSystemProvider(localeProvider: localeProvider)
+        appSettings = AppSettings(
+            localeProvider: localeProvider,
+            measurementSystemProvider: measurementProvider
+        )
         weightManager = WeightManager(
             healthKit: MockHealthKitManager(),
             dataStore: MockDataStore(),
@@ -37,13 +43,13 @@ final class WeightManagerTests: XCTestCase {
             syncCoordinator: MockWeightSyncCoordinator(),
             analytics: WeightAnalyticsService()
         )
-        // Clear any existing entries for clean tests
         weightManager.weightEntries.removeAll()
-        // Disable HealthKit sync for faster, isolated unit tests
         weightManager.syncWithHealthKit = false
     }
 
     override func tearDown() {
+        measurementProvider = nil
+        localeProvider = nil
         weightManager = nil
         appSettings = nil
         Self.removeSecurePersistenceArtifact()
@@ -1351,7 +1357,11 @@ final class WeightManagerTests: XCTestCase {
 
     func test_formattedDisplayWeight_updatesLocaleOnChange() {
         let localeProvider = MutableLocaleProvider(isMetric: false)
-        let appSettings = AppSettings(localeProvider: localeProvider)
+        let measurementProvider = LinkedMeasurementSystemProvider(localeProvider: localeProvider)
+        let appSettings = AppSettings(
+            localeProvider: localeProvider,
+            measurementSystemProvider: measurementProvider
+        )
         let manager = WeightManager(
             healthKit: MockHealthKitManager(),
             dataStore: MockDataStore(),
@@ -1783,12 +1793,14 @@ final class WeightPersistenceAdapterTests: XCTestCase {
 
 final class MutableLocaleProvider: LocaleProviding {
     private var customLocaleIdentifier: String?
+    var measurementChangeHandler: ((Locale.MeasurementSystem, String) -> Void)?
 
     var isMetric: Bool {
         didSet {
             if customLocaleIdentifier == nil {
                 localeIdentifier = isMetric ? "en_GB" : "en_US"
             }
+            measurementChangeHandler?(measurementSystem, localeIdentifier)
         }
     }
 
@@ -1796,7 +1808,11 @@ final class MutableLocaleProvider: LocaleProviding {
         isMetric ? .metric : .us
     }
 
-    var localeIdentifier: String
+    var localeIdentifier: String {
+        didSet {
+            measurementChangeHandler?(measurementSystem, localeIdentifier)
+        }
+    }
 
     init(isMetric: Bool) {
         self.isMetric = isMetric
@@ -1820,5 +1836,38 @@ final class MutableLocaleProvider: LocaleProviding {
             self.customLocaleIdentifier = nil
             self.localeIdentifier = isMetric ? "en_GB" : "en_US"
         }
+    }
+}
+
+final class LinkedMeasurementSystemProvider: MeasurementSystemProviding {
+    private let localeProvider: MutableLocaleProvider
+    private let subject: CurrentValueSubject<Locale.MeasurementSystem, Never>
+
+    init(localeProvider: MutableLocaleProvider) {
+        self.localeProvider = localeProvider
+        self.subject = CurrentValueSubject(localeProvider.measurementSystem)
+        localeProvider.measurementChangeHandler = { [weak self] system, _ in
+            self?.subject.send(system)
+        }
+    }
+
+    var currentUnit: WeightUnit {
+        subject.value == .metric ? .kilograms : .pounds
+    }
+
+    var locale: Locale {
+        Locale(identifier: localeProvider.localeIdentifier)
+    }
+
+    var currentMeasurementSystem: Locale.MeasurementSystem {
+        subject.value
+    }
+
+    var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> {
+        subject.eraseToAnyPublisher()
+    }
+
+    func refresh() {
+        subject.send(localeProvider.measurementSystem)
     }
 }

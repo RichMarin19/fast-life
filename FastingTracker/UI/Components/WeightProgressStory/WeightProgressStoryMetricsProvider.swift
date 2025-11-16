@@ -12,7 +12,21 @@ struct WeightProgressStoryBannerCopy {
 }
 
 @MainActor
-struct WeightProgressStoryMetricsProvider {
+protocol WeightProgressStoryMetricsProviding {
+    func delta(days: Int) -> Double?
+    var netDelta30Days: Double { get }
+    var bestStreak: Int { get }
+    var totalEntries: Int { get }
+    func trendState(for delta: Double) -> WeightProgressStoryTrendState
+    func coachBarText(for state: WeightProgressStoryTrendState) -> String
+    func bannerCopy(for state: WeightProgressStoryTrendState) -> WeightProgressStoryBannerCopy
+    func randomDidYouKnowTip() -> String
+    func randomReflectionPrompt() -> String
+    func trendSummary(for days: Int?) -> (amount: Double, isLoss: Bool)?
+}
+
+@MainActor
+struct WeightProgressStoryMetricsProvider: WeightProgressStoryMetricsProviding {
     let weightManager: WeightManager
 
     func delta(days: Int) -> Double? {
@@ -82,7 +96,7 @@ struct WeightProgressStoryMetricsProvider {
             localized("progress_story_tip_4", comment: "Did you know tip 4"),
             localized("progress_story_tip_5", comment: "Did you know tip 5")
         ]
-        return tips.randomElement() ?? tips[0]
+        return tips[safeDeterministicIndex(count: tips.count, offset: 0)]
     }
 
     func randomReflectionPrompt() -> String {
@@ -91,7 +105,7 @@ struct WeightProgressStoryMetricsProvider {
             localized("progress_story_prompt_2", comment: "Reflection prompt 2"),
             localized("progress_story_prompt_3", comment: "Reflection prompt 3")
         ]
-        return prompts.randomElement() ?? prompts[0]
+        return prompts[safeDeterministicIndex(count: prompts.count, offset: 17)]
     }
 
     func trendSummary(for days: Int?) -> (amount: Double, isLoss: Bool)? {
@@ -108,5 +122,12 @@ struct WeightProgressStoryMetricsProvider {
 
     private func localized(_ key: String, comment: StaticString) -> String {
         NSLocalizedString(key, bundle: .main, comment: String(describing: comment))
+    }
+
+    private func safeDeterministicIndex(count: Int, offset: Int) -> Int {
+        guard count > 0 else { return 0 }
+        let dayOfYear = Calendar.current.ordinality(of: .day, in: .year, for: Date()) ?? 0
+        let seed = dayOfYear + offset
+        return abs(seed) % count
     }
 }

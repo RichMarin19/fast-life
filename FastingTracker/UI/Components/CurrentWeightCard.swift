@@ -9,6 +9,7 @@ struct CurrentWeightCard: View {
     @Binding var showingGoalEditor: Bool
     @Binding var showingAddWeight: Bool
     @Binding var showingTrends: Bool
+    @ObservedObject var measurementObserver: MeasurementSystemObserver = MeasurementSystemObserver.shared
 
     // MARK: - Helpers
 
@@ -94,6 +95,7 @@ struct CurrentWeightCard: View {
 
     /// Calculates progress percentage toward goal weight
     var body: some View {
+        let _ = measurementObserver.system
         let progressPercentage = weightManager.progressPercentage(toward: weightGoal)
         let hasPositiveProgress = (progressPercentage ?? 0) > 0.0001
 
