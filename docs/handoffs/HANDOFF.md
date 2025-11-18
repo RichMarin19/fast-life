@@ -1,3 +1,20 @@
+# Fast LIFe - Current Session Handoff
+
+**Working Branch:** `feat/T1-folder-structure-file-splits`
+**Current Commit:** `31dc8e3` (Nov 15, 2025)
+**Last Updated:** November 18, 2025 – 12:10 PM ET
+**Repo Location:** `/Users/richmarin/fast-life` ← SINGLE SOURCE OF TRUTH
+
+---
+
+## 2025-11-18 12:10 EST – Branch Sync Fixed & Workflow Established (What/How/Expected/Actual)
+- **What:** Identified and resolved branch confusion where two separate repos (Desktop/FastingTracker and fast-life) were diverging, with T1 branch having Nov 15 working code but fast-life on old October base. Established single source of truth workflow to prevent future confusion.
+- **How:** Fetched from origin, checked out `feat/T1-folder-structure-file-splits` branch locally from remote, verified Core/UI structure and WeightControlCenterModels.swift present, confirmed working tree clean and synced with `origin/feat/T1-folder-structure-file-splits` at commit 31dc8e3.
+- **Expected:** Local fast-life repo now on T1 branch with Nov 15 working code (building & tests passing), ready for continued development with clear daily sync protocol (pull morning, push evening, commit frequently).
+- **Actual:** ✅ Successfully switched to T1 branch, verified file structure matches Nov 15 Desktop snapshot, branch tracking `origin/feat/T1-folder-structure-file-splits`, working tree clean. Going forward: ALL work happens in `/Users/richmarin/fast-life` on `feat/T1-folder-structure-file-splits` branch only. Desktop/FastingTracker is archived. Daily sync protocol established to prevent drift.
+
+---
+
 # Fast LIFe – Active Handoff (Condensed)
 
 > **Purpose:** Live status for ongoing development with archive links for historical detail.  
