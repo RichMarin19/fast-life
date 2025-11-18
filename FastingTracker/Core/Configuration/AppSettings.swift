@@ -1,0 +1,295 @@
+import Foundation
+import SwiftUI
+import Combine
+
+/// Global application settings following Apple's single source of truth principle
+/// Reference: https://developer.apple.com/documentation/swiftui/appstorage
+/// Reference: https://developer.apple.com/documentation/swiftui/managing-user-interface-state
+protocol LocaleProviding {
+    var measurementSystem: Locale.MeasurementSystem { get }
+    var localeIdentifier: String { get }
+}
+
+struct SystemLocaleProvider: LocaleProviding {
+    var measurementSystem: Locale.MeasurementSystem { Locale.current.measurementSystem }
+    var localeIdentifier: String { Locale.current.identifier }
+}
+
+final class AppSettings: ObservableObject {
+    static let shared = AppSettings()
+
+    private let localeProvider: LocaleProviding
+    private let measurementSystemProvider: MeasurementSystemProviding
+
+    // MARK: - Unit Preferences
+    // Following Apple @AppStorage pattern for persistent user preferences
+    // Reference: https://developer.apple.com/documentation/swiftui/appstorage
+
+    @AppStorage("hydrationUnit") var hydrationUnit: HydrationUnit = .ounces
+
+    // RECOVERY TASK #2: System locale detection - app ALWAYS follows iPhone system locale
+    // Following Apple Internationalization and Localization Guide
+    // Locale.current.measurementSystem: .metric (most of world) or .us (US/Liberia/Myanmar)
+    // Reference: https://developer.apple.com/documentation/foundation/locale/2293761-measurementsystem
+    // User Decision (Q1): No manual override - app follows iPhone Settings > General > Language & Region
+    var weightUnit: WeightUnit {
+        return measurementSystemProvider.currentMeasurementSystem == .metric ? .kilograms : .pounds
+    }
+
+    var localeIdentifier: String {
+        localeProvider.localeIdentifier
+    }
+
+    // MARK: - Default Tracker (Phase 3 Roadmap Implementation)
+    // Following roadmap specification for default start tracker
+
+    @AppStorage("app.defaultTracker") private var defaultTrackerRawValue: String = ""
+
+    @Published var defaultTracker: TrackerType? {
+        didSet {
+            defaultTrackerRawValue = defaultTracker?.rawValue ?? ""
+        }
+    }
+
+    init(
+        localeProvider: LocaleProviding = SystemLocaleProvider(),
+        measurementSystemProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared
+    ) {
+        self.localeProvider = localeProvider
+        self.measurementSystemProvider = measurementSystemProvider
+        // Initialize default tracker from stored raw value
+        // Following Apple pattern for enum persistence via raw values
+        if !defaultTrackerRawValue.isEmpty {
+            defaultTracker = TrackerType(rawValue: defaultTrackerRawValue)
+        }
+    }
+}
+
+// MARK: - Unit Enumerations
+// Following Apple naming conventions and CaseIterable for UI selection
+// Reference: https://docs.swift.org/swift-book/LanguageGuide/Enumerations.html
+
+enum HydrationUnit: String, CaseIterable, Identifiable {
+    case ounces = "oz"
+    case milliliters = "ml"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .ounces: return "Fluid Ounces (oz)"
+        case .milliliters: return "Milliliters (ml)"
+        }
+    }
+
+    var abbreviation: String {
+        return rawValue
+    }
+
+    /// Convert from ounces to this unit
+    /// Following standard US fluid ounce conversion: 1 fl oz = 29.5735 ml
+    /// Reference: https://www.nist.gov/pml/weights-and-measures/approximate-conversions-us-customary-measures
+    func fromOunces(_ ounces: Double) -> Double {
+        switch self {
+        case .ounces: return ounces
+        case .milliliters: return ounces * 29.5735
+        }
+    }
+
+    /// Convert from this unit to ounces
+    func toOunces(_ value: Double) -> Double {
+        switch self {
+        case .ounces: return value
+        case .milliliters: return value / 29.5735
+        }
+    }
+}
+
+enum WeightUnit: String, CaseIterable, Identifiable {
+    case pounds = "lbs"
+    case kilograms = "kg"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .pounds: return "Pounds (lbs)"
+        case .kilograms: return "Kilograms (kg)"
+        }
+    }
+
+    var abbreviation: String {
+        return rawValue
+    }
+
+    /// Convert from pounds to this unit
+    /// Following standard conversion: 1 lb = 0.453592 kg
+    /// Reference: https://www.nist.gov/pml/weights-and-measures/approximate-conversions-us-customary-measures
+    func fromPounds(_ pounds: Double) -> Double {
+        switch self {
+        case .pounds: return pounds
+        case .kilograms: return pounds * 0.453592
+        }
+    }
+
+    /// Convert from this unit to pounds
+    func toPounds(_ value: Double) -> Double {
+        switch self {
+        case .pounds: return value
+        case .kilograms: return value / 0.453592
+        }
+    }
+}
+
+// MARK: - Tracker Type (Phase 3 Roadmap Implementation)
+// Following roadmap specification exactly as provided
+
+enum TrackerType: String, CaseIterable, Identifiable {
+    case weight = "weight"
+    case fasting = "fasting"
+    case hydration = "hydration"
+    case sleep = "sleep"
+    case mood = "mood"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .weight: return "Weight"
+        case .fasting: return "Fasting"
+        case .hydration: return "Hydration"
+        case .sleep: return "Sleep"
+        case .mood: return "Mood & Energy"
+        }
+    }
+
+    var systemImage: String {
+        switch self {
+        case .weight: return "scalemass"
+        case .fasting: return "timer"
+        case .hydration: return "drop.fill"
+        case .sleep: return "bed.double.fill"
+        case .mood: return "face.smiling"
+        }
+    }
+
+    // Luxury SF Symbol icons following luxury spec design guidelines
+    // Style: Minimalist line icons, 2pt rounded strokes, 24pt/28pt bounding box
+    var icon: String {
+        switch self {
+        case .weight: return "scalemass.fill"           // Modern scale outline
+        case .fasting: return "timer.circle.fill"       // Circular timer design
+        case .hydration: return "drop.fill"             // Single water drop silhouette
+        case .sleep: return "moon.circle.fill"          // Crescent moon outline
+        case .mood: return "face.smiling.fill"          // Simple smile design
+        }
+    }
+}
+
+// MARK: - Measurement System Provider
+
+protocol MeasurementSystemProviding: AnyObject {
+    var currentUnit: WeightUnit { get }
+    var locale: Locale { get }
+    var currentMeasurementSystem: Locale.MeasurementSystem { get }
+    var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> { get }
+    func refresh()
+}
+
+/// Centralises measurement-system notifications so SwiftUI surfaces can respond
+/// immediately to user preference or system changes without re-instantiation.
+final class MeasurementSystemProvider: MeasurementSystemProviding {
+    static let shared = MeasurementSystemProvider()
+
+    private let localeProvider: LocaleProviding
+    private let notificationCenter: NotificationCenter
+    private let subject: CurrentValueSubject<Locale.MeasurementSystem, Never>
+    private var localeObserver: NSObjectProtocol?
+    private var defaultsObserver: NSObjectProtocol?
+
+    init(localeProvider: LocaleProviding = SystemLocaleProvider(),
+         notificationCenter: NotificationCenter = .default) {
+        self.localeProvider = localeProvider
+        self.notificationCenter = notificationCenter
+        self.subject = CurrentValueSubject(Self.resolveMeasurementSystem())
+
+        localeObserver = notificationCenter.addObserver(
+            forName: NSLocale.currentLocaleDidChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.subject.send(Self.resolveMeasurementSystem())
+        }
+
+        defaultsObserver = notificationCenter.addObserver(
+            forName: UserDefaults.didChangeNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            self.subject.send(Self.resolveMeasurementSystem())
+        }
+    }
+
+    deinit {
+        if let token = localeObserver {
+            notificationCenter.removeObserver(token)
+        }
+        if let token = defaultsObserver {
+            notificationCenter.removeObserver(token)
+        }
+    }
+
+    private var currentSystem: Locale.MeasurementSystem {
+        subject.value
+    }
+
+    var currentUnit: WeightUnit {
+        currentSystem == .metric ? .kilograms : .pounds
+    }
+
+    var locale: Locale {
+        Locale(identifier: localeProvider.localeIdentifier)
+    }
+
+    var currentMeasurementSystem: Locale.MeasurementSystem {
+        currentSystem
+    }
+
+    var measurementSystemPublisher: AnyPublisher<Locale.MeasurementSystem, Never> {
+        subject.removeDuplicates().eraseToAnyPublisher()
+    }
+
+    func refresh() {
+        subject.send(Self.resolveMeasurementSystem())
+    }
+
+    private static func resolveMeasurementSystem() -> Locale.MeasurementSystem {
+        if let override = UserDefaults.standard.string(forKey: "AppleMeasurementUnits")?.lowercased() {
+            if override.contains("centimeter") || override.contains("centimetre") {
+                return .metric
+            }
+            if override.contains("inch") {
+                return .us
+            }
+        }
+        return Locale.autoupdatingCurrent.measurementSystem
+    }
+}
+
+final class MeasurementSystemObserver: ObservableObject {
+    static let shared = MeasurementSystemObserver(provider: MeasurementSystemProvider.shared)
+
+    @Published private(set) var system: Locale.MeasurementSystem
+    private var cancellable: AnyCancellable?
+
+    init(provider: MeasurementSystemProviding) {
+        self.system = provider.currentMeasurementSystem
+        self.cancellable = provider.measurementSystemPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newSystem in
+                self?.system = newSystem
+            }
+    }
+}

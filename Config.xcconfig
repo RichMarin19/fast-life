@@ -1,0 +1,3 @@
+// Shared build settings for Fast LIFe
+PRODUCT_BUNDLE_IDENTIFIER = com.fastlife.app
+DEVELOPMENT_TEAM = QDD5ZFGK2T

@@ -15,9 +15,9 @@
 	<key>CFBundlePackageType</key>
 	<string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
 	<key>CFBundleShortVersionString</key>
-	<string>1.1.4</string>
+	<string>2.3.0</string>
 	<key>CFBundleVersion</key>
-	<string>6</string>
+	<string>12</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -47,16 +47,14 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSUserNotificationsUsageDescription</key>
-	<string>Fast LIFe needs permission to notify you when your fasting goal is complete.</string>
+	<string>Fast LIFe needs permission to send helpful reminders for your fasting goals and daily weigh-ins to help you stay on track.</string>
 	<key>CFBundleDisplayName</key>
 	<string>Fast LIFe</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>Fast LIFe needs access to read your weight, BMI, and body fat data from Apple Health to track your progress.</string>
+	<string>Fast LIFe needs access to read your health data (fasting sessions, weight, BMI, body fat, water intake, and sleep) from Apple Health to help you track your fasting progress and overall wellness.</string>
 	<key>NSHealthUpdateUsageDescription</key>
-	<string>Fast LIFe needs permission to save your weight, BMI, and body fat data to Apple Health.</string>
-	<key>UIBackgroundModes</key>
-	<array>
-		<string>processing</string>
-	</array>
+	<string>Fast LIFe needs permission to save your health data (fasting sessions, weight, BMI, body fat, water intake, and sleep) to Apple Health so your progress is synced across all your devices and health apps. Fasting sessions are saved as workouts.</string>
+	<key>OpenAI_API_Key</key>
+	<string>${OPENAI_API_KEY}</string>
 </dict>
 </plist>
