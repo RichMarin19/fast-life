@@ -5,9 +5,37 @@ struct FastLifeApp: App {
     @State private var selectedTab: Int = 2  // Always start at Hub tab (index 2 - center tab)
     @State private var shouldPopToRoot = false  // Trigger navigation pop
     @State private var shouldResetToOnboarding = false  // Trigger full app reset
-    @State private var isOnboardingComplete: Bool = UserDefaults.standard.safeBool(forKey: "onboardingCompleted", defaultValue: false)
+    @State private var isOnboardingComplete: Bool
+    @State private var appDependencies: AppDependencies
 
+    @MainActor
+    private static func makeAppDependencies(isOnboardingComplete: Bool) -> AppDependencies {
+        let weightManager = WeightManager(autoStartSync: isOnboardingComplete)
+        let healthKitManager = HealthKitManager.shared
+        let measurementProvider = MeasurementSystemProvider.shared
+        let measurementObserver = MeasurementSystemObserver(provider: measurementProvider)
+        let behavioralScheduler = BehavioralNotificationScheduler.shared
+        let trackerCardManager = MainActor.assumeIsolated { TrackerCards.shared }
+        let progressStoryCardManager = MainActor.assumeIsolated { ProgressStoryCards.shared }
+        let optOutManager = MainActor.assumeIsolated { ContentOptOutManager.shared }
+        let nudgeManager = MainActor.assumeIsolated { HealthKitNudgeManager.shared }
+        return AppDependencies.live(
+            weightManager: weightManager,
+            healthKitManager: healthKitManager,
+            measurementProvider: measurementProvider,
+            measurementObserver: measurementObserver,
+            behavioralScheduler: behavioralScheduler,
+            trackerCardManager: trackerCardManager,
+            progressStoryCardManager: progressStoryCardManager,
+            optOutManager: optOutManager,
+            nudgeManager: nudgeManager
+        )
+    }
+    @MainActor
     init() {
+        let onboardingCompleted = UserDefaults.standard.safeBool(forKey: "onboardingCompleted", defaultValue: false)
+        _isOnboardingComplete = State(initialValue: onboardingCompleted)
+        _appDependencies = State(initialValue: Self.makeAppDependencies(isOnboardingComplete: onboardingCompleted))
         // CRITICAL: Validate UserDefaults before anything else
         // Prevents app freezes from corrupted data caused by crashes
         // Must run BEFORE Firebase or any other initialization
@@ -28,15 +56,20 @@ struct FastLifeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            if isOnboardingComplete && !shouldResetToOnboarding {
-                mainTabView
-            } else {
-                OnboardingView(isOnboardingComplete: $isOnboardingComplete)
-                    .onAppear {
-                        // Reset the flag when onboarding appears
-                        shouldResetToOnboarding = false
-                    }
+            Group {
+                if isOnboardingComplete && !shouldResetToOnboarding {
+                    mainTabView
+                } else {
+                    appDependencies.makeOnboardingView(isOnboardingComplete: $isOnboardingComplete)
+                        .onAppear {
+                            // Reset the flag when onboarding appears
+                            shouldResetToOnboarding = false
+                            appDependencies.weightManager.disableSyncForOnboardingReset()
+                        }
+                }
             }
+            .environment(\.appDependencies, appDependencies)
+            .environment(\.weightDependencies, appDependencies.makeWeightDependencies())
         }
     }
 
@@ -77,12 +110,11 @@ struct FastLifeApp: App {
 // MARK: - Main Tab View (Separate to defer FastingManager initialization)
 
 struct MainTabView: View {
+    @Environment(\.appDependencies) private var appDependencies
     @StateObject private var fastingManager = FastingManager()
     @StateObject private var hydrationManager = HydrationManager()
-    @StateObject private var weightManager = WeightManager()
     @StateObject private var sleepManager = SleepManager()
     @StateObject private var moodManager = MoodManager()
-    @StateObject private var behavioralScheduler = BehavioralNotificationScheduler()
 
     @Binding var shouldPopToRoot: Bool
     @Binding var shouldResetToOnboarding: Bool
@@ -97,18 +129,11 @@ struct MainTabView: View {
     /// Used by .withAInsteinPresence() modifier on all 5 tabs
     private func createUnifiedHealthDataService() -> UnifiedHealthDataService {
         return UnifiedHealthDataService(
-            weightManager: weightManager,
+            weightManager: appDependencies.weightManager,
             fastingManager: fastingManager,
             sleepManager: sleepManager,
             hydrationManager: hydrationManager,
             moodManager: moodManager
-        )
-    }
-
-    private var weightDependencies: WeightDependencies {
-        WeightDependencies.live(
-            weightManager: weightManager,
-            behavioralScheduler: behavioralScheduler
         )
     }
 
@@ -134,10 +159,10 @@ struct MainTabView: View {
             HubView(shouldPopToRoot: $shouldPopToRoot)
                 .environmentObject(fastingManager)
                 .environmentObject(hydrationManager)
-                .environmentObject(weightManager)
+                .environmentObject(appDependencies.weightManager)
                 .environmentObject(sleepManager)
                 .environmentObject(moodManager)
-                .environmentObject(behavioralScheduler)
+                .environmentObject(appDependencies.behavioralScheduler)
                 .withAInsteinPresence(dataService: createUnifiedHealthDataService())
                 .tabItem {
                     Label("Hub", systemImage: "waveform.path.ecg")
@@ -161,11 +186,11 @@ struct MainTabView: View {
                     selectedTab: $selectedTab
                 )
                 .environmentObject(fastingManager)
-                .environmentObject(weightManager)
+                .environmentObject(appDependencies.weightManager)
                 .environmentObject(sleepManager)
                 .environmentObject(hydrationManager)
                 .environmentObject(moodManager)
-                .environmentObject(behavioralScheduler)
+                .environmentObject(appDependencies.behavioralScheduler)
             )
             .withAInsteinPresence(dataService: createUnifiedHealthDataService())
             .tabItem {
@@ -179,7 +204,6 @@ struct MainTabView: View {
             // History loads in background and displays inline in Hub tab (central dashboard pattern)
             fastingManager.loadHistoryAsync()
         }
-        .environment(\.weightDependencies, weightDependencies)
     }
 }
 

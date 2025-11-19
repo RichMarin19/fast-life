@@ -12,30 +12,34 @@ struct WeightTrackingView: View {
 @MainActor
 private struct WeightTrackingExperienceView: View {
     private let dependencies: WeightDependencies
-    private let weightManager: WeightManager
     private let behavioralScheduler: BehavioralNotificationScheduler
     private let optOutManager: ContentOptOutManaging
     private let healthKitManager: HealthKitManagerProtocol
     private let nudgeManager: HealthKitNudgeManaging
     private let progressStoryCardManager: ProgressStoryCardManaging
     private let measurementProvider: MeasurementSystemProviding
+    private let syncCoordinator: WeightSyncCoordinating
 
     @StateObject private var viewModel: WeightTrackingViewModel
+    @ObservedObject private var weightManager: WeightManager
     @ObservedObject private var cardManager: CardManager<TrackerCardType>
     @ObservedObject private var measurementObserver: MeasurementSystemObserver
+    @State private var showingSyncStatusAlert = false
+    @State private var latestSyncStatus: WeightSyncStatus?
 
     private var vm: WeightTrackingViewModel { viewModel }
 
     init(dependencies: WeightDependencies) {
         self.dependencies = dependencies
-        self.weightManager = dependencies.weightManager
         self.behavioralScheduler = dependencies.behavioralScheduler
         self.optOutManager = dependencies.optOutManager
         self.healthKitManager = dependencies.healthKitManager
         self.nudgeManager = dependencies.nudgeManager
         self.progressStoryCardManager = dependencies.progressStoryCardManager
         self.measurementProvider = dependencies.measurementProvider
+        self.syncCoordinator = dependencies.syncCoordinator
         _measurementObserver = ObservedObject(wrappedValue: dependencies.measurementObserver)
+        _weightManager = ObservedObject(wrappedValue: dependencies.weightManager)
         _viewModel = StateObject(
             wrappedValue: dependencies.makeWeightTrackingViewModel()
         )
@@ -66,7 +70,8 @@ private struct WeightTrackingExperienceView: View {
                 EmptyWeightStateView(
                     showingAddWeight: binding(\.showingAddWeight),
                     healthKitManager: healthKitManager,
-                    weightManager: weightManager
+                    weightManager: weightManager,
+                    syncCoordinator: syncCoordinator
                 )
             } else {
                 ForEach(cardManager.getVisibleCardsInOrder(), id: \.self) { cardType in
@@ -154,6 +159,20 @@ private struct WeightTrackingExperienceView: View {
         .onChange(of: vm.weightGoal) { _, _ in
             vm.saveGoalSettings()
         }
+        .onReceive(syncCoordinator.statusPublisher) { status in
+            switch status {
+            case .success, .upToDate, .failure:
+                latestSyncStatus = status
+                showingSyncStatusAlert = true
+            case .idle, .syncing:
+                break
+            }
+        }
+        .alert("Sync Status", isPresented: $showingSyncStatusAlert, actions: {
+            Button("OK", role: .cancel) { }
+        }, message: {
+            Text(syncMessage(for: latestSyncStatus))
+        })
     }
 
     private func binding<Value>(_ keyPath: ReferenceWritableKeyPath<WeightTrackingViewModel, Value>) -> Binding<Value> {
@@ -206,9 +225,25 @@ private struct WeightTrackingExperienceView: View {
                     )
                 }
             case .history:
-                EmptyView()
-            }
+            EmptyView()
         }
+    }
+
+    private func syncMessage(for status: WeightSyncStatus?) -> String {
+        guard let status else { return "" }
+        switch status {
+        case .success(let newEntries):
+            return "Successfully synced \(newEntries) weight entries from Apple Health."
+        case .upToDate:
+            return "Weight data is up to date. No new entries found in Apple Health."
+        case .failure(let message):
+            return message
+        case .idle:
+            return ""
+        case .syncing:
+            return "Sync in progress..."
+        }
+    }
 }
 
 private func describeMeasurementSystem(_ system: Locale.MeasurementSystem) -> String {

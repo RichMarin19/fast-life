@@ -40,7 +40,7 @@ final class WeightManagerTests: XCTestCase {
             dataStore: MockDataStore(),
             appSettings: appSettings,
             persistence: InMemoryWeightPersistence(),
-            syncCoordinator: MockWeightSyncCoordinator(),
+            entrySyncCoordinator: MockWeightEntrySyncCoordinator(),
             analytics: WeightAnalyticsService()
         )
         weightManager.weightEntries.removeAll()
@@ -73,7 +73,7 @@ final class WeightManagerTests: XCTestCase {
             dataStore: MockDataStore(),
             appSettings: appSettings,
             persistence: persistence,
-            syncCoordinator: MockWeightSyncCoordinator(),
+            entrySyncCoordinator: MockWeightEntrySyncCoordinator(),
             analytics: WeightAnalyticsService()
         )
     }
@@ -1377,9 +1377,9 @@ final class WeightManagerTests: XCTestCase {
     }
 }
 
-final class WeightSyncCoordinatorTests: XCTestCase {
+final class WeightEntrySyncCoordinatorTests: XCTestCase {
 
-    private let coordinator = WeightSyncCoordinator()
+    private let coordinator = WeightEntrySyncCoordinator()
 
     func test_mergeNewEntries_addsUniqueEntriesAndKeepsMostRecentFirst() {
         let baseDate = Date(timeIntervalSince1970: 1_700_000_000)
@@ -1497,7 +1497,7 @@ final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
                                    weight: 200.0,
                                    source: .manual)
         let persistence = InMemoryWeightPersistence(entries: [existing])
-        let coordinator = MockWeightSyncCoordinator()
+        let coordinator = MockWeightEntrySyncCoordinator()
 
         let hkEntries = [
             WeightEntry(date: existing.date.addingTimeInterval(-600), weight: 198.0, source: .healthKit),
@@ -1514,7 +1514,7 @@ final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
             healthKit: mockHealthKit,
             dataStore: dataStore,
             persistence: persistence,
-            syncCoordinator: coordinator
+            entrySyncCoordinator: coordinator
         )
 
         manager.syncFromHealthKit(startDate: nil) { added, error in
@@ -1536,7 +1536,7 @@ final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
         let mockHealthKit = MockHealthKitManager()
         let dataStore = MockDataStore()
         let persistence = InMemoryWeightPersistence()
-        let coordinator = MockWeightSyncCoordinator()
+        let coordinator = MockWeightEntrySyncCoordinator()
 
         let hkEntries = [
             WeightEntry(date: Date(timeIntervalSince1970: 1_699_000_000), weight: 210.0, source: .healthKit),
@@ -1553,7 +1553,7 @@ final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
             healthKit: mockHealthKit,
             dataStore: dataStore,
             persistence: persistence,
-            syncCoordinator: coordinator
+            entrySyncCoordinator: coordinator
         )
 
         manager.syncFromHealthKitHistorical(startDate: Date(timeIntervalSince1970: 1_690_000_000)) { added, error in
@@ -1582,7 +1582,7 @@ final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
                                  weight: 204.5,
                                  source: .manual)
         let persistence = InMemoryWeightPersistence(entries: [staleHealthKit, manual])
-        let coordinator = MockWeightSyncCoordinator()
+        let coordinator = MockWeightEntrySyncCoordinator()
 
         let hkEntries = [
             WeightEntry(date: staleHealthKit.date, weight: staleHealthKit.weight, source: .healthKit),
@@ -1602,7 +1602,7 @@ final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
             healthKit: mockHealthKit,
             dataStore: dataStore,
             persistence: persistence,
-            syncCoordinator: coordinator
+            entrySyncCoordinator: coordinator
         )
 
         manager.syncFromHealthKitWithReset(startDate: Date(timeIntervalSince1970: 1_690_000_000)) { added, error in
@@ -1620,7 +1620,7 @@ final class WeightManagerSyncCoordinatorIntegrationTests: XCTestCase {
     }
 }
 
-private final class MockWeightSyncCoordinator: WeightSyncCoordinating {
+private final class MockWeightEntrySyncCoordinator: WeightEntrySyncCoordinating {
     var mergeNewEntriesCallCount = 0
     var mergeHistoricalEntriesCallCount = 0
     var reconcileAfterResetCallCount = 0
@@ -1670,17 +1670,20 @@ private final class InMemoryWeightPersistence: WeightPersistenceManaging {
     private var startOverride: (Double?, Date?)
     private var milestoneCount: Int?
     private var goalWeight: Double?
+    private var futureSyncStartDate: Date?
 
     init(entries: [WeightEntry] = [],
          syncPreference: Bool? = nil,
          startOverride: (Double?, Date?) = (nil, nil),
          milestoneCount: Int? = nil,
-         goalWeight: Double? = nil) {
+         goalWeight: Double? = nil,
+         futureSyncStartDate: Date? = nil) {
         self.entries = entries
         self.syncPreference = syncPreference
         self.startOverride = startOverride
         self.milestoneCount = milestoneCount
         self.goalWeight = goalWeight
+        self.futureSyncStartDate = futureSyncStartDate
     }
 
     func loadWeightEntries() -> [WeightEntry] {
@@ -1721,6 +1724,14 @@ private final class InMemoryWeightPersistence: WeightPersistenceManaging {
 
     func saveGoalWeight(_ weight: Double) {
         goalWeight = weight
+    }
+
+    func loadFutureSyncStartDate() -> Date? {
+        futureSyncStartDate
+    }
+
+    func saveFutureSyncStartDate(_ date: Date?) {
+        futureSyncStartDate = date
     }
 }
 

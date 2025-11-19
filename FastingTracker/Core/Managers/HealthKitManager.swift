@@ -56,6 +56,7 @@ protocol HealthKitManagerProtocol: AnyObject {
     func deleteWeightByUUID(_ uuid: UUID, completion: @escaping (Bool, Error?) -> Void)
     func findWeightSampleUUID(date: Date, weight: Double, completion: @escaping (String?) -> Void)
     func deleteWeightDataHistorical(healthKitEntries: [Any], completion: @escaping (Bool) -> Void)
+    func seedWeightAnchor(at date: Date, completion: @escaping () -> Void)
 
     // MARK: - Weight Sync Properties
     var lastWeightSyncDate: Date? { get }
@@ -252,6 +253,10 @@ class HealthKitManager: ObservableObject, HealthKitManagerProtocol {
 
     func deleteWeightFromHealthKit(uuid: String, completion: @escaping (Bool) -> Void) {
         weightService.deleteWeightFromHealthKit(uuid: uuid, completion: completion)
+    }
+
+    func seedWeightAnchor(at date: Date, completion: @escaping () -> Void) {
+        weightService.seedWeightAnchor(at: date, completion: completion)
     }
 
     // MARK: - Mindfulness API (API Compatibility for MoodManager)

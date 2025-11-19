@@ -18,7 +18,7 @@ final class WeightGoalCoordinatorTests: XCTestCase {
             dataStore: MockDataStore(),
             appSettings: appSettings,
             persistence: persistence,
-            syncCoordinator: WeightSyncCoordinator(),
+            entrySyncCoordinator: WeightEntrySyncCoordinator(),
             analytics: WeightAnalyticsService()
         )
         weightManager.setGoalWeight(170)
@@ -59,7 +59,7 @@ final class WeightGoalCoordinatorTests: XCTestCase {
             dataStore: MockDataStore(),
             appSettings: appSettings,
             persistence: TestWeightPersistence(),
-            syncCoordinator: MockWeightSyncCoordinator(),
+            entrySyncCoordinator: MockWeightEntrySyncCoordinator(),
             analytics: WeightAnalyticsService()
         )
 
@@ -132,6 +132,7 @@ private final class TestWeightPersistence: WeightPersistenceManaging {
     var startWeightOverride: (weight: Double?, date: Date?) = (nil, nil)
     var milestoneCount: Int?
     var goalWeight: Double?
+    var futureSyncStartDate: Date?
 
     func loadWeightEntries() -> [WeightEntry] {
         storedEntries
@@ -172,9 +173,17 @@ private final class TestWeightPersistence: WeightPersistenceManaging {
     func saveGoalWeight(_ weight: Double) {
         goalWeight = weight
     }
+
+    func loadFutureSyncStartDate() -> Date? {
+        futureSyncStartDate
+    }
+
+    func saveFutureSyncStartDate(_ date: Date?) {
+        futureSyncStartDate = date
+    }
 }
 
-private final class MockWeightSyncCoordinator: WeightSyncCoordinating {
+private final class MockWeightEntrySyncCoordinator: WeightEntrySyncCoordinating {
     func mergeNewEntries(currentEntries: inout [WeightEntry], healthKitEntries: [WeightEntry], duplicateChecker: (WeightEntry, WeightEntry) -> Bool) -> Int {
         0
     }

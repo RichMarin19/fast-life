@@ -29,6 +29,8 @@
 3. Open the newest session recap in `docs/handoffs/reports/SESSION-RECAP-*.md` (and any active audit/backlog doc called out in the handoff) to recover historical decisions.
 4. Draft a concise plan aligned with the current slice, confirm it with Rich, then begin execution.
 5. Keep `HANDOFF.md` under ~500 lines by archiving closed work into dated files under `docs/handoffs/archive/` and linking back from the main file.
+6. **Repo and Project Guardrail:** Before touching code, run `pwd` and ensure you are inside `/Users/richmarin/fast-life`. Only open `fast-life/FastingTracker.xcodeproj`. Never open or edit `FastLIFe.xcodeproj` or any project under `/Users/richmarin/Desktop/FastingTracker`; those are archived snapshots. If Xcode shows multiple “recent” projects, clear the menu and reopen the fast-life project explicitly.
+7. **Scope Guardrail:** Do not create, rename, or reorganize folders/projects unless the current HANDOFF entry explicitly calls for that work. Stay inside the approved slice (e.g., fixing sync) and avoid touching legacy artifacts or top-level project files unless Rich assigns that task.
 
 ---
 

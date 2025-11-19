@@ -43,6 +43,7 @@ struct NotificationServices: NotificationServicing {
     }
 }
 
+@MainActor
 struct OnboardingView: View {
     // Don't create managers or access HealthKit immediately - they're only needed at the end
     // Accessing HealthKitManager.shared causes expensive HealthKit framework initialization on main thread
@@ -66,6 +67,14 @@ struct OnboardingView: View {
     let notificationServices: NotificationServicing
     private let measurementProvider: MeasurementSystemProviding
     @StateObject private var measurementObserver: MeasurementSystemObserver
+    private let onboardingWeightManager: WeightManager
+    private let weightSyncCoordinator: WeightSyncCoordinating
+    @State private var hasTriggeredWeightSync = false
+    @State private var showingSyncStatusAlert = false
+    @State private var latestSyncStatus: WeightSyncStatus?
+    @State private var shouldNavigateToNotificationsAfterSync = false
+    @State private var isInteractionLocked = false
+    @State private var activeSyncRequest: SyncRequestSource?
 
     private var weightUnit: WeightUnit {
         measurementObserver.system == .metric ? .kilograms : .pounds
@@ -75,13 +84,26 @@ struct OnboardingView: View {
         weightUnit.abbreviation
     }
 
+    private enum HealthKitSyncSelection {
+        case allHistorical
+        case futureOnly
+    }
+
+    private enum SyncRequestSource {
+        case onboardingHistorical
+    }
+
     init(
         isOnboardingComplete: Binding<Bool>,
-        healthKitServices: HealthKitServicing = HealthKitServices(),
-        notificationServices: NotificationServicing = NotificationServices(),
-        measurementProvider: MeasurementSystemProviding = MeasurementSystemProvider.shared
+        weightManager: WeightManager,
+        healthKitServices: HealthKitServicing,
+        notificationServices: NotificationServicing,
+        weightSyncCoordinator: WeightSyncCoordinating,
+        measurementProvider: MeasurementSystemProviding
     ) {
         self._isOnboardingComplete = isOnboardingComplete
+        self.onboardingWeightManager = weightManager
+        self.weightSyncCoordinator = weightSyncCoordinator
         self.healthKitServices = healthKitServices
         self.notificationServices = notificationServices
         self.measurementProvider = measurementProvider
@@ -126,6 +148,34 @@ struct OnboardingView: View {
                 .tag(6)
         }
         .tabViewStyle(.page)
+        .allowsHitTesting(!isInteractionLocked)
+        .alert("Sync Status", isPresented: $showingSyncStatusAlert, actions: {
+            Button("OK", role: .cancel) {
+                if shouldNavigateToNotificationsAfterSync {
+                    shouldNavigateToNotificationsAfterSync = false
+                    isInteractionLocked = false
+                    currentPage = 6
+                }
+                activeSyncRequest = nil
+            }
+        }, message: {
+            Text(syncMessage(for: latestSyncStatus))
+        })
+        .onReceive(weightSyncCoordinator.statusPublisher) { status in
+            guard activeSyncRequest != nil else {
+                AppLogger.debug("Ignoring sync status \(status) because onboarding did not initiate it", category: AppLogger.healthKit)
+                return
+            }
+            switch status {
+            case .success, .upToDate, .failure:
+                latestSyncStatus = status
+                showingSyncStatusAlert = true
+                isInteractionLocked = false
+                activeSyncRequest = nil
+            case .idle, .syncing:
+                break
+            }
+        }
         .onChange(of: currentPage) { oldValue, newValue in
             AppLogger.debug("Onboarding page changed from \(oldValue) to \(newValue)", category: AppLogger.ui)
             let pageNames = ["Welcome", "Current Weight", "Goal Weight", "Fasting Goal", "Hydration Goal", "HealthKit Sync", "Notifications"]
@@ -598,38 +648,7 @@ struct OnboardingView: View {
             VStack(spacing: 15) {
                 Button(action: {
                     AppLogger.debug("Sync All Historical Data button tapped, requesting HealthKit authorization", category: AppLogger.healthKit)
-
-                    // CRITICAL: Request authorization on main thread
-                    // Per Apple documentation: UI operations must happen on main thread
-                    // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
-                    DispatchQueue.main.async {
-                        healthKitServices.requestAuthorization { success, error in
-                            if success {
-                                AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
-
-                                // Verify which permissions were actually granted
-                                let weightGranted = healthKitServices.isWeightAuthorized()
-                                let waterGranted = healthKitServices.isWaterAuthorized()
-                                let sleepGranted = healthKitServices.isSleepAuthorized()
-
-                                AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
-
-                                if weightGranted || waterGranted || sleepGranted {
-                                    AppLogger.debug("HealthKit permissions granted, enabling sync with all historical data, advancing to Notifications", category: AppLogger.healthKit)
-                                    saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
-                                    currentPage = 6
-                                } else {
-                                    AppLogger.debug("No HealthKit permissions granted, disabling sync, advancing to Notifications", category: AppLogger.healthKit)
-                                    saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                                    currentPage = 6
-                                }
-                            } else {
-                                AppLogger.debug("HealthKit authorization failed: \(String(describing: error)), disabling sync", category: AppLogger.healthKit)
-                                saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                                currentPage = 6
-                            }
-                        }
-                    }
+                    handleHealthKitSelection(.allHistorical)
                 }) {
                     VStack(spacing: 8) {
                         Text("Sync All Historical Data")
@@ -647,38 +666,7 @@ struct OnboardingView: View {
 
                 Button(action: {
                     AppLogger.debug("Sync Future Data Only button tapped, requesting HealthKit authorization", category: AppLogger.healthKit)
-
-                    // CRITICAL: Request authorization on main thread
-                    // Per Apple documentation: UI operations must happen on main thread
-                    // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
-                    DispatchQueue.main.async {
-                        healthKitServices.requestAuthorization { success, error in
-                            if success {
-                                AppLogger.debug("HealthKit authorization dialog completed", category: AppLogger.healthKit)
-
-                                // Verify which permissions were actually granted
-                                let weightGranted = healthKitServices.isWeightAuthorized()
-                                let waterGranted = healthKitServices.isWaterAuthorized()
-                                let sleepGranted = healthKitServices.isSleepAuthorized()
-
-                                AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
-
-                                if weightGranted || waterGranted || sleepGranted {
-                                    AppLogger.debug("HealthKit permissions granted, enabling sync with future data only, advancing to Notifications", category: AppLogger.healthKit)
-                                    saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
-                                    currentPage = 6
-                                } else {
-                                    AppLogger.debug("No HealthKit permissions granted, disabling sync, advancing to Notifications", category: AppLogger.healthKit)
-                                    saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                                    currentPage = 6
-                                }
-                            } else {
-                                AppLogger.debug("HealthKit authorization failed: \(String(describing: error)), disabling sync", category: AppLogger.healthKit)
-                                saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                                currentPage = 6
-                            }
-                        }
-                    }
+                    handleHealthKitSelection(.futureOnly)
                 }) {
                     VStack(spacing: 8) {
                         Text("Sync Future Data Only")
@@ -697,7 +685,8 @@ struct OnboardingView: View {
                 Button(action: {
                     AppLogger.debug("Skip for Now button tapped, disabling HealthKit sync, advancing to Notifications", category: AppLogger.ui)
                     saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
-                    currentPage = 6
+                    hasTriggeredWeightSync = false
+                    advanceToNotifications(afterSync: false, reason: "User skipped HealthKit during onboarding")
                 }) {
                     Text("Skip for Now")
                         .font(.headline)
@@ -795,6 +784,76 @@ struct OnboardingView: View {
 
     // MARK: - Helper Functions
 
+    private func handleHealthKitSelection(_ selection: HealthKitSyncSelection) {
+        // CRITICAL: Request authorization and present UI on the main thread (per Apple HealthKit docs)
+        // Reference: https://developer.apple.com/documentation/healthkit/hkhealthstore/1614152-requestauthorization
+        DispatchQueue.main.async {
+            healthKitServices.requestAuthorization { success, error in
+                Task { @MainActor in
+                    guard success else {
+                        AppLogger.debug("HealthKit authorization failed: \(String(describing: error)), disabling sync and advancing", category: AppLogger.healthKit)
+                        saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                        advanceToNotifications(afterSync: false, reason: "HealthKit authorization failed")
+                        return
+                    }
+
+                    // Verify which permissions were actually granted (only sync authorized domains)
+                    let weightGranted = healthKitServices.isWeightAuthorized()
+                    let waterGranted = healthKitServices.isWaterAuthorized()
+                    let sleepGranted = healthKitServices.isSleepAuthorized()
+
+                    AppLogger.debug("HealthKit permissions - Weight: \(weightGranted), Water: \(waterGranted), Sleep: \(sleepGranted)", category: AppLogger.healthKit)
+
+                    guard weightGranted || waterGranted || sleepGranted else {
+                        AppLogger.debug("No HealthKit permissions granted, leaving sync disabled", category: AppLogger.healthKit)
+                        saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                        advanceToNotifications(afterSync: false, reason: "No HealthKit permissions granted")
+                        return
+                    }
+
+                switch selection {
+                case .allHistorical:
+                    AppLogger.debug("Permissions granted, kicking off canonical historical sync flow", category: AppLogger.healthKit)
+                    if weightGranted {
+                        saveHealthKitPreference(syncHealthKit: true, futureOnly: false)
+                            advanceToNotifications(afterSync: true, reason: "Historical sync in progress")
+                            triggerHistoricalWeightSync()
+                        } else {
+                            AppLogger.debug("Weight permission missing, cannot import historical entries even though other domains granted; advancing without sync", category: AppLogger.healthKit)
+                            saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                            advanceToNotifications(afterSync: false, reason: "Historical sync skipped due to missing weight permission")
+                        }
+                case .futureOnly:
+                    AppLogger.debug("Permissions granted, enabling future-only sync without importing history", category: AppLogger.healthKit)
+                    if weightGranted {
+                        saveHealthKitPreference(syncHealthKit: true, futureOnly: true)
+                        onboardingWeightManager.enableFutureOnlySync()
+                        AppLogger.debug("Weight sync preference seeded for future entries (anchor set to now, observer only)", category: AppLogger.healthKit)
+                    } else {
+                        AppLogger.debug("Weight permission missing, cannot enable future sync; keeping sync disabled", category: AppLogger.healthKit)
+                        saveHealthKitPreference(syncHealthKit: false, futureOnly: false)
+                    }
+                    advanceToNotifications(afterSync: false, reason: "Future-only sync configured")
+                }
+                }
+            }
+        }
+    }
+
+    private func advanceToNotifications(afterSync: Bool, reason: String) {
+        AppLogger.debug("advanceToNotifications invoked (afterSync=\(afterSync)) – \(reason)", category: AppLogger.ui)
+        if afterSync {
+            shouldNavigateToNotificationsAfterSync = true
+            isInteractionLocked = true
+            activeSyncRequest = .onboardingHistorical
+        } else {
+            shouldNavigateToNotificationsAfterSync = false
+            isInteractionLocked = false
+            activeSyncRequest = nil
+            currentPage = 6
+        }
+    }
+
     /// Dismisses the keyboard
     /// Per Apple HIG: "Dismiss the keyboard when users navigate away from text input"
     /// Reference: https://developer.apple.com/design/human-interface-guidelines/text-fields
@@ -807,6 +866,14 @@ struct OnboardingView: View {
         healthKitSyncChoice = (syncHealthKit, futureOnly)
     }
 
+    private func triggerHistoricalWeightSync() {
+        onboardingWeightManager.setSyncPreference(true)
+        hasTriggeredWeightSync = true
+        onboardingWeightManager.resetFutureOnlySyncCutoff()
+        activeSyncRequest = .onboardingHistorical
+        weightSyncCoordinator.sync(initialImport: true)
+    }
+
     // MARK: - Complete Onboarding
 
     private func completeOnboarding() {
@@ -814,7 +881,6 @@ struct OnboardingView: View {
 
         // Create managers only when needed (at completion time, not during onboarding UI rendering)
         // This prevents lag during onboarding caused by expensive init() work
-        let weightManager = WeightManager()
         let fastingManager = FastingManager()
         let hydrationManager = HydrationManager()
 
@@ -822,7 +888,7 @@ struct OnboardingView: View {
         if let weight = Double(currentWeight) {
             let canonicalWeight = measurementProvider.currentUnit.toPounds(weight)
             let entry = WeightEntry(date: Date(), weight: canonicalWeight)
-            weightManager.addWeightEntry(entry)
+            onboardingWeightManager.addWeightEntry(entry)
             AppLogger.debug("Current weight saved during onboarding", category: AppLogger.general)
         } else {
             AppLogger.debug("No current weight entered, skipped", category: AppLogger.general)
@@ -831,7 +897,7 @@ struct OnboardingView: View {
         // Save goal weight via WeightManager (single source of truth)
         if let goal = Double(goalWeight) {
             let canonicalGoal = measurementProvider.currentUnit.toPounds(goal)
-            weightManager.setGoalWeight(canonicalGoal)
+            onboardingWeightManager.setGoalWeight(canonicalGoal)
             AppLogger.debug("Goal weight saved during onboarding", category: AppLogger.general)
         } else {
             AppLogger.debug("No goal weight entered, skipped", category: AppLogger.general)
@@ -866,14 +932,15 @@ struct OnboardingView: View {
 
             // Only sync data for authorized domains
             if weightGranted {
+                onboardingWeightManager.setSyncPreference(true)
                 if self.healthKitSyncChoice.futureOnly {
-                    AppLogger.debug("Syncing future weight data only", category: AppLogger.healthKit)
-                    weightManager.syncFromHealthKit(startDate: Date())
+                    AppLogger.debug("User chose future-only sync; preference enabled for upcoming entries", category: AppLogger.healthKit)
+                } else if !hasTriggeredWeightSync {
+                    AppLogger.debug("Triggering canonical historical weight sync during onboarding completion", category: AppLogger.healthKit)
+                    triggerHistoricalWeightSync()
                 } else {
-                    AppLogger.debug("Syncing all historical weight data", category: AppLogger.healthKit)
-                    weightManager.syncFromHealthKit()
+                    AppLogger.debug("Historical sync already triggered earlier in onboarding", category: AppLogger.healthKit)
                 }
-                AppLogger.debug("Weight sync completed", category: AppLogger.healthKit)
             } else {
                 AppLogger.debug("Weight sync skipped (permission denied)", category: AppLogger.healthKit)
             }
@@ -931,6 +998,20 @@ struct FeatureRow: View {
     }
 }
 
-#Preview {
-    OnboardingView(isOnboardingComplete: .constant(false))
+extension OnboardingView {
+    private func syncMessage(for status: WeightSyncStatus?) -> String {
+        guard let status else { return "" }
+        switch status {
+        case .success(let newEntries):
+            return "Successfully synced \(newEntries) weight entries from Apple Health."
+        case .upToDate:
+            return "Weight data is up to date. No new entries found in Apple Health."
+        case .failure(let message):
+            return message
+        case .idle:
+            return ""
+        case .syncing:
+            return "Sync in progress..."
+        }
+    }
 }

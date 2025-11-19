@@ -9,6 +9,7 @@ class WeightManager: ObservableObject {
     @Published private(set) var startWeightOverride: Double?
     @Published private(set) var startWeightDate: Date?
     @Published var milestoneCount: Int = 10
+    private var futureSyncStartDate: Date?
 
     // RECOVERY TASK #1: Restore goal weight persistence
     // Following industry standard MVVM pattern - WeightManager owns goal weight persistence
@@ -27,7 +28,7 @@ class WeightManager: ObservableObject {
     private let appSettings: AppSettings
 
     // HealthKit sync orchestration
-    private let syncCoordinator: WeightSyncCoordinating
+    private let entrySyncCoordinator: WeightEntrySyncCoordinating
     private let analytics: WeightAnalyticsServicing
 
     // PHASE 2 TASK 2.3: Performance optimization - reusable NumberFormatter
@@ -55,13 +56,14 @@ class WeightManager: ObservableObject {
 
     /// Production init (convenience) - backward compatible
     /// Uses singleton instances for existing code
-    convenience init() {
+    convenience init(autoStartSync: Bool = true) {
         self.init(
             healthKit: HealthKitManager.shared,
             dataStore: AppDataStore.shared,
             appSettings: AppSettings.shared,
-            syncCoordinator: WeightSyncCoordinator(),
-            analytics: WeightAnalyticsService()
+            entrySyncCoordinator: WeightEntrySyncCoordinator(),
+            analytics: WeightAnalyticsService(),
+            autoStartSync: autoStartSync
         )
     }
 
@@ -71,13 +73,14 @@ class WeightManager: ObservableObject {
          dataStore: DataStore,
          appSettings: AppSettings = AppSettings.shared,
          persistence: WeightPersistenceManaging = WeightPersistenceAdapter(),
-         syncCoordinator: WeightSyncCoordinating = WeightSyncCoordinator(),
-         analytics: WeightAnalyticsServicing = WeightAnalyticsService()) {
+         entrySyncCoordinator: WeightEntrySyncCoordinating = WeightEntrySyncCoordinator(),
+         analytics: WeightAnalyticsServicing = WeightAnalyticsService(),
+         autoStartSync: Bool = true) {
         self.healthKit = healthKit
         self.dataStore = dataStore
         self.appSettings = appSettings
         self.persistence = persistence
-        self.syncCoordinator = syncCoordinator
+        self.entrySyncCoordinator = entrySyncCoordinator
         self.analytics = analytics
 
         loadWeightEntries()
@@ -85,14 +88,21 @@ class WeightManager: ObservableObject {
         loadStartWeightOverride()
         loadMilestoneCount()
         loadGoalWeight()
+        loadFutureSyncStartDate()
 
         // REMOVED auto-sync on init per Apple HealthKit Best Practices
         // Sync only when user explicitly enables it via setSyncPreference()
         // or when view explicitly calls syncFromHealthKit()
         // Reference: https://developer.apple.com/documentation/healthkit/setting_up_healthkit
 
-        // Setup observer if sync is already enabled (app restart scenario)
-        if syncWithHealthKit && healthKit.isWeightAuthorized() {
+        if !autoStartSync {
+            if syncWithHealthKit {
+                AppLogger.info("Auto-start sync disabled (onboarding reset); clearing stored preference", category: AppLogger.weightTracking)
+            }
+            syncWithHealthKit = false
+            persistence.saveSyncPreference(false)
+        } else if syncWithHealthKit && healthKit.isWeightAuthorized() {
+            // Setup observer if sync is already enabled (app restart scenario)
             setupHealthKitObserver()
         }
 
@@ -411,9 +421,10 @@ class WeightManager: ObservableObject {
 
             // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
-                let added = self.syncCoordinator.mergeNewEntries(
+                let filteredEntries = self.entriesRespectingFutureOnlyCutoff(healthKitEntries)
+                let added = self.entrySyncCoordinator.mergeNewEntries(
                     currentEntries: &self.weightEntries,
-                    healthKitEntries: healthKitEntries,
+                    healthKitEntries: filteredEntries,
                     duplicateChecker: self.makeDuplicateChecker(
                         timeThreshold: WeightConstants.DuplicationThreshold.tightTimeInterval,
                         weightThreshold: WeightConstants.DuplicationThreshold.weightDelta
@@ -451,7 +462,7 @@ class WeightManager: ObservableObject {
 
             // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
-                let added = self.syncCoordinator.mergeHistoricalEntries(
+                let added = self.entrySyncCoordinator.mergeHistoricalEntries(
                     currentEntries: &self.weightEntries,
                     healthKitEntries: healthKitEntries,
                     duplicateChecker: self.makeDuplicateChecker(
@@ -492,7 +503,7 @@ class WeightManager: ObservableObject {
 
             // Industry Standard: All @Published property updates must be on main thread (SwiftUI + HealthKit best practice)
             DispatchQueue.main.async {
-                let result = self.syncCoordinator.reconcileAfterReset(
+                let result = self.entrySyncCoordinator.reconcileAfterReset(
                     currentEntries: &self.weightEntries,
                     healthKitEntries: healthKitEntries,
                     duplicateChecker: self.makeDuplicateChecker(
@@ -509,6 +520,15 @@ class WeightManager: ObservableObject {
                 completion(result.added, nil)
             }
         }
+    }
+
+    private func entriesRespectingFutureOnlyCutoff(_ entries: [WeightEntry]) -> [WeightEntry] {
+        guard let cutoff = futureSyncStartDate else { return entries }
+        let filtered = entries.filter { $0.date >= cutoff }
+        if filtered.count != entries.count {
+            AppLogger.info("Future-only sync filter dropped \(entries.count - filtered.count) entries older than \(cutoff)", category: AppLogger.weightTracking)
+        }
+        return filtered
     }
 
     func setSyncPreference(_ enabled: Bool) {
@@ -557,7 +577,43 @@ class WeightManager: ObservableObject {
                 healthKit.stopObserving(query: query)
                 observerQuery = nil
             }
+            updateFutureSyncStartDate(nil)
         }
+    }
+
+    /// Used when onboarding restarts so we don't auto-sync until the user opts in again.
+    func disableSyncForOnboardingReset() {
+        guard syncWithHealthKit else {
+            AppLogger.info("Onboarding reset requested; sync already disabled", category: AppLogger.weightTracking)
+            persistence.saveSyncPreference(false)
+            updateFutureSyncStartDate(nil)
+            return
+        }
+
+        AppLogger.info("Onboarding reset requested; forcing HealthKit sync off until user opts in", category: AppLogger.weightTracking)
+        setSyncPreference(false)
+        updateFutureSyncStartDate(nil)
+    }
+
+    /// Seeds the HealthKit anchor so future-only sync starts from "now" and then enables ongoing sync.
+    func enableFutureOnlySync(completion: (() -> Void)? = nil) {
+        let now = Date()
+        AppLogger.info("Preparing future-only sync starting at \(now)", category: AppLogger.weightTracking)
+        updateFutureSyncStartDate(now)
+        healthKit.seedWeightAnchor(at: now) { [weak self] in
+            guard let self else {
+                completion?()
+                return
+            }
+            Task { @MainActor in
+                self.setSyncPreference(true)
+                completion?()
+            }
+        }
+    }
+
+    func resetFutureOnlySyncCutoff() {
+        updateFutureSyncStartDate(nil)
     }
 
     // MARK: - HealthKit Observer
@@ -863,6 +919,18 @@ class WeightManager: ObservableObject {
         } else {
             goalWeight = 0
             AppLogger.info("No stored goal weight found, defaulting to 0", category: AppLogger.weightTracking)
+        }
+    }
+
+    private func updateFutureSyncStartDate(_ date: Date?) {
+        futureSyncStartDate = date
+        persistence.saveFutureSyncStartDate(date)
+    }
+
+    private func loadFutureSyncStartDate() {
+        futureSyncStartDate = persistence.loadFutureSyncStartDate()
+        if let cutoff = futureSyncStartDate {
+            AppLogger.info("Loaded future-only sync cutoff at \(cutoff)", category: AppLogger.weightTracking)
         }
     }
 

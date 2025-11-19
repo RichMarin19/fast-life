@@ -198,6 +198,12 @@ final class MockHealthKitManager: HealthKitManagerProtocol, @unchecked Sendable 
         }
     }
 
+    func seedWeightAnchor(at date: Date, completion: @escaping () -> Void) {
+        DispatchQueue.global(qos: .background).async {
+            completion()
+        }
+    }
+
     func deleteWeightDataHistorical(healthKitEntries: [Any], completion: @escaping (Bool) -> Void) {
         deleteWeightCalled = true
         DispatchQueue.global(qos: .background).async {

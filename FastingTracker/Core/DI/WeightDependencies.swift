@@ -1,3 +1,4 @@
+import Foundation
 import SwiftUI
 
 /// Strongly typed bundle of dependencies required by Weight Tracking + Control Center experiences.
@@ -13,9 +14,24 @@ struct WeightDependencies {
     let nudgeManager: HealthKitNudgeManaging
     let measurementProvider: MeasurementSystemProviding
     let measurementObserver: MeasurementSystemObserver
+    let syncCoordinator: WeightSyncCoordinating
     let notificationCoordinatorFactory: @MainActor (WeightManager, WeightDependencies) -> WeightNotificationCoordinator
     let preferencesFactory: @MainActor (WeightDependencies) -> PreferencesViewModel
     let controlCenterCoordinatorFactory: @MainActor (WeightDependencies) -> WeightControlCenterCoordinator
+    private static let syncCoordinatorCache = NSMapTable<WeightManager, WeightSyncCoordinator>(keyOptions: .weakMemory, valueOptions: .strongMemory)
+
+    @MainActor
+    private static func resolveSyncCoordinator(
+        for weightManager: WeightManager,
+        healthKitManager: HealthKitManagerProtocol
+    ) -> WeightSyncCoordinator {
+        if let existing = syncCoordinatorCache.object(forKey: weightManager) {
+            return existing
+        }
+        let coordinator = WeightSyncCoordinator(weightManager: weightManager, healthKitManager: healthKitManager)
+        syncCoordinatorCache.setObject(coordinator, forKey: weightManager)
+        return coordinator
+    }
 
     /// Production factory used at runtime so the container reuses the app’s @StateObject instances.
     @MainActor
@@ -55,7 +71,8 @@ struct WeightDependencies {
             )
         }
     ) -> WeightDependencies {
-        WeightDependencies(
+        let syncCoordinator = resolveSyncCoordinator(for: weightManager, healthKitManager: healthKitManager)
+        return WeightDependencies(
             weightManager: weightManager,
             behavioralScheduler: behavioralScheduler,
             trackerCardManager: trackerCardManager,
@@ -65,6 +82,7 @@ struct WeightDependencies {
             nudgeManager: nudgeManager,
             measurementProvider: measurementProvider,
             measurementObserver: measurementObserver,
+            syncCoordinator: syncCoordinator,
             notificationCoordinatorFactory: notificationCoordinatorFactory,
             preferencesFactory: preferencesFactory,
             controlCenterCoordinatorFactory: controlCenterCoordinatorFactory
@@ -126,7 +144,8 @@ struct WeightDependencies {
             )
         }
     ) -> WeightDependencies {
-        WeightDependencies(
+        let syncCoordinator = WeightSyncCoordinator(weightManager: weightManager, healthKitManager: healthKitManager)
+        return WeightDependencies(
             weightManager: weightManager,
             behavioralScheduler: behavioralScheduler,
             trackerCardManager: trackerCardManager,
@@ -136,6 +155,7 @@ struct WeightDependencies {
             nudgeManager: nudgeManager,
             measurementProvider: measurementProvider,
             measurementObserver: measurementObserver,
+            syncCoordinator: syncCoordinator,
             notificationCoordinatorFactory: notificationCoordinatorFactory,
             preferencesFactory: preferencesFactory,
             controlCenterCoordinatorFactory: controlCenterCoordinatorFactory
@@ -170,6 +190,7 @@ extension WeightDependencies {
             optOutManager: optOutManager,
             trackerCardManager: trackerCardManager,
             progressStoryCardManager: progressStoryCardManager,
+            syncCoordinator: syncCoordinator,
             userDefaults: userDefaults
         )
     }
@@ -188,6 +209,7 @@ extension WeightDependencies {
             cardManager: deps.trackerCardManager,
             progressStoryCardManager: deps.progressStoryCardManager,
             healthKitManager: deps.healthKitManager,
+            syncCoordinator: deps.syncCoordinator,
             userDefaults: deps.userDefaults
         )
     }

@@ -76,7 +76,7 @@ final class WeightTrackingViewModelTests: XCTestCase {
             dataStore: MockDataStore(),
             appSettings: mockAppSettings,
             persistence: mockPersistence,
-            syncCoordinator: WeightSyncCoordinator(),
+            entrySyncCoordinator: WeightEntrySyncCoordinator(),
             analytics: WeightAnalyticsService()
         )
         dependencies = WeightTrackingViewModel.Dependencies(
@@ -301,17 +301,20 @@ fileprivate final class TestWeightPersistence: WeightPersistenceManaging {
     private var startOverride: (Double?, Date?)
     private var milestoneCount: Int?
     private var goalWeight: Double?
+    private var futureSyncStartDate: Date?
 
     init(entries: [WeightEntry] = [],
          syncPreference: Bool? = nil,
          startOverride: (Double?, Date?) = (nil, nil),
          milestoneCount: Int? = nil,
-         goalWeight: Double? = nil) {
+         goalWeight: Double? = nil,
+         futureSyncStartDate: Date? = nil) {
         self.entries = entries
         self.syncPreference = syncPreference
         self.startOverride = startOverride
         self.milestoneCount = milestoneCount
         self.goalWeight = goalWeight
+        self.futureSyncStartDate = futureSyncStartDate
     }
 
     func loadWeightEntries() -> [WeightEntry] { entries }
@@ -324,4 +327,6 @@ fileprivate final class TestWeightPersistence: WeightPersistenceManaging {
     func saveMilestoneCount(_ count: Int) { milestoneCount = count }
     func loadGoalWeight() -> Double? { goalWeight }
     func saveGoalWeight(_ weight: Double) { goalWeight = weight }
+    func loadFutureSyncStartDate() -> Date? { futureSyncStartDate }
+    func saveFutureSyncStartDate(_ date: Date?) { futureSyncStartDate = date }
 }

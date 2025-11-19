@@ -159,6 +159,29 @@ class HealthKitWeightService {
         healthStore.execute(query)
     }
 
+    // MARK: - Anchor Utilities
+
+    func seedWeightAnchor(at date: Date, completion: @escaping () -> Void) {
+        guard let weightType = HKObjectType.quantityType(forIdentifier: .bodyMass) else {
+            DispatchQueue.main.async { completion() }
+            return
+        }
+
+        let predicate = HKQuery.predicateForSamples(withStart: date, end: date, options: .strictStartDate)
+        let query = HKAnchoredObjectQuery(type: weightType, predicate: predicate, anchor: nil, limit: 0) { [weak self] _, _, _, newAnchor, error in
+            if let error = error {
+                AppLogger.error("Failed to seed weight anchor", category: AppLogger.healthKit, error: error)
+            } else {
+                self?.saveAnchor(newAnchor, forKey: AnchorKeys.weight)
+                self?.saveSyncTimestamp(for: SyncTimestampKeys.weight)
+                AppLogger.info("Seeded weight anchor at \(date)", category: AppLogger.healthKit)
+            }
+            DispatchQueue.main.async { completion() }
+        }
+
+        healthStore.execute(query)
+    }
+
     // MARK: - Private Helper Methods
 
     private func processWeightSamples(_ samples: [HKQuantitySample], completion: @escaping ([WeightEntry]) -> Void) {

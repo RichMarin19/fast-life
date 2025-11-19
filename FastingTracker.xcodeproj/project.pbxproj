@@ -67,6 +67,7 @@
 		5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0722E8D5F6500254E70 /* Core/Managers/WeightManager.swift */; };
 		5289E0782E8D5F6500254E70 /* UI/Views/WeightTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0742E8D5F6500254E70 /* UI/Views/WeightTrackingView.swift */; };
 		E5C2A1B22EB6F7C5004C1234 /* WeightDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C2A1B12EB6F7C5004C1234 /* WeightDependencies.swift */; };
+		E5C2A1B42EB6F7C5004C1234 /* AppDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5C2A1B32EB6F7C5004C1234 /* AppDependencies.swift */; };
 		5289E0792E8D5F6500254E70 /* UI/Views/AddWeightView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E06E2E8D5F6500254E70 /* UI/Views/AddWeightView.swift */; };
 		5289E07A2E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0732E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift */; };
 		5289E07B2E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5289E0702E8D5F6500254E70 /* Core/Managers/HealthKitManager.swift */; };
@@ -158,7 +159,9 @@
 		DC01B28C3A00473B8C88E668 /* Core/ViewModels/WeightChartViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00579E29CBCC45D59580DDBC /* Core/ViewModels/WeightChartViewModel.swift */; };
 		E3B065802EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E3B0657F2EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift */; };
 		E5A1C3B22EB50F0F004C1234 /* WeightPersistenceAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B12EB50F0F004C1234 /* WeightPersistenceAdapter.swift */; };
-		E5A1C3B42EB50F0F004C1234 /* WeightSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */; };
+		E5A1C3B42EB50F0F004C1234 /* WeightEntrySyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B32EB50F0F004C1234 /* WeightEntrySyncCoordinator.swift */; };
+		B7CC54B0E6124ED1B93F527B /* WeightSyncCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2DCE01F33A0462CAF1336EE /* WeightSyncCoordinator.swift */; };
+		356FE953C4D5423797647E80 /* WeightSyncStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = D87E6DA288064E62B3A18855 /* WeightSyncStatus.swift */; };
 		E5A1C3B62EB50F0F004C1234 /* WeightAnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */; };
 		E5A1C3B92EB50F0F004C1234 /* WeightGoalCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3B82EB50F0F004C1234 /* WeightGoalCoordinator.swift */; };
 		E5A1C3D82EB51436004C1234 /* WeightTrackerMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5A1C3D72EB51436004C1234 /* WeightTrackerMetrics.swift */; };
@@ -264,6 +267,7 @@
 		5289E0732E8D5F6500254E70 /* UI/Views/WeightSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightSettingsView.swift; sourceTree = "<group>"; };
 		5289E0742E8D5F6500254E70 /* UI/Views/WeightTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/WeightTrackingView.swift; sourceTree = "<group>"; };
 		E5C2A1B12EB6F7C5004C1234 /* WeightDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightDependencies.swift; sourceTree = "<group>"; };
+		E5C2A1B32EB6F7C5004C1234 /* AppDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDependencies.swift; sourceTree = "<group>"; };
 		5289E07C2E8D600A00254E70 /* FastingTracker.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FastingTracker.entitlements; sourceTree = "<group>"; };
 		5289E07E2E8D700000254E70 /* Core/Managers/HydrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/Managers/HydrationManager.swift; sourceTree = "<group>"; };
 		5289E0802E8D700100254E70 /* UI/Views/HydrationTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Views/HydrationTrackingView.swift; sourceTree = "<group>"; };
@@ -350,7 +354,9 @@
 		D8CA2E00A104497085E45B53 /* UI/Components/WeightEmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UI/Components/WeightEmptyStateView.swift; sourceTree = "<group>"; };
 		E3B0657F2EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Core/ViewModels/Weight/WeightNotificationCoordinator.swift; sourceTree = "<group>"; };
 		E5A1C3B12EB50F0F004C1234 /* WeightPersistenceAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightPersistenceAdapter.swift; sourceTree = "<group>"; };
-		E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSyncCoordinator.swift; sourceTree = "<group>"; };
+		E5A1C3B32EB50F0F004C1234 /* WeightEntrySyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightEntrySyncCoordinator.swift; sourceTree = "<group>"; };
+		A2DCE01F33A0462CAF1336EE /* WeightSyncCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSyncCoordinator.swift; sourceTree = "<group>"; };
+		D87E6DA288064E62B3A18855 /* WeightSyncStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightSyncStatus.swift; sourceTree = "<group>"; };
 		E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightAnalyticsService.swift; sourceTree = "<group>"; };
 		E5A1C3B82EB50F0F004C1234 /* WeightGoalCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WeightGoalCoordinator.swift; path = Core/ViewModels/Weight/WeightGoalCoordinator.swift; sourceTree = "<group>"; };
 		E5A1C3D72EB51436004C1234 /* WeightTrackerMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightTrackerMetrics.swift; sourceTree = "<group>"; };
@@ -474,6 +480,7 @@
 			isa = PBXGroup;
 			children = (
 				E5C2A1B12EB6F7C5004C1234 /* WeightDependencies.swift */,
+				E5C2A1B32EB6F7C5004C1234 /* AppDependencies.swift */,
 			);
 			path = Core/DI;
 			sourceTree = "<group>";
@@ -673,7 +680,9 @@
 			children = (
 				E5A1C3B12EB50F0F004C1234 /* WeightPersistenceAdapter.swift */,
 				E5A1C3B52EB50F0F004C1234 /* WeightAnalyticsService.swift */,
-				E5A1C3B32EB50F0F004C1234 /* WeightSyncCoordinator.swift */,
+				E5A1C3B32EB50F0F004C1234 /* WeightEntrySyncCoordinator.swift */,
+				A2DCE01F33A0462CAF1336EE /* WeightSyncCoordinator.swift */,
+				D87E6DA288064E62B3A18855 /* WeightSyncStatus.swift */,
 				E5A1C3D72EB51436004C1234 /* WeightTrackerMetrics.swift */,
 			);
 			name = Weight;
@@ -876,10 +885,13 @@
 				5289E0772E8D5F6500254E70 /* Core/Managers/WeightManager.swift in Sources */,
 				E5A1C3B22EB50F0F004C1234 /* WeightPersistenceAdapter.swift in Sources */,
 				E5C2A1B22EB6F7C5004C1234 /* WeightDependencies.swift in Sources */,
+				E5C2A1B42EB6F7C5004C1234 /* AppDependencies.swift in Sources */,
 				E5A1C3B92EB50F0F004C1234 /* WeightGoalCoordinator.swift in Sources */,
 				E3B065802EB306D000D9D6D1 /* Core/ViewModels/Weight/WeightNotificationCoordinator.swift in Sources */,
 				E5A1C3B62EB50F0F004C1234 /* WeightAnalyticsService.swift in Sources */,
-				E5A1C3B42EB50F0F004C1234 /* WeightSyncCoordinator.swift in Sources */,
+				E5A1C3B42EB50F0F004C1234 /* WeightEntrySyncCoordinator.swift in Sources */,
+				B7CC54B0E6124ED1B93F527B /* WeightSyncCoordinator.swift in Sources */,
+				356FE953C4D5423797647E80 /* WeightSyncStatus.swift in Sources */,
 				A61A28CA263664CC583BAE01 /* Core/ViewModels/WeightControlCenterViewModel.swift in Sources */,
 				526B7FB62EB30A6B00B91277 /* ThreadSafeUserDefaults.swift in Sources */,
 				526B7FB72EB30A6B00B91277 /* ObserverSuppressionActor.swift in Sources */,

@@ -15,6 +15,7 @@ class WeightControlCenterViewModel: ObservableObject {
     let goalCoordinator: WeightGoalCoordinator
     let notificationCoordinator: WeightNotificationCoordinator
     let measurementObserver: MeasurementSystemObserver
+    private let syncCoordinator: WeightSyncCoordinating
 
     // Singleton managers (pass-through)
     let optOutManager: ContentOptOutManaging
@@ -67,6 +68,9 @@ class WeightControlCenterViewModel: ObservableObject {
     // MARK: - Private Properties (was @AppStorage in View)
 
     private let userDefaults: UserDefaults
+    private var syncStatusCancellable: AnyCancellable?
+    private var pendingInitialImport = false
+    private var awaitingUserInitiatedSyncResult = false
     private let hasCompletedInitialImportKey = "weightHasCompletedInitialImport"
 
     // AppStorage keys
@@ -93,6 +97,7 @@ class WeightControlCenterViewModel: ObservableObject {
          cardManager: CardManager<TrackerCardType>,
          progressStoryCardManager: ProgressStoryCardManaging,
          healthKitManager: HealthKitManagerProtocol,
+         syncCoordinator: WeightSyncCoordinating,
          userDefaults: UserDefaults) {
         self.weightManager = weightManager
         self.behavioralScheduler = behavioralScheduler
@@ -109,6 +114,7 @@ class WeightControlCenterViewModel: ObservableObject {
             healthKitManager: healthKitManager
         )
         self.notificationCoordinator = notificationCoordinator
+        self.syncCoordinator = syncCoordinator
         
         // Load persisted state
         loadCardOrder()
@@ -139,6 +145,12 @@ class WeightControlCenterViewModel: ObservableObject {
                 self?.objectWillChange.send()
             }
             .store(in: &cancellables)
+
+        syncStatusCancellable = syncCoordinator.statusPublisher
+            .receive(on: RunLoop.main)
+            .sink { [weak self] status in
+                self?.handleSyncStatus(status)
+            }
     }
 
     deinit {
@@ -426,72 +438,25 @@ class WeightControlCenterViewModel: ObservableObject {
     }
 
     func performSync() {
-        let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
-
-        weightManager.syncFromHealthKitWithReset(startDate: startDate) { [weak self] syncedCount, error in
-            Task<Void, Never> { @MainActor in
-                guard let self else { return }
-                self.isSyncing = false
-
-                if let error = error {
-                    self.syncMessage = error.localizedDescription
-                    self.showingSyncAlert = true
-                } else {
-                    if syncedCount > 0 {
-                        self.syncMessage = "Successfully synced \(syncedCount) new weight entries from Apple Health."
-                    } else {
-                        let hasPermission = self.healthKitManager.isWeightAuthorized()
-                        if hasPermission {
-                            self.syncMessage = "Weight data is up to date. No new entries found in Apple Health."
-                        } else {
-                            self.syncMessage = "Permission denied. To enable weight sync, go to Settings → Privacy → Health."
-                        }
-                    }
-                    self.showingSyncAlert = true
-
-                    self.updatePermissionStatus()
-                    self.loadLastSyncStatus()
-                    self.updateToggleState()
-
-                    if self.hasHealthKitPermission && self.userSyncPreference {
-                        self.weightManager.setSyncPreference(true)
-                    }
-                }
-            }
+        awaitingUserInitiatedSyncResult = true
+        guard !weightManager.weightEntries.isEmpty else {
+            performHistoricalSync()
+            return
         }
+
+        pendingInitialImport = false
+        syncCoordinator.sync(initialImport: false)
     }
 
     func performHistoricalSync() {
-        markInitialImportCompleted()
-        isSyncing = true
-
-        let startDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
-
-        weightManager.syncFromHealthKitHistorical(startDate: startDate) { syncedCount, error in
-            Task<Void, Never> { @MainActor in
-                self.isSyncing = false
-
-                if let error = error {
-                    self.syncMessage = "Failed to import historical weight data: \(error.localizedDescription)"
-                    self.showingSyncAlert = true
-                } else {
-                    if syncedCount > 0 {
-                        self.syncMessage = "Successfully imported \(syncedCount) weight entries from your Apple Health history."
-                    } else {
-                        self.syncMessage = "All weight data is already up to date. No new historical entries found."
-                    }
-                    self.showingSyncAlert = true
-
-                    if self.hasHealthKitPermission {
-                        self.weightManager.setSyncPreference(true)
-                        self.userSyncPreference = true
-                        self.updatePermissionStatus()
-                        self.loadLastSyncStatus()
-                        self.updateToggleState()
-                    }
-                }
-            }
+        awaitingUserInitiatedSyncResult = true
+        if hasHealthKitPermission {
+            weightManager.resetFutureOnlySyncCutoff()
+            weightManager.setSyncPreference(true)
+            userSyncPreference = true
         }
+        pendingInitialImport = true
+        syncCoordinator.sync(initialImport: true)
     }
 
     func performFutureOnlySync() {
@@ -501,7 +466,7 @@ class WeightControlCenterViewModel: ObservableObject {
         showingSyncAlert = true
 
         if hasHealthKitPermission {
-            weightManager.setSyncPreference(true)
+            weightManager.enableFutureOnlySync()
             userSyncPreference = true
             updatePermissionStatus()
             loadLastSyncStatus()
@@ -516,6 +481,48 @@ class WeightControlCenterViewModel: ObservableObject {
     func markInitialImportCompleted() {
         userDefaults.set(true, forKey: hasCompletedInitialImportKey)
         userDefaults.synchronize()
+    }
+
+    private func handleSyncStatus(_ status: WeightSyncStatus) {
+        switch status {
+        case .idle:
+            isSyncing = false
+        case .syncing:
+            isSyncing = true
+        case .success(let newEntries):
+            isSyncing = false
+            syncMessage = "Successfully synced \(newEntries) weight entries from Apple Health."
+            if awaitingUserInitiatedSyncResult {
+                showingSyncAlert = true
+            }
+            completeSyncIfNeeded()
+            awaitingUserInitiatedSyncResult = false
+        case .upToDate:
+            isSyncing = false
+            syncMessage = "Weight data is up to date. No new entries found in Apple Health."
+            if awaitingUserInitiatedSyncResult {
+                showingSyncAlert = true
+            }
+            completeSyncIfNeeded()
+            awaitingUserInitiatedSyncResult = false
+        case .failure(let message):
+            isSyncing = false
+            syncMessage = message
+            if awaitingUserInitiatedSyncResult {
+                showingSyncAlert = true
+            }
+            awaitingUserInitiatedSyncResult = false
+        }
+    }
+
+    private func completeSyncIfNeeded() {
+        if pendingInitialImport {
+            markInitialImportCompleted()
+            pendingInitialImport = false
+        }
+        updatePermissionStatus()
+        loadLastSyncStatus()
+        updateToggleState()
     }
 
     // MARK: - Badge Interaction: Cycle Through Opted-Out Items
@@ -716,6 +723,7 @@ extension WeightControlCenterViewModel {
         let optOutManager: ContentOptOutManaging
         let trackerCardManager: CardManager<TrackerCardType>
         let progressStoryCardManager: ProgressStoryCardManaging
+        let syncCoordinator: WeightSyncCoordinating
         let userDefaults: UserDefaults
     }
 
@@ -737,6 +745,7 @@ extension WeightControlCenterViewModel {
             cardManager: dependencies.trackerCardManager,
             progressStoryCardManager: dependencies.progressStoryCardManager,
             healthKitManager: dependencies.healthKitManager,
+            syncCoordinator: dependencies.syncCoordinator,
             userDefaults: dependencies.userDefaults
         )
     }
