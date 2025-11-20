@@ -23,11 +23,22 @@ class WeightControlCenterViewModel: ObservableObject {
     let progressStoryCardManager: ProgressStoryCardManaging
     let healthKitManager: HealthKitManagerProtocol
     private var cancellables = Set<AnyCancellable>()
+    private static let csvDateFormatter: ISO8601DateFormatter = {
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return formatter
+    }()
+    private static let displayDateFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .short
+        return formatter
+    }()
 
     // MARK: - Published State (was @State in View)
 
     // Card Management
-    @Published var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .experience]
+    @Published var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .dataManagement, .experience]
     @Published var draggedCard: ControlCenterCardType?
     @Published var expandedCards: Set<String> = []
 
@@ -49,6 +60,13 @@ class WeightControlCenterViewModel: ObservableObject {
     @Published var lastSyncStatus: String = ""
     @Published var showingWeightSyncDetails: Bool = false
     @Published var showingSyncPreferenceDialog: Bool = false
+
+    // Data Management
+    @Published var isExportingData: Bool = false
+    @Published var isImportingData: Bool = false
+    @Published var lastExportStatus: String?
+    @Published var lastImportStatus: String?
+    @Published var lastDeleteStatus: String?
 
     // Experience Opt-Out
     @Published var optOutTrackerCards: Bool = false
@@ -267,6 +285,15 @@ class WeightControlCenterViewModel: ObservableObject {
                 needsMigration = true
             }
 
+            if !migratedOrder.contains(.dataManagement) {
+                if let experienceIndex = migratedOrder.firstIndex(of: .experience) {
+                    migratedOrder.insert(.dataManagement, at: experienceIndex)
+                } else {
+                    migratedOrder.append(.dataManagement)
+                }
+                needsMigration = true
+            }
+
             cardOrder = migratedOrder
 
             // Save the migrated order if changes were made
@@ -274,8 +301,8 @@ class WeightControlCenterViewModel: ObservableObject {
                 saveCardOrder()
             }
         } else {
-            // Default order: Goals → Notifications → Insights → Sync → History → Experience
-            cardOrder = [.goals, .notifications, .insights, .sync, .history, .experience]
+            // Default order: Goals → Notifications → Insights → Sync → History → Data Management → Experience
+            cardOrder = [.goals, .notifications, .insights, .sync, .history, .dataManagement, .experience]
         }
     }
 
@@ -472,6 +499,127 @@ class WeightControlCenterViewModel: ObservableObject {
             loadLastSyncStatus()
             updateToggleState()
         }
+    }
+
+    // MARK: - Data Management
+
+    @MainActor
+    func exportWeightData() async throws -> URL {
+        let entries = weightManager.weightEntries.sorted { $0.date < $1.date }
+        guard !entries.isEmpty else { throw DataManagementError.noEntries }
+
+        isExportingData = true
+        defer { isExportingData = false }
+
+        var csv = "Date,Weight (lbs),BMI,BodyFat,Source\n"
+        for entry in entries {
+            let row = csvRow([
+                Self.csvDateFormatter.string(from: entry.date),
+                String(format: "%.4f", entry.weight),
+                entry.bmi.map { String(format: "%.4f", $0) } ?? "",
+                entry.bodyFat.map { String(format: "%.2f", $0) } ?? "",
+                entry.source.rawValue
+            ])
+            csv.append(row + "\n")
+        }
+
+        let timestamp = Self.csvDateFormatter.string(from: Date())
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("WeightData-\(timestamp).csv")
+        try csv.write(to: url, atomically: true, encoding: .utf8)
+
+        lastExportStatus = "Exported \(entries.count) entries · \(Self.displayDateFormatter.string(from: Date()))"
+        return url
+    }
+
+    @MainActor
+    func importWeightData(from url: URL) async throws -> WeightDataImportSummary {
+        isImportingData = true
+        defer { isImportingData = false }
+
+        guard url.startAccessingSecurityScopedResource() else {
+            throw DataManagementError.unreadableFile
+        }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        let content = try String(contentsOf: url, encoding: .utf8)
+        let rows = content.split(whereSeparator: \.isNewline)
+        guard rows.count > 1 else { throw DataManagementError.invalidFormat }
+
+        var existingKeys = Set(weightManager.weightEntries.map { Self.csvDateFormatter.string(from: $0.date) })
+        var imported = 0
+        var skipped = 0
+
+        for row in rows.dropFirst() {
+            let fields = parseCSVRow(String(row))
+            guard fields.count >= 2,
+                  let date = Self.csvDateFormatter.date(from: fields[0]),
+                  let weight = Double(fields[1]) else {
+                continue
+            }
+
+            let key = Self.csvDateFormatter.string(from: date)
+            if existingKeys.contains(key) {
+                skipped += 1
+                continue
+            }
+
+            let bmi = Double(fields[safe: 2] ?? "")
+            let bodyFat = Double(fields[safe: 3] ?? "")
+            let entry = WeightEntry(
+                date: date,
+                weight: weight,
+                bmi: bmi,
+                bodyFat: bodyFat,
+                source: .manual
+            )
+
+            weightManager.addWeightEntry(entry)
+            existingKeys.insert(key)
+            imported += 1
+        }
+
+        guard imported > 0 else {
+            throw imported == 0 && skipped > 0 ? DataManagementError.onlyDuplicates : DataManagementError.invalidFormat
+        }
+
+        lastImportStatus = "Imported \(imported) (\(skipped) skipped) · \(Self.displayDateFormatter.string(from: Date()))"
+        return WeightDataImportSummary(imported: imported, skipped: skipped)
+    }
+
+    @MainActor
+    func deleteAllWeightData() {
+        let total = weightManager.weightEntries.count
+        weightManager.deleteAllWeightData()
+        lastDeleteStatus = "Deleted \(total) entries · \(Self.displayDateFormatter.string(from: Date()))"
+    }
+
+    enum DataManagementError: LocalizedError {
+        case noEntries
+        case unreadableFile
+        case invalidFormat
+        case onlyDuplicates
+
+        var errorDescription: String? {
+            switch self {
+            case .noEntries:
+                return "No weight entries are available to export."
+            case .unreadableFile:
+                return "Cannot read the selected file."
+            case .invalidFormat:
+                return "The file is not a valid Fast LIFe weight export."
+            case .onlyDuplicates:
+                return "All entries in the file already exist."
+            }
+        }
+    }
+
+    private func csvRow(_ values: [String]) -> String {
+        values.map { "\"\($0)\"" }.joined(separator: ",")
+    }
+
+    private func parseCSVRow(_ row: String) -> [String] {
+        row.split(separator: ",", omittingEmptySubsequences: false)
+            .map { $0.trimmingCharacters(in: CharacterSet(charactersIn: "\"")) }
     }
 
     func hasCompletedInitialImport() -> Bool {
@@ -757,5 +905,17 @@ extension WeightControlCenterViewModel {
         let userDefaults = UserDefaults(suiteName: suiteName) ?? .standard
         userDefaults.removePersistentDomain(forName: suiteName)
         return deps.makeControlCenterViewModel(userDefaults: userDefaults)
+    }
+}
+
+struct WeightDataImportSummary {
+    let imported: Int
+    let skipped: Int
+}
+
+private extension Array {
+    subscript(safe index: Int) -> Element? {
+        guard indices.contains(index) else { return nil }
+        return self[index]
     }
 }

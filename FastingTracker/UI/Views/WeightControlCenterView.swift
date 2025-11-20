@@ -157,7 +157,7 @@ private struct WeightControlCenterExperienceView: View {
     @ViewBuilder
     private func deleteAllActions() -> some View {
         Group {
-            Button("Delete All Data", role: .destructive) { viewModel.weightManager.deleteAllWeightData() }
+            Button("Delete All Data", role: .destructive) { viewModel.deleteAllWeightData() }
             Button("Cancel", role: .cancel) { }
         }
     }

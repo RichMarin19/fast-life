@@ -49,6 +49,7 @@ struct AdvancedView: View {
     @Binding var isOnboardingComplete: Bool
     @Binding var selectedTab: Int
     @State private var navigationPath = NavigationPath()
+    @Environment(\.weightDependencies) private var weightDependencies
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
@@ -154,7 +155,8 @@ struct AdvancedView: View {
             AppSettingsView(
                 shouldResetToOnboarding: $shouldResetToOnboarding,
                 isOnboardingComplete: $isOnboardingComplete,
-                selectedTab: $selectedTab
+                selectedTab: $selectedTab,
+                weightDependencies: weightDependencies
             )
         default:
             EmptyView()
@@ -249,56 +251,55 @@ struct AppSettingsView: View {
     @EnvironmentObject var sleepManager: SleepManager
     @EnvironmentObject var moodManager: MoodManager
     @EnvironmentObject var appSettings: AppSettings
-
     @Binding var shouldResetToOnboarding: Bool
     @Binding var isOnboardingComplete: Bool
     @Binding var selectedTab: Int
 
-    @State private var isExporting = false
-    @State private var showingImportFilePicker = false
+    @StateObject private var dataManagementViewModel: WeightControlCenterViewModel
+    @State private var showDeleteAllConfirmation = false
+
+    @MainActor
+    init(
+        shouldResetToOnboarding: Binding<Bool>,
+        isOnboardingComplete: Binding<Bool>,
+        selectedTab: Binding<Int>,
+        weightDependencies: WeightDependencies
+    ) {
+        _shouldResetToOnboarding = shouldResetToOnboarding
+        _isOnboardingComplete = isOnboardingComplete
+        _selectedTab = selectedTab
+        _dataManagementViewModel = StateObject(wrappedValue: weightDependencies.makeControlCenterViewModel())
+    }
 
     var body: some View {
         List {
-            dataImportExportSection
+            Section(
+                header: Text("Weight Data Management"),
+                footer: Text("Export encrypted backups, import CSV archives, or delete data to stay compliant with GDPR/CCPA.")
+            ) {
+                WeightControlCenterDataManagementCard(
+                    viewModel: dataManagementViewModel,
+                    showDeleteAllConfirmation: $showDeleteAllConfirmation
+                )
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
         }
+        .listStyle(.insetGrouped)
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.inline)
-    }
-
-    private var dataImportExportSection: some View {
-        Section(header: Text("Data Import & Export"), footer: Text("Export your data for backup or import previously exported data to restore.")) {
-            Button(action: { exportData() }) {
-                HStack {
-                    if isExporting {
-                        ProgressView()
-                            .padding(.trailing, 8)
-                    } else {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(.blue)
-                    }
-                    Text(isExporting ? "Exporting..." : "Export All Data to CSV")
-                        .foregroundColor(.primary)
-                }
+        .confirmationDialog(
+            "Delete All Weight Data?",
+            isPresented: $showDeleteAllConfirmation,
+            actions: {
+                Button("Delete All Data", role: .destructive) { dataManagementViewModel.deleteAllWeightData() }
+                Button("Cancel", role: .cancel) { }
+            },
+            message: {
+                Text("This will delete all \(dataManagementViewModel.weightManager.weightEntries.count) weight entries from Fast LIFe. You can resync from HealthKit afterward. This action cannot be undone.")
             }
-            .disabled(isExporting)
-
-            Button(action: { showingImportFilePicker = true }) {
-                HStack {
-                    Image(systemName: "square.and.arrow.down")
-                        .foregroundColor(.green)
-                    Text("Import Data from CSV")
-                        .foregroundColor(.primary)
-                }
-            }
-        }
-    }
-
-    private func exportData() {
-        // Simplified export - just set state for UI feedback
-        isExporting = true
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            isExporting = false
-        }
+        )
     }
 }
 

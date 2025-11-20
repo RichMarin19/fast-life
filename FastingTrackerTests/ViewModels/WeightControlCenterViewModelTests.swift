@@ -153,13 +153,14 @@ final class WeightControlCenterViewModelTests: XCTestCase {
         // Given/When: ViewModel initialized in setUp
 
         // Then: Should have default card order
-        XCTAssertEqual(sut.cardOrder.count, 6)
+        XCTAssertEqual(sut.cardOrder.count, 7)
         XCTAssertEqual(sut.cardOrder[0], .goals)
         XCTAssertEqual(sut.cardOrder[1], .notifications)
         XCTAssertEqual(sut.cardOrder[2], .insights)
         XCTAssertEqual(sut.cardOrder[3], .sync)
         XCTAssertEqual(sut.cardOrder[4], .history)
-        XCTAssertEqual(sut.cardOrder[5], .experience)
+        XCTAssertEqual(sut.cardOrder[5], .dataManagement)
+        XCTAssertEqual(sut.cardOrder[6], .experience)
     }
 
     func testInit_StoresInjectedDependencies() {
@@ -232,7 +233,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
 
     func testSaveCardOrder_PersistsToUserDefaults() {
         // Given: Custom card order
-        let customOrder: [ControlCenterCardType] = [.sync, .goals, .notifications, .insights, .history, .experience]
+        let customOrder: [ControlCenterCardType] = [.sync, .goals, .notifications, .insights, .history, .dataManagement, .experience]
         sut.cardOrder = customOrder
 
         // When: Save card order
@@ -327,7 +328,7 @@ final class WeightControlCenterViewModelTests: XCTestCase {
 
     func testLoadCardOrder_RestoresPersistedOrder() {
         // Given: Saved custom card order
-        let customOrder: [ControlCenterCardType] = [.insights, .goals, .sync, .notifications, .history, .experience]
+        let customOrder: [ControlCenterCardType] = [.insights, .goals, .sync, .notifications, .history, .dataManagement, .experience]
         if let encoded = try? JSONEncoder().encode(customOrder) {
             userDefaultsUnderTest.set(encoded, forKey: "weightControlCenterCardOrder")
         }

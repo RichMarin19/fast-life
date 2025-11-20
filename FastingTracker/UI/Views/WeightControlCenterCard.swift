@@ -32,15 +32,15 @@ struct WeightControlCenterCard<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
-                .padding(.horizontal, DSSpacing.cardPadding)
-                .padding(.vertical, DSSpacing.cardElementSpacing)
-                .contentShape(Rectangle())
-                .onTapGesture {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
-                        viewModel.toggleCardExpansion(cardType)
-                    }
-                }
+            Button(action: { toggleExpansion() }) {
+                header
+                    .padding(.horizontal, DSSpacing.cardPadding)
+                    .padding(.vertical, DSSpacing.cardElementSpacing)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(title) card")
+            .accessibilityValue(isExpanded ? "Expanded" : "Collapsed")
+            .accessibilityHint("Double tap to \(isExpanded ? "collapse" : "expand"). Drag with two fingers on the grab handle to reorder.")
 
             if isExpanded {
                 Divider()
@@ -74,7 +74,8 @@ struct WeightControlCenterCard<Content: View>: View {
             saveAction: viewModel.saveCardOrder
         ))
         .accessibilityElement(children: .contain)
-        .accessibilityHint("Drag to reorder or double tap to expand.")
+        .accessibilityAction(named: Text("Move down")) { moveCard(by: 1) }
+        .accessibilityAction(named: Text("Move up")) { moveCard(by: -1) }
     }
 
     private var header: some View {
@@ -115,5 +116,26 @@ struct WeightControlCenterCard<Content: View>: View {
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark.opacity(0.85))
                 .accessibilityHidden(true)
         }
+    }
+}
+
+private extension WeightControlCenterCard {
+    func toggleExpansion() {
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.85)) {
+            viewModel.toggleCardExpansion(cardType)
+        }
+    }
+
+    func moveCard(by offset: Int) {
+        guard let currentIndex = viewModel.cardOrder.firstIndex(of: cardType) else { return }
+        let newIndex = min(max(currentIndex + offset, 0), viewModel.cardOrder.count - 1)
+        guard newIndex != currentIndex else { return }
+
+        var updatedOrder = viewModel.cardOrder
+        updatedOrder.remove(at: currentIndex)
+        updatedOrder.insert(cardType, at: newIndex)
+        viewModel.cardOrder = updatedOrder
+        viewModel.saveCardOrder()
+        viewModel.scrollViewProxy?.scrollTo(cardType, anchor: .top)
     }
 }

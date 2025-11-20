@@ -3,7 +3,6 @@ import SwiftUI
 /// Apple Health sync configuration card within the Weight Control Center.
 struct WeightControlCenterSyncCard: View {
     @ObservedObject var viewModel: WeightControlCenterViewModel
-    @Binding var showDeleteAllConfirmation: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: DSSpacing.cardPadding) {
@@ -25,6 +24,8 @@ struct WeightControlCenterSyncCard: View {
             }
             .tint(Theme.ColorToken.accentPrimary)
             .disabled(!viewModel.canEnableSync)
+            .accessibilityValue(viewModel.localSyncEnabled ? "Enabled" : "Disabled")
+            .accessibilityHint(viewModel.hasHealthKitPermission ? "Double tap to enable or disable automatic Health sync" : "Grant Health permission first")
             .onChange(of: viewModel.localSyncEnabled) { _, newValue in
                 viewModel.userSyncPreference = newValue
                 if viewModel.canEnableSync {
@@ -39,6 +40,7 @@ struct WeightControlCenterSyncCard: View {
             if viewModel.localSyncEnabled {
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
+            }
 
                 Button(action: {
                     viewModel.syncWithHealthKit()
@@ -64,32 +66,11 @@ struct WeightControlCenterSyncCard: View {
                 }
                 .disabled(viewModel.isSyncing || !viewModel.hasHealthKitPermission)
                 .opacity((viewModel.isSyncing || !viewModel.hasHealthKitPermission) ? 0.5 : 1.0)
+                .accessibilityLabel(viewModel.isSyncing ? "Syncing with Apple Health" : "Sync now with Apple Health")
+                .accessibilityHint(viewModel.hasHealthKitPermission ? "Double tap to start a sync" : "Enable Health access to sync")
 
                 Divider()
                     .background(Theme.ColorToken.dividerOnDark)
-
-                Button(action: {
-                    showDeleteAllConfirmation = true
-                }) {
-                    HStack(spacing: DSSpacing.cardSmallSpacing) {
-                        Image(systemName: "trash")
-                            .font(DSTypography.cardTitle)
-                        Text("Delete All Weight Data")
-                            .font(DSTypography.cardTitle)
-                    }
-                    .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
-                    .frame(maxWidth: .infinity)
-                    .padding(DSSpacing.cardElementSpacing)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(Theme.ColorToken.stateError.opacity(0.2))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(Theme.ColorToken.stateError, lineWidth: 1)
-                            )
-                    )
-                }
-            }
 
             if !viewModel.hasHealthKitPermission {
                 statusRow(icon: "exclamationmark.triangle.fill", color: Theme.ColorToken.stateWarning, message: viewModel.permissionStatusMessage)
@@ -124,5 +105,7 @@ struct WeightControlCenterSyncCard: View {
                 .font(DSTypography.cardCaption)
                 .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Sync status: \(message)")
     }
 }

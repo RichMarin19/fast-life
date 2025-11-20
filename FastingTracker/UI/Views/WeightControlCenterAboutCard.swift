@@ -34,6 +34,7 @@ struct WeightControlCenterAboutCard: View {
                         .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(isExpanded ? "Collapse About section" : "Expand About section")
             }
             .padding(DSSpacing.cardPadding)
             .background(Theme.ColorToken.cardHeaderOnDark)
@@ -52,6 +53,8 @@ struct WeightControlCenterAboutCard: View {
                             .font(DSTypography.cardTitle)
                             .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                     }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityLabel("Total entries \(viewModel.weightManager.weightEntries.count)")
 
                     if let oldest = viewModel.weightManager.weightEntries.sorted(by: { $0.date < $1.date }).first {
                         Divider()
@@ -67,6 +70,8 @@ struct WeightControlCenterAboutCard: View {
                                     .font(DSTypography.cardTitle)
                                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Tracking since \(oldest.date.formatted(date: .abbreviated, time: .omitted))")
 
                             HStack(spacing: 6) {
                                 Image(systemName: "star.fill")
@@ -76,6 +81,8 @@ struct WeightControlCenterAboutCard: View {
                                     .font(DSTypography.statLabel)
                                     .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
                             }
+                            .accessibilityElement(children: .combine)
+                            .accessibilityLabel("Logged \(viewModel.weightManager.weightEntries.count) entries since \(Calendar.current.component(.year, from: oldest.date)))")
                             .padding(.top, DSSpacing.cardExtraSmallSpacing)
                         }
                     }

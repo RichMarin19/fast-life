@@ -38,7 +38,9 @@ struct WeightControlCenterNotificationsCard: View {
                 }
             }
             .tint(Theme.ColorToken.accentPrimary)
-            .accessibilityLabel("Toggle daily weight reminders")
+            .accessibilityLabel("Daily weight reminders")
+            .accessibilityValue(coordinator.weightRemindersEnabled ? "On" : "Off")
+            .accessibilityHint("Double tap to enable or disable reminders")
             .onChange(of: coordinator.weightRemindersEnabled) { _, newValue in
                 coordinator.handleReminderToggle(newValue)
             }
@@ -86,6 +88,8 @@ struct WeightControlCenterNotificationsCard: View {
             }
             .pickerStyle(.segmented)
             .tint(Theme.ColorToken.accentCyan)
+            .accessibilityLabel("Reminder timing mode")
+            .accessibilityValue(coordinator.timingMode.rawValue)
             .onAppear {
                 let appearance = UISegmentedControl.appearance()
                 appearance.setTitleTextAttributes([.foregroundColor: UIColor(Theme.ColorToken.accentCyan)], for: .normal)
@@ -129,6 +133,8 @@ struct WeightControlCenterNotificationsCard: View {
                     .font(DSTypography.cardTitle)
                     .foregroundColor(Theme.ColorToken.textPrimaryOnDark)
             }
+            .accessibilityValue("\(coordinator.minutesOffset) minutes")
+            .accessibilityHint("Swipe up or down to adjust the offset")
             .onChange(of: coordinator.minutesOffset) { _, _ in
                 coordinator.saveMinutesOffset()
             }
@@ -152,6 +158,9 @@ struct WeightControlCenterNotificationsCard: View {
                 }
             }
             .tint(Theme.ColorToken.accentPrimary)
+            .accessibilityLabel("Quiet hours")
+            .accessibilityValue(coordinator.quietHoursEnabled ? "On" : "Off")
+            .accessibilityHint("Double tap to enable or disable quiet hours")
             .onChange(of: coordinator.quietHoursEnabled) { _, _ in
                 coordinator.saveQuietHours()
             }
@@ -171,6 +180,7 @@ struct WeightControlCenterNotificationsCard: View {
                         .labelsHidden()
                         .colorScheme(.dark)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Quiet hours start")
                         .onChange(of: coordinator.quietHoursStart) { _, _ in
                             coordinator.saveQuietHours()
                         }
@@ -189,6 +199,7 @@ struct WeightControlCenterNotificationsCard: View {
                         .labelsHidden()
                         .colorScheme(.dark)
                         .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityLabel("Quiet hours end")
                         .onChange(of: coordinator.quietHoursEnd) { _, _ in
                             coordinator.saveQuietHours()
                         }

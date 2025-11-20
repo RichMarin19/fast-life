@@ -46,16 +46,18 @@ struct WeightControlCenterCardList: View {
             case .notifications:
                 WeightControlCenterNotificationsCard(coordinator: viewModel.notificationCoordinator)
             case .sync:
-                WeightControlCenterSyncCard(
-                    viewModel: viewModel,
-                    showDeleteAllConfirmation: $showDeleteAllConfirmation
-                )
+                WeightControlCenterSyncCard(viewModel: viewModel)
             case .insights:
                 WeightControlCenterInsightsCard()
             case .experience:
                 WeightControlCenterExperienceCard(viewModel: viewModel)
             case .history:
                 WeightControlCenterHistoryCard(viewModel: viewModel)
+            case .dataManagement:
+                WeightControlCenterDataManagementCard(
+                    viewModel: viewModel,
+                    showDeleteAllConfirmation: $showDeleteAllConfirmation
+                )
             }
         }
     }
@@ -72,6 +74,8 @@ struct WeightControlCenterCardList: View {
             return "Control how Apple Health powers your data"
         case .history:
             return "Review and manage logged weight entries"
+        case .dataManagement:
+            return "Export, import, or delete weight data securely"
         case .experience:
             return "Opt in to the motivation styles that work for you"
         }

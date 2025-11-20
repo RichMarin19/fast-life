@@ -14,6 +14,8 @@ struct WeightControlCenterHistoryCard: View {
                 weightManager: viewModel.weightManager,
                 measurementObserver: viewModel.measurementObserver
             )
+            .accessibilityLabel("Weight entry history list")
+            .accessibilityHint("Swipe through to review or delete individual entries")
         }
     }
 }

@@ -116,6 +116,9 @@ struct WeightControlCenterExperienceCard: View {
                 }
             }
             .tint(Theme.ColorToken.accentPrimary)
+            .accessibilityLabel("Weight tracker cards")
+            .accessibilityValue(TrackerCardType.allCases.filter { $0 != .history }.allSatisfy { viewModel.cardManager.isCardVisible($0) } ? "All visible" : "Some hidden")
+            .accessibilityHint("Double tap to show or hide all tracker cards")
 
             let hiddenCards = TrackerCardType.allCases
                 .filter { $0 != .history }
@@ -258,6 +261,9 @@ struct WeightControlCenterExperienceCard: View {
                 }
             }
             .tint(Theme.ColorToken.accentPrimary)
+            .accessibilityLabel("Progress journey cards")
+            .accessibilityValue(viewModel.areAllProgressStoryCardsVisible ? "All visible" : "Some hidden")
+            .accessibilityHint("Double tap to show or hide progress story recaps")
 
             let hiddenCards = ProgressStoryCardType.allCases.filter { cardType in
                 !viewModel.progressStoryCardManager.isCardVisible(cardType)
@@ -294,6 +300,9 @@ struct WeightControlCenterExperienceCard: View {
                             .font(DSTypography.statLabel)
                             .foregroundColor(Theme.ColorToken.accentPrimary)
                         }
+                        .accessibilityElement(children: .combine)
+                        .accessibilityLabel("\(cardType.displayName) hidden")
+                        .accessibilityHint("Double tap restore to show this card again")
                         .padding(.horizontal, DSSpacing.cardPadding)
                         .padding(.vertical, 6)
                         .background(

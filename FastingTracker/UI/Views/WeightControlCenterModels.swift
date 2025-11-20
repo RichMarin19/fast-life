@@ -229,7 +229,8 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
     case notifications = "notifications"
     case insights = "insights"
     case sync = "sync"
-    case history = "history"  // NEW: Weight History (moved from main screen)
+    case history = "history"
+    case dataManagement = "dataManagement"
     case experience = "experience"
 
     var id: String { rawValue }
@@ -240,7 +241,8 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
         case .notifications: return "Notifications"
         case .insights: return "Insights & Education"
         case .sync: return "Apple Health Sync"
-        case .history: return "Weight History"  // NEW
+        case .history: return "Weight History"
+        case .dataManagement: return "Data Management"
         case .experience: return "Manage My Experience"
         }
     }
@@ -251,7 +253,8 @@ enum ControlCenterCardType: String, Codable, CaseIterable, Identifiable {
         case .notifications: return "bell.fill"
         case .insights: return "lightbulb.fill"
         case .sync: return "arrow.triangle.2.circlepath"
-        case .history: return "list.bullet.clipboard.fill"  // NEW: History icon
+        case .history: return "list.bullet.clipboard.fill"
+        case .dataManagement: return "lock.doc.fill"
         case .experience: return "slider.horizontal.3"
         }
     }

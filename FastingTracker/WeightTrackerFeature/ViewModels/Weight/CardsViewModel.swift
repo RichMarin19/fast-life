@@ -10,7 +10,7 @@ class CardsViewModel: ObservableObject {
     // MARK: - Published State
 
     /// Current order of cards in the control center
-    @Published var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .experience]
+    @Published var cardOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .dataManagement, .experience]
 
     /// Card currently being dragged (for reordering)
     @Published var draggedCard: ControlCenterCardType?
@@ -96,6 +96,15 @@ class CardsViewModel: ObservableObject {
                 needsMigration = true
             }
 
+            if !migratedOrder.contains(.dataManagement) {
+                if let experienceIndex = migratedOrder.firstIndex(of: .experience) {
+                    migratedOrder.insert(.dataManagement, at: experienceIndex)
+                } else {
+                    migratedOrder.append(.dataManagement)
+                }
+                needsMigration = true
+            }
+
             cardOrder = migratedOrder
 
             // Save the migrated order if changes were made
@@ -103,8 +112,8 @@ class CardsViewModel: ObservableObject {
                 saveCardOrder()
             }
         } else {
-            // Default order: Goals → Notifications → Insights → Sync → History → Experience
-            cardOrder = [.goals, .notifications, .insights, .sync, .history, .experience]
+            // Default order: Goals → Notifications → Insights → Sync → History → Data Management → Experience
+            cardOrder = [.goals, .notifications, .insights, .sync, .history, .dataManagement, .experience]
         }
     }
 

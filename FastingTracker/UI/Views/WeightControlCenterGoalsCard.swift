@@ -44,6 +44,8 @@ struct WeightControlCenterGoalsCard: View {
                 }
             }
             .tint(Theme.ColorToken.accentPrimary)
+            .accessibilityLabel("Show goal line on chart")
+            .accessibilityHint("Double tap to toggle the goal line overlay")
         }
         .onAppear {
             goalCoordinator.prepareStartWeightDefaults()
@@ -91,6 +93,9 @@ struct WeightControlCenterGoalsCard: View {
                         .monospacedDigit()
                         .fixedSize()
                         .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
+                        .accessibilityLabel("Start weight value")
+                        .accessibilityValue(goalCoordinator.startWeightString.isEmpty ? "Not set" : "\(goalCoordinator.startWeightString) \(goalCoordinator.unitAbbreviation)")
+                        .accessibilityHint("Double tap to edit the starting weight")
                         .onChange(of: goalCoordinator.startWeightString) { _, newValue in
                             goalCoordinator.formatStartWeightInput(newValue)
                         }
@@ -144,6 +149,7 @@ struct WeightControlCenterGoalsCard: View {
             }
             .disabled(!goalCoordinator.canSaveStartWeight)
             .opacity(goalCoordinator.canSaveStartWeight ? 1.0 : 0.5)
+            .accessibilityHint(goalCoordinator.canSaveStartWeight ? "Saves the selected start weight" : "Enter a valid weight and date to enable this button")
         }
     }
 

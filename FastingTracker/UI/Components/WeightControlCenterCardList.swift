@@ -7,18 +7,23 @@ struct WeightControlCenterCardList: View {
     @Binding var showGoalLine: Bool
     @Binding var weightGoal: Double
     @Binding var showDeleteAllConfirmation: Bool
+    @State private var accessibilityScrollIndex: Int = 0
 
     var body: some View {
         ScrollViewReader { proxy in
-            LazyVStack(spacing: DSSpacing.cardSectionSpacing) {
-                ForEach(viewModel.cardOrder) { cardType in
-                    card(for: cardType)
-                }
+            ScrollView {
+                LazyVStack(spacing: DSSpacing.cardSectionSpacing) {
+                    ForEach(viewModel.cardOrder) { cardType in
+                        card(for: cardType)
+                            .id(cardType)
+                    }
 
-                WeightControlCenterAboutCard(viewModel: viewModel)
+                    WeightControlCenterAboutCard(viewModel: viewModel)
+                        .id("about")
+                }
+                .padding(.horizontal, DSSpacing.cardSectionSpacing)
+                .padding(.top, DSSpacing.cardSmallSpacing)
             }
-            .padding(.horizontal, DSSpacing.cardSectionSpacing)
-            .padding(.top, DSSpacing.cardSmallSpacing)
             .onAppear {
                 viewModel.scrollViewProxy = proxy
             }
@@ -46,16 +51,18 @@ struct WeightControlCenterCardList: View {
             case .notifications:
                 WeightControlCenterNotificationsCard(coordinator: viewModel.notificationCoordinator)
             case .sync:
-                WeightControlCenterSyncCard(
-                    viewModel: viewModel,
-                    showDeleteAllConfirmation: $showDeleteAllConfirmation
-                )
+                WeightControlCenterSyncCard(viewModel: viewModel)
             case .insights:
                 WeightControlCenterInsightsCard()
             case .experience:
                 WeightControlCenterExperienceCard(viewModel: viewModel)
             case .history:
                 WeightControlCenterHistoryCard(viewModel: viewModel)
+            case .dataManagement:
+                WeightControlCenterDataManagementCard(
+                    viewModel: viewModel,
+                    showDeleteAllConfirmation: $showDeleteAllConfirmation
+                )
             }
         }
     }
@@ -72,6 +79,8 @@ struct WeightControlCenterCardList: View {
             return "Control how Apple Health powers your data"
         case .history:
             return "Review and manage logged weight entries"
+        case .dataManagement:
+            return "Export, import, or delete weight data securely"
         case .experience:
             return "Opt in to the motivation styles that work for you"
         }

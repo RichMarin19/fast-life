@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 
 protocol HealthKitServicing {
     func requestAuthorization(completion: @escaping (Bool, Error?) -> Void)
@@ -61,6 +62,7 @@ struct OnboardingView: View {
     @FocusState private var isFastingGoalFocused: Bool
     @FocusState private var isHydrationGoalFocused: Bool
     @FocusState private var isKeyboardPrewarmFocused: Bool  // Hidden field for keyboard initialization
+    @State private var isVoiceOverRunning = UIAccessibility.isVoiceOverRunning
 
     @Binding var isOnboardingComplete: Bool
     let healthKitServices: HealthKitServicing
@@ -149,6 +151,9 @@ struct OnboardingView: View {
         }
         .tabViewStyle(.page)
         .allowsHitTesting(!isInteractionLocked)
+        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.voiceOverStatusDidChangeNotification)) { _ in
+            isVoiceOverRunning = UIAccessibility.isVoiceOverRunning
+        }
         .alert("Sync Status", isPresented: $showingSyncStatusAlert, actions: {
             Button("OK", role: .cancel) {
                 if shouldNavigateToNotificationsAfterSync {
@@ -256,6 +261,7 @@ struct OnboardingView: View {
             }  // End VStack
         }  // End ZStack
         .task {
+            guard !isVoiceOverRunning else { return }
             // Trigger keyboard pre-warming after page fully loads
             // Delay ensures page renders first, then keyboard initializes in background
             try? await Task.sleep(nanoseconds: 500_000_000)  // 0.5 second delay
@@ -289,6 +295,9 @@ struct OnboardingView: View {
                     .font(.system(size: 48, weight: .bold))
                     .frame(maxWidth: .infinity)
                     .focused($isWeightFocused)
+                    .accessibilityLabel("Current weight")
+                    .accessibilityValue(currentWeight.isEmpty ? "Not set" : "\(currentWeight) \(weightUnitAbbreviation)")
+                    .accessibilityHint("Double tap to edit your current weight")
 
                 Text(weightUnitAbbreviation)
                     .font(.title)
@@ -296,7 +305,9 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 40)
             .onAppear {
-                isWeightFocused = true
+                if !isVoiceOverRunning {
+                    isWeightFocused = true
+                }
             }
 
             Spacer()
@@ -359,6 +370,9 @@ struct OnboardingView: View {
                     .font(.system(size: 48, weight: .bold))
                     .frame(maxWidth: .infinity)
                     .focused($isGoalWeightFocused)
+                    .accessibilityLabel("Goal weight")
+                    .accessibilityValue(goalWeight.isEmpty ? "Not set" : "\(goalWeight) \(weightUnitAbbreviation)")
+                    .accessibilityHint("Double tap to edit your goal weight")
 
                 Text(weightUnitAbbreviation)
                     .font(.title)
@@ -366,7 +380,9 @@ struct OnboardingView: View {
             }
             .padding(.horizontal, 40)
             .onAppear {
-                isGoalWeightFocused = true
+                if !isVoiceOverRunning {
+                    isGoalWeightFocused = true
+                }
             }
 
             Spacer()

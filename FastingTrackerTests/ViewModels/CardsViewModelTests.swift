@@ -48,7 +48,7 @@ final class CardsViewModelTests: XCTestCase {
         // Given - fresh ViewModel (no saved state)
 
         // Then - should have default order
-        let expectedOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .experience]
+        let expectedOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .dataManagement, .experience]
         XCTAssertEqual(viewModel.cardOrder, expectedOrder, "Default card order should match specification")
     }
 
@@ -143,7 +143,7 @@ final class CardsViewModelTests: XCTestCase {
 
     func test_saveCardOrder_persistsToUserDefaults() {
         // Given - modify card order
-        viewModel.cardOrder = [.sync, .goals, .notifications, .insights, .history, .experience]
+        viewModel.cardOrder = [.sync, .goals, .notifications, .insights, .history, .dataManagement, .experience]
 
         // When
         viewModel.saveCardOrder()
@@ -152,13 +152,13 @@ final class CardsViewModelTests: XCTestCase {
         let newViewModel = CardsViewModel()
 
         // Then - card order should be restored
-        XCTAssertEqual(newViewModel.cardOrder, [.sync, .goals, .notifications, .insights, .history, .experience],
+        XCTAssertEqual(newViewModel.cardOrder, [.sync, .goals, .notifications, .insights, .history, .dataManagement, .experience],
                       "Card order should persist to UserDefaults")
     }
 
     func test_loadCardOrder_restoresSavedOrder() {
         // Given - save custom order
-        let customOrder: [ControlCenterCardType] = [.history, .experience, .goals, .sync, .notifications, .insights]
+        let customOrder: [ControlCenterCardType] = [.history, .experience, .dataManagement, .goals, .sync, .notifications, .insights]
         viewModel.cardOrder = customOrder
         viewModel.saveCardOrder()
 
@@ -206,8 +206,10 @@ final class CardsViewModelTests: XCTestCase {
         // Then - .experience should be added to end
         XCTAssertTrue(newViewModel.cardOrder.contains(.experience),
                      "Migration should add .experience card if missing")
-        XCTAssertEqual(newViewModel.cardOrder.last, .experience,
-                      "Experience card should be appended to end")
+        XCTAssertTrue(newViewModel.cardOrder.contains(.dataManagement),
+                     "Migration should add .dataManagement card when absent")
+        XCTAssertEqual(Array(newViewModel.cardOrder.suffix(2)), [.dataManagement, .experience],
+                      "Data Management should precede Experience at the end")
     }
 
     func test_migration_addsBothHistoryAndExperienceIfMissing() {
@@ -231,6 +233,25 @@ final class CardsViewModelTests: XCTestCase {
             XCTAssertLessThan(historyIndex, experienceIndex,
                             "History should be before Experience in migrated order")
         }
+
+        XCTAssertEqual(Array(newViewModel.cardOrder.suffix(2)), [.dataManagement, .experience],
+                      "Data Management should precede Experience after migration")
+    }
+
+    func test_migration_addsDataManagementCardIfMissing() {
+        // Given - order without Data Management card
+        let oldOrder: [ControlCenterCardType] = [.goals, .notifications, .insights, .sync, .history, .experience]
+        let encoded = try! JSONEncoder().encode(oldOrder)
+        UserDefaults.standard.set(encoded, forKey: "weightControlCenterCardOrder")
+
+        // When
+        let newViewModel = CardsViewModel()
+
+        // Then
+        XCTAssertTrue(newViewModel.cardOrder.contains(.dataManagement),
+                     "Migration should add Data Management card if missing")
+        XCTAssertEqual(Array(newViewModel.cardOrder.suffix(2)), [.dataManagement, .experience],
+                      "Data Management should be inserted before Experience")
     }
 
     func test_migration_savesMigratedOrder() {
@@ -248,8 +269,8 @@ final class CardsViewModelTests: XCTestCase {
         // Then - migration should not run again (order already contains .history)
         XCTAssertTrue(secondViewModel.cardOrder.contains(.history),
                      "Migrated order should be saved to UserDefaults")
-        XCTAssertEqual(secondViewModel.cardOrder.count, 6,
-                      "Card order should have all 6 cards after migration")
+        XCTAssertEqual(secondViewModel.cardOrder.count, 7,
+                      "Card order should have all cards after migration")
     }
 
     // MARK: - Drag and Drop State Tests
