@@ -1,0 +1,13 @@
+{
+  "hooks": {
+    "onSessionStart": "bash .claude/hooks/session-start.sh",
+    "onSessionEnd": "bash .claude/hooks/session-end.sh",
+    "onTokenThreshold": "bash .claude/hooks/token-warning.sh"
+  },
+  "tokenThresholds": {
+    "warning": 50000,
+    "critical": 30000
+  },
+  "autoDocumentation": true,
+  "sessionTracking": true
+}

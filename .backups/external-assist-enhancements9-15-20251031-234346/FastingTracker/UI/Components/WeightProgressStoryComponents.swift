@@ -1,0 +1,1317 @@
+import SwiftUI
+
+// MARK: - Weight Components
+struct WeightTrendsView: View {
+    @ObservedObject var weightManager: WeightManager
+    @Environment(\.dismiss) private var dismiss
+
+    // Unified opt-out system: ContentOptOutManager for all cards + global
+    @ObservedObject private var optOutManager = ContentOptOutManager.shared
+
+    // Progress Story Card Manager for master toggle visibility control
+    @ObservedObject private var progressStoryCardManager = ProgressStoryCards.shared
+
+    // Content IDs for opt-out tracking
+    private let contentID_ProgressStory = "progress_story_v1"             // Global (toolbar button)
+    private let contentID_CoachBar = "progress_story_coach_bar_v1"        // Coach Bar (v1.2)
+    private let contentID_7Day = "progress_story_7day_v1"                 // 7-day card
+    private let contentID_30Day = "progress_story_30day_v1"               // 30-day card
+    private let contentID_Banner = "progress_story_banner_v1"             // Motivational banner
+    private let contentID_ReflectionNudge = "progress_story_reflection_v1" // Reflection Nudge (v1.2b)
+    private let contentID_Recap = "progress_story_recap_v1"               // Recap row
+    private let contentID_Tip = "progress_story_tip_v1"                   // Did You Know
+
+    // MARK: - Trend State Logic (Layer 1)
+
+    /// Trend state classification per Stacked_v1.1 spec
+    enum TrendState {
+        case improving  // Δ < -0.2 (loss)
+        case regressing // Δ > +0.2 (gain)
+        case flat       // |Δ| ≤ 0.2
+    }
+
+    /// Calculate signed delta for a period using WeightManager Single Source of Truth
+    /// Returns signed value (negative = loss, positive = gain)
+    private func calculateDelta(days: Int) -> Double? {
+        let cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        // SINGLE SOURCE OF TRUTH: Use WeightManager.weightChange(since:)
+        // Returns: latestWeight - avgWeightOnOldestDay
+        // Negative = weight loss, Positive = weight gain
+        return weightManager.weightChange(since: cutoffDate)
+    }
+
+    /// Determine trend state from delta
+    private func trendState(for delta: Double) -> TrendState {
+        if delta < -0.2 { return .improving }
+        if delta > 0.2 { return .regressing }
+        return .flat
+    }
+
+    /// Calculate net delta across 30 days for recap row
+    private var netDelta30d: Double {
+        return calculateDelta(days: 30) ?? 0
+    }
+
+    /// Calculate best streak (placeholder - TODO)
+    private var bestStreak: Int {
+        return weightManager.weightEntries.count // Placeholder logic
+    }
+
+    /// Total entries count
+    private var totalEntries: Int {
+        return weightManager.weightEntries.count
+    }
+
+    /// Coach Bar text based on 7-day trend state (v1.1)
+    /// Per v1.1 spec §5: Behavioral micro-copy under subtitle
+    /// v1.2: Added exclamation points for motivational emphasis
+    private func coachBarText(for state: TrendState) -> String {
+        switch state {
+        case .improving:
+            return "Progress in motion — your consistency shows!"
+        case .regressing:
+            return "Weight gain is feedback, not failure — hydrate and sleep strong!"
+        case .flat:
+            return "Balance is mastery in motion — keep showing up!"
+        }
+    }
+
+    /// Banner text based on 7-day trend state
+    /// Per Stacked_v1.1 spec: Dynamic behavioral copy
+    /// v1.2: Added exclamation points for motivational emphasis
+    private func banner7Text(for state: TrendState) -> String {
+        switch state {
+        case .improving:
+            return "Small wins compound. Keep stacking the days!"
+        case .regressing:
+            return "Course‑correct today. One choice changes the trend!"
+        case .flat:
+            return "Consistency is power. Nudge your routine by 1%!"
+        }
+    }
+
+    /// Banner accent color based on trend state
+    private func bannerAccentColor(for state: TrendState) -> Color {
+        switch state {
+        case .improving:
+            return Theme.ColorToken.stateSuccess
+        case .regressing:
+            return Theme.ColorToken.stateError
+        case .flat:
+            return Theme.ColorToken.accentInfo
+        }
+    }
+
+    /// Random "Did You Know" tip for educational banner
+    /// Per Stacked_v1.1 spec: Max ~80 chars, no medical claims
+    /// FASTING-FRIENDLY: Avoids time-specific meal names (breakfast/lunch/dinner)
+    /// Fast LIFe users have flexible eating windows, so use universal language
+    private func randomDidYouKnowTip() -> String {
+        let tips = [
+            "Drinking water before meals can reduce calorie intake.",
+            "Sleep loss increases hunger hormones; protect your 7–8 hours.",
+            "Protein at your first meal improves satiety for the day.",  // Fasting-friendly!
+            "Consistent weigh-ins help track trends, not daily fluctuations.",
+            "Strength training preserves muscle during weight loss."
+        ]
+        return tips.randomElement() ?? tips[0]
+    }
+
+    /// Random reflection prompt for ReflectionNudge banner
+    /// Per v1.2 spec D.3: Rotates between 3 options to encourage micro-planning
+    /// 🔧 FIX #7: Extracted as separate function for pre-computation pattern
+    private func randomReflectionPrompt() -> String {
+        let prompts = [
+            "One small habit to try this week?",
+            "What helped most on your best day?",
+            "Pick tomorrow's anchor: sleep / steps / water."
+        ]
+        return prompts.randomElement() ?? prompts[0]
+    }
+
+    /// Calculate weight change over a specific number of days using WeightManager Single Source of Truth
+    /// Returns (amount: Double, isLoss: Bool) or nil if insufficient data
+    private func calculateTrend(days: Int?) -> (amount: Double, isLoss: Bool)? {
+        let cutoffDate: Date
+        if let days = days {
+            cutoffDate = Calendar.current.date(byAdding: .day, value: -days, to: Date()) ?? Date()
+        } else {
+            // All-time trend: use date 10 years ago
+            cutoffDate = Calendar.current.date(byAdding: .year, value: -10, to: Date()) ?? Date()
+        }
+
+        // SINGLE SOURCE OF TRUTH: Use WeightManager.weightChange(since:)
+        // Returns: latestWeight - avgWeightOnOldestDay
+        // Negative = weight loss (isLoss = true), Positive = weight gain (isLoss = false)
+        guard let change = weightManager.weightChange(since: cutoffDate) else { return nil }
+
+        return (amount: abs(change), isLoss: change < 0)
+    }
+
+    @State private var isAnimating = false  // Animation state for staggered fade-in
+    @Environment(\.accessibilityReduceMotion) var reduceMotion  // v1.1: Respect Reduce Motion
+    @State private var moodAnimate = false  // v1.1: Mood background micro-drift animation
+
+    // Phase v1.4b: Drag-to-Reorder State (following existing pattern - no Edit button)
+    @State private var draggedCard: ProgressStoryCardType?  // Currently dragged card
+
+    // 🔧 FIX #12: Stable text state - locked at view appearance, never changes during drag
+    // Apple Health Pattern: Use @State for content that shouldn't change during interactions
+    @State private var reflectionPromptText: String = ""  // Initialized in onAppear
+
+    // MARK: - Adaptive Mood Overlay (v1.1)
+
+    /// Returns adaptive mood gradient overlay based on trend state
+    /// Per v1.1 spec §2: Subtle 12-18% opacity overlays on navy base
+    /// Colors reflect emotional state without being alarmist
+    private func adaptiveMoodOverlay(for state: TrendState) -> LinearGradient {
+        switch state {
+        case .improving:  // Weight loss (teal → blue)
+            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
+            // Improving: top 0.22, bottom 0.16 (was 0.18/0.12)
+            return LinearGradient(
+                colors: [
+                    Theme.ColorToken.moodImprovingStart.opacity(0.22),  // Teal
+                    Theme.ColorToken.moodImprovingEnd.opacity(0.16)     // Blue
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .regressing:  // Weight gain (coral → peach)
+            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
+            // Regressing: top 0.22, bottom 0.16 (was 0.18/0.12)
+            return LinearGradient(
+                colors: [
+                    Theme.ColorToken.moodRegressingStart.opacity(0.22),  // Coral
+                    Theme.ColorToken.moodRegressingEnd.opacity(0.16)     // Peach
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        case .flat:  // Stable (gold → light gold)
+            // Per v1.2 spec C.4: Enhanced opacity for better emotional feedback
+            // Stable: top 0.18, bottom 0.12 (was 0.16/0.10)
+            return LinearGradient(
+                colors: [
+                    Theme.ColorToken.moodStableStart.opacity(0.18),  // Gold
+                    Theme.ColorToken.moodStableEnd.opacity(0.12)     // Light gold
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        }
+    }
+
+    var body: some View {
+        NavigationView {
+            // v1.1 Adaptive Background: Navy base + Mood overlay based on 7-day trend
+            // Per FastLIFe_LIFeJourney_UIUX_v1.1_AdaptiveBehavioralDesign.md §3
+            ZStack {
+                // Layer 1: Deep 3-stop navy gradient (base canvas)
+                LinearGradient(
+                    colors: [
+                        Theme.ColorToken.bgDeepStart,  // Top: #0C1A2B (calm base)
+                        Theme.ColorToken.bgDeepMid,    // Mid: #0F2438 (breathing effect)
+                        Theme.ColorToken.bgDeepEnd     // Bot: #123449 (depth)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                // Layer 2: Adaptive mood gradient overlay (12-18% opacity)
+                // Driven by 7-day trend state: improving/regressing/stable
+                // Changes color to reflect emotional tone without being alarmist
+                adaptiveMoodOverlay(for: trendState(for: calculateDelta(days: 7) ?? 0))
+                    .ignoresSafeArea()
+                    .animation(reduceMotion ? nil : .easeInOut(duration: 0.6), value: calculateDelta(days: 7))
+                    .offset(y: reduceMotion ? 0 : (moodAnimate ? -6 : 6))  // Micro drift (breathing effect)
+                    .animation(
+                        reduceMotion ? nil : .easeInOut(duration: 5).repeatForever(autoreverses: true),
+                        value: moodAnimate
+                    )
+
+                ScrollView {
+                    VStack(spacing: DSSpacing.cardSectionSpacing) {
+                        // HEADER: Title + Subtitle
+                        // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
+                        VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
+                            // TITLE: Your LIFe Journey (luxury gradient)
+                            // Font: SF Pro Rounded 34pt (matching app standard, not spec's 28pt)
+                            // Gradient: Theme.ColorToken.accentInfo → accentPrimary (blue→emerald)
+                            Text("Your LIFe Journey")
+                                .font(DSTypography.displayLRounded)
+                                .foregroundStyle(
+                                    LinearGradient(
+                                        colors: [
+                                            Theme.ColorToken.accentInfo,    // Blue (left)
+                                            Theme.ColorToken.accentPrimary  // Emerald (right)
+                                        ],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .frame(maxWidth: .infinity)
+
+                            // SUBTITLE: Motivational tagline
+                            // Font: SF Pro Display 15pt, weight 400, italic (per spec §4)
+                            // v1.2: Changed to white for better visibility on gradient background
+                            Text("Progress you can feel — one choice at a time.")
+                                .font(DSTypography.cardBody)
+                                .italic()
+                                .foregroundColor(.white)
+                                .frame(maxWidth: .infinity, alignment: .center)  // Centered
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding(.top, DSSpacing.cardSmallSpacing)
+                        .padding(.bottom, DSSpacing.cardSmallSpacing)
+
+                        // COACH BAR (v1.2) - State-based micro-copy under subtitle with hide functionality
+                        // Per v1.2 spec: Accent background, white text, eye.slash hide button
+                        // Registers under "Your Progress Journey" in Control Center
+                        // Dual visibility system: ProgressStoryCardManager (master) + ContentOptOutManager (individual)
+                        let coachState7d = trendState(for: calculateDelta(days: 7) ?? 0)
+                        if progressStoryCardManager.isCardVisible(.coachBar) && !optOutManager.isContentOptedOut(id: contentID_CoachBar) {
+                            CoachBar(text: coachBarText(for: coachState7d), onHide: {
+                                withAnimation(.easeInOut(duration: 0.25)) {
+                                    // Hide via ProgressStoryCardManager (shows in "Your Progress Journey" section)
+                                    progressStoryCardManager.hideCard(.coachBar)
+                                }
+                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            })
+                            .padding(.bottom, DSSpacing.cardSmallSpacing)
+                            .opacity(isAnimating ? 1 : 0)
+                            .offset(y: isAnimating ? 0 : 20)
+                            .animation(.easeInOut(duration: 0.4).delay(0.05), value: isAnimating)
+                        }
+
+                        // STACKED LAYOUT v1.1: Narrative flow top-to-bottom
+                        // Phase v1.4b Layer 3 & 4: Drag-and-drop reordering with ForEach
+
+                        // REORDERABLE CARDS (exclude Coach Bar)
+                        let visibleCards = progressStoryCardManager.getVisibleCardsInOrder()
+                        let reorderableCards = visibleCards.filter { $0 != .coachBar }
+
+                        // Precompute values for banner and tip (outside ForEach to prevent random changes during drag)
+                        let delta7d = calculateDelta(days: 7) ?? 0
+                        let state7d = trendState(for: delta7d)
+                        let bannerText = banner7Text(for: state7d)
+                        let bannerAccent = bannerAccentColor(for: state7d)
+                        let didYouKnowText = randomDidYouKnowTip()  // 🔧 FIX #1: Pre-compute tip text once
+                        // 🔧 FIX #12: reflectionPromptText now @State variable initialized in onAppear (never changes during drag)
+
+                        ForEach(reorderableCards, id: \.self) { cardType in  // 🔧 FIX #2: Use stable cardType IDs instead of indices
+                            Group {
+                                // Render card based on type
+                                switch cardType {
+                                case .sevenDay:
+                                    if !optOutManager.isContentOptedOut(id: contentID_7Day) {
+                                        CircularTrendRingCard(
+                                            periodLabel: "7 DAYS",
+                                            delta: calculateDelta(days: 7),
+                                            surface: Theme.ColorToken.surfaceIce,
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.sevenDay)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
+                                    }
+
+                                case .banner:
+                                    if !optOutManager.isContentOptedOut(id: contentID_Banner) {
+                                        ProgressBanner(text: bannerText, accent: bannerAccent, onHide: {
+                                            withAnimation(.easeInOut(duration: 0.25)) {
+                                                progressStoryCardManager.hideCard(.banner)
+                                            }
+                                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                        })
+                                    }
+
+                                case .thirtyDay:
+                                    if !optOutManager.isContentOptedOut(id: contentID_30Day) {
+                                        CircularTrendRingCard(
+                                            periodLabel: "30 DAYS",
+                                            delta: calculateDelta(days: 30),
+                                            surface: Theme.ColorToken.surfaceIce,
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.thirtyDay)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
+                                    }
+
+                                case .reflection:
+                                    if !optOutManager.isContentOptedOut(id: contentID_ReflectionNudge) {
+                                        ReflectionNudge(
+                                            text: reflectionPromptText,  // 🔧 FIX #7: Use pre-computed text
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.reflection)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            },
+                                            onTap: {
+                                                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                                            }
+                                        )
+                                    }
+
+                                case .recap:
+                                    if !optOutManager.isContentOptedOut(id: contentID_Recap) {
+                                        RecapRow(
+                                            netDelta: netDelta30d,
+                                            bestStreak: bestStreak,
+                                            entries: totalEntries,
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.recap)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
+                                    }
+
+                                case .didYouKnow:
+                                    if totalEntries >= 5 && !optOutManager.isContentOptedOut(id: contentID_Tip) {
+                                        DidYouKnowBanner(
+                                            text: didYouKnowText,  // 🔧 FIX #1: Use pre-computed text
+                                            onHide: {
+                                                withAnimation(.easeInOut(duration: 0.25)) {
+                                                    progressStoryCardManager.hideCard(.didYouKnow)
+                                                }
+                                                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                                            }
+                                        )
+                                    }
+
+                                case .coachBar:
+                                    EmptyView()  // Coach Bar rendered separately, never in ForEach
+                                }
+                            }
+                            // Phase v1.4b: Drag-and-drop modifiers applied at Group level (matching Control Center + Weight Tracker pattern)
+                            // CRITICAL FIX: Applying .onDrag() to Group (not individual cards) prevents LightCard button from blocking gesture
+                            .onDrag {
+                                draggedCard = cardType
+                                return NSItemProvider(object: cardType.rawValue as NSString)
+                            }
+                            .onDrop(of: [.text], delegate: ProgressStoryCardDropDelegate(
+                                cardType: cardType,
+                                visibleCards: reorderableCards,
+                                draggedCard: $draggedCard,
+                                cardManager: progressStoryCardManager
+                            ))
+                            .opacity(isAnimating ? 1 : 0)
+                            .offset(y: isAnimating ? 0 : 20)
+                            .animation(.easeInOut(duration: 0.4), value: isAnimating)  // 🔧 FIX #2: Removed index-based delay (index no longer exists)
+                        }
+
+                        // 6. FOOTER CELEBRATION (optional - motivational message)
+                        // Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
+                        // Animated text: "You're showing up. That's what builds your LIFe!"
+                        // Subtle, encouraging, human tone
+                        // Standard: Dark background = light text, proper punctuation
+                        if totalEntries >= 1 {
+                            Text("You're showing up. That's what builds your LIFe!")
+                                .font(DSTypography.cardBody)
+                                .foregroundColor(.white.opacity(0.8))
+                                .italic()
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 24)
+                                .opacity(isAnimating ? 1 : 0)
+                                .animation(.easeInOut(duration: 0.6).delay(0.6), value: isAnimating)
+                        }
+                    }
+                    .padding(.horizontal, DSSpacing.screenEdgePadding)  // Universal standard (20pt) - matches all tracker screens
+                    .padding(.vertical, DSSpacing.cardPadding)
+                }
+            }
+            .navigationTitle("Weight Trends")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                // 🔧 FIX #12: Initialize reflection prompt once on appear (never changes during drag)
+                // Apple Health Pattern: Lock content at view appearance for stable UI during interactions
+                reflectionPromptText = randomReflectionPrompt()
+
+                // Trigger staggered fade-in animation on view appear
+                withAnimation {
+                    isAnimating = true
+                }
+
+                // v1.1: Trigger mood background micro-drift animation (respects Reduce Motion)
+                if !reduceMotion {
+                    moodAnimate = true
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    // LUXURY OPT-OUT BUTTON (v1.0 - Refined Design)
+                    // Per UI/UX Design Note: FastLIFe_UIUX_DontShowAgain_DesignNote.md
+                    // Layers: Gradient border + Fade animation + Haptic feedback
+                    Button {
+                        // Layer 3: Haptic feedback (light tap) = premium responsiveness
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+
+                        // Opt out entire Progress Story (global)
+                        optOutManager.optOutContent(id: contentID_ProgressStory, category: .progressSummaries, text: "Your Progress Story")
+
+                        // Layer 2: Smooth fade-out animation (0.25s)
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            dismiss()
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "eye.slash")
+                                .font(DSTypography.cardSubtitle)
+                            Text("Don't show again")
+                                .font(DSTypography.cardSubtitle)
+                        }
+                        .foregroundColor(Theme.ColorToken.textSecondaryOnDark)
+                        .padding(.horizontal, DSSpacing.cardElementSpacing)
+                        .padding(.vertical, 6)
+                        .background(
+                            // Layer 1: Subtle gradient border (10-15% opacity) = luxury feel
+                            Capsule()
+                                .fill(Color.white.opacity(0.1))
+                                .overlay(
+                                    Capsule()
+                                        .stroke(
+                                            LinearGradient(
+                                                colors: [
+                                                    Theme.ColorToken.accentPrimary.opacity(0.15),
+                                                    Theme.ColorToken.accentPrimary.opacity(0.10)
+                                                ],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            ),
+                                            lineWidth: 1
+                                        )
+                                )
+                                .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 1)
+                        )
+                    }
+                    .buttonStyle(.plain)  // Removes default button press effect
+                }
+
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .accessibilityLabel("Close weight trends view")
+                }
+            }
+        }
+    }
+}
+// MARK: - Light Card Wrapper (Stacked v1.2)
+
+/// LightCard - Reusable wrapper for light surface cards with opt-out menu
+/// Per Stacked v1.2 spec: Light surfaces with eye.slash dismiss on RIGHT (matching DSCard pattern)
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader (line 108-116)
+struct LightCard<Content: View>: View {
+    let surface: Color
+    let content: Content
+    let onHide: () -> Void
+
+    init(surface: Color, onHide: @escaping () -> Void, @ViewBuilder content: () -> Content) {
+        self.surface = surface
+        self.content = content()
+        self.onHide = onHide
+    }
+
+    var body: some View {
+        // Content with standard padding (matching DSBanner pattern)
+        content
+            .padding(DSSpacing.cardPadding)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .topTrailing) {
+                // Eye.slash button (positioned as overlay, matching DSBanner pattern)
+                // CRITICAL: Using .overlay() instead of ZStack allows drag gestures to pass through content
+                Button(action: onHide) {
+                    Image(systemName: "eye.slash")
+                        .font(DSTypography.iconButton)  // Matching DSBanner font size
+                        .foregroundColor(Theme.ColorToken.textSecondary)
+                        .frame(width: 44, height: 44)  // Apple HIG tap target
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Hide card")
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(Theme.ColorToken.strokeLight, lineWidth: 1)
+                    )
+                    .shadow(color: Theme.ColorToken.shadowCard, radius: 10, x: 0, y: 6)
+            )
+    }
+}
+
+// MARK: - Luxury Progress Story Components (Stacked v1.1)
+
+/*
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ 📝 PROGRESS STORY PATTERN (Standardized for Reuse)
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+ WHEN TO USE:
+ Apply this pattern to ANY tracker that needs progress visualization:
+ • Hydration Tracker: 7d/30d intake trends
+ • Sleep Tracker: 7d/30d sleep quality trends
+ • Mood Tracker: 7d/30d stability trends
+ • Fasting Tracker: 7d/30d fasting completion trends
+
+ INDUSTRY STANDARD:
+ Follows Apple Health, MyFitnessPal, Strava pattern:
+ • Stacked narrative (tell a story top-to-bottom)
+ • Glass morphism UI (luxury feel on dark gradients)
+ • Behavioral copy (adapting to user's trend state)
+ • Educational tips (Did You Know banners)
+
+ HOW TO IMPLEMENT:
+
+ 1️⃣ TREND CALCULATION (in your view):
+ private func calculateDelta(days: Int) -> Double? {
+ // Calculate signed delta (negative = improving, positive = regressing)
+ // Use your tracker's metric (weight, hours, mood score, etc.)
+ }
+
+ 2️⃣ TREND STATE LOGIC:
+ enum TrendState { case improving, regressing, flat }
+
+ private func trendState(for delta: Double) -> TrendState {
+ // Define thresholds for your metric
+ if delta < -threshold { return .improving }
+ if delta > +threshold { return .regressing }
+ return .flat
+ }
+
+ 3️⃣ USE COMPONENTS:
+ TrendCardFull(periodLabel: "7 DAYS", delta: calculateDelta(days: 7))
+ ProgressBanner(text: adaptiveMessage, accent: adaptiveColor)
+ RecapRow(netDelta: net30d, bestStreak: streak, entries: count)
+ DidYouKnowBanner(text: randomTip())
+
+ **STANDARD TEXT SIZE:** DSTypography.statValueSmall (18pt semibold rounded)
+ All banner cards use this size by default for visual consistency.
+ Override only when explicitly required for design reasons.
+
+ 4️⃣ BACKGROUND:
+ ZStack {
+ LinearGradient(
+ colors: [Theme.ColorToken.bgDeepStart, Theme.ColorToken.bgDeepEnd],
+ startPoint: .top, endPoint: .bottom
+ ).ignoresSafeArea()
+
+ ScrollView { /* Stacked components with 16pt spacing */ }
+ }
+
+ RESULT:
+ ✅ Consistent luxury UI across all trackers
+ ✅ Reusable components = faster development
+ ✅ Industry-standard progress visualization
+ ✅ Behavioral psychology = user engagement
+
+ REFERENCE IMPLEMENTATION:
+ See WeightTrendsView (lines 420-610) for complete example
+
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ */
+
+/// Coach Bar - Behavioral micro-copy under subtitle (v1.2)
+/// Per v1.2 spec C.1: Enhanced emotional anchor with icon
+/// Appears between subtitle and first card
+/// ✅ REUSABLE across all trackers - just pass trend-driven text + optional icon
+/// v1.3: Refactored to use DSCoachBar component for standardization
+struct CoachBar: View {
+    let text: String  // State-based micro-copy
+    var icon: String = "sparkles"  // SF Symbol name (default: sparkles)
+    let onHide: () -> Void  // Hide callback
+
+    var body: some View {
+        DSCoachBar(
+            text: text,
+            icon: icon,
+            backgroundColor: Theme.ColorToken.accentInfo,
+            onHide: onHide
+        )
+    }
+}
+
+/// Progress Banner - Motivational/Action message with accent stripe
+/// Per Stacked v1.2 spec: Frosted glass background with eye.slash dismiss on RIGHT (matching DSCard pattern)
+/// ✅ REUSABLE across all trackers - just pass text + accent color
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
+struct ProgressBanner: View {
+    let text: String
+    let accent: Color
+    let onHide: () -> Void  // Hide callback
+
+    var body: some View {
+        DSBanner(ice: onHide) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
+                Image(systemName: "square.stack.3d.up.fill")  // 🔧 FIX #3: Unique icon representing small wins compounding/stacking
+                    .font(DSTypography.listTitle)
+                    .foregroundColor(accent)
+
+                Text(text)
+                    .font(DSTypography.statValueSmall)
+                    .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.9))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityLabel("Progress tip: \(text)")
+    }
+}
+
+/// Circular Trend Ring Card - "Your LIFe Journey" luxury visual card
+/// Per FastLIFe_Your_LIFe_Journey_UIUX_v1.0.md §2
+/// Circular progress ring with gradient based on trend state
+/// Industry Pattern: Apple Watch Activity Rings
+struct CircularTrendRingCard: View {
+    let periodLabel: String  // "7 DAYS" or "30 DAYS"
+    let delta: Double?       // Signed value (negative = loss)
+    let surface: Color       // Universal Ice standard (Phase v1.3e)
+    let onHide: () -> Void   // Hide card callback
+
+    @State private var animateRing = false  // Ring sweep animation
+    @State private var showWinHalo = false  // v1.2b: Win halo animation (D.1)
+    @Environment(\.accessibilityReduceMotion) var reduceMotion  // Respect Reduce Motion
+
+    private var state: WeightTrendsView.TrendState {
+        guard let delta = delta else { return .flat }
+        if delta < -0.2 { return .improving }
+        if delta > 0.2 { return .regressing }
+        return .flat
+    }
+
+    /// Gradient colors based on trend state per spec §3
+    /// Loss → Teal #22D1A3 → Blue #2B86C5
+    /// Gain → Coral #E47A6E → Rose #D63A3A
+    /// Stable → Gold #EEC36A → Amber #DFA53F
+    private var ringGradient: LinearGradient {
+        switch state {
+        case .improving:  // Loss
+            return LinearGradient(
+                colors: [
+                    Color(hex: "22D1A3"),  // Teal
+                    Color(hex: "2B86C5")   // Blue
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .regressing:  // Gain
+            return LinearGradient(
+                colors: [
+                    Color(hex: "E47A6E"),  // Coral
+                    Color(hex: "D63A3A")   // Rose
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case .flat:  // Stable
+            return LinearGradient(
+                colors: [
+                    Color(hex: "EEC36A"),  // Gold
+                    Color(hex: "DFA53F")   // Amber
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    private var tag: String {
+        guard let delta = delta else { return "NO DATA" }
+        if delta < -0.2 { return "LOST" }
+        if delta > 0.2 { return "GAINED" }
+        return "FLAT"
+    }
+
+    /// Microcopy per spec §6
+    /// v1.2: Added exclamation points for motivational emphasis
+    private var microcopy: String {
+        switch state {
+        case .improving:
+            return "You're right on track — keep fueling smart!"
+        case .regressing:
+            return "Small upticks are data, not defeat — consistency wins!"
+        case .flat:
+            return "Holding steady means you're balanced — that's progress!"
+        }
+    }
+
+    /// Ring progress (0.0 - 1.0) - simplified for v1
+    /// TODO: Calculate actual progress based on goal distance
+    private var ringProgress: Double {
+        guard let delta = delta else { return 0.0 }
+        // Simple mapping: 0-5 lbs = 0.0-1.0 ring fill
+        let maxChange: Double = 5.0
+        let normalizedProgress = min(abs(delta) / maxChange, 1.0)
+        return normalizedProgress
+    }
+
+    /// Accent color for ring glow based on trend state
+    /// Per v1.1 spec §4: Ambient glow uses accent color at 35% opacity
+    private var accentColor: Color {
+        switch state {
+        case .improving:  // Weight loss → Success green
+            return Theme.ColorToken.stateSuccess
+        case .regressing:  // Weight gain → Coral (non-judgmental)
+            return Theme.ColorToken.accentCoral
+        case .flat:  // Stable → Gold
+            return Theme.ColorToken.accentGold
+        }
+    }
+
+    /// Emotion indicator icon (v1.1 spec §7)
+    /// Returns SF Symbol name for trend state
+    private func emotionIcon(for state: WeightTrendsView.TrendState) -> String {
+        switch state {
+        case .improving:  return "checkmark.seal"           // Trend down
+        case .regressing: return "arrow.up.right.circle"    // Trend up
+        case .flat:       return "pause.circle"             // Holding steady
+        }
+    }
+
+    /// Emotion indicator label (v1.1 spec §7)
+    /// Returns text label for trend state
+    private func emotionLabel(for state: WeightTrendsView.TrendState) -> String {
+        switch state {
+        case .improving:  return "trend down"
+        case .regressing: return "trend up"
+        case .flat:       return "holding steady"
+        }
+    }
+
+    var body: some View {
+        LightCard(surface: surface, onHide: onHide) {
+            VStack(spacing: DSSpacing.cardSectionSpacing) {
+                // CIRCULAR PROGRESS RING
+                // v1.2: Centered horizontally (user requirement: all center icons/imagery centered by default)
+                ZStack {
+                    // WIN HALO (v1.2b) - Expanding + fading celebration when trend = improving
+                    // Per v1.2 spec D.1: One-time animation on appear, skip on Reduce Motion
+                    if state == .improving && !reduceMotion {
+                        Circle()
+                            .stroke(accentColor.opacity(0.15), lineWidth: 8)
+                            .frame(width: 180, height: 180)
+                            .scaleEffect(showWinHalo ? 1.12 : 1.0)
+                            .opacity(showWinHalo ? 0.0 : 1.0)
+                            .animation(.easeOut(duration: 0.9), value: showWinHalo)
+                    }
+
+                    // v1.2d: Replaced duplicated ring code with DSProgressRing component
+                    // Industry Pattern: Apple Watch Activity Rings
+                    // Extracted to eliminate ~60-80 lines of duplication across CircularTrendRingCard + MilestoneRingCard
+                    DSProgressRing(
+                        progress: ringProgress,
+                        size: 160,
+                        strokeWidth: 12,
+                        progressGradient: ringGradient,
+                        trackColor: Color.white.opacity(0.2),
+                        glowColor: accentColor,
+                        glowIntensity: 0.40,
+                        enableGlow: true,
+                        enableHalo: true,
+                        animationDuration: 1.2,
+                        animateProgress: $animateRing
+                    )
+
+                    // Center content - Weight change value
+                    VStack(spacing: DSSpacing.cardExtraSmallSpacing) {
+                        HStack(alignment: .firstTextBaseline, spacing: DSSpacing.cardExtraSmallSpacing) {
+                            Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
+                                .font(DSTypography.statValueLarge)
+                                .foregroundColor(Theme.ColorToken.textPrimary)
+
+                            Text("lbs")
+                                .font(DSTypography.cardSubtitle)
+                                .foregroundColor(Theme.ColorToken.textSecondary)
+                        }
+
+                        // Emotion Indicator (v1.2) - Icon + Label
+                        // Per v1.2 spec C.3: Enhanced sizes for better legibility
+                        // Icon: 20pt, Label: 14pt semibold
+                        if delta != nil {
+                            HStack(spacing: DSSpacing.cardExtraSmallSpacing) {
+                                Image(systemName: emotionIcon(for: state))
+                                    .font(DSTypography.displayS)
+                                    .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
+
+                                Text(emotionLabel(for: state))
+                                    .font(DSTypography.cardSubtitle)
+                                    .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
+                            }
+                        }
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, DSSpacing.cardSmallSpacing)
+
+                // TAG + PERIOD LABEL
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
+                    Text(tag)
+                        .font(DSTypography.pillLabel)
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.25))
+                        )
+
+                    Text(periodLabel)
+                        .font(DSTypography.labelSecondary)
+                        .foregroundColor(Theme.ColorToken.textSecondary)
+                }
+
+                // MICROCOPY (motivational message)
+                Text(microcopy)
+                    .font(DSTypography.iconButton)
+                    .foregroundColor(Theme.ColorToken.textPrimary.opacity(0.85))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .padding(.horizontal, DSSpacing.cardElementSpacing)
+            }
+            .padding(.vertical, DSSpacing.cardSmallSpacing)
+        }
+        .onAppear {
+            // Trigger ring animation on appear
+            animateRing = true
+
+            // v1.2b: Trigger win halo animation (D.1) - only when improving + Reduce Motion OFF
+            if state == .improving && !reduceMotion {
+                showWinHalo = true
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
+        }
+        .transition(.opacity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(tag) \(delta != nil ? String(format: "%.1f", abs(delta!)) : "no data") pounds in \(periodLabel)")
+    }
+}
+
+/// LEGACY: Trend Card Full-Width - Simple flat number display
+/// Replaced by CircularTrendRingCard but kept for reference
+/// Per Stacked v1.2 spec: Light surface card with LightCard wrapper
+struct TrendCardFull: View {
+    let periodLabel: String  // "7 DAYS" or "30 DAYS"
+    let delta: Double?       // Signed value (negative = loss)
+    let surface: Color       // Universal Ice standard (Phase v1.3e)
+    let onHide: () -> Void   // Hide card callback
+
+    private var state: WeightTrendsView.TrendState {
+        guard let delta = delta else { return .flat }
+        if delta < -0.2 { return .improving }
+        if delta > 0.2 { return .regressing }
+        return .flat
+    }
+
+    private var accent: Color {
+        switch state {
+        case .improving: return Theme.ColorToken.stateSuccess
+        case .regressing: return Theme.ColorToken.stateError
+        case .flat: return Theme.ColorToken.textSecondary.opacity(0.8)
+        }
+    }
+
+    private var tag: String {
+        guard let delta = delta else { return "NO DATA" }
+        if delta < -0.2 { return "LOST" }
+        if delta > 0.2 { return "GAINED" }
+        return "FLAT"
+    }
+
+    var body: some View {
+        LightCard(surface: surface, onHide: onHide) {
+            VStack(alignment: .leading, spacing: DSSpacing.cardElementSpacing) {
+                // Top accent bar (3pt height)
+                RoundedRectangle(cornerRadius: 2, style: .continuous)
+                    .fill(accent)
+                    .frame(height: 3)
+                    .opacity(0.9)
+
+                // Primary number + unit
+                HStack(alignment: .lastTextBaseline, spacing: DSSpacing.cardSmallSpacing) {
+                    Text(delta != nil ? String(format: "%.1f", abs(delta!)) : "--")
+                        .font(DSTypography.displayHero)
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+
+                    Text("lbs")
+                        .font(DSTypography.listTitle)
+                        .foregroundColor(Theme.ColorToken.textSecondary)
+
+                    Spacer()
+                }
+
+                // Tag + Period label
+                HStack(spacing: DSSpacing.cardSmallSpacing) {
+                    Text(tag)
+                        .font(DSTypography.statLabel)
+                        .padding(.horizontal, DSSpacing.cardSmallSpacing)
+                        .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
+                        .background(accent.opacity(0.18))
+                        .clipShape(Capsule())
+                        .foregroundColor(accent)
+
+                    Text(periodLabel)
+                        .font(DSTypography.listCaption)
+                        .foregroundColor(Theme.ColorToken.textSecondary)
+
+                    Spacer()
+
+                    // Chevron disclosure
+                    Image(systemName: "chevron.right")
+                        .foregroundColor(Theme.ColorToken.textSecondary.opacity(0.8))
+                        .font(DSTypography.listCaption)
+                }
+            }
+        }
+        .transition(.opacity)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(tag) \(delta != nil ? String(format: "%.1f", abs(delta!)) : "no data") pounds in \(periodLabel)")
+    }
+}
+
+/// Recap Row - Three metrics in single row (Net Δ | Streak | Entries)
+/// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
+/// v1.2b: Added streak badge system (D.2) - badge dot + haptic when new best streak achieved
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
+struct RecapRow: View {
+    let netDelta: Double   // Signed across 30d
+    let bestStreak: Int    // Days
+    let entries: Int       // Total entries
+    let onHide: () -> Void // Hide callback
+
+    // v1.2b: Track best streak in @AppStorage for badge system
+    @AppStorage("weight_tracker_best_streak") private var savedBestStreak: Int = 0
+    @State private var showNewBestBadge = false  // Badge animation state
+
+    private var netText: String {
+        let tag = netDelta < 0 ? "LOST" : (netDelta > 0 ? "GAINED" : "FLAT")
+        return "\(tag) \(String(format: "%.1f", abs(netDelta))) lbs"
+    }
+
+    /// Check if current streak is new best
+    /// Per v1.2 spec D.2: New best streak → small badge dot + haptic .success
+    private var isNewBest: Bool {
+        return bestStreak > savedBestStreak && bestStreak > 0
+    }
+
+    var body: some View {
+        DSBanner(ice: onHide) {
+            // Metrics row (2 metrics: Net Delta + Streak)
+            // 🔧 FIX #20: Add top padding to push content down, DSBanner already provides 16pt horizontal (side) padding
+            HStack(spacing: DSSpacing.cardElementSpacing) {
+                // Net delta
+                Label(netText, systemImage: "chart.line.uptrend.xyaxis")
+                    .font(DSTypography.statValueSmall)
+                    .foregroundColor(Theme.ColorToken.textPrimary)
+
+                Spacer()
+
+                // Best streak (v1.2b: with badge dot when new best achieved)
+                ZStack(alignment: .topTrailing) {
+                    Label("\(bestStreak)‑day streak", systemImage: "flame.fill")
+                        .font(DSTypography.statValueSmall)
+                        .foregroundColor(Theme.ColorToken.textPrimary)
+
+                    // NEW BEST BADGE (v1.2b) - Small dot overlay when new best streak achieved
+                    // Per v1.2 spec D.2: Badge dot + haptic .success
+                    if isNewBest {
+                        Circle()
+                            .fill(Theme.ColorToken.stateSuccess)
+                            .frame(width: 8, height: 8)
+                            .offset(x: 6, y: -4)
+                            .opacity(showNewBestBadge ? 1.0 : 0.0)
+                            .scaleEffect(showNewBestBadge ? 1.0 : 0.5)
+                            .animation(.spring(response: 0.5, dampingFraction: 0.6), value: showNewBestBadge)
+                    }
+                }
+            }
+            .padding(.top, 24)  // 🔧 FIX #20: 24pt top padding pushes content down, leaving 16pt bottom space (66pt - 24pt top - ~26pt content = 16pt bottom)
+        }
+        .onAppear {
+            // v1.2b: Check for new best streak and trigger badge animation + haptic feedback
+            if isNewBest {
+                // Update saved best streak
+                savedBestStreak = bestStreak
+
+                // Trigger badge animation
+                showNewBestBadge = true
+
+                // Haptic .success feedback (per spec D.2)
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            }
+        }
+    }
+}
+
+/// Reflection Nudge - Behavioral prompt for micro-planning (v1.2b)
+/// Per v1.2 spec D.3: Below 30-day card, rotate one line at random
+/// Tap → triggers micro-plan Coach prompt (stub now, functional later)
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
+/// 🔧 FIX #7: Accepts pre-computed prompt text to prevent random changes during drag
+struct ReflectionNudge: View {
+    let text: String        // Pre-computed reflection prompt (prevents random changes during drag)
+    let onHide: () -> Void  // Hide callback
+    let onTap: () -> Void   // Tap callback (stub for now)
+
+    var body: some View {
+        DSBanner(ice: onHide) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
+                Image(systemName: "sparkle")
+                    .foregroundColor(Theme.ColorToken.accentGold)
+                    .font(DSTypography.listTitle)
+
+                Text(text)
+                    .font(DSTypography.statValueSmall)
+                    .foregroundColor(Theme.ColorToken.textPrimary)
+                    .italic()
+                    .lineLimit(2)  // Enforce 2-line max for consistent height
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .onTapGesture {
+            onTap()
+        }
+        .accessibilityLabel("Respond to reflection prompt")
+        .accessibilityHint("Double tap to respond to: \(text)")
+    }
+}
+
+/// Did You Know Banner - Optional educational micro-tip
+/// Per Stacked v1.2 spec: Mint surface with eye.slash dismiss on RIGHT (matching DSCard pattern)
+/// Updated: Eye-slash moved from LEFT to RIGHT to match DSCardHeader
+/// v1.2e: Refactored to use DSBanner component for uniform container sizing
+///
+/// **STANDARD CARD TEXT SIZE:** DSTypography.statValueSmall (18pt semibold rounded)
+/// This is the standard text size for all banner cards in Progress Story unless explicitly specified otherwise.
+/// Ensures visual consistency across ProgressBanner, ReflectionNudge, RecapRow, and DidYouKnowBanner.
+struct DidYouKnowBanner: View {
+    let text: String
+    let onHide: () -> Void  // Hide callback
+
+    var body: some View {
+        DSBanner(ice: onHide) {
+            HStack(spacing: DSSpacing.cardElementSpacing) {
+                Image(systemName: "lightbulb")
+                    .foregroundColor(Theme.ColorToken.accentInfo)
+                    .font(DSTypography.listTitle)
+
+                Text(text)
+                    .font(DSTypography.statValueSmall)
+                    .foregroundColor(Theme.ColorToken.textPrimary)
+
+                Spacer()
+            }
+        }
+    }
+}
+
+// MARK: - Legacy TrendCard (Keep for backward compatibility)
+
+struct TrendCard: View {
+    let title: String
+    let trend: (amount: Double, isLoss: Bool)?
+
+    var body: some View {
+        VStack(spacing: DSSpacing.cardSmallSpacing) {
+            if let trend = trend {
+                // Top: Celebration emoji (EXCITING!)
+                Text(trendEmoji(for: trend))
+                    .font(DSTypography.displayHero)
+                    .padding(.top, DSSpacing.cardSmallSpacing)
+
+                // Middle: HUGE number + lbs (IMPACTFUL!)
+                HStack(alignment: .firstTextBaseline, spacing: 2) {
+                    Text(String(format: "%.1f", trend.amount))
+                        .font(DSTypography.displayXXL)
+                        .foregroundColor(.white)
+                    Text("lbs")
+                        .font(DSTypography.statValueSmall)
+                        .foregroundColor(.white.opacity(0.9))
+                }
+
+                // Status pill (like weight lost pill!)
+                Text(trend.isLoss ? "LOST" : "GAINED")
+                    .font(DSTypography.pillLabel)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, DSSpacing.cardElementSpacing)
+                    .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.3))
+                    )
+
+                // Period label (clear but subtle)
+                Text(title)
+                    .font(DSTypography.periodLabel)
+                    .foregroundColor(.white.opacity(0.8))
+                    .padding(.bottom, DSSpacing.cardExtraSmallSpacing)
+            } else {
+                // No data state
+                Text("📊")
+                    .font(DSTypography.displayHero)
+                    .padding(.top, DSSpacing.cardSmallSpacing)
+
+                Text("--")
+                    .font(DSTypography.displayXXL)
+                    .foregroundColor(.white.opacity(0.6))
+
+                Text("NO DATA")
+                    .font(DSTypography.pillLabel)
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.horizontal, DSSpacing.cardElementSpacing)
+                    .padding(.vertical, DSSpacing.cardExtraSmallSpacing)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.2))
+                    )
+
+                Text(title)
+                    .font(DSTypography.periodLabel)
+                    .foregroundColor(.white.opacity(0.6))
+                    .padding(.bottom, DSSpacing.cardExtraSmallSpacing)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DSSpacing.cardSectionSpacing)
+        .padding(.horizontal, DSSpacing.cardPadding)  // Internal padding for content breathing room
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(cardGradient)
+        )
+        .shadow(color: shadowColor, radius: 8, x: 0, y: 4)
+    }
+
+    /// Luxury gradient background per Theme.ColorToken design system
+    /// Loss: Emerald green gradient (success)
+    /// Gain: Orange/red gradient (caution/warning)
+    /// Per UI/UX spec: Deep navy background, gold highlights, green for success
+    private var cardGradient: LinearGradient {
+        guard let trend = trend else {
+            // No data: Gray gradient
+            return LinearGradient(
+                colors: [Color.gray.opacity(0.6), Color.gray.opacity(0.4)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+
+        if trend.isLoss {
+            // Loss: Emerald gradient per luxury UI spec
+            // Using accentPrimary (emerald #1ABC9C) for success states
+            return LinearGradient(
+                colors: [Theme.ColorToken.accentPrimary, Theme.ColorToken.accentPrimary.opacity(0.7)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        } else {
+            // Gain: Warning/Error gradient per luxury UI spec
+            // Using stateWarning (amber) for gentle caution
+            return LinearGradient(
+                colors: [Theme.ColorToken.stateWarning, Theme.ColorToken.stateWarning.opacity(0.7)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        }
+    }
+
+    /// Shadow color matches card gradient per luxury UI spec
+    private var shadowColor: Color {
+        guard let trend = trend else {
+            return Color.gray.opacity(0.3)
+        }
+
+        if trend.isLoss {
+            // Loss: Emerald shadow for success
+            return Theme.ColorToken.accentPrimary.opacity(0.3)
+        } else {
+            // Gain: Amber shadow for caution
+            return Theme.ColorToken.stateWarning.opacity(0.3)
+        }
+    }
+
+    /// Dynamic emoji based on trend - CELEBRATION!
+    private func trendEmoji(for trend: (amount: Double, isLoss: Bool)) -> String {
+        if trend.isLoss {
+            // Celebration emojis for weight loss!
+            switch trend.amount {
+            case 0..<1:
+                return "👍"  // Small progress
+            case 1..<2:
+                return "💪"  // Good progress
+            case 2..<3:
+                return "⭐️"  // Great progress
+            case 3..<5:
+                return "🔥"  // Excellent progress
+            case 5..<10:
+                return "🏆"  // Amazing progress
+            default:
+                return "🚀"  // Incredible progress!
+            }
+        } else {
+            // Gentle supportive emojis for weight gain
+            switch trend.amount {
+            case 0..<1:
+                return "💧"  // Just water weight
+            case 1..<2:
+                return "🤝"  // Small fluctuation
+            case 2..<5:
+                return "💙"  // Keep going
+            default:
+                return "🫂"  // Still on the journey
+            }
+        }
+    }
+}
+
+// MARK: - Drag-and-Drop Delegate (Phase v1.4b Layer 4)
+
+/// ProgressStoryCardDropDelegate - Handles drop events for reordering Progress Story cards
+/// Per Phase v1.4b: Apple Health Edit button pattern with SwiftUI official drag-and-drop API
+/// Triggers CardManager.reorderCards(from:to:) when user drops a card on another card
+struct ProgressStoryCardDropDelegate: DropDelegate {
+    let cardType: ProgressStoryCardType
+    let visibleCards: [ProgressStoryCardType]
+    @Binding var draggedCard: ProgressStoryCardType?
+    let cardManager: CardManager<ProgressStoryCardType>
+
+    func performDrop(info: DropInfo) -> Bool {
+        guard let draggedCard = draggedCard else { return false }
+
+        // 🔧 FIX #3: Convert visible card indices to actual cardPreferences array indices
+        // CRITICAL: visibleCards only contains VISIBLE cards, but cardManager.reorderCards
+        // operates on the FULL cardPreferences array (which includes HIDDEN cards)
+        // We must convert indices from visibleCards → cardPreferences to match correctly
+
+        // Get all cards in cardPreferences order (includes hidden cards)
+        let allCardsInOrder = cardManager.cardPreferences.sorted { $0.sortOrder < $1.sortOrder }
+
+        // Find actual indices in full array
+        guard let sourceIndex = allCardsInOrder.firstIndex(where: { $0.id == draggedCard.rawValue }),
+              let destinationIndex = allCardsInOrder.firstIndex(where: { $0.id == cardType.rawValue }) else {
+            return false
+        }
+
+        // Reorder using unified CardManager (Phase v1.4a)
+        // This automatically updates sortOrder and persists to UserDefaults
+        cardManager.reorderCards(from: sourceIndex, to: destinationIndex)
+
+        // Haptic feedback on drop (medium style = card placement confirmation)
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+        self.draggedCard = nil
+        return true
+    }
+}
